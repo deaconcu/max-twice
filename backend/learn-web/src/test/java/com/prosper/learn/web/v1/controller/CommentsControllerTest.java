@@ -912,7 +912,7 @@ public class CommentsControllerTest extends BaseControllerTest {
         commentDataService.deleteById(comment2.getId());
 
         // 按状态查询
-        List<CommentDO> comments = commentDataService.getListByState(
+        List<CommentDO> comments = commentDataService.listByState(
             ContentState.PUBLISHED.value(),
             null,
             10
@@ -945,7 +945,7 @@ public class CommentsControllerTest extends BaseControllerTest {
         commentDataService.deleteById(comment1.getId());
 
         // 使用过滤条件查询
-        List<CommentDO> comments = commentDataService.getListByFilter(
+        List<CommentDO> comments = commentDataService.listByFilter(
             ContentType.post.value(),
             post.getId(),
             null,

@@ -110,7 +110,7 @@ public class CoursesController {
         }
         // 3. 默认：返回所有已发布课程（分页）
         else {
-            response = courseService.getListByStateAndLastIdWithStatsPage(ContentState.PUBLISHED, lastId, userId);
+            response = courseService.getListByStateWithStatsPage(ContentState.PUBLISHED, lastId, userId);
         }
 
         return ApiResponse.query(response);

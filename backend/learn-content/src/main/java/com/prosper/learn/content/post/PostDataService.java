@@ -174,20 +174,10 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     }
 
     /**
-     * 根据状态获取帖子列表
-     */
-    public List<PostDO> getListByState(byte state, int limit) {
-        return postMapper.getListByState(state, limit);
-    }
-
-    /**
      * 根据状态获取帖子列表（支持分页）
      */
-    public List<PostDO> getListByState(byte state, Long lastId, int limit) {
-        if (lastId == null || lastId == 0) {
-            return postMapper.getListByState(state, limit);
-        }
-        return postMapper.getListByStateWithPagination(state, lastId, limit);
+    public List<PostDO> listByState(Byte state, Long lastId, int limit) {
+        return postMapper.listByState(state, lastId, limit);
     }
 
     /**

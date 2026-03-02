@@ -84,11 +84,7 @@ public class AdminContentsController {
 
         return switch (contentType.toLowerCase()) {
             case "post" -> ApiResponse.success(
-                postService.getPostsByState(
-                    stateValue != null ? stateValue : ContentState.SUBMITTED,
-                    lastId,
-                    DEFAULT_PAGE_SIZE
-                )
+                postService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE)
             );
             case "roadmap" -> ApiResponse.success(
                 roadmapService.listByState(stateValue, lastId)
@@ -103,10 +99,10 @@ public class AdminContentsController {
                 commentService.listByState(stateValue, lastId)
             );
             case "course" -> ApiResponse.success(
-                courseService.getListByStateAndLastId(stateValue, lastId)
+                courseService.listByState(stateValue, lastId)
             );
             case "profession" -> ApiResponse.success(
-                professionService.getListByStateAndLastId(stateValue, lastId, DEFAULT_PAGE_SIZE)
+                professionService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE)
             );
             case "node" -> ApiResponse.success(
                 nodeService.listByState(stateValue, lastId)

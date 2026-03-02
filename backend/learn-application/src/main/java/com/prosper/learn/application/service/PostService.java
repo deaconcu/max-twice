@@ -413,7 +413,7 @@ public class PostService {
         int limit = systemProperties.getPosting().getPendingPostsLimit();
 
         // 调用 DomainService 查询（包含 idToName 处理）
-        List<PostDO> postDOList = domainService.getListByState(state.value(), limit);
+        List<PostDO> postDOList = domainService.listByState(state.value(), null, limit);
 
         return toSummaryDTO(postDOList);
     }
@@ -421,9 +421,10 @@ public class PostService {
     /**
      * 根据状态获取帖子列表（支持分页）- 管理后台使用
      */
-    public KeysetPageResponse<PostAdminDTO> getPostsByState(ContentState state, Long lastId, Integer limit) {
+    public KeysetPageResponse<PostAdminDTO> listByState(ContentState state, Long lastId, Integer limit) {
         // 多查询一条用于判断 hasMore
-        List<PostDO> postDOList = domainService.getListByState(state.value(), lastId, limit + 1);
+        Byte stateValue = state != null ? state.value() : null;
+        List<PostDO> postDOList = domainService.listByState(stateValue, lastId, limit + 1);
 
         boolean hasMore = postDOList.size() > limit;
         if (hasMore) {

@@ -242,10 +242,10 @@ public class ProfessionDomainService {
     }
 
     /**
-     * 根据状态和最后ID获取职业列表
+     * 根据状态获取职业列表
      */
-    public List<ProfessionDO> listByStateAndLastId(int state, Long lastId, int limit) {
-        return professionDataService.listByStateAndLastId((byte) state, lastId, limit);
+    public List<ProfessionDO> listByState(Byte state, Long lastId, int limit) {
+        return professionDataService.listByState(state, lastId, limit);
     }
 
     /**

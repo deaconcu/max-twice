@@ -155,14 +155,18 @@ public class CommentDomainService {
     }
 
     /**
-     * 根据状态获取评论列表（分页）
-     * @return List<CommentDO>
+     * 根据状态获取评论列表
      */
-    /*
-    public List<CommentDO> getCommentsByState(byte stateValue, Long lastId, int pageSize) {
-        return commentDataService.getListByState(stateValue, lastId, pageSize);
+    public List<CommentDO> listByState(Byte state, Long lastId, int pageSize) {
+        return commentDataService.listByState(state, lastId, pageSize);
     }
+
+    /**
+     * 高级筛选评论列表
      */
+    public List<CommentDO> listByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, int pageSize) {
+        return commentDataService.listByFilter(objectType, objectId, creatorId, lastId, pageSize);
+    }
 
     /**
      * 根据状态字符串获取评论列表（分页）
@@ -171,7 +175,7 @@ public class CommentDomainService {
      */
     public List<CommentDO> getCommentsByState(String state, Long lastId, int pageSize) {
         byte stateValue = convertStateStringToValue(state);
-        return commentDataService.getListByState(stateValue, lastId, pageSize);
+        return commentDataService.listByState(stateValue, lastId, pageSize);
     }
 
     /**
@@ -197,12 +201,5 @@ public class CommentDomainService {
      */
     public List<CommentDO> listByState(Enums.ContentState state, Long lastId, int pageSize) {
         return commentDataService.listByState(state.value(), lastId, pageSize);
-    }
-
-    /**
-     * 高级筛选评论列表
-     */
-    public List<CommentDO> listByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, int pageSize) {
-        return commentDataService.listByFilter(objectType, objectId, creatorId, lastId, pageSize);
     }
 }

@@ -74,11 +74,13 @@ public interface PostMapper {
 //    List<PostDO> getAllPostsForScoreCalculation(byte state);
 // --注释掉检查 STOP (2025/12/10 12:02)
 
-    @Select("SELECT * FROM post where state = #{state} AND deleted_at IS NULL order by id DESC limit #{count}")
-    List<PostDO> getListByState(byte state, int count);
-
-    @Select("SELECT * FROM post where state = #{state} and id < #{lastId} AND deleted_at IS NULL order by id DESC limit #{limit}")
-    List<PostDO> getListByStateWithPagination(byte state, long lastId, int limit);
+    @Select({"<script>",
+            "SELECT * FROM post WHERE deleted_at IS NULL",
+            "<if test='state != null'> AND state = #{state}</if>",
+            "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
+            "ORDER BY id DESC LIMIT #{limit}",
+            "</script>"})
+    List<PostDO> listByState(@Param("state") Byte state, @Param("lastId") Long lastId, @Param("limit") int limit);
 
     /**
      * 统计活跃文章数量（state=APPROVED表示已发布状态）

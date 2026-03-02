@@ -118,7 +118,7 @@ public class PagesControllerTest extends BaseControllerTest {
         StpUtil.logout();
 
         // 从数据库查询创建的课程并审核通过
-        List<CourseDO> courses = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null);
+        List<CourseDO> courses = courseDataService.listByState(ContentState.SUBMITTED.value(), null, 100);
         CourseDO course = courses.stream()
                 .filter(c -> name.equals(c.getName()))
                 .findFirst()
@@ -209,9 +209,10 @@ public class PagesControllerTest extends BaseControllerTest {
         StpUtil.logout();
 
         // 从数据库查询创建的评论（SUBMITTED 状态）
-        List<CommentDO> comments = commentDataService.getListByFilter(
-                objectType.value(), objectId, creatorId, null, ContentState.SUBMITTED.value(), 100);
+        List<CommentDO> comments = commentDataService.listByFilter(
+                objectType.value(), objectId, creatorId, null, 100);
         CommentDO comment = comments.stream()
+                .filter(c -> c.getState() == ContentState.SUBMITTED.value())
                 .filter(c -> content.equals(c.getContent()) && (c.getReplyToCommentId() == null || c.getReplyToCommentId() == 0))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("评论未创建"));
@@ -249,9 +250,10 @@ public class PagesControllerTest extends BaseControllerTest {
         StpUtil.logout();
 
         // 从数据库查询创建的回复评论（SUBMITTED 状态）
-        List<CommentDO> comments = commentDataService.getListByFilter(
-                objectType.value(), objectId, creatorId, null, ContentState.SUBMITTED.value(), 100);
+        List<CommentDO> comments = commentDataService.listByFilter(
+                objectType.value(), objectId, creatorId, null, 100);
         CommentDO comment = comments.stream()
+                .filter(c -> c.getState() == ContentState.SUBMITTED.value())
                 .filter(c -> content.equals(c.getContent()) && replyToCommentId.equals(c.getReplyToCommentId()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("回复评论未创建"));

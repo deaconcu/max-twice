@@ -246,7 +246,7 @@ public class PublicController {
         } else if (parentId != null) {
             response = courseService.getListByParentWithStatsPage(parentId, ContentState.PUBLISHED, lastId, null);
         } else {
-            response = courseService.getListByStateAndLastIdWithStatsPage(ContentState.PUBLISHED, lastId, null);
+            response = courseService.getListByStateWithStatsPage(ContentState.PUBLISHED, lastId, null);
         }
 
         return ApiResponse.query(response);

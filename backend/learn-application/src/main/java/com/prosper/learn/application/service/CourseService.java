@@ -382,14 +382,16 @@ public class CourseService {
     }
 
     // 新增：根据状态和lastId获取课程列表
-    public List<CourseSummaryWithStatsAndProgressDTO> getListByStateAndLastIdWithStats(ContentState state, Long lastId, Long userId) {
-        List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId);
+    public List<CourseSummaryWithStatsAndProgressDTO> getListByStateWithStats(ContentState state, Long lastId, Long userId) {
+        Byte stateValue = state != null ? state.value() : null;
+        List<CourseDO> courseDOList = courseDataService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE);
         return toSummaryWithStatsAndProgressDTOList(courseDOList, userId);
     }
 
     // 新增：根据状态和lastId获取课程列表（分页版本）
-    public KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO> getListByStateAndLastIdWithStatsPage(ContentState state, Long lastId, Long userId) {
-        List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId);
+    public KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO> getListByStateWithStatsPage(ContentState state, Long lastId, Long userId) {
+        Byte stateValue = state != null ? state.value() : null;
+        List<CourseDO> courseDOList = courseDataService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE);
         return buildPageResponse(courseDOList, userId);
     }
 
@@ -470,9 +472,10 @@ public class CourseService {
         return KeysetPageResponse.of(items, hasMore, null, nextLastId);
     }
 
-    // 管理后台：根据状态和lastId获取课程列表（返回分页响应）
-    public KeysetPageResponse<CourseDetailDTO> getListByStateAndLastId(ContentState state, Long lastId) {
-        List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId, DEFAULT_PAGE_SIZE + 1);
+    // 管理后台：根据状态获取课程列表（返回分页响应）
+    public KeysetPageResponse<CourseDetailDTO> listByState(ContentState state, Long lastId) {
+        Byte stateValue = state != null ? state.value() : null;
+        List<CourseDO> courseDOList = courseDataService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE + 1);
 
         boolean hasMore = courseDOList.size() > DEFAULT_PAGE_SIZE;
         if (hasMore) {

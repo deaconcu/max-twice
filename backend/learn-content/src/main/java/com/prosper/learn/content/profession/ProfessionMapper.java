@@ -14,12 +14,13 @@ public interface ProfessionMapper {
     @Select("SELECT * FROM profession WHERE id = #{id} AND deleted_at IS NULL")
     ProfessionDO getById(long id);
 
-    @Select("<script>" +
-            "SELECT * FROM profession WHERE state = #{state} AND deleted_at IS NULL " +
-            "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
-            "ORDER BY id DESC LIMIT #{limit}" +
-            "</script>")
-    List<ProfessionDO> listByStateAndLastId(byte state, Long lastId, int limit);
+    @Select({"<script>",
+            "SELECT * FROM profession WHERE deleted_at IS NULL",
+            "<if test='state != null'> AND state = #{state}</if>",
+            "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
+            "ORDER BY id DESC LIMIT #{limit}",
+            "</script>"})
+    List<ProfessionDO> listByState(@Param("state") Byte state, @Param("lastId") Long lastId, @Param("limit") int limit);
 
     @Select("<script>" +
             "SELECT * FROM profession WHERE main_category = #{mainCategory} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +

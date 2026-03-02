@@ -98,17 +98,8 @@ public class PostDomainService {
     /**
      * 根据状态获取帖子列表
      */
-    public List<PostDO> getListByState(Byte state, int limit) {
-        List<PostDO> posts = postDataService.getListByState(state, limit);
-        posts.forEach(this::processIdToName);
-        return posts;
-    }
-
-    /**
-     * 根据状态获取帖子列表（分页）
-     */
-    public List<PostDO> getListByState(Byte state, Long lastId, Integer limit) {
-        List<PostDO> posts = postDataService.getListByState(state, lastId, limit);
+    public List<PostDO> listByState(Byte state, Long lastId, int limit) {
+        List<PostDO> posts = postDataService.listByState(state, lastId, limit);
         posts.forEach(this::processIdToName);
         return posts;
     }

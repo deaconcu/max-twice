@@ -107,7 +107,7 @@ public class ProfessionsControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.message").value("操作成功"));
 
             // 验证：职业已创建
-            List<ProfessionDO> professions = professionDataService.listByStateAndLastId(
+            List<ProfessionDO> professions = professionDataService.listByState(
                 ContentState.SUBMITTED.value(), null, 100);
             ProfessionDO createdProfession = professions.stream()
                     .filter(p -> "Java开发工程师".equals(p.getName()))
@@ -281,7 +281,7 @@ public class ProfessionsControllerTest extends BaseControllerTest {
         StpUtil.logout();
 
         // 从数据库查询创建的职业
-        List<ProfessionDO> professions = professionDataService.listByStateAndLastId(
+        List<ProfessionDO> professions = professionDataService.listByState(
             ContentState.SUBMITTED.value(), null, 100);
         ProfessionDO profession = professions.stream()
                 .filter(p -> "产品经理".equals(p.getName()))
@@ -360,7 +360,7 @@ public class ProfessionsControllerTest extends BaseControllerTest {
             }
 
             // 审核通过所有职业
-            List<ProfessionDO> professions = professionDataService.listByStateAndLastId(
+            List<ProfessionDO> professions = professionDataService.listByState(
                 ContentState.SUBMITTED.value(), null, 100);
             ProfessionDO profession1 = professions.stream()
                 .filter(p -> "Java开发".equals(p.getName())).findFirst().orElseThrow();
@@ -502,7 +502,7 @@ public class ProfessionsControllerTest extends BaseControllerTest {
             }
 
             // 审核通过所有职业
-            List<ProfessionDO> professions = professionDataService.listByStateAndLastId(
+            List<ProfessionDO> professions = professionDataService.listByState(
                 ContentState.SUBMITTED.value(), null, 100);
             for (ProfessionDO profession : professions) {
                 if (profession.getName().contains("Java") || profession.getName().contains("Python")
@@ -598,7 +598,7 @@ public class ProfessionsControllerTest extends BaseControllerTest {
             }
 
             // 审核通过所有职业
-            List<ProfessionDO> professions = professionDataService.listByStateAndLastId(
+            List<ProfessionDO> professions = professionDataService.listByState(
                 ContentState.SUBMITTED.value(), null, 100);
             for (ProfessionDO profession : professions) {
                 if (profession.getName().startsWith("热门职业")) {

@@ -110,17 +110,10 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
     private static final int DEFAULT_PAGE_SIZE = 21;
 
     /**
-     * 根据状态和最后ID获取课程列表（不缓存）
+     * 根据状态获取课程列表
      */
-    public List<CourseDO> listByStateAndLastId(Enums.ContentState state, Long lastId) {
-        return courseMapper.listByStateAndLastId(state, lastId, DEFAULT_PAGE_SIZE);
-    }
-
-    /**
-     * 根据状态和最后ID获取课程列表，支持limit参数（不缓存）
-     */
-    public List<CourseDO> listByStateAndLastId(Enums.ContentState state, Long lastId, int limit) {
-        return courseMapper.listByStateAndLastId(state, lastId, limit);
+    public List<CourseDO> listByState(Byte state, Long lastId, int limit) {
+        return courseMapper.listByState(state, lastId, limit);
     }
 
     /**

@@ -285,7 +285,8 @@ public class CommentService {
      */
     public KeysetPageResponse<CommentAdminDTO> listByState(ContentState state, Long lastId) {
         int pageSize = systemProperties.getComment().getDefaultPageSize();
-        List<CommentDO> commentDOList = commentDomainService.listByState(state, lastId, pageSize + 1);
+        Byte stateValue = state != null ? state.value() : null;
+        List<CommentDO> commentDOList = commentDomainService.listByState(stateValue, lastId, pageSize + 1);
         return buildAdminResponse(commentDOList, pageSize);
     }
 

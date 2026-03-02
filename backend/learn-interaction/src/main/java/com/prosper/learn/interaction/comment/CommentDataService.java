@@ -162,29 +162,19 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
     public List<CommentDO> getByTopicPaginated(long id, double score, long offsetId, int pageSize) {
         return commentMapper.getByTopicPaginated(id, score, offsetId, pageSize);
     }
-    
-    /**
-     * 根据状态获取评论列表（不缓存）
-     * @param state 评论状态
-     * @param lastId 最后一条记录的ID，为null时加载第一页
-     * @param limit 每页数量
-     */
-    public List<CommentDO> getListByState(byte state, Long lastId, int limit) {
-        return commentMapper.getListByState(state, lastId, limit);
-    }
 
     /**
      * 根据状态获取评论列表
      */
     public List<CommentDO> listByState(Byte state, Long lastId, int limit) {
-        return commentMapper.getListByState(state, lastId, limit);
+        return commentMapper.listByState(state, lastId, limit);
     }
 
     /**
      * 高级筛选评论列表
      */
     public List<CommentDO> listByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, int limit) {
-        return commentMapper.getListByFilter(objectType, objectId, creatorId, lastId, limit);
+        return commentMapper.listByFilter(objectType, objectId, creatorId, lastId, limit);
     }
 
     /**

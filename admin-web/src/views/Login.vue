@@ -2,8 +2,10 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { useSystemConfigStore } from '@/stores/modules/systemConfig'
 
 const router = useRouter()
+const systemConfigStore = useSystemConfigStore()
 
 const email = ref('')
 const password = ref('')
@@ -26,7 +28,9 @@ const login = async () => {
     })
 
     if (response.data.code === 200) {
-      // 登录成功，跳转到Dashboard
+      // 登录成功，加载系统配置
+      await systemConfigStore.init()
+      // 跳转到Dashboard
       router.push('/')
     } else {
       errorMsg.value = response.data.message || '登录失败'

@@ -127,7 +127,7 @@ public class CoursesControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证：课程已创建
-            List<CourseDO> courses = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null);
+            List<CourseDO> courses = courseDataService.listByState(ContentState.SUBMITTED.value(), null, 100);
             CourseDO createdCourse = courses.stream()
                     .filter(c -> "Spring Boot 实战".equals(c.getName()))
                     .findFirst()
@@ -288,7 +288,7 @@ public class CoursesControllerTest extends BaseControllerTest {
                     .andExpect(status().isOk());
 
             // 查找父课程
-            List<CourseDO> courses = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null);
+            List<CourseDO> courses = courseDataService.listByState(ContentState.SUBMITTED.value(), null, 100);
             CourseDO parentCourse = courses.stream()
                     .filter(c -> "父课程".equals(c.getName()))
                     .findFirst()
@@ -412,7 +412,7 @@ public class CoursesControllerTest extends BaseControllerTest {
         StpUtil.logout();
 
         // 从数据库查询创建的课程
-        List<CourseDO> courses = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null);
+        List<CourseDO> courses = courseDataService.listByState(ContentState.SUBMITTED.value(), null, 100);
         CourseDO course = courses.stream()
                 .filter(c -> "测试课程详情".equals(c.getName()))
                 .findFirst()
@@ -566,7 +566,7 @@ public class CoursesControllerTest extends BaseControllerTest {
                     .andExpect(status().isOk());
 
             // 获取创建的课程并审核通过
-            List<CourseDO> courses = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null);
+            List<CourseDO> courses = courseDataService.listByState(ContentState.SUBMITTED.value(), null, 100);
             CourseDO course1 = courses.stream().filter(c -> "Java基础教程".equals(c.getName())).findFirst().orElseThrow();
             CourseDO course2 = courses.stream().filter(c -> "Python实战开发".equals(c.getName())).findFirst().orElseThrow();
             CourseDO course3 = courses.stream().filter(c -> "Spring框架详解".equals(c.getName())).findFirst().orElseThrow();
@@ -755,7 +755,7 @@ public class CoursesControllerTest extends BaseControllerTest {
             }
 
             // 审核通过所有课程
-            List<CourseDO> courses = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null);
+            List<CourseDO> courses = courseDataService.listByState(ContentState.SUBMITTED.value(), null, 100);
             for (CourseDO course : courses) {
                 if (course.getName().contains("Java") || course.getName().contains("Python")
                     || course.getName().contains("JavaScript") || course.getName().contains("Spring")) {
@@ -889,7 +889,7 @@ public class CoursesControllerTest extends BaseControllerTest {
             }
 
             // 审核通过前5个课程（第6个保持SUBMITTED状态用于测试过滤）
-            List<CourseDO> courses = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null);
+            List<CourseDO> courses = courseDataService.listByState(ContentState.SUBMITTED.value(), null, 100);
             int publishedCount = 0;
             for (CourseDO course : courses) {
                 if (course.getName().startsWith("热门课程") && publishedCount < 5) {
@@ -1005,7 +1005,7 @@ public class CoursesControllerTest extends BaseControllerTest {
                     .andExpect(status().isOk());
 
             // 获取创建的课程
-            List<CourseDO> courses = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null);
+            List<CourseDO> courses = courseDataService.listByState(ContentState.SUBMITTED.value(), null, 100);
             CourseDO course = courses.stream()
                     .filter(c -> "参数验证测试课程".equals(c.getName()))
                     .findFirst()
@@ -1207,7 +1207,7 @@ public class CoursesControllerTest extends BaseControllerTest {
             }
 
             // 审核通过所有课程
-            List<CourseDO> courses = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null);
+            List<CourseDO> courses = courseDataService.listByState(ContentState.SUBMITTED.value(), null, 100);
             for (CourseDO course : courses) {
                 if (course.getName().startsWith("批量查询测试课程")) {
                     course.setState(ContentState.PUBLISHED.value());
@@ -1216,7 +1216,7 @@ public class CoursesControllerTest extends BaseControllerTest {
             }
 
             // 获取已发布的测试课程
-            List<CourseDO> publishedCourses = courseDataService.listByStateAndLastId(ContentState.PUBLISHED, null)
+            List<CourseDO> publishedCourses = courseDataService.listByState(ContentState.PUBLISHED.value(), null, 100)
                     .stream()
                     .filter(c -> c.getName().startsWith("批量查询测试课程"))
                     .toList();
@@ -1354,7 +1354,7 @@ public class CoursesControllerTest extends BaseControllerTest {
             }
 
             // 审核通过所有课程
-            List<CourseDO> allCourses = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null);
+            List<CourseDO> allCourses = courseDataService.listByState(ContentState.SUBMITTED.value(), null, 100);
             for (CourseDO course : allCourses) {
                 if (course.getName().startsWith("分页测试课程")) {
                     course.setState(ContentState.PUBLISHED.value());

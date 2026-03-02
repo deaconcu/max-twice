@@ -122,7 +122,7 @@ public class MeilisearchService {
             int total = 0;
             Long lastId = null;
             while (true) {
-                List<CourseDO> list = courseDataService.listByStateAndLastId(Enums.ContentState.PUBLISHED, lastId);
+                List<CourseDO> list = courseDataService.listByState(Enums.ContentState.PUBLISHED.value(), lastId, 1000);
                 if (list.isEmpty()) break;
 
                 bulkIndexCourses(list);
@@ -186,7 +186,7 @@ public class MeilisearchService {
             int total = 0;
             Long lastId = null;
             while (true) {
-                List<UserDO> list = userDataService.listByStateAndLastId(Enums.UserState.ACTIVE.value(), lastId, 1000);
+                List<UserDO> list = userDataService.listByState(Enums.UserState.ACTIVE.value(), lastId, 1000);
                 if (list.isEmpty()) break;
 
                 bulkIndexUsers(list);
@@ -218,7 +218,7 @@ public class MeilisearchService {
             int total = 0;
             Long lastId = null;
             while (true) {
-                List<ProfessionDO> list = professionDataService.listByStateAndLastId(
+                List<ProfessionDO> list = professionDataService.listByState(
                         Enums.ContentState.PUBLISHED.value(), lastId, 1000);
                 if (list.isEmpty()) break;
 

@@ -87,8 +87,9 @@ public class ProfessionService {
     /**
      * 获取职业列表（管理后台专用，包含状态和原因）
      */
-    public KeysetPageResponse<ProfessionAdminDTO> getListByStateAndLastId(ContentState state, Long lastId, int limit) {
-        List<ProfessionDO> professionDOList = professionDomainService.listByStateAndLastId(state.value(), lastId, limit + 1);
+    public KeysetPageResponse<ProfessionAdminDTO> listByState(ContentState state, Long lastId, int limit) {
+        Byte stateValue = state != null ? state.value() : null;
+        List<ProfessionDO> professionDOList = professionDomainService.listByState(stateValue, lastId, limit + 1);
 
         boolean hasMore = professionDOList.size() > limit;
         if (hasMore) {
@@ -133,7 +134,7 @@ public class ProfessionService {
      * 获取已发布的职业列表（公开接口，只返回已发布状态）
      */
     public List<ProfessionDTO> getApprovedByLastId(Long lastId, int limit) {
-        List<ProfessionDO> professionDOList = professionDomainService.listByStateAndLastId(ContentState.PUBLISHED.value(), lastId, limit);
+        List<ProfessionDO> professionDOList = professionDomainService.listByState(ContentState.PUBLISHED.value(), lastId, limit);
         return toDTO(professionDOList);
     }
 

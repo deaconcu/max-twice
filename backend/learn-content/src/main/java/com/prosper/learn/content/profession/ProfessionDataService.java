@@ -97,10 +97,10 @@ public class ProfessionDataService extends AbstractDataService<ProfessionDO, Pro
     }
     
     /**
-     * 根据状态和最后ID查询
+     * 根据状态获取职业列表
      */
-    public List<ProfessionDO> listByStateAndLastId(byte state, Long lastId, int limit) {
-        return professionMapper.listByStateAndLastId(state, lastId, limit);
+    public List<ProfessionDO> listByState(Byte state, Long lastId, int limit) {
+        return professionMapper.listByState(state, lastId, limit);
     }
 
     /**

@@ -115,7 +115,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         courseService.createCourse(courseRequest, testUser);
 
         // 获取刚创建的课程
-        testCourse = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null).stream()
+        testCourse = courseDataService.listByState(ContentState.SUBMITTED.value(), null, 100).stream()
             .filter(c -> "测试课程".equals(c.getName()))
             .findFirst()
             .orElseThrow(() -> new RuntimeException("未找到测试课程"));
@@ -432,7 +432,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         courseRequest.setSubCategory(1);
         courseService.createCourse(courseRequest, testUser);
 
-        CourseDO emptyCourse = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null).stream()
+        CourseDO emptyCourse = courseDataService.listByState(ContentState.SUBMITTED.value(), null, 100).stream()
             .filter(c -> "空课程".equals(c.getName()))
             .findFirst()
             .orElseThrow();

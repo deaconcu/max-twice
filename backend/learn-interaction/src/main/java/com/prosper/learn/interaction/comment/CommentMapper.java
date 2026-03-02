@@ -68,25 +68,22 @@ public interface CommentMapper {
     List<CommentDO> getByTopicPaginated(long commentId, double lastScore, long lastId, int count);
 
     @Select({"<script>",
-            "SELECT * FROM comment WHERE state = #{state}",
+            "SELECT * FROM comment WHERE deleted_at IS NULL",
+            "<if test='state != null'> AND state = #{state}</if>",
             "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
-            " AND deleted_at IS NULL",
-            "ORDER BY id DESC LIMIT #{count}",
+            "ORDER BY id DESC LIMIT #{limit}",
             "</script>"})
-    List<CommentDO> getListByState(@Param("state") byte state, @Param("lastId") Long lastId, @Param("count") int count);
+    List<CommentDO> listByState(@Param("state") Byte state, @Param("lastId") Long lastId, @Param("limit") int limit);
 
     @Select({"<script>",
-            "SELECT * FROM comment",
-            "<where>",
-            "deleted_at IS NULL",
+            "SELECT * FROM comment WHERE deleted_at IS NULL",
             "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
             "<if test='objectType != null'> AND object_type = #{objectType}</if>",
             "<if test='objectId != null'> AND object_id = #{objectId}</if>",
             "<if test='creatorId != null'> AND creator_id = #{creatorId}</if>",
-            "</where>",
             "ORDER BY id DESC LIMIT #{limit}",
             "</script>"})
-    List<CommentDO> getListByFilter(@Param("objectType") Integer objectType, @Param("objectId") Long objectId, @Param("creatorId") Long creatorId, @Param("lastId") Long lastId, @Param("limit") int limit);
+    List<CommentDO> listByFilter(@Param("objectType") Integer objectType, @Param("objectId") Long objectId, @Param("creatorId") Long creatorId, @Param("lastId") Long lastId, @Param("limit") int limit);
 
     @Insert("INSERT INTO comment(content, object_type, object_id, reply_to_comment_id, creator_id, to_user_id, state, score) " +
             "VALUES (#{content}, #{objectType}, #{objectId}, #{replyToCommentId}, #{creatorId}, #{toUserId}, #{state}, #{score})")
