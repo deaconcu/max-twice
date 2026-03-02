@@ -161,15 +161,21 @@
                 <!-- 标题行 -->
                 <div class="d-flex align-center justify-space-between mb-2">
                   <div class="d-flex align-center">
-                    <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                    <a
+                      :href="systemConfigStore.getRoadmapUrl(roadmap.id)"
+                      target="_blank"
+                      class="text-body-1 font-weight-medium text-grey-darken-3 text-decoration-none"
+                    >
                       {{ roadmap.profession?.name || '未知职业' }}
-                    </div>
+                      <v-icon icon="mdi-open-in-new" size="14" color="grey" class="ml-1"></v-icon>
+                    </a>
                     <v-chip variant="flat" :color="getStateConfig(roadmap.state).color" size="x-small" class="ml-2">
                       {{ getStateConfig(roadmap.state).text }}
                     </v-chip>
                   </div>
                   <div class="d-flex align-center text-caption text-grey-darken-1">
-                    <span>{{ roadmap.creator?.name || '未知' }}</span>
+                    <a v-if="roadmap.creator" :href="systemConfigStore.getUserUrl(roadmap.creator.id)" target="_blank" class="text-grey-darken-1">{{ roadmap.creator.name }}</a>
+                    <span v-else>未知</span>
                     <span class="mx-1">·</span>
                     <span>{{ roadmap.createdAt || '未知时间' }}</span>
                     <span class="mx-1">·</span>
@@ -311,6 +317,9 @@ import type { StateOption } from '@/types/common.d'
 import RejectBanDialog from './RejectBanDialog.vue'
 import RoadmapVueFlow from '../common/RoadmapVueFlow.vue'
 import { useFetchForScroll } from '@/composables/useFetchForScroll'
+import { useSystemConfigStore } from '@/stores'
+
+const systemConfigStore = useSystemConfigStore()
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
