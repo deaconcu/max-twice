@@ -12,6 +12,7 @@ import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.response.NodeTocDTO;
 import com.prosper.learn.application.dto.response.course.CourseSummaryDTO;
 import com.prosper.learn.application.dto.response.course.CourseWithProgressDTO;
+import com.prosper.learn.application.dto.response.node.NodeSimpleDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
 import com.prosper.learn.application.dto.response.post.PostWithVoteDTO;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
@@ -721,6 +722,12 @@ public class PageService {
         PostWithVoteDTO postDTO = postConverter.toWithVoteDTO(postDO);
         postDTO.setCreator(userMap.get(postDTO.getCreatorId()));
 
+        // 目录类型帖子：将逗号分隔的 node id 转换为包含完整 node 信息的 JSON
+        if (postDO.getType() != null && postDO.getType() == PostType.index.value()) {
+            String enrichedContent = enrichIndexPostContent(postDO.getContent());
+            postDTO.setContent(enrichedContent);
+        }
+
         if (userId != null) {
             List<UpvoteDO> upvotes = upvoteDataService.getList(userId, List.of(postDO.getId()), ContentType.post.value());
             if (!upvotes.isEmpty()) {
@@ -736,6 +743,54 @@ public class PageService {
         postDTO.setCommentCount(stats.getCommentCount());
 
         return postDTO;
+    }
+
+    /**
+     * 将目录类型帖子的 content（逗号分隔的 node id）转换为包含完整 node 信息的 JSON
+     * 输入格式：1,2,3
+     * 输出格式：[{"id": 1, "name": "节点名", "description": "描述"}, ...]
+     */
+    private String enrichIndexPostContent(String content) {
+        if (content == null || content.isBlank()) {
+            return "[]";
+        }
+
+        try {
+            // 解析逗号分隔的 node id
+            List<Long> nodeIds = Arrays.stream(content.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+
+            if (nodeIds.isEmpty()) {
+                return "[]";
+            }
+
+            // 批量查询 node 信息
+            Map<Long, NodeDO> nodeMap = nodeDataService.getMapByIds(nodeIds);
+
+            // 构建结果列表，保持原顺序
+            List<NodeSimpleDTO> nodeList = new ArrayList<>();
+            for (Long nodeId : nodeIds) {
+                NodeDO nodeDO = nodeMap.get(nodeId);
+                NodeSimpleDTO dto = new NodeSimpleDTO();
+                dto.setId(nodeId);
+                if (nodeDO != null) {
+                    dto.setName(nodeDO.getName());
+                    dto.setDescription(nodeDO.getDescription());
+                } else {
+                    dto.setName("节点 #" + nodeId);
+                    dto.setDescription("");
+                }
+                nodeList.add(dto);
+            }
+
+            return objectMapper.writeValueAsString(nodeList);
+        } catch (Exception e) {
+            log.warn("Failed to enrich index post content: {}", content, e);
+            return "[]";
+        }
     }
 
     private long calculateLastId(PostDO chosenPosting, List<PostDO> otherPostings) {

@@ -433,6 +433,8 @@ const getStateColor = (state: number): string => {
                     <span>{{ comment.createdAt }}</span>
                     <span class="mx-1">·</span>
                     <span>ID: {{ comment.id }}</span>
+                    <span class="mx-1">·</span>
+                    <span>{{ getObjectTypeName(comment.objectType) }} #{{ comment.objectId }}</span>
                   </div>
                 </div>
 

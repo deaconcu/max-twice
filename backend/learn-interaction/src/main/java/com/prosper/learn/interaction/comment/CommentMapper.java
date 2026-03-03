@@ -113,4 +113,48 @@ public interface CommentMapper {
     @Delete("DELETE FROM comment where id = #{id}")
     void delete(long id);
 
+    /**
+     * 获取目标评论之前的评论（score更高，或score相同但id更大的）
+     * 用于评论上下文查询，结果按 score ASC, id ASC 排序（需要反转）
+     */
+    @Select("SELECT * FROM comment WHERE object_id = #{objectId} AND object_type = #{objectType} " +
+            "AND reply_to_comment_id = 0 AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
+            "AND (score > #{score} OR (score = #{score} AND id > #{id})) " +
+            "ORDER BY score ASC, id ASC LIMIT #{count}")
+    List<CommentDO> getCommentsBeforeTarget(@Param("objectId") long objectId, @Param("objectType") int objectType,
+                                            @Param("score") double score, @Param("id") long id, @Param("count") int count);
+
+    /**
+     * 获取目标评论及之后的评论（score更低，或score相同但id更小或等于的）
+     * 用于评论上下文查询，结果按 score DESC, id DESC 排序
+     */
+    @Select("SELECT * FROM comment WHERE object_id = #{objectId} AND object_type = #{objectType} " +
+            "AND reply_to_comment_id = 0 AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
+            "AND (score < #{score} OR (score = #{score} AND id <= #{id})) " +
+            "ORDER BY score DESC, id DESC LIMIT #{count}")
+    List<CommentDO> getCommentsFromTarget(@Param("objectId") long objectId, @Param("objectType") int objectType,
+                                          @Param("score") double score, @Param("id") long id, @Param("count") int count);
+
+    /**
+     * 获取目标子评论之前的子评论（score更高，或score相同但id更大的）
+     * 用于子评论上下文查询，结果按 score ASC, id ASC 排序（需要反转）
+     */
+    @Select("SELECT * FROM comment WHERE reply_to_comment_id = #{parentCommentId} " +
+            "AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
+            "AND (score > #{score} OR (score = #{score} AND id > #{id})) " +
+            "ORDER BY score ASC, id ASC LIMIT #{count}")
+    List<CommentDO> getSubCommentsBeforeTarget(@Param("parentCommentId") long parentCommentId,
+                                               @Param("score") double score, @Param("id") long id, @Param("count") int count);
+
+    /**
+     * 获取目标子评论及之后的子评论（score更低，或score相同但id更小或等于的）
+     * 用于子评论上下文查询，结果按 score DESC, id DESC 排序
+     */
+    @Select("SELECT * FROM comment WHERE reply_to_comment_id = #{parentCommentId} " +
+            "AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
+            "AND (score < #{score} OR (score = #{score} AND id <= #{id})) " +
+            "ORDER BY score DESC, id DESC LIMIT #{count}")
+    List<CommentDO> getSubCommentsFromTarget(@Param("parentCommentId") long parentCommentId,
+                                             @Param("score") double score, @Param("id") long id, @Param("count") int count);
+
 }

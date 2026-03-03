@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { commentApi } from '@/api'
 import { useFetch, useMutation } from '@/composables'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
@@ -10,13 +10,21 @@ interface Props {
   postId?: number
   commentCount?: number
   objectType?: number
+  targetCommentId?: number | null
+  targetSubCommentId?: number | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   postId: 0,
   commentCount: 0,
   objectType: ObjectType.POST,
+  targetCommentId: null,
+  targetSubCommentId: null,
 })
+
+const emit = defineEmits<{
+  viewAllComments: []
+}>()
 
 // 验证规则
 const commentRules = useValidationRules('comment-content')
@@ -37,14 +45,127 @@ const comments = ref<any[]>([])
 const loading = ref(false)
 const loadingMore = ref(false)
 const hasMore = ref(true)
+const hasMoreBefore = ref(false)
 const lastScore = ref<number | undefined>(undefined)
 const lastId = ref<number | undefined>(undefined)
+const firstScore = ref<number | undefined>(undefined)
+const firstId = ref<number | undefined>(undefined)
+const highlightedCommentId = ref<number | null>(null)
+const highlightedSubCommentId = ref<number | null>(null)
+
+// 使用 useFetch 加载主评论上下文
+const { execute: fetchCommentContext } = useFetch({
+  fetchFn: () => commentApi.getCommentContext(props.targetCommentId!),
+  immediate: false,
+  onSuccess: async (result) => {
+    if (result?.items && result.items.length > 0) {
+      comments.value = result.items
+      // 初始化每个评论的 hasMoreReplies 标志
+      comments.value.forEach((comment) => {
+        if (
+          comment.children &&
+          comment.children.length > 0 &&
+          comment.replyCount > comment.children.length
+        ) {
+          comment.hasMoreReplies = true
+        } else {
+          comment.hasMoreReplies = false
+        }
+      })
+      hasMore.value = result.hasMoreAfter
+      hasMoreBefore.value = result.hasMoreBefore
+      if (result.lastScore !== undefined && result.lastId !== undefined) {
+        lastScore.value = result.lastScore
+        lastId.value = result.lastId
+      }
+      if (result.firstScore !== undefined && result.firstId !== undefined) {
+        firstScore.value = result.firstScore
+        firstId.value = result.firstId
+      }
+
+      // 如果有子评论ID，加载子评论上下文（不高亮父评论）
+      if (props.targetSubCommentId) {
+        await loadSubCommentContext()
+      } else {
+        // 设置高亮（仅主评论定位时）
+        highlightedCommentId.value = props.targetCommentId ?? null
+
+        // 使用 MutationObserver 监听目标主评论元素出现
+        const observer = new MutationObserver(() => {
+          const commentEl = document.querySelector(`[data-comment-id="${props.targetCommentId}"]`)
+          if (commentEl) {
+            commentEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            observer.disconnect()
+          }
+        })
+        observer.observe(document.body, { childList: true, subtree: true })
+
+        // 5秒后移除高亮
+        setTimeout(() => {
+          highlightedCommentId.value = null
+        }, 5000)
+      }
+    } else {
+      hasMore.value = false
+    }
+    loading.value = false
+
+    // 设置无限滚动
+    await nextTick()
+    setupInfiniteScroll()
+  },
+  onError: () => {
+    loading.value = false
+  },
+})
+
+// 使用 useFetch 加载子评论上下文
+const { execute: fetchSubCommentContext } = useFetch({
+  fetchFn: () => commentApi.getCommentContext(props.targetSubCommentId!),
+  immediate: false,
+  onSuccess: async (result) => {
+    if (result?.subItems && result.subItems.length > 0 && result.parentCommentId) {
+      // 找到父评论，替换其 children
+      const parentComment = comments.value.find((c) => c.id === result.parentCommentId)
+      if (parentComment) {
+        parentComment.children = result.subItems
+        // 更新 hasMoreReplies 标志
+        parentComment.hasMoreReplies = result.hasMoreAfter
+        parentComment.hasMoreRepliesBefore = result.hasMoreBefore
+      }
+
+      // 设置子评论高亮
+      highlightedSubCommentId.value = props.targetSubCommentId ?? null
+
+      // 使用 MutationObserver 监听目标子评论元素出现
+      const observer = new MutationObserver(() => {
+        const subCommentEl = document.querySelector(`[data-sub-comment-id="${props.targetSubCommentId}"]`)
+        if (subCommentEl) {
+          subCommentEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          observer.disconnect()
+        }
+      })
+      observer.observe(document.body, { childList: true, subtree: true })
+
+      // 5秒后移除高亮
+      setTimeout(() => {
+        highlightedCommentId.value = null
+        highlightedSubCommentId.value = null
+      }, 5000)
+    }
+  },
+})
+
+// 加载子评论上下文
+const loadSubCommentContext = async () => {
+  await fetchSubCommentContext()
+}
 
 // 使用 useFetch 加载初始评论列表
 const { execute: fetchInitialComments } = useFetch({
   fetchFn: () => commentApi.getComments(props.postId, props.objectType),
   immediate: false,
-  onSuccess: (result) => {
+  onSuccess: async (result) => {
     if (result?.items && result.items.length > 0) {
       comments.value = result.items
       // 初始化每个评论的 hasMoreReplies 标志
@@ -69,6 +190,10 @@ const { execute: fetchInitialComments } = useFetch({
       hasMore.value = false
     }
     loading.value = false
+
+    // 设置无限滚动
+    await nextTick()
+    setupInfiniteScroll()
   },
   onError: () => {
     loading.value = false
@@ -90,11 +215,20 @@ const loadComments = async (reset = false) => {
     comments.value = []
     lastScore.value = undefined
     lastId.value = undefined
+    firstScore.value = undefined
+    firstId.value = undefined
     hasMore.value = true
+    hasMoreBefore.value = false
   }
 
   loading.value = true
-  await fetchInitialComments()
+
+  // 如果有目标评论，使用上下文加载
+  if (props.targetCommentId) {
+    await fetchCommentContext()
+  } else {
+    await fetchInitialComments()
+  }
 }
 
 // 加载更多评论
@@ -296,10 +430,9 @@ const cleanupInfiniteScroll = () => {
   }
 }
 
-// 组件挂载时设置无限滚动和加载初始数据
+// 组件挂载时加载初始数据
 onMounted(() => {
   void loadComments(true)
-  setTimeout(setupInfiniteScroll, 100)
 })
 
 // 组件卸载时清理
@@ -352,7 +485,31 @@ onBeforeUnmount(() => {
 
     <!-- 评论列表 -->
     <div v-else class="comment-list">
-      <div v-for="comment in comments" :key="comment.id" class="comment-item mb-2">
+      <!-- 查看全部评论提示 -->
+      <div v-if="hasMoreBefore" class="view-all-hint mb-4">
+        <div class="action-row">
+          <v-chip
+            color="primary"
+            variant="tonal"
+            size="small"
+            prepend-icon="mdi-arrow-up"
+            @click="$emit('viewAllComments')"
+          >
+            查看全部评论
+          </v-chip>
+        </div>
+        <div class="ellipsis-row">
+          <v-icon icon="mdi-dots-horizontal" color="grey" size="24"></v-icon>
+        </div>
+      </div>
+
+      <div
+        v-for="comment in comments"
+        :key="comment.id"
+        :data-comment-id="comment.id"
+        class="comment-item mb-2"
+        :class="{ 'highlighted': highlightedCommentId === comment.id }"
+      >
         <div class="d-flex">
           <UserAvatar
             :name="comment.creator?.name || '匿名用户'"
@@ -439,10 +596,17 @@ onBeforeUnmount(() => {
 
             <!-- 子评论列表 -->
             <div v-if="comment.children && comment.children.length > 0" class="sub-comments mt-3">
+              <!-- 子评论上方省略号 -->
+              <div v-if="comment.hasMoreRepliesBefore" class="sub-comments-ellipsis mb-4">
+                <v-icon icon="mdi-dots-horizontal" color="grey" size="20"></v-icon>
+              </div>
+
               <div
                 v-for="subComment in comment.children"
                 :key="subComment.id"
+                :data-sub-comment-id="subComment.id"
                 class="sub-comment-item mb-2"
+                :class="{ 'highlighted': highlightedSubCommentId === subComment.id }"
               >
                 <div class="d-flex">
                   <UserAvatar
@@ -573,6 +737,7 @@ onBeforeUnmount(() => {
 .comment-item {
   padding-bottom: 2px;
   border-bottom: 0px solid #f0f0f0;
+  transition: background-color 0.3s ease;
 }
 
 .comment-item:last-child {
@@ -580,15 +745,49 @@ onBeforeUnmount(() => {
   padding-bottom: 0;
 }
 
+.comment-item.highlighted {
+  background-color: #fff8e1;
+  border-radius: 8px;
+  padding: 8px;
+  margin: -8px;
+  margin-bottom: 2px;
+}
+
 .sub-comments {
   padding-left: 0;
 }
 
+.sub-comments-ellipsis {
+  text-align: left;
+}
+
 .sub-comment-item {
   padding-bottom: 0px;
+  transition: background-color 0.3s ease;
 }
 
 .sub-comment-item:last-child {
   padding-bottom: 0;
+}
+
+.sub-comment-item.highlighted {
+  background-color: #fff8e1;
+  border-radius: 8px;
+  padding: 8px;
+  margin: -8px;
+  margin-bottom: 2px;
+}
+
+.view-all-hint {
+  display: flex;
+  flex-direction: column;
+}
+
+.view-all-hint .ellipsis-row {
+  text-align: left;
+}
+
+.view-all-hint .action-row {
+  text-align: center;
 }
 </style>

@@ -202,4 +202,100 @@ public class CommentDomainService {
     public List<CommentDO> listByState(Enums.ContentState state, Long lastId, int pageSize) {
         return commentDataService.listByState(state.value(), lastId, pageSize);
     }
+
+    /**
+     * 获取评论上下文结果
+     */
+    public static class CommentContextResult {
+        public List<CommentDO> comments;
+        public boolean hasMoreBefore;
+        public boolean hasMoreAfter;
+
+        public CommentContextResult(List<CommentDO> comments, boolean hasMoreBefore, boolean hasMoreAfter) {
+            this.comments = comments;
+            this.hasMoreBefore = hasMoreBefore;
+            this.hasMoreAfter = hasMoreAfter;
+        }
+    }
+
+    /**
+     * 获取评论上下文（目标评论及其前后评论）
+     * @param targetComment 目标评论
+     * @param beforeCount 目标评论之前的评论数量
+     * @param afterCount 目标评论之后的评论数量（不包含目标评论本身）
+     * @return CommentContextResult 包含评论列表和是否有更多的标志
+     */
+    public CommentContextResult getCommentContext(CommentDO targetComment, int beforeCount, int afterCount) {
+        long objectId = targetComment.getObjectId();
+        int objectType = targetComment.getObjectType();
+        double score = targetComment.getScore();
+        long id = targetComment.getId();
+
+        // 多查一条用于判断是否还有更多
+        List<CommentDO> beforeComments = commentDataService.getCommentsBeforeTarget(
+            objectId, objectType, score, id, beforeCount + 1);
+        List<CommentDO> afterComments = commentDataService.getCommentsFromTarget(
+            objectId, objectType, score, id, afterCount + 2); // +1 包含目标评论，+1 判断是否有更多
+
+        // 判断是否有更多
+        boolean hasMoreBefore = beforeComments.size() > beforeCount;
+        boolean hasMoreAfter = afterComments.size() > afterCount + 1;
+
+        // 截取实际需要的数量
+        if (hasMoreBefore) {
+            beforeComments = beforeComments.subList(0, beforeCount);
+        }
+        if (hasMoreAfter) {
+            afterComments = afterComments.subList(0, afterCount + 1);
+        }
+
+        // 合并结果：beforeComments 是按 score ASC 排序的，需要反转
+        List<CommentDO> result = new ArrayList<>();
+        for (int i = beforeComments.size() - 1; i >= 0; i--) {
+            result.add(beforeComments.get(i));
+        }
+        result.addAll(afterComments);
+
+        return new CommentContextResult(result, hasMoreBefore, hasMoreAfter);
+    }
+
+    /**
+     * 获取子评论上下文（目标子评论及其前后子评论）
+     * @param targetSubComment 目标子评论
+     * @param beforeCount 目标子评论之前的数量
+     * @param afterCount 目标子评论之后的数量（不包含目标子评论本身）
+     * @return CommentContextResult 包含子评论列表和是否有更多的标志
+     */
+    public CommentContextResult getSubCommentContext(CommentDO targetSubComment, int beforeCount, int afterCount) {
+        long parentCommentId = targetSubComment.getReplyToCommentId();
+        double score = targetSubComment.getScore();
+        long id = targetSubComment.getId();
+
+        // 多查一条用于判断是否还有更多
+        List<CommentDO> beforeComments = commentDataService.getSubCommentsBeforeTarget(
+            parentCommentId, score, id, beforeCount + 1);
+        List<CommentDO> afterComments = commentDataService.getSubCommentsFromTarget(
+            parentCommentId, score, id, afterCount + 2); // +1 包含目标子评论，+1 判断是否有更多
+
+        // 判断是否有更多
+        boolean hasMoreBefore = beforeComments.size() > beforeCount;
+        boolean hasMoreAfter = afterComments.size() > afterCount + 1;
+
+        // 截取实际需要的数量
+        if (hasMoreBefore) {
+            beforeComments = beforeComments.subList(0, beforeCount);
+        }
+        if (hasMoreAfter) {
+            afterComments = afterComments.subList(0, afterCount + 1);
+        }
+
+        // 合并结果：beforeComments 是按 score ASC 排序的，需要反转
+        List<CommentDO> result = new ArrayList<>();
+        for (int i = beforeComments.size() - 1; i >= 0; i--) {
+            result.add(beforeComments.get(i));
+        }
+        result.addAll(afterComments);
+
+        return new CommentContextResult(result, hasMoreBefore, hasMoreAfter);
+    }
 }

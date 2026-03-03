@@ -6,6 +6,7 @@ import com.prosper.learn.application.converter.MemoryCardDeckConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.request.CreateDeckRequest;
 import com.prosper.learn.application.dto.response.deck.DeckDetailDTO;
+import com.prosper.learn.application.dto.response.deck.DeckAdminDTO;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.deck.MemoryCardDeckDTO;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
@@ -469,6 +470,66 @@ public class MemoryCardDeckService {
         }
 
         return response;
+    }
+
+    // ========== Admin 管理接口 ==========
+
+    private static final int DEFAULT_PAGE_SIZE = 20;
+
+    /**
+     * Admin管理：按状态查询卡片组列表
+     */
+    public KeysetPageResponse<DeckAdminDTO> listByState(Enums.ContentState state, Long lastId) {
+        List<MemoryCardDeckDO> deckList = deckDomainService.listByState(
+                state != null ? state : Enums.ContentState.SUBMITTED,
+                lastId,
+                DEFAULT_PAGE_SIZE + 1);
+
+        boolean hasMore = deckList.size() > DEFAULT_PAGE_SIZE;
+        if (hasMore) {
+            deckList = deckList.subList(0, DEFAULT_PAGE_SIZE);
+        }
+
+        List<DeckAdminDTO> items = deckConverter.toAdminDTO(deckList);
+        fillAdminDTOInfo(deckList, items);
+
+        Long nextLastId = hasMore && !items.isEmpty() ? items.get(items.size() - 1).getId() : null;
+
+        return KeysetPageResponse.of(items, hasMore, null, nextLastId);
+    }
+
+    /**
+     * 批量填充 DeckAdminDTO 的关联信息
+     */
+    private void fillAdminDTOInfo(List<MemoryCardDeckDO> deckList, List<DeckAdminDTO> items) {
+        if (items.isEmpty()) {
+            return;
+        }
+
+        // 收集 creatorId
+        Set<Long> creatorIds = deckList.stream()
+                .map(MemoryCardDeckDO::getCreatorId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        // 批量查询 creator
+        Map<Long, UserDO> creatorMap = creatorIds.isEmpty() ? Map.of() :
+                userDataService.getMapByIds(creatorIds);
+
+        // 创建 deckDO 映射
+        Map<Long, MemoryCardDeckDO> deckDOMap = deckList.stream()
+                .collect(Collectors.toMap(MemoryCardDeckDO::getId, d -> d));
+
+        // 填充信息
+        for (DeckAdminDTO dto : items) {
+            MemoryCardDeckDO deckDO = deckDOMap.get(dto.getId());
+            if (deckDO != null && deckDO.getCreatorId() != null) {
+                UserDO userDO = creatorMap.get(deckDO.getCreatorId());
+                if (userDO != null) {
+                    dto.setCreator(userConverter.toBriefDTO(userDO));
+                }
+            }
+        }
     }
 
     /**

@@ -62,7 +62,10 @@
                 :post-id="(data.currPosting || data.post).id"
                 :comment-count="(data.currPosting || data.post).commentCount || 0"
                 :object-type="ObjectType.POST"
+                :target-comment-id="targetCommentId"
+                :target-sub-comment-id="targetSubCommentId"
                 class="mt-6"
+                @view-all-comments="handleViewAllComments"
               />
             </div>
 
@@ -323,6 +326,22 @@ const isMainCourse = computed(() => {
   return true
 })
 
+// 目标评论ID（从 URL 获取）
+const targetCommentId = computed(() => {
+  if (route.query.commentId) {
+    return Number(route.query.commentId)
+  }
+  return null
+})
+
+// 目标子评论ID（从 URL 获取）
+const targetSubCommentId = computed(() => {
+  if (route.query.subCommentId) {
+    return Number(route.query.subCommentId)
+  }
+  return null
+})
+
 // 使用 useFetch 加载页面数据（使用优化后的接口）
 const {
   data,
@@ -346,8 +365,14 @@ const {
     // 特殊处理：如果返回了 commentId 和 subCommentId，说明需要重定向
     if (data.value.commentId && data.value.subCommentId) {
       // 这是一个回复评论，前端需要重定向到主评论的 URL
-      // TODO: 实现重定向逻辑
-      console.warn('回复评论重定向:', data.value)
+      router.replace({
+        path: '/read',
+        query: {
+          commentId: String(data.value.commentId),
+          subCommentId: String(data.value.subCommentId),
+        },
+      })
+      return
     }
 
     // 处理投票类型
@@ -359,6 +384,13 @@ const {
     // 处理 otherPostings（新接口不返回 otherPostings，这里保留兼容性）
     data.value.otherPostings?.forEach((posting: any) => {
       posting.voteType = convertVoteType(posting.voteType)
+    })
+  },
+  onError: () => {
+    // 跳转到错误页
+    router.replace({
+      path: '/error/404',
+      state: { message: '您访问的内容不存在或已被删除' },
     })
   },
 })
@@ -404,6 +436,17 @@ const handleCreateDeck = () => {
 const handleViewDeck = (deck: MemoryCardDeck) => {
   selectedDeck.value = deck
   showDeckDetailDialog.value = true
+}
+
+// 处理查看全部评论
+const handleViewAllComments = () => {
+  const postId = data.value?.currPosting?.id || data.value?.post?.id
+  if (postId) {
+    router.replace({
+      path: '/read',
+      query: { postId: String(postId) },
+    })
+  }
 }
 
 // 处理添加卡片组到学习计划

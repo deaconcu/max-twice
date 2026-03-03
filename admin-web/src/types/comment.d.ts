@@ -23,7 +23,7 @@ export interface Comment {
   createdAt: string // 创建时间（必需）
   likeCount: number // 点赞数（必需）
   liked: boolean // 点赞状态（必需）
-  type?: ObjectType // 评论类型
+  objectType?: ObjectType // 评论对象类型
   objectId?: number // 被评论对象ID
   replyCount?: number // 回复数量
   replyToCommentId?: number // 回复的评论ID
@@ -32,6 +32,7 @@ export interface Comment {
   toUserId?: number // 被回复者ID
   toUser?: UserBrief // 被回复者信息（包含头像）
   state?: ContentState // 评论状态
+  reason?: string // 拒绝/封禁原因
   children?: Comment[] | null // 子评论列表
 }
 

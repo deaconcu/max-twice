@@ -8,6 +8,7 @@ import com.prosper.learn.application.dto.request.CreateCommentRequest;
 import com.prosper.learn.application.dto.response.comment.CommentDTO;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.comment.CommentAdminDTO;
+import com.prosper.learn.application.dto.response.comment.CommentContextDTO;
 import com.prosper.learn.application.dto.response.comment.CommentDetailDTO;
 import com.prosper.learn.application.dto.response.comment.CommentSummaryDTO;
 import com.prosper.learn.application.dto.response.comment.CommentWithRepliesDTO;
@@ -581,5 +582,105 @@ public class CommentService {
             return roadmapDO != null ? roadmapDO.getCreatorId() : null;
         }
         return null;
+    }
+
+    // ========== 评论上下文查询 ==========
+
+    private static final int CONTEXT_BEFORE_COUNT = 5;
+    private static final int CONTEXT_AFTER_COUNT = 5;
+
+    /**
+     * 获取评论上下文（目标评论及其前后评论）
+     * 用于从外部链接跳转到特定评论
+     *
+     * 如果目标评论是主评论：返回主评论上下文（items）
+     * 如果目标评论是子评论：返回子评论上下文（subItems）+ 父评论ID
+     *
+     * @param commentId 目标评论ID
+     * @param currentUser 当前用户
+     * @return CommentContextDTO 包含评论列表、目标评论ID、是否有更多等信息
+     */
+    public CommentContextDTO getCommentContext(Long commentId, UserDO currentUser) {
+        // 获取目标评论
+        CommentDO targetComment = commentDataService.validateAndGet(commentId);
+
+        // 判断是主评论还是子评论
+        if (targetComment.getReplyToCommentId() != null && targetComment.getReplyToCommentId() > 0) {
+            // 子评论：返回子评论上下文
+            return getSubCommentContext(targetComment, currentUser);
+        } else {
+            // 主评论：返回主评论上下文
+            return getMainCommentContext(targetComment, currentUser);
+        }
+    }
+
+    /**
+     * 获取主评论上下文
+     */
+    private CommentContextDTO getMainCommentContext(CommentDO targetComment, UserDO currentUser) {
+        // 获取评论上下文
+        CommentDomainService.CommentContextResult contextResult = commentDomainService.getCommentContext(
+            targetComment, CONTEXT_BEFORE_COUNT, CONTEXT_AFTER_COUNT);
+
+        // 转换为带子评论的 DTO
+        List<CommentWithRepliesDTO> commentDTOList = toCommentsWithReplies(contextResult.comments, currentUser.getId());
+
+        // 构建响应
+        CommentContextDTO dto = new CommentContextDTO();
+        dto.setItems(commentDTOList);
+        dto.setTargetCommentId(targetComment.getId());
+        dto.setHasMoreBefore(contextResult.hasMoreBefore);
+        dto.setHasMoreAfter(contextResult.hasMoreAfter);
+
+        // 设置游标
+        if (!commentDTOList.isEmpty()) {
+            CommentWithRepliesDTO first = commentDTOList.get(0);
+            dto.setFirstScore(first.getScore());
+            dto.setFirstId(first.getId());
+
+            CommentWithRepliesDTO last = commentDTOList.get(commentDTOList.size() - 1);
+            dto.setLastScore(last.getScore());
+            dto.setLastId(last.getId());
+        }
+
+        return dto;
+    }
+
+    /**
+     * 获取子评论上下文
+     */
+    private CommentContextDTO getSubCommentContext(CommentDO targetSubComment, UserDO currentUser) {
+        // 获取子评论上下文
+        CommentDomainService.CommentContextResult contextResult = commentDomainService.getSubCommentContext(
+            targetSubComment, CONTEXT_BEFORE_COUNT, CONTEXT_AFTER_COUNT);
+
+        // 转换为 DTO
+        List<CommentDetailDTO> subCommentDTOList = commentConverter.toDetailDTO(contextResult.comments);
+
+        // 填充统计字段、用户名、点赞状态
+        fillStatsForComments(subCommentDTOList);
+        fillUserNamesForComments(subCommentDTOList);
+        fillUpvoteStatusForComments(subCommentDTOList, currentUser.getId());
+
+        // 构建响应
+        CommentContextDTO dto = new CommentContextDTO();
+        dto.setSubItems(subCommentDTOList);
+        dto.setTargetCommentId(targetSubComment.getId());
+        dto.setParentCommentId(targetSubComment.getReplyToCommentId());
+        dto.setHasMoreBefore(contextResult.hasMoreBefore);
+        dto.setHasMoreAfter(contextResult.hasMoreAfter);
+
+        // 设置游标
+        if (!subCommentDTOList.isEmpty()) {
+            CommentDetailDTO first = subCommentDTOList.get(0);
+            dto.setFirstScore(first.getScore());
+            dto.setFirstId(first.getId());
+
+            CommentDetailDTO last = subCommentDTOList.get(subCommentDTOList.size() - 1);
+            dto.setLastScore(last.getScore());
+            dto.setLastId(last.getId());
+        }
+
+        return dto;
     }
 }

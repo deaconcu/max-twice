@@ -192,4 +192,32 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
     public int ban(long id, String reason) {
         return commentMapper.updateStateWithReason(id, Enums.ContentState.BANNED.value(), reason);
     }
+
+    /**
+     * 获取目标评论之前的评论（score更高的）
+     */
+    public List<CommentDO> getCommentsBeforeTarget(long objectId, int objectType, double score, long id, int count) {
+        return commentMapper.getCommentsBeforeTarget(objectId, objectType, score, id, count);
+    }
+
+    /**
+     * 获取目标评论及之后的评论（score更低或相等的）
+     */
+    public List<CommentDO> getCommentsFromTarget(long objectId, int objectType, double score, long id, int count) {
+        return commentMapper.getCommentsFromTarget(objectId, objectType, score, id, count);
+    }
+
+    /**
+     * 获取目标子评论之前的子评论（score更高的）
+     */
+    public List<CommentDO> getSubCommentsBeforeTarget(long parentCommentId, double score, long id, int count) {
+        return commentMapper.getSubCommentsBeforeTarget(parentCommentId, score, id, count);
+    }
+
+    /**
+     * 获取目标子评论及之后的子评论（score更低或相等的）
+     */
+    public List<CommentDO> getSubCommentsFromTarget(long parentCommentId, double score, long id, int count) {
+        return commentMapper.getSubCommentsFromTarget(parentCommentId, score, id, count);
+    }
 }

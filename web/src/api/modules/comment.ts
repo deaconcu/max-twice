@@ -16,6 +16,22 @@ export interface KeysetPageResponse<T> {
 }
 
 /**
+ * 评论上下文响应
+ */
+export interface CommentContextResponse {
+  items?: Comment[]
+  subItems?: Comment[]
+  targetCommentId: number
+  parentCommentId?: number
+  hasMoreBefore: boolean
+  hasMoreAfter: boolean
+  firstScore?: number
+  firstId?: number
+  lastScore?: number
+  lastId?: number
+}
+
+/**
  * 评论管理相关 API
  * 参考：web-ts/src/services/api/v1/apiServiceV1.ts (commentServiceV1)
  */
@@ -82,5 +98,14 @@ export const commentApi = {
       params.lastId = lastId
     }
     return apiClient.get(`/v1/comments/${String(id)}/replies`, { params })
+  },
+
+  /**
+   * 获取评论上下文
+   * 根据评论ID获取该评论及其前后评论，用于从外部链接跳转到特定评论
+   * @param id 评论ID
+   */
+  getCommentContext(id: number): Promise<ApiResponse<CommentContextResponse>> {
+    return apiClient.get(`/v1/comments/${String(id)}/context`)
   },
 }

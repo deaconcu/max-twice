@@ -90,10 +90,7 @@ public class AdminContentsController {
                 roadmapService.listByState(stateValue, lastId)
             );
             case "memory_card_deck" -> ApiResponse.success(
-                memoryCardDeckService.getDecksForReview(
-                    null, null,
-                    stateValue != null ? (int) stateValue.value() : null,
-                    lastId, null)
+                memoryCardDeckService.listByState(stateValue, lastId)
             );
             case "comment" -> ApiResponse.success(
                 commentService.listByState(stateValue, lastId)
