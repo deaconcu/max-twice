@@ -133,7 +133,14 @@ export const useSystemConfigStore = defineStore(
      * 获取评论前台链接
      */
     function getCommentUrl(commentId: number): string {
-      return `${frontendUrl.value}/read?commentId=${commentId}`
+      return `${frontendUrl.value}/comment/${commentId}`
+    }
+
+    /**
+     * 获取帖子前台链接
+     */
+    function getPostUrl(postId: number): string {
+      return `${frontendUrl.value}/read?postId=${postId}`
     }
 
     return {
@@ -152,6 +159,7 @@ export const useSystemConfigStore = defineStore(
       getUserUrl,
       getRoadmapUrl,
       getCommentUrl,
+      getPostUrl,
     }
   },
   {

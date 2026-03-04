@@ -1,6 +1,6 @@
 package com.prosper.learn.application.dto.response.roadmap;
 
-import com.prosper.learn.application.dto.response.ProfessionBriefDTO;
+import com.prosper.learn.application.dto.response.profession.ProfessionBriefDTO;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

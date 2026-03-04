@@ -209,6 +209,8 @@
               :post-id="roadmapId"
               :object-type="ObjectType.ROADMAP"
               :comment-count="roadmap.commentCount"
+              :target-comment-id="targetCommentId"
+              :target-sub-comment-id="targetSubCommentId"
             />
           </div>
         </div>
@@ -248,6 +250,22 @@ const roadmapId = computed(() => {
   return typeof id === 'string' ? parseInt(id, 10) : 0
 })
 
+// 目标评论ID（从 URL 获取）
+const targetCommentId = computed(() => {
+  if (route.query.commentId) {
+    return Number(route.query.commentId)
+  }
+  return null
+})
+
+// 目标子评论ID（从 URL 获取）
+const targetSubCommentId = computed(() => {
+  if (route.query.subCommentId) {
+    return Number(route.query.subCommentId)
+  }
+  return null
+})
+
 // 使用 useFetch 加载路径详情
 const {
   data: roadmapData,
@@ -257,6 +275,10 @@ const {
   fetchFn: () => roadmapApi.getRoadmap(roadmapId.value),
   immediate: true,
   defaultValue: null,
+  onError: () => {
+    // 获取失败时跳转到 404 页面
+    router.replace({ path: '/error/404', state: { message: '路线图不存在或已被删除' } })
+  },
 })
 
 const roadmap = computed(() => roadmapData.value)

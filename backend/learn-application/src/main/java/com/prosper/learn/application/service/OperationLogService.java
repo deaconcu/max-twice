@@ -58,6 +58,12 @@ public class OperationLogService {
 
     /**
      * 查询操作日志（keyset分页）
+     *
+     * 支持4种查询模式：
+     * 1. 时间浏览：按时间倒序浏览，可选截止时间
+     * 2. 按类型：targetType + 截止时间
+     * 3. 按操作人：operatorId + 截止时间
+     * 4. 按对象：targetType + targetId
      */
     public Map<String, Object> queryLogs(OperationLogRequest query) {
         // 参数验证和默认值
@@ -69,18 +75,13 @@ public class OperationLogService {
         Long lastId = query.getLastId();
 
         // 时间转换
-        LocalDateTime startTime = parseDateTime(query.getStartTime());
         LocalDateTime endTime = parseDateTime(query.getEndTime());
 
         // 调用 DomainService 查询数据（多查一条用于判断是否还有更多数据）
         List<OperationLogDO> logs = operationLogDomainService.queryLogs(
                 query.getOperatorId(),
-                query.getModule(),
-                query.getOperationType(),
-                query.getOperationLevel(),
                 query.getTargetType(),
                 query.getTargetId(),
-                startTime,
                 endTime,
                 lastId,
                 limit + 1

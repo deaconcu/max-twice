@@ -214,15 +214,6 @@ export const adminApi = {
     return apiClient.get('/v1/admin/contents/node/filter', { params })
   },
 
-  /**
-   * 更新节点状态
-   */
-  updateNodeState(id: number, state: number, reason?: string): Promise<ApiResponse<void>> {
-    const params: Record<string, unknown> = { state }
-    if (reason) params.reason = reason
-    return apiClient.put(`/v1/admin/contents/node/${id}/state`, null, { params })
-  },
-
   // ========== 用户管理 ==========
 
   /**

@@ -6,8 +6,10 @@ import type { DeckDetail } from '@/types/memoryCard'
 import RejectBanDialog from './RejectBanDialog.vue'
 import { useFetchForScroll } from '@/composables/useFetchForScroll'
 import { useMutation } from '@/composables/useMutation'
+import { useSystemConfigStore } from '@/stores'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
+const systemConfigStore = useSystemConfigStore()
 
 const activeTab = ref<string>('pending')
 
@@ -366,9 +368,6 @@ const getStateColor = (state: number): string => {
                   <v-btn variant="tonal" color="info" size="small" block @click="unbanDeck(deck)">
                     解封
                   </v-btn>
-                  <v-btn variant="tonal" color="warning" size="small" block @click="rejectDeck(deck)">
-                    降级
-                  </v-btn>
                 </div>
               </div>
 
@@ -379,9 +378,13 @@ const getStateColor = (state: number): string => {
                   <div class="d-flex align-center">
                     <div class="text-body-1 font-weight-medium text-grey-darken-3">
                       <template v-if="deck.course || deck.node">
-                        <span v-if="deck.course">{{ deck.course.name }}</span>
+                        <a v-if="deck.course" :href="systemConfigStore.getCourseUrl(deck.course.id)" target="_blank" class="text-grey-darken-3 text-decoration-none">
+                          {{ deck.course.name }}
+                        </a>
                         <span v-if="deck.course && deck.node" class="mx-1">/</span>
-                        <span v-if="deck.node">{{ deck.node.name }}</span>
+                        <a v-if="deck.node" :href="systemConfigStore.getNodeUrl(deck.node.id)" target="_blank" class="text-grey-darken-3 text-decoration-none">
+                          {{ deck.node.name }}
+                        </a>
                       </template>
                       <span v-else>卡片组 #{{ deck.id }}</span>
                     </div>
@@ -390,13 +393,24 @@ const getStateColor = (state: number): string => {
                     </v-chip>
                   </div>
                   <div class="d-flex align-center text-caption text-grey-darken-1">
-                    <span>{{ deck.creator?.name || '匿名' }}</span>
+                    <a v-if="deck.creator" :href="systemConfigStore.getUserUrl(deck.creator.id)" target="_blank" class="text-grey-darken-1 text-decoration-none">
+                      {{ deck.creator.name }}
+                    </a>
+                    <span v-else>未知名称</span>
                     <span class="mx-1">·</span>
                     <span>{{ new Date(deck.createdAt).toLocaleDateString() }}</span>
                     <span class="mx-1">·</span>
                     <span>ID: {{ deck.id }}</span>
-                    <span v-if="deck.postId" class="mx-1">·</span>
-                    <span v-if="deck.postId">帖子 #{{ deck.postId }}</span>
+                    <template v-if="deck.node">
+                      <span class="mx-1">·</span>
+                      <span>节点 #{{ deck.node.id }}</span>
+                    </template>
+                    <template v-if="deck.postId">
+                      <span class="mx-1">·</span>
+                      <a :href="systemConfigStore.getPostUrl(deck.postId)" target="_blank" class="text-grey-darken-1 text-decoration-none">
+                        帖子 #{{ deck.postId }}
+                      </a>
+                    </template>
                   </div>
                 </div>
 
@@ -405,11 +419,6 @@ const getStateColor = (state: number): string => {
                   <!-- 描述 -->
                   <div v-if="deck.description" class="text-body-2 text-grey-darken-1 mb-2">
                     {{ deck.description }}
-                  </div>
-
-                  <!-- 统计信息 -->
-                  <div class="text-caption text-grey-darken-1 mb-2">
-                    {{ deck.cardCount || 0 }} 张卡片 · {{ deck.likeCount || 0 }} 赞
                   </div>
 
                   <!-- 卡片列表 -->
@@ -432,6 +441,40 @@ const getStateColor = (state: number): string => {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  <!-- 统计信息 -->
+                  <div class="d-flex align-center text-caption text-grey-darken-1 mt-2" style="gap: 12px">
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-cards-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">卡片数</v-tooltip>
+                      {{ deck.cardCount ?? 0 }}
+                    </span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-eye-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">浏览量</v-tooltip>
+                      {{ deck.viewCount ?? 0 }}
+                    </span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-thumb-up-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">点赞数</v-tooltip>
+                      {{ deck.likeCount ?? 0 }}
+                    </span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-bookmark-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">收藏数</v-tooltip>
+                      {{ deck.bookmarkCount ?? 0 }}
+                    </span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-close-circle-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">被拒次数</v-tooltip>
+                      {{ deck.rejectCount ?? 0 }}
+                    </span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-chart-line" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">排序分数</v-tooltip>
+                      {{ deck.score?.toFixed(2) ?? 0 }}
+                    </span>
                   </div>
 
                   <!-- 拒绝/封禁原因 -->

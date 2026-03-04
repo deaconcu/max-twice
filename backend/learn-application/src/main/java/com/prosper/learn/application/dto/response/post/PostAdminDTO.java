@@ -70,4 +70,21 @@ public class PostAdminDTO {
      * 创建时间
      */
     private String createdAt;
+
+    // 统计字段
+    private Double score;
+
+    private Integer viewCount;
+
+    private Integer twiceCount;
+
+    private Integer likeCount;
+
+    private Integer commentCount;
+
+    private Integer bookmarkCount;
+
+    private Integer cardDeckCount;
+
+    private Integer rejectCount;
 }

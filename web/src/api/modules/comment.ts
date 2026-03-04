@@ -16,6 +16,16 @@ export interface KeysetPageResponse<T> {
 }
 
 /**
+ * 评论基本信息响应
+ */
+export interface CommentBasicResponse {
+  id: number
+  objectType: number
+  objectId: number
+  replyToCommentId?: number
+}
+
+/**
  * 评论上下文响应
  */
 export interface CommentContextResponse {
@@ -107,5 +117,13 @@ export const commentApi = {
    */
   getCommentContext(id: number): Promise<ApiResponse<CommentContextResponse>> {
     return apiClient.get(`/v1/comments/${String(id)}/context`)
+  },
+
+  /**
+   * 获取评论基本信息
+   * @param id 评论ID
+   */
+  getCommentBasic(id: number): Promise<ApiResponse<CommentBasicResponse>> {
+    return apiClient.get(`/v1/comments/${String(id)}`)
   },
 }

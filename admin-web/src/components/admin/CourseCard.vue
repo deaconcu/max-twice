@@ -100,9 +100,6 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
           <v-btn variant="tonal" color="info" size="small" block @click="$emit('unban', course)">
             解封
           </v-btn>
-          <v-btn variant="tonal" color="warning" size="small" block @click="$emit('reject', course)">
-            降级
-          </v-btn>
         </div>
 
         <!-- 编辑按钮 -->
@@ -155,12 +152,35 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
             {{ course.description || '暂无描述' }}
           </div>
 
-          <!-- 分类信息 -->
-          <div v-if="course.mainCategory || course.subCategory" class="text-caption text-grey-darken-1">
-            <span>分类：</span>
-            <span v-if="course.mainCategory">{{ getMainCategoryName(course.mainCategory) }}</span>
-            <span v-if="course.mainCategory && course.subCategory"> | </span>
-            <span v-if="course.subCategory">{{ getSubCategoryName(course.mainCategory, course.subCategory) }}</span>
+          <!-- 分类信息和统计 -->
+          <div class="d-flex align-center text-caption text-grey-darken-1">
+            <template v-if="course.mainCategory || course.subCategory">
+              <span class="d-inline-flex align-center">
+                <v-icon icon="mdi-tag-outline" size="12" class="mr-1"></v-icon>
+                <v-tooltip activator="parent" location="top">分类</v-tooltip>
+              </span>
+              <span v-if="course.mainCategory">{{ getMainCategoryName(course.mainCategory) }}</span>
+              <span v-if="course.mainCategory && course.subCategory" class="mx-1"> | </span>
+              <span v-if="course.subCategory">{{ getSubCategoryName(course.mainCategory, course.subCategory) }}</span>
+              <span class="mx-2"></span>
+            </template>
+            <span class="d-inline-flex align-center">
+              <v-icon icon="mdi-bookmark-outline" size="12" class="mr-1"></v-icon>
+              <v-tooltip activator="parent" location="top">收藏数</v-tooltip>
+            </span>
+            {{ course.bookmarkCount ?? 0 }}
+            <span class="mx-2"></span>
+            <span class="d-inline-flex align-center">
+              <v-icon icon="mdi-account-outline" size="12" class="mr-1"></v-icon>
+              <v-tooltip activator="parent" location="top">学习人数</v-tooltip>
+            </span>
+            {{ course.learnerCount ?? 0 }}
+            <span class="mx-2"></span>
+            <span class="d-inline-flex align-center">
+              <v-icon icon="mdi-check-circle-outline" size="12" class="mr-1"></v-icon>
+              <v-tooltip activator="parent" location="top">完成人数</v-tooltip>
+            </span>
+            {{ course.completedUserCount ?? 0 }}
           </div>
 
           <!-- 拒绝/封禁原因 -->

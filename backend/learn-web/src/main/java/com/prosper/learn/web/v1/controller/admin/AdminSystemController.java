@@ -108,7 +108,7 @@ public class AdminSystemController {
         module = "系统配置",
         type = "修改系统配置",
         level = OperationLevel.HIGH,
-        targetType = "SystemConfig",
+        targetType = "System",
         targetId = "0",
         targetName = "#key"
     )
@@ -143,7 +143,7 @@ public class AdminSystemController {
         module = "系统配置",
         type = "删除系统配置",
         level = OperationLevel.HIGH,
-        targetType = "SystemConfig",
+        targetType = "System",
         targetId = "0",
         targetName = "#key"
     )
@@ -194,7 +194,7 @@ public class AdminSystemController {
         module = "系统配置",
         type = "#enable ? '开启只读模式' : '关闭只读模式'",
         level = OperationLevel.HIGH,
-        targetType = "SystemConfig",
+        targetType = "System",
         targetId = "0",
         targetName = "'readonly_mode'"
     )

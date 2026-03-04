@@ -79,7 +79,12 @@ export interface MemoryCardDeck {
   courseId?: number // 所属课程ID
   cardCount: number // 卡片数量
   state: number // 状态：1=审核中, 2=已通过, 3=已拒绝, 4=已屏蔽
+  reason?: string // 拒绝/封禁原因
   likeCount: number // 点赞数
+  viewCount?: number // 浏览量
+  bookmarkCount?: number // 收藏数
+  rejectCount?: number // 被拒次数
+  score?: number // 排序分数
   hasLiked?: boolean // 当前用户是否已点赞
   creatorId?: number // 创建者ID
   creator?: {

@@ -208,4 +208,31 @@ public interface UserConverter {
      */
     @IterableMapping(qualifiedByName = "toProfileDTO")
     List<UserProfileDTO> toProfileDTO(List<UserDO> userDOList);
+
+    /**
+     * 转换为用户管理 DTO（管理后台使用）
+     * 用途：管理后台用户列表
+     */
+    @Named("toAdminDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "avatar")
+    @Mapping(target = "phone")
+    @Mapping(target = "email")
+    @Mapping(target = "emailValidated")
+    @Mapping(target = "biography")
+    @Mapping(target = "state")
+    @Mapping(target = "role")
+    @Mapping(target = "lastViewedMessageId")
+    @Mapping(target = "reviewCardCount")
+    @Mapping(target = "createdAt")
+    @Mapping(target = "updatedAt")
+    UserAdminDTO toAdminDTO(UserDO userDO);
+
+    /**
+     * 批量转换为用户管理 DTO
+     */
+    @IterableMapping(qualifiedByName = "toAdminDTO")
+    List<UserAdminDTO> toAdminDTO(List<UserDO> userDOList);
 }

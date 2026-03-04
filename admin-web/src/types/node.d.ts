@@ -18,9 +18,22 @@ export interface Node {
   creatorId?: number // 创建者ID
   commentCount?: number // 评论数量
   state?: number // 节点状态: 0=待审核, 1=正常, 2=已屏蔽
+  reason?: string // 拒绝/封禁原因
   isCourseRoot?: boolean // 是否为课程根节点（用于 Roadmap 区分课程和普通节点）
   createdAt?: string // 创建时间
   updatedAt?: string // 更新时间
+  creator?: {
+    id: number
+    name: string
+    avatar?: string
+  }
+
+  // 统计字段
+  postCount?: number // 帖子总数
+  articleCount?: number // 文章数量
+  indexCount?: number // 目录数量
+  nodeReferenceCount?: number // 被引用次数
+  cardDeckCount?: number // 卡片组数量
 
   // 学习进度相关
   isCompleted?: boolean // 是否已完成

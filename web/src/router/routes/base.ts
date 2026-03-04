@@ -22,6 +22,12 @@ export const baseRoutes: RouteRecordRaw[] = [
     props: true,
   },
   {
+    path: '/comment/:id',
+    name: 'CommentRedirect',
+    component: () => import('@/views/comment/CommentRedirectPage.vue'),
+    meta: { requireAuth: true },
+  },
+  {
     path: '/error/:code',
     name: 'error',
     component: () => import('@/views/error/ErrorPage.vue'),

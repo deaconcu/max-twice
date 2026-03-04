@@ -23,13 +23,28 @@ const isFilterMode = ref<boolean>(false)
 const objectTypeOptions = [
   { title: '帖子', value: ObjectType.POST },
   { title: '节点', value: ObjectType.NODE },
-  { title: '课程', value: ObjectType.COURSE },
+  { title: '路线图', value: ObjectType.ROADMAP },
 ]
 
 // 获取对象类型名称
 const getObjectTypeName = (type?: number): string => {
   const option = objectTypeOptions.find((opt) => opt.value === type)
   return option ? option.title : ''
+}
+
+// 获取对象链接
+const getObjectUrl = (type?: number, id?: number): string | null => {
+  if (!type || !id) return null
+  switch (type) {
+    case ObjectType.POST:
+      return systemConfigStore.getPostUrl(id)
+    case ObjectType.NODE:
+      return systemConfigStore.getNodeUrl(id)
+    case ObjectType.ROADMAP:
+      return systemConfigStore.getRoadmapUrl(id)
+    default:
+      return null
+  }
 }
 
 // 拒绝/屏蔽对话框
@@ -404,9 +419,6 @@ const getStateColor = (state: number): string => {
                   <v-btn variant="tonal" color="info" size="small" block @click="unbanComment(comment)">
                     解封
                   </v-btn>
-                  <v-btn variant="tonal" color="warning" size="small" block @click="rejectComment(comment)">
-                    降级
-                  </v-btn>
                 </div>
               </div>
 
@@ -426,22 +438,59 @@ const getStateColor = (state: number): string => {
                     <v-chip variant="flat" :color="getStateColor(comment.state)" size="x-small" class="ml-2">
                       {{ getStateText(comment.state) }}
                     </v-chip>
+                    <v-chip v-if="comment.replyToCommentId" variant="tonal" color="blue-grey" size="x-small" class="ml-1">
+                      子评论
+                    </v-chip>
                   </div>
                   <div class="d-flex align-center text-caption text-grey-darken-1">
-                    <span>用户 #{{ comment.creatorId }}</span>
+                    <a :href="systemConfigStore.getUserUrl(comment.creatorId)" target="_blank" class="text-grey-darken-1 text-decoration-none">
+                      {{ comment.creator?.name || `用户 #${comment.creatorId}` }}
+                    </a>
                     <span class="mx-1">·</span>
                     <span>{{ comment.createdAt }}</span>
                     <span class="mx-1">·</span>
                     <span>ID: {{ comment.id }}</span>
                     <span class="mx-1">·</span>
-                    <span>{{ getObjectTypeName(comment.objectType) }} #{{ comment.objectId }}</span>
+                    <a
+                      v-if="getObjectUrl(comment.objectType, comment.objectId)"
+                      :href="getObjectUrl(comment.objectType, comment.objectId)"
+                      target="_blank"
+                      class="text-grey-darken-1 text-decoration-none"
+                    >
+                      {{ getObjectTypeName(comment.objectType) }} #{{ comment.objectId }}
+                    </a>
+                    <span v-else>{{ getObjectTypeName(comment.objectType) }} #{{ comment.objectId }}</span>
                   </div>
                 </div>
 
                 <!-- 内容 -->
                 <div class="content-wrapper">
-                  <div class="text-body-2 text-grey-darken-2">
-                    {{ comment.content }}
+                  <div class="text-body-2 text-grey-darken-2 mb-2">
+                    <a v-if="comment.toUserId" :href="systemConfigStore.getUserUrl(comment.toUserId)" target="_blank" class="text-primary text-decoration-none mr-1">@{{ comment.toUser?.name || comment.toUserId }}</a>{{ comment.content }}
+                  </div>
+
+                  <!-- 统计信息 -->
+                  <div class="d-flex align-center text-caption text-grey-darken-1" style="gap: 12px">
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-thumb-up-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">点赞数</v-tooltip>
+                      {{ comment.likeCount ?? 0 }}
+                    </span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-comment-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">回复数</v-tooltip>
+                      {{ comment.replyCount ?? 0 }}
+                    </span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-close-circle-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">被拒次数</v-tooltip>
+                      {{ comment.rejectCount ?? 0 }}
+                    </span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-chart-line" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">排序分数</v-tooltip>
+                      {{ comment.score?.toFixed(2) ?? 0 }}
+                    </span>
                   </div>
 
                   <!-- 拒绝/封禁原因 -->

@@ -49,9 +49,6 @@ const dialogTitle = computed(() => {
   if (props.itemState === ContentState.PUBLISHED) {
     return `撤销${props.itemType}通过`
   }
-  if (props.itemState === ContentState.BANNED) {
-    return '降级为拒绝'
-  }
   return `拒绝${props.itemType}`
 })
 
@@ -66,7 +63,6 @@ const dialogIconColor = computed(() => {
 const actionText = computed(() => {
   if (props.type === 'ban') return '屏蔽'
   if (props.itemState === ContentState.PUBLISHED) return '撤销'
-  if (props.itemState === ContentState.BANNED) return '降级'
   return '拒绝'
 })
 
@@ -85,9 +81,6 @@ const textareaPlaceholder = computed(() => {
 const warningText = computed(() => {
   if (props.itemState === ContentState.PUBLISHED) {
     return `注意：此${props.itemType}已通过审核，撤销后将变为拒绝状态`
-  }
-  if (props.itemState === ContentState.BANNED) {
-    return `注意：此${props.itemType}当前为屏蔽状态，降级后将变为拒绝状态`
   }
   return null
 })

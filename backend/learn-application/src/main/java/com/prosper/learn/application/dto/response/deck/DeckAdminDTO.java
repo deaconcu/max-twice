@@ -50,6 +50,26 @@ public class DeckAdminDTO {
 
     private Integer cardCount;
 
+    /**
+     * 排序分数
+     */
+    private Double score;
+
+    /**
+     * 浏览量
+     */
+    private Integer viewCount;
+
+    /**
+     * 收藏数
+     */
+    private Integer bookmarkCount;
+
+    /**
+     * 被拒次数
+     */
+    private Integer rejectCount;
+
     private CourseBriefDTO course;
 
     private NodeBriefDTO node;

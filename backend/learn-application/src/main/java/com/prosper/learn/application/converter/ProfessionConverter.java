@@ -1,8 +1,8 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.application.dto.response.ProfessionAdminDTO;
-import com.prosper.learn.application.dto.response.ProfessionBriefDTO;
-import com.prosper.learn.application.dto.response.ProfessionDTO;
+import com.prosper.learn.application.dto.response.profession.ProfessionAdminDTO;
+import com.prosper.learn.application.dto.response.profession.ProfessionBriefDTO;
+import com.prosper.learn.application.dto.response.profession.ProfessionDTO;
 import com.prosper.learn.content.profession.ProfessionDO;
 import org.mapstruct.*;
 

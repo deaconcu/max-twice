@@ -3,6 +3,7 @@ package com.prosper.learn.web.v1.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.CreateCommentRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
+import com.prosper.learn.application.dto.response.comment.CommentBasicDTO;
 import com.prosper.learn.application.dto.response.comment.CommentContextDTO;
 import com.prosper.learn.application.dto.response.comment.CommentDetailDTO;
 import com.prosper.learn.application.dto.response.comment.CommentWithRepliesDTO;
@@ -97,5 +98,19 @@ public class CommentsController {
 
         CommentContextDTO context = commentService.getCommentContext(id, currentUser);
         return ApiResponse.success(context);
+    }
+
+    /**
+     * 获取评论基本信息
+     * 根据评论ID返回其所属对象类型和ID，用于前端跳转到对应页面
+     */
+    @GetMapping("/comments/{id}")
+    @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<CommentBasicDTO> getCommentBasic(
+            @PathVariable @NotNull(message = "评论ID不能为空") @Positive(message = "评论ID必须大于0") Long id) {
+
+        CommentBasicDTO basic = commentService.getCommentBasic(id);
+        return ApiResponse.success(basic);
     }
 }

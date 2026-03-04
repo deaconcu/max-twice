@@ -84,6 +84,7 @@ public interface RoadmapConverter {
     @Mapping(target = "nodeCount")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
+    @Mapping(target = "score")
     RoadmapAdminDTO toAdminDTO(RoadmapDO roadmapDO);
 
     @IterableMapping(qualifiedByName = "toAdminDTO")

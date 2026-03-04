@@ -131,6 +131,34 @@ const getStateColor = (state: number): string => {
       return 'grey-lighten-3'
   }
 }
+
+const getRoleText = (role?: number): string => {
+  switch (role) {
+    case 0:
+      return '用户'
+    case 1:
+      return '审核员'
+    case 2:
+      return '管理员'
+    case 3:
+      return '超管'
+    default:
+      return '用户'
+  }
+}
+
+const getRoleColor = (role?: number): string => {
+  switch (role) {
+    case 1:
+      return 'blue-lighten-4'
+    case 2:
+      return 'purple-lighten-4'
+    case 3:
+      return 'orange-lighten-4'
+    default:
+      return 'grey-lighten-4'
+  }
+}
 </script>
 
 <template>
@@ -263,6 +291,9 @@ const getStateColor = (state: number): string => {
                     <v-chip variant="flat" :color="getStateColor(user.state)" size="x-small" class="ml-2">
                       {{ getStateText(user.state) }}
                     </v-chip>
+                    <v-chip v-if="user.role !== undefined && user.role !== 0" variant="flat" :color="getRoleColor(user.role)" size="x-small" class="ml-1">
+                      {{ getRoleText(user.role) }}
+                    </v-chip>
                   </div>
                   <div class="d-flex align-center text-caption text-grey-darken-1">
                     <span>{{ user.createdAt }}</span>
@@ -293,9 +324,28 @@ const getStateColor = (state: number): string => {
                     <v-icon icon="mdi-phone" size="14" color="grey-darken-1" class="mr-2"></v-icon>
                     <span class="text-body-2 text-grey-darken-2">{{ user.phone }}</span>
                   </div>
-                  <div v-if="user.biography" class="d-flex align-start">
+                  <div v-if="user.biography" class="d-flex align-start mb-2">
                     <v-icon icon="mdi-text" size="14" color="grey-darken-1" class="mr-2 mt-1"></v-icon>
                     <span class="text-body-2 text-grey-darken-2">{{ user.biography }}</span>
+                  </div>
+                  <div v-if="user.lastViewedMessageId" class="d-flex align-center mb-2">
+                    <v-icon icon="mdi-message-text-outline" size="14" color="grey-darken-1" class="mr-2"></v-icon>
+                    <span class="text-body-2 text-grey-darken-2">最后查看消息ID: {{ user.lastViewedMessageId }}</span>
+                  </div>
+                  <div v-if="user.reviewCardCount" class="d-flex align-center mb-2">
+                    <v-icon icon="mdi-cards-outline" size="14" color="grey-darken-1" class="mr-2"></v-icon>
+                    <span class="text-body-2 text-grey-darken-2">复习卡片数: {{ user.reviewCardCount }}</span>
+                  </div>
+
+                  <!-- 统计信息 -->
+                  <div class="text-caption text-grey-darken-1 mt-2">
+                    <span class="font-weight-medium">互动:</span> 浏览 {{ user.viewCount ?? 0 }} | 两遍 {{ user.twiceCount ?? 0 }} | 赞 {{ user.likeCount ?? 0 }} | 评论 {{ user.commentCount ?? 0 }}
+                    <span class="mx-2">·</span>
+                    <span class="font-weight-medium">学习:</span> 课程 {{ user.learningCourseCount ?? 0 }}/{{ user.completedCourseCount ?? 0 }} | 职业 {{ user.inProgressProfessionCount ?? 0 }}/{{ user.completedProfessionCount ?? 0 }}
+                    <span class="mx-2">·</span>
+                    <span class="font-weight-medium">关注:</span> 用户 {{ user.followingUserCount ?? 0 }} | 课程 {{ user.followingCourseCount ?? 0 }} | 职业 {{ user.followingProfessionCount ?? 0 }}
+                    <span class="mx-2">·</span>
+                    <span class="font-weight-medium">创作:</span> 文章 {{ user.createdArticleCount ?? 0 }} | 目录 {{ user.createdIndexCount ?? 0 }} | 路线图 {{ user.createdRoadmapCount ?? 0 }} | 卡片组 {{ user.createdCardDeckCount ?? 0 }}
                   </div>
                 </div>
               </div>

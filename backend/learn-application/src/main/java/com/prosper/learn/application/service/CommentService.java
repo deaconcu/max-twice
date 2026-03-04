@@ -8,6 +8,7 @@ import com.prosper.learn.application.dto.request.CreateCommentRequest;
 import com.prosper.learn.application.dto.response.comment.CommentDTO;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.comment.CommentAdminDTO;
+import com.prosper.learn.application.dto.response.comment.CommentBasicDTO;
 import com.prosper.learn.application.dto.response.comment.CommentContextDTO;
 import com.prosper.learn.application.dto.response.comment.CommentDetailDTO;
 import com.prosper.learn.application.dto.response.comment.CommentSummaryDTO;
@@ -307,6 +308,52 @@ public class CommentService {
         }
 
         List<CommentAdminDTO> items = commentConverter.toAdminDTO(commentDOList);
+
+        // 批量填充 creator 和 toUser 信息
+        Set<Long> userIds = new HashSet<>();
+        commentDOList.forEach(c -> {
+            if (c.getCreatorId() != null) userIds.add(c.getCreatorId());
+            if (c.getToUserId() != null) userIds.add(c.getToUserId());
+        });
+        if (!userIds.isEmpty()) {
+            Map<Long, UserDO> userMap = userDataService.getMapByIds(userIds);
+            Map<Long, Long> commentCreatorMap = commentDOList.stream()
+                    .collect(Collectors.toMap(CommentDO::getId, CommentDO::getCreatorId));
+            Map<Long, Long> commentToUserMap = commentDOList.stream()
+                    .filter(c -> c.getToUserId() != null)
+                    .collect(Collectors.toMap(CommentDO::getId, CommentDO::getToUserId));
+            for (CommentAdminDTO dto : items) {
+                Long creatorId = commentCreatorMap.get(dto.getId());
+                if (creatorId != null) {
+                    UserDO user = userMap.get(creatorId);
+                    if (user != null) {
+                        dto.setCreator(userConverter.toBriefDTO(user));
+                    }
+                }
+                Long toUserId = commentToUserMap.get(dto.getId());
+                if (toUserId != null) {
+                    UserDO toUser = userMap.get(toUserId);
+                    if (toUser != null) {
+                        dto.setToUser(userConverter.toBriefDTO(toUser));
+                    }
+                }
+            }
+        }
+
+        // 批量填充统计数据
+        List<Long> commentIds = commentDOList.stream().map(CommentDO::getId).collect(Collectors.toList());
+        if (!commentIds.isEmpty()) {
+            List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(comment, commentIds);
+            Map<Long, ContentStatsDO> statsMap = statsList.stream()
+                    .collect(Collectors.toMap(ContentStatsDO::getContentId, s -> s));
+            for (CommentAdminDTO dto : items) {
+                ContentStatsDO stats = statsMap.get(dto.getId());
+                if (stats != null) {
+                    dto.setRejectCount(stats.getRejectCount());
+                }
+            }
+        }
+
         Long nextLastId = hasMore && !items.isEmpty() ? items.get(items.size() - 1).getId() : null;
 
         return KeysetPageResponse.of(items, hasMore, null, nextLastId);
@@ -681,6 +728,19 @@ public class CommentService {
             dto.setLastId(last.getId());
         }
 
+        return dto;
+    }
+
+    /**
+     * 获取评论基本信息
+     */
+    public CommentBasicDTO getCommentBasic(Long commentId) {
+        CommentDO comment = commentDataService.validateAndGet(commentId);
+        CommentBasicDTO dto = new CommentBasicDTO();
+        dto.setId(comment.getId());
+        dto.setObjectType(comment.getObjectType());
+        dto.setObjectId(comment.getObjectId());
+        dto.setReplyToCommentId(comment.getReplyToCommentId());
         return dto;
     }
 }

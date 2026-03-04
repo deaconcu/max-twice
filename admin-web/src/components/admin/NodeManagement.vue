@@ -177,32 +177,35 @@ const getStateText = (state: ContentState): string => {
   }
 }
 
-// 使用 useMutation 更新节点状态
-const { execute: executeUpdateNodeState } = useMutation(
-  (data: { nodeId: number; newState: number; reason?: string }) =>
-    adminApi.updateNodeState(data.nodeId, data.newState, data.reason),
+// 使用 useMutation 更新节点状态（通过 operateContent 接口）
+const { execute: executeOperate } = useMutation(
+  (data: { nodeId: number; action: string; reason?: string }) =>
+    adminApi.operateContent('node', data.nodeId, { action: data.action, reason: data.reason }),
   {
-    onSuccess: (response, data) => {
-      const updatedNode = response as Node
-      showSnackbar?.(`节点状态已更新为${getStateText(data.newState)}`, 'success')
+    onSuccess: (_, data) => {
+      showSnackbar?.('操作成功', 'success')
 
+      // 从列表中移除（非筛选模式下，状态变化后会从当前列表消失）
       if (!isFilterMode.value) {
         const index = nodeList.value.findIndex((n) => n.id === data.nodeId)
         if (index !== -1) {
           nodeList.value.splice(index, 1)
         }
       } else {
-        const index = nodeList.value.findIndex((n) => n.id === data.nodeId)
-        if (index !== -1) {
-          nodeList.value[index].state = updatedNode.state
-        }
+        // 筛选模式下重新加载
+        resetList()
+        loadMore()
       }
     },
   }
 )
 
-const updateNodeState = async (node: Node, newState: number) => {
-  await executeUpdateNodeState({ nodeId: node.id, newState })
+const approveNode = async (node: Node) => {
+  await executeOperate({ nodeId: node.id, action: 'APPROVE' })
+}
+
+const restoreNode = async (node: Node) => {
+  await executeOperate({ nodeId: node.id, action: 'RESTORE' })
 }
 
 // 打开拒绝对话框
@@ -221,11 +224,11 @@ const showBanDialog = (node: Node) => {
 
 // 使用 useMutation 处理拒绝/屏蔽
 const { execute: executeRejectOrBan, loading: submitting } = useMutation(
-  (data: { nodeId: number; targetState: number; reason: string }) =>
-    adminApi.updateNodeState(data.nodeId, data.targetState, data.reason),
+  (data: { nodeId: number; action: string; reason: string }) =>
+    adminApi.operateContent('node', data.nodeId, { action: data.action, reason: data.reason }),
   {
     onSuccess: (_, data) => {
-      const message = data.targetState === ContentState.REJECTED ? '已拒绝' : '已屏蔽'
+      const message = data.action === 'REJECT' ? '已拒绝' : '已屏蔽'
       showSnackbar?.(message, 'success')
 
       if (!isFilterMode.value) {
@@ -234,10 +237,8 @@ const { execute: executeRejectOrBan, loading: submitting } = useMutation(
           nodeList.value.splice(index, 1)
         }
       } else {
-        const index = nodeList.value.findIndex((n) => n.id === data.nodeId)
-        if (index !== -1) {
-          nodeList.value[index].state = data.targetState
-        }
+        resetList()
+        loadMore()
       }
 
       showReasonDialog.value = false
@@ -250,10 +251,10 @@ const { execute: executeRejectOrBan, loading: submitting } = useMutation(
 const handleConfirmAction = async (reason: string) => {
   if (!currentNode.value) return
 
-  const targetState = dialogType.value === 'reject' ? ContentState.REJECTED : ContentState.BANNED
+  const action = dialogType.value === 'reject' ? 'REJECT' : 'BAN'
   await executeRejectOrBan({
     nodeId: currentNode.value.id,
-    targetState,
+    action,
     reason,
   })
 }
@@ -406,7 +407,7 @@ const initializeEmbeddings = async () => {
                 <div class="action-area mr-4">
                   <!-- 待审核 -->
                   <div v-if="node.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
-                    <v-btn variant="tonal" color="success" size="small" block @click="updateNodeState(node, ContentState.PUBLISHED)">
+                    <v-btn variant="tonal" color="success" size="small" block @click="approveNode(node)">
                       批准
                     </v-btn>
                     <v-btn variant="tonal" color="error" size="small" block @click="showRejectDialog(node)">
@@ -429,7 +430,7 @@ const initializeEmbeddings = async () => {
 
                   <!-- 已拒绝 -->
                   <div v-if="node.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
-                    <v-btn variant="tonal" color="success" size="small" block @click="updateNodeState(node, ContentState.PUBLISHED)">
+                    <v-btn variant="tonal" color="success" size="small" block @click="approveNode(node)">
                       通过
                     </v-btn>
                     <v-btn variant="tonal" color="grey" size="small" block @click="showBanDialog(node)">
@@ -439,11 +440,8 @@ const initializeEmbeddings = async () => {
 
                   <!-- 已屏蔽 -->
                   <div v-if="node.state === ContentState.BANNED" class="d-flex flex-column ga-2">
-                    <v-btn variant="tonal" color="info" size="small" block @click="updateNodeState(node, ContentState.PUBLISHED)">
+                    <v-btn variant="tonal" color="info" size="small" block @click="restoreNode(node)">
                       解封
-                    </v-btn>
-                    <v-btn variant="tonal" color="warning" size="small" block @click="updateNodeState(node, ContentState.REJECTED)">
-                      降级
                     </v-btn>
                   </div>
                 </div>
@@ -484,6 +482,39 @@ const initializeEmbeddings = async () => {
                     </div>
                     <div v-else class="text-body-2 text-grey-darken-1">
                       暂无描述
+                    </div>
+
+                    <!-- 统计信息 -->
+                    <div class="d-flex align-center text-caption text-grey-darken-1 mt-2">
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-file-document-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">文章数量</v-tooltip>
+                      </span>
+                      {{ node.articleCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-format-list-bulleted" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">目录数量</v-tooltip>
+                      </span>
+                      {{ node.indexCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-comment-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">评论数量</v-tooltip>
+                      </span>
+                      {{ node.commentCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-link-variant" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">被引用次数</v-tooltip>
+                      </span>
+                      {{ node.nodeReferenceCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-cards-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">卡片组数量</v-tooltip>
+                      </span>
+                      {{ node.cardDeckCount ?? 0 }}
                     </div>
 
                     <!-- 拒绝/封禁原因 -->

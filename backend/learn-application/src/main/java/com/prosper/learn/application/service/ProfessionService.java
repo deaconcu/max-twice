@@ -1,12 +1,14 @@
 package com.prosper.learn.application.service;
 
 import com.prosper.learn.analytics.ranking.service.ProfessionRankingDomainService;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
+import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.application.converter.ProfessionConverter;
 import com.prosper.learn.application.dto.request.CreateProfessionRequest;
 import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
-import com.prosper.learn.application.dto.response.ProfessionAdminDTO;
-import com.prosper.learn.application.dto.response.ProfessionDTO;
+import com.prosper.learn.application.dto.response.profession.ProfessionAdminDTO;
+import com.prosper.learn.application.dto.response.profession.ProfessionDTO;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import com.prosper.learn.content.profession.ProfessionDO;
 import com.prosper.learn.content.profession.ProfessionDomainService;
@@ -51,6 +53,7 @@ public class ProfessionService {
 
     // 跨域服务依赖
     private final ProfessionRankingDomainService professionRankingService;
+    private final ContentStatsDataService contentStatsDataService;
     private final BookmarkService bookmarkService;
     private final UserService userService;
 
@@ -113,6 +116,27 @@ public class ProfessionService {
             }
         }
 
+        // 填充统计数据
+        if (!dtoList.isEmpty()) {
+            List<Long> professionIds = dtoList.stream()
+                    .map(ProfessionAdminDTO::getId)
+                    .collect(Collectors.toList());
+            List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(
+                    ContentType.profession, professionIds);
+            Map<Long, ContentStatsDO> statsMap = statsList.stream()
+                    .collect(Collectors.toMap(ContentStatsDO::getContentId, s -> s));
+            for (ProfessionAdminDTO dto : dtoList) {
+                ContentStatsDO stats = statsMap.get(dto.getId());
+                if (stats != null) {
+                    dto.setRoadmapCount(stats.getRoadmapCount() != null ? stats.getRoadmapCount() : 0);
+                    dto.setBookmarkCount(stats.getBookmarkCount() != null ? stats.getBookmarkCount() : 0);
+                } else {
+                    dto.setRoadmapCount(0);
+                    dto.setBookmarkCount(0);
+                }
+            }
+        }
+
         Long nextLastId = dtoList.isEmpty() ? null : dtoList.get(dtoList.size() - 1).getId();
         return KeysetPageResponse.of(dtoList, hasMore, null, nextLastId);
     }
@@ -127,6 +151,13 @@ public class ProfessionService {
         }
         ProfessionAdminDTO dto = professionConverter.toAdminDTO(professionDO);
         dto.setCreator(userService.getUserBriefById(professionDO.getCreatorId()));
+
+        // 填充统计数据
+        contentStatsDataService.getByContent(ContentType.profession, id).ifPresent(stats -> {
+            dto.setRoadmapCount(stats.getRoadmapCount() != null ? stats.getRoadmapCount() : 0);
+            dto.setBookmarkCount(stats.getBookmarkCount() != null ? stats.getBookmarkCount() : 0);
+        });
+
         return dto;
     }
 

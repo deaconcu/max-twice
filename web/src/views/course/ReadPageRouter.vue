@@ -14,8 +14,8 @@ const route = useRoute()
 
 // 根据查询参数判断加载哪个页面组件
 const currentComponent = computed(() => {
-  // 帖子/评论模式
-  if (route.query.postId || route.query.commentId) {
+  // 帖子详情模式
+  if (route.query.postId) {
     return PostDetailPage
   }
 

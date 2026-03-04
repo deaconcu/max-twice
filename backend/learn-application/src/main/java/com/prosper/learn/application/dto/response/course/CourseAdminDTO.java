@@ -48,4 +48,21 @@ public class CourseAdminDTO {
     private String createdAt;
 
     private String updatedAt;
+
+    // ==================== 统计字段 ====================
+
+    /**
+     * 收藏数
+     */
+    private Integer bookmarkCount;
+
+    /**
+     * 完成人数
+     */
+    private Integer completedUserCount;
+
+    /**
+     * 正在学习人数
+     */
+    private Integer learnerCount;
 }

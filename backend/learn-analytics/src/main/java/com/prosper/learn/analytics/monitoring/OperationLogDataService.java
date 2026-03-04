@@ -39,11 +39,11 @@ public class OperationLogDataService {
     /**
      * 查询操作日志（keyset分页）
      */
-    public List<OperationLogDO> queryLogs(Long operatorId, String module, String operationType,
-                                          Integer operationLevel, String targetType, Long targetId,
-                                          LocalDateTime startTime, LocalDateTime endTime,
+    public List<OperationLogDO> queryLogs(Long operatorId,
+                                          String targetType, Long targetId,
+                                          LocalDateTime endTime,
                                           Long lastId, int limit) {
-        return operationLogMapper.queryLogsByLastId(operatorId, module, operationType, operationLevel,
-                targetType, targetId, startTime, endTime, lastId, limit);
+        return operationLogMapper.queryLogsByLastId(operatorId,
+                targetType, targetId, endTime, lastId, limit);
     }
 }

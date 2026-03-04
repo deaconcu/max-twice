@@ -2,8 +2,8 @@ package com.prosper.learn.web.v1.controller.admin;
 
 import com.prosper.learn.application.dto.request.CreateVirtualUserRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
+import com.prosper.learn.application.dto.response.user.UserAdminDTO;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
-import com.prosper.learn.application.dto.response.user.UserProfileDTO;
 import com.prosper.learn.application.service.UserService;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
@@ -46,10 +46,10 @@ public class AdminUserController {
     @GetMapping("/users")
     @RequireRole(UserRole.ADMIN)
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<KeysetPageResponse<UserProfileDTO>> getUsers(
+    public ApiResponse<KeysetPageResponse<UserAdminDTO>> getUsers(
             @RequestParam(required = false) @Min(value = 0, message = "偏移ID不能小于0") Long offsetId,
             @CurrentUser UserDO currentUser) {
-        KeysetPageResponse<UserProfileDTO> users = userService.getUsers(offsetId, 20);
+        KeysetPageResponse<UserAdminDTO> users = userService.getUsers(offsetId, 20);
         return ApiResponse.success(users);
     }
 
@@ -60,13 +60,12 @@ public class AdminUserController {
     @GetMapping("/users/{userId}")
     @RequireRole(UserRole.ADMIN)
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<UserProfileDTO> getUserById(
+    public ApiResponse<UserAdminDTO> getUserById(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
             Long userId,
             @CurrentUser UserDO currentUser) {
-        // 复用现有方法：返回用户详情（包括被屏蔽用户）
-        UserProfileDTO user = userService.getUser(userId);
+        UserAdminDTO user = userService.getUserForAdmin(userId);
         return ApiResponse.success(user);
     }
 
@@ -77,11 +76,10 @@ public class AdminUserController {
     @GetMapping("/users/search")
     @RequireRole(UserRole.ADMIN)
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<List<UserBriefDTO>> searchUsers(
+    public ApiResponse<List<UserAdminDTO>> searchUsers(
             @RequestParam @NotNull(message = "搜索名称不能为空") String name,
             @CurrentUser UserDO currentUser) {
-        // 复用现有方法
-        List<UserBriefDTO> users = userService.searchUsers(name);
+        List<UserAdminDTO> users = userService.searchUsersForAdmin(name);
         return ApiResponse.success(users);
     }
 
@@ -99,14 +97,14 @@ public class AdminUserController {
         targetType = "User",
         targetId = "#id"
     )
-    public ApiResponse<UserProfileDTO> setUserRole(
+    public ApiResponse<UserAdminDTO> setUserRole(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
             Long id,
             @RequestParam @NotNull(message = "角色代码不能为空") Integer roleCode,
             @CurrentUser UserDO currentUser) {
 
-        UserProfileDTO user = userService.setUserRole(id, roleCode, currentUser);
+        UserAdminDTO user = userService.setUserRole(id, roleCode, currentUser);
         return ApiResponse.success(user);
     }
 
@@ -124,14 +122,14 @@ public class AdminUserController {
         targetType = "User",
         targetId = "#id"
     )
-    public ApiResponse<UserProfileDTO> updateUserState(
+    public ApiResponse<UserAdminDTO> updateUserState(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
             Long id,
             @RequestParam @NotNull(message = "封禁状态不能为空") Boolean ban,
             @CurrentUser UserDO currentUser) {
 
-        UserProfileDTO user = userService.updateUserState(id, ban, currentUser);
+        UserAdminDTO user = userService.updateUserState(id, ban, currentUser);
         return ApiResponse.success(user);
     }
 
@@ -149,40 +147,15 @@ public class AdminUserController {
         targetType = "User",
         targetId = "#id"
     )
-    public ApiResponse<UserProfileDTO> banUser(
+    public ApiResponse<UserAdminDTO> banUser(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
             Long id,
             @RequestParam @NotNull(message = "封禁状态不能为空") Boolean ban,
             @CurrentUser UserDO currentUser) {
 
-        UserProfileDTO user = userService.updateUserState(id, ban, currentUser);
+        UserAdminDTO user = userService.updateUserState(id, ban, currentUser);
         return ApiResponse.success(user);
     }
 
-    /**
-     * 创建虚拟用户（用于内容生成工具）
-     * POST /api/v1/admin/users/create-virtual
-     */
-    @PostMapping("/users/create-virtual")
-    @RequireRole(UserRole.ADMIN)
-    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    @OperationLog(
-        module = "用户管理",
-        type = "创建虚拟用户",
-        level = OperationLevel.MEDIUM,
-        targetType = "User",
-        targetId = "0"
-    )
-    public ApiResponse<UserBriefDTO> createVirtualUser(
-            @RequestBody @Valid CreateVirtualUserRequest request,
-            @CurrentUser UserDO currentUser) {
-
-        UserBriefDTO user = userService.createVirtualUser(
-            request.getUsername(),
-            request.getEmail(),
-            request.getPassword()
-        );
-        return ApiResponse.success(user);
-    }
 }

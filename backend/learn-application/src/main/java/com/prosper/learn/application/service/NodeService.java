@@ -1,6 +1,8 @@
 package com.prosper.learn.application.service;
 
 import com.prosper.learn.analytics.dto.ContentStatsDTO;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
+import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.NodeConverter;
@@ -55,6 +57,7 @@ public class NodeService {
     private final EmbeddingService embeddingService;
     private final MilvusService milvusService;
     private final ContentStatsDomainService contentStatsDomainService;
+    private final ContentStatsDataService contentStatsDataService;
     private final UserService userService;
 
     // ========== Query 方法（读操作）==========
@@ -115,6 +118,35 @@ public class NodeService {
                 Long nodeCreatorId = nodeDOList.get(i).getCreatorId();
                 if (nodeCreatorId != null) {
                     dtoList.get(i).setCreator(creatorMap.get(nodeCreatorId));
+                }
+            }
+        }
+
+        // 填充统计数据
+        if (!dtoList.isEmpty()) {
+            List<Long> nodeIds = dtoList.stream()
+                    .map(NodeAdminDTO::getId)
+                    .collect(Collectors.toList());
+            List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(
+                    ContentType.node, nodeIds);
+            Map<Long, ContentStatsDO> statsMap = statsList.stream()
+                    .collect(Collectors.toMap(ContentStatsDO::getContentId, s -> s));
+            for (NodeAdminDTO dto : dtoList) {
+                ContentStatsDO stats = statsMap.get(dto.getId());
+                if (stats != null) {
+                    dto.setPostCount(stats.getPostCount() != null ? stats.getPostCount() : 0);
+                    dto.setArticleCount(stats.getArticleCount() != null ? stats.getArticleCount() : 0);
+                    dto.setIndexCount(stats.getIndexCount() != null ? stats.getIndexCount() : 0);
+                    dto.setCommentCount(stats.getCommentCount() != null ? stats.getCommentCount() : 0);
+                    dto.setNodeReferenceCount(stats.getNodeReferenceCount() != null ? stats.getNodeReferenceCount() : 0);
+                    dto.setCardDeckCount(stats.getCardDeckCount() != null ? stats.getCardDeckCount() : 0);
+                } else {
+                    dto.setPostCount(0);
+                    dto.setArticleCount(0);
+                    dto.setIndexCount(0);
+                    dto.setCommentCount(0);
+                    dto.setNodeReferenceCount(0);
+                    dto.setCardDeckCount(0);
                 }
             }
         }
@@ -308,6 +340,14 @@ public class NodeService {
     @Transactional
     public void ban(Long nodeId, String reason) {
         domainService.ban(nodeId, reason);
+    }
+
+    /**
+     * 恢复节点（解封）
+     */
+    @Transactional
+    public void restore(Long nodeId, String reason) {
+        domainService.approve(nodeId);
     }
 
     /**

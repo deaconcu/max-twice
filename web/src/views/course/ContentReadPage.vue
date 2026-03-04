@@ -239,6 +239,8 @@
                 :is-learning="isLearning"
                 :loading-more="loadingMore"
                 :has-more="hasMore"
+                :target-comment-id="targetCommentId"
+                :target-sub-comment-id="targetSubCommentId"
                 @switch-tab="handleTabSwitch"
                 @view-deck="handleViewDeck"
                 @load-data="loadData"
@@ -444,6 +446,22 @@ const hasMore = ref(true)
 
 // 获取课程ID
 const courseId = computed(() => data.value?.course?.id)
+
+// 目标评论ID（从 URL 获取）
+const targetCommentId = computed(() => {
+  if (route.query.commentId) {
+    return Number(route.query.commentId)
+  }
+  return null
+})
+
+// 目标子评论ID（从 URL 获取）
+const targetSubCommentId = computed(() => {
+  if (route.query.subCommentId) {
+    return Number(route.query.subCommentId)
+  }
+  return null
+})
 
 // 开始学习课程
 const { execute: startLearning, loading: startingLearning } = useMutation(

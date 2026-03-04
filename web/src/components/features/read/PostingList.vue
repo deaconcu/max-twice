@@ -21,6 +21,8 @@ interface Props {
   isLearning?: boolean
   loadingMore?: boolean
   hasMore?: boolean
+  targetCommentId?: number | null
+  targetSubCommentId?: number | null
 }
 
 interface Emits {
@@ -34,6 +36,8 @@ const props = withDefaults(defineProps<Props>(), {
   isLearning: false,
   loadingMore: false,
   hasMore: true,
+  targetCommentId: null,
+  targetSubCommentId: null,
 })
 
 const emit = defineEmits<Emits>()
@@ -55,6 +59,17 @@ watch(
     tab.value = 'list'
     currPosting.value = null
   }
+)
+
+// 如果有目标评论ID，自动切换到评论 tab
+watch(
+  () => props.targetCommentId,
+  (newVal) => {
+    if (newVal) {
+      tab.value = 'comment'
+    }
+  },
+  { immediate: true }
 )
 
 // 切换 Tab
@@ -469,6 +484,8 @@ const completeButtonTooltip = () => {
         :post-id="currNodeId"
         :comment-count="data.node?.commentCount || 0"
         :object-type="ObjectType.NODE"
+        :target-comment-id="targetCommentId"
+        :target-sub-comment-id="targetSubCommentId"
         class="mt-2"
       />
     </template>
@@ -476,30 +493,6 @@ const completeButtonTooltip = () => {
     <!-- 记忆卡片 -->
     <template v-else-if="tab === 'memoryCards'">
       <MemoryCardList :node-id="currNodeId" @view-deck="handleViewDeck" @create-deck="showCreateDeckDialog = true" />
-    </template>
-
-    <!-- 文章详情 -->
-    <template v-else>
-      <div class="pt-0">
-        <SinglePost
-          :posting="currPosting"
-          :curr-node="currNode"
-          :data="data"
-          :is-learning="isLearning"
-          :detail="true"
-          @switch-tab="handlePostSwitchTab"
-          @load-data="(fields) => emit('load-data', fields)"
-          @mark-node-completed="emit('mark-node-completed')"
-        />
-
-        <!-- 评论区 -->
-        <CommentSection
-          :post-id="currPosting?.id"
-          :comment-count="currPosting?.commentCount || 0"
-          :object-type="ObjectType.POST"
-          class="mt-6"
-        />
-      </div>
     </template>
 
     <!-- 节点选择器对话框 -->

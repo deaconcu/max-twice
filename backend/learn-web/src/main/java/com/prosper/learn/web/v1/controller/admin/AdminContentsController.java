@@ -229,8 +229,8 @@ public class AdminContentsController {
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
-        module = "内容管理",
-        type = "更新路线图信息",
+        module = "用户内容管理",
+        type = "更新路线图",
         level = OperationLevel.MEDIUM,
         targetType = "Roadmap",
         targetId = "#id"
@@ -251,8 +251,8 @@ public class AdminContentsController {
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
-        module = "内容管理",
-        type = "更新课程信息",
+        module = "全局内容管理",
+        type = "更新课程",
         level = OperationLevel.MEDIUM,
         targetType = "Course",
         targetId = "#id"
@@ -274,8 +274,8 @@ public class AdminContentsController {
     @RequireRole(UserRole.ADMIN)
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
-        module = "内容管理",
-        type = "更新职业信息",
+        module = "全局内容管理",
+        type = "更新职业",
         level = OperationLevel.MEDIUM,
         targetType = "Profession",
         targetId = "#id"
@@ -300,32 +300,6 @@ public class AdminContentsController {
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0") Long id) {
         return ApiResponse.query(professionService.getAdminById(id));
-    }
-
-    /**
-     * 更新节点状态
-     * PUT /api/v1/admin/contents/node/{id}/state?state=xxx&reason=xxx
-     */
-    @PutMapping("/node/{id}/state")
-    @RequireRole(UserRole.MODERATOR)
-    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    @OperationLog(
-        module = "内容管理",
-        type = "#state == 2 ? '审核通过节点' : (#state == 3 ? '审核拒绝节点' : '修改节点状态')",
-        level = OperationLevel.MEDIUM,
-        targetType = "Node",
-        targetId = "#id",
-        reason = "#reason"
-    )
-    public ApiResponse<?> updateNodeState(
-            @PathVariable @Positive(message = "节点ID必须大于0") Long id,
-            @RequestParam @Min(value = 0, message = "状态值必须大于等于0") Integer state,
-            @RequestParam(required = false, defaultValue = "") String reason) {
-        ContentState contentState = ContentState.getByValue(state.byteValue());
-        if (contentState == null) {
-            throw StatusCode.INVALID_PARAMETER.exception("无效的状态值: " + state);
-        }
-        return ApiResponse.success(nodeService.updateNodeState(id, contentState, reason));
     }
 
     /**
@@ -373,11 +347,15 @@ public class AdminContentsController {
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
-        module = "内容管理",
-        type = "#request.action == 'APPROVE' ? '审核通过内容' : " +
-               "(#request.action == 'REJECT' ? '审核拒绝内容' : " +
-               "(#request.action == 'REMOVE' ? '下架内容' : " +
-               "(#request.action == 'BAN' ? '封禁内容' : '恢复内容')))",
+        module = "#contentType == 'course' || #contentType == 'profession' || #contentType == 'node' ? '全局内容管理' : '用户内容管理'",
+        type = "#{" +
+               "'APPROVE': '审核通过', " +
+               "'REJECT': '审核拒绝', " +
+               "'REMOVE': '下架', " +
+               "'BAN': '封禁', " +
+               "'RESTORE': '恢复', " +
+               "'DELETE': '删除'" +
+               "}[#request.action] ?: '未知操作'",
         level = OperationLevel.MEDIUM,
         targetType = "#contentType",
         targetId = "#id",
@@ -403,6 +381,7 @@ public class AdminContentsController {
             case "comment" -> operateComment(id, action, reason, currentUser);
             case "course" -> operateCourse(id, action, reason, currentUser);
             case "profession" -> operateProfession(id, action, reason, currentUser);
+            case "node" -> operateNode(id, action, reason);
             default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的内容类型: " + contentType);
         }
 
@@ -501,6 +480,16 @@ public class AdminContentsController {
         }
     }
 
+    private void operateNode(Long id, String action, String reason) {
+        switch (action) {
+            case "approve" -> nodeService.approve(id);
+            case "reject" -> nodeService.reject(id, reason);
+            case "ban" -> nodeService.ban(id, reason);
+            case "restore" -> nodeService.restore(id, reason);
+            default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+        }
+    }
+
     // ==================== 节点Embedding初始化 ====================
 
     /**
@@ -512,8 +501,16 @@ public class AdminContentsController {
      */
     @PostMapping("/nodes/init-embeddings")
     @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.HOURS, limitType = LimitType.GLOBAL)
+    @OperationLog(
+        module = "系统维护",
+        type = "初始化节点Embedding",
+        level = OperationLevel.HIGH,
+        targetType = "Node",
+        targetId = "0"
+    )
     public ApiResponse<?> initializeNodeEmbeddings(
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int batchSize) {
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int batchSize,
+            @CurrentUser UserDO currentUser) {
 
         log.info("Starting batch initialization of node embeddings, batchSize: {}", batchSize);
 
@@ -534,6 +531,13 @@ public class AdminContentsController {
      */
     @PostMapping("/nodes/recalculate-references")
     @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.HOURS, limitType = LimitType.GLOBAL)
+    @OperationLog(
+        module = "系统维护",
+        type = "重算节点引用数",
+        level = OperationLevel.HIGH,
+        targetType = "Node",
+        targetId = "0"
+    )
     public ApiResponse<?> recalculateNodeReferences() {
         log.info("开始重新计算节点引用数统计");
 
@@ -551,7 +555,13 @@ public class AdminContentsController {
      * POST /api/v1/admin/contents/course/create
      */
     @PostMapping("/course/create")
-    @OperationLog(module = "课程管理", type = "创建", targetType = "course", targetId = "#result")
+    @OperationLog(
+        module = "全局内容管理",
+        type = "创建课程",
+        level = OperationLevel.MEDIUM,
+        targetType = "Course",
+        targetId = "#result"
+    )
     @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Long> createCourse(
             @RequestBody @Valid CreateCourseRequest request,
@@ -566,7 +576,13 @@ public class AdminContentsController {
      * POST /api/v1/admin/contents/node/create
      */
     @PostMapping("/node/create")
-    @OperationLog(module = "节点管理", type = "创建", targetType = "node", targetId = "#result")
+    @OperationLog(
+        module = "全局内容管理",
+        type = "创建节点",
+        level = OperationLevel.MEDIUM,
+        targetType = "Node",
+        targetId = "#result"
+    )
     @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Long> createNode(
             @RequestBody @Valid CreateNodeRequest request,

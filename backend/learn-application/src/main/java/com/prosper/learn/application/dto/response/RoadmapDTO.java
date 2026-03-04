@@ -1,5 +1,6 @@
 package com.prosper.learn.application.dto.response;
 
+import com.prosper.learn.application.dto.response.profession.ProfessionDTO;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
 

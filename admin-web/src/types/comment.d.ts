@@ -30,9 +30,11 @@ export interface Comment {
   creatorId?: number // 评论者ID
   creator?: UserBrief // 评论者信息（包含头像）
   toUserId?: number // 被回复者ID
-  toUser?: UserBrief // 被回复者信息（包含头像）
+  toUser?: UserBrief // 被回复者信息
+  score?: number // 排序分数
   state?: ContentState // 评论状态
   reason?: string // 拒绝/封禁原因
+  rejectCount?: number // 被拒绝次数
   children?: Comment[] | null // 子评论列表
 }
 

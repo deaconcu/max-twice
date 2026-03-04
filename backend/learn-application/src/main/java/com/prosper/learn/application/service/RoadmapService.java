@@ -3,6 +3,7 @@ package com.prosper.learn.application.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.analytics.dto.ContentStatsDTO;
+import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.ProfessionConverter;
@@ -70,6 +71,7 @@ public class RoadmapService {
     private final ProfessionDataService professionDataService;
     private final UpvoteDomainService upvoteDomainService;
     private final ContentStatsDomainService contentStatsDomainService;
+    private final ContentStatsDataService contentStatsDataService;
     private final BookmarkService bookmarkService;
     private final LearningProgressService learningProgressService;
     private final ApplicationEventPublisher eventPublisher;
@@ -724,6 +726,26 @@ public class RoadmapService {
                     if (creator != null) {
                         dto.setCreator(userConverter.toBriefDTO(creator));
                     }
+                }
+            }
+        }
+
+        // 批量填充统计数据
+        List<Long> roadmapIds = roadmapDOList.stream().map(RoadmapDO::getId).collect(Collectors.toList());
+        if (!roadmapIds.isEmpty()) {
+            List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(ContentType.roadmap, roadmapIds);
+            Map<Long, ContentStatsDO> statsMap = statsList.stream()
+                    .collect(Collectors.toMap(ContentStatsDO::getContentId, s -> s));
+            for (RoadmapAdminDTO dto : items) {
+                ContentStatsDO stats = statsMap.get(dto.getId());
+                if (stats != null) {
+                    dto.setViewCount(stats.getViewCount());
+                    dto.setLikeCount(stats.getLikeCount());
+                    dto.setCommentCount(stats.getCommentCount());
+                    dto.setBookmarkCount(stats.getBookmarkCount());
+                    dto.setLearnerCount(stats.getLearnerCount());
+                    dto.setCompletedUserCount(stats.getCompletedUserCount());
+                    dto.setRejectCount(stats.getRejectCount());
                 }
             }
         }

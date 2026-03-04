@@ -156,9 +156,6 @@
                   <v-btn variant="tonal" color="info" size="small" block @click="unbanRoadmap(roadmap)">
                     解封
                   </v-btn>
-                  <v-btn variant="tonal" color="warning" size="small" block @click="downgradeToRejected(roadmap)">
-                    降级
-                  </v-btn>
                 </div>
 
                 <!-- 编辑按钮 -->
@@ -203,8 +200,65 @@
                 <div class="content-wrapper d-flex">
                   <!-- 左侧描述 -->
                   <div class="content-left flex-grow-1">
-                    <div class="text-body-2 text-grey-darken-1">
+                    <div class="text-body-2 text-grey-darken-1 mb-2">
                       {{ roadmap.description || '暂无描述' }}
+                    </div>
+
+                    <!-- 统计信息 -->
+                    <div class="d-flex align-center text-caption text-grey-darken-1">
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-eye-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">浏览量</v-tooltip>
+                      </span>
+                      {{ roadmap.viewCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-thumb-up-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">点赞数</v-tooltip>
+                      </span>
+                      {{ roadmap.likeCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-comment-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">评论数</v-tooltip>
+                      </span>
+                      {{ roadmap.commentCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-bookmark-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">收藏数</v-tooltip>
+                      </span>
+                      {{ roadmap.bookmarkCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-account-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">学习人数</v-tooltip>
+                      </span>
+                      {{ roadmap.learnerCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-check-circle-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">完成人数</v-tooltip>
+                      </span>
+                      {{ roadmap.completedUserCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-close-circle-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">被拒次数</v-tooltip>
+                      </span>
+                      {{ roadmap.rejectCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-graph-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">节点数</v-tooltip>
+                      </span>
+                      {{ roadmap.nodeCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-chart-line" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">排序分数</v-tooltip>
+                      </span>
+                      {{ roadmap.score?.toFixed(2) ?? 0 }}
                     </div>
 
                     <!-- 拒绝/封禁原因 -->
@@ -740,11 +794,6 @@ const rejectRoadmap = (roadmap: Roadmap): void => {
 // 取消屏蔽路线图
 const unbanRoadmap = async (roadmap: Roadmap): Promise<void> => {
   await executeApprove({ id: roadmap.id, action: 'APPROVE' })
-}
-
-// 降级为拒绝
-const downgradeToRejected = (roadmap: Roadmap): void => {
-  showRejectDialog(roadmap)
 }
 
 // 屏蔽路线图（供按钮调用）

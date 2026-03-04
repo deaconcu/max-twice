@@ -413,9 +413,6 @@ const getStateColor = (state: number): string => {
                   <v-btn variant="tonal" color="info" size="small" block @click="unbanPost(post)">
                     解封
                   </v-btn>
-                  <v-btn variant="tonal" color="warning" size="small" block @click="rejectPost(post)">
-                    降级
-                  </v-btn>
                 </div>
               </div>
 
@@ -424,9 +421,9 @@ const getStateColor = (state: number): string => {
                 <!-- 标题行 -->
                 <div class="d-flex align-center justify-space-between mb-2">
                   <div class="d-flex align-center">
-                    <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                    <a :href="systemConfigStore.getPostUrl(post.id)" target="_blank" class="text-body-1 font-weight-medium text-grey-darken-3 text-decoration-none">
                       {{ post.node?.name || `文章 #${post.id}` }}
-                    </div>
+                    </a>
                     <v-chip variant="flat" :color="getStateColor(post.state)" size="x-small" class="ml-2">
                       {{ getStateText(post.state) }}
                     </v-chip>
@@ -438,6 +435,10 @@ const getStateColor = (state: number): string => {
                     <span>{{ post.createdAt }}</span>
                     <span class="mx-1">·</span>
                     <span>ID: {{ post.id }}</span>
+                    <template v-if="post.node">
+                      <span class="mx-1">·</span>
+                      <a :href="systemConfigStore.getNodeUrl(post.node.id)" target="_blank" class="text-grey-darken-1">节点 #{{ post.node.id }}</a>
+                    </template>
                   </div>
                 </div>
 
@@ -471,6 +472,57 @@ const getStateColor = (state: number): string => {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  <!-- 统计信息 -->
+                  <div class="d-flex align-center text-caption text-grey-darken-1 mt-2">
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-eye-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">浏览量</v-tooltip>
+                    </span>
+                    {{ post.viewCount ?? 0 }}
+                    <span class="mx-2"></span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-repeat" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">两遍就懂</v-tooltip>
+                    </span>
+                    {{ post.twiceCount ?? 0 }}
+                    <span class="mx-2"></span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-thumb-up-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">点赞数</v-tooltip>
+                    </span>
+                    {{ post.likeCount ?? 0 }}
+                    <span class="mx-2"></span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-comment-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">评论数</v-tooltip>
+                    </span>
+                    {{ post.commentCount ?? 0 }}
+                    <span class="mx-2"></span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-bookmark-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">收藏数</v-tooltip>
+                    </span>
+                    {{ post.bookmarkCount ?? 0 }}
+                    <span class="mx-2"></span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-cards-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">卡片组数量</v-tooltip>
+                    </span>
+                    {{ post.cardDeckCount ?? 0 }}
+                    <span class="mx-2"></span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-close-circle-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">被拒次数</v-tooltip>
+                    </span>
+                    {{ post.rejectCount ?? 0 }}
+                    <span class="mx-2"></span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-chart-line" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">排序分数</v-tooltip>
+                    </span>
+                    {{ post.score?.toFixed(2) ?? 0 }}
                   </div>
 
                   <!-- 拒绝/封禁原因 -->

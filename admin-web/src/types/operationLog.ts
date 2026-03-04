@@ -38,11 +38,8 @@ export interface OperationLogDTO {
  */
 export interface OperationLogQueryRequest {
   operatorId?: number
-  module?: string
-  operationType?: string
   targetType?: string
-  operationLevel?: OperationLevel
-  startTime?: string
+  targetId?: number
   endTime?: string
   lastId?: number
   limit?: number

@@ -548,9 +548,6 @@ onMounted(() => {
                   <v-btn variant="tonal" color="info" size="small" block @click="unbanProfession(profession)">
                     解封
                   </v-btn>
-                  <v-btn variant="tonal" color="warning" size="small" block @click="showRejectModal(profession)">
-                    降级
-                  </v-btn>
                 </div>
 
                 <!-- 编辑按钮（非已通过状态） -->
@@ -611,12 +608,29 @@ onMounted(() => {
                     </v-chip>
                   </div>
 
-                  <!-- 分类信息 -->
-                  <div v-if="profession.mainCategory || profession.subCategory" class="text-caption text-grey-darken-1">
-                    <span>分类：</span>
-                    <span v-if="profession.mainCategory">{{ getCategoryName(profession.mainCategory) }}</span>
-                    <span v-if="profession.mainCategory && profession.subCategory"> | </span>
-                    <span v-if="profession.subCategory">{{ getSubCategoryName(profession.mainCategory, profession.subCategory) }}</span>
+                  <!-- 分类信息和统计 -->
+                  <div class="d-flex align-center text-caption text-grey-darken-1">
+                    <template v-if="profession.mainCategory || profession.subCategory">
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-tag-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">分类</v-tooltip>
+                      </span>
+                      <span v-if="profession.mainCategory">{{ getCategoryName(profession.mainCategory) }}</span>
+                      <span v-if="profession.mainCategory && profession.subCategory" class="mx-1">|</span>
+                      <span v-if="profession.subCategory">{{ getSubCategoryName(profession.mainCategory, profession.subCategory) }}</span>
+                      <span class="mx-2"></span>
+                    </template>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-map-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">路线图数量</v-tooltip>
+                    </span>
+                    {{ profession.roadmapCount ?? 0 }}
+                    <span class="mx-2"></span>
+                    <span class="d-inline-flex align-center">
+                      <v-icon icon="mdi-bookmark-outline" size="12" class="mr-1"></v-icon>
+                      <v-tooltip activator="parent" location="top">收藏数</v-tooltip>
+                    </span>
+                    {{ profession.bookmarkCount ?? 0 }}
                   </div>
 
                   <!-- 拒绝/封禁原因 -->

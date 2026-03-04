@@ -15,19 +15,33 @@ const selectedLog = ref<OperationLogDTO | null>(null)
 // 筛选条件
 const filters = reactive<Omit<OperationLogQueryRequest, 'lastId' | 'limit'>>({
   operatorId: undefined,
-  module: '',
-  operationType: '',
   targetType: '',
-  operationLevel: undefined,
-  startTime: '',
+  targetId: undefined,
   endTime: '',
 })
 
-// 操作级别选项
-const operationLevels = [
-  { text: '低', value: OperationLevel.LOW },
-  { text: '中', value: OperationLevel.MEDIUM },
-  { text: '高', value: OperationLevel.HIGH },
+// 查询模式
+const queryMode = ref<'time' | 'type' | 'operator' | 'object'>('time')
+
+// 目标类型选项
+const targetTypeOptions = [
+  { text: '用户', value: 'User' },
+  { text: '帖子', value: 'Post' },
+  { text: '评论', value: 'Comment' },
+  { text: '路线图', value: 'Roadmap' },
+  { text: '记忆卡片', value: 'MemoryCardDeck' },
+  { text: '课程', value: 'Course' },
+  { text: '节点', value: 'Node' },
+  { text: '职业', value: 'Profession' },
+  { text: '系统', value: 'System' },
+]
+
+// 查询模式选项
+const queryModeOptions = [
+  { text: '时间浏览', value: 'time', icon: 'mdi-clock-outline' },
+  { text: '按类型', value: 'type', icon: 'mdi-shape-outline' },
+  { text: '按操作人', value: 'operator', icon: 'mdi-account-outline' },
+  { text: '按对象', value: 'object', icon: 'mdi-target' },
 ]
 
 // 使用 useFetchForScroll 管理分页数据
@@ -46,10 +60,7 @@ const {
     }
 
     // 清空空字符串值
-    if (query.module === '') delete query.module
-    if (query.operationType === '') delete query.operationType
     if (query.targetType === '') delete query.targetType
-    if (query.startTime === '') delete query.startTime
     if (query.endTime === '') delete query.endTime
 
     return adminApi.getOperationLogs(query)
@@ -62,6 +73,53 @@ const {
     showSnackbar?.(`获取操作日志失败: ${error.message}`, 'error')
   },
 })
+
+/**
+ * 校验查询条件
+ */
+const validateSearchQuery = (): boolean => {
+  switch (queryMode.value) {
+    case 'time':
+      // 时间浏览模式，无强制条件
+      return true
+    case 'type':
+      // 按类型模式，必须选择目标类型
+      if (!filters.targetType) {
+        showSnackbar?.('请选择目标类型', 'warning')
+        return false
+      }
+      return true
+    case 'operator':
+      // 按操作人模式，必须输入操作人ID
+      if (!filters.operatorId) {
+        showSnackbar?.('请输入操作人ID', 'warning')
+        return false
+      }
+      return true
+    case 'object':
+      // 按对象模式，必须选择目标类型和目标ID
+      if (!filters.targetType || !filters.targetId) {
+        showSnackbar?.('请选择目标类型并输入目标ID', 'warning')
+        return false
+      }
+      return true
+    default:
+      return true
+  }
+}
+
+/**
+ * 切换查询模式
+ */
+const switchMode = (mode: 'time' | 'type' | 'operator' | 'object') => {
+  queryMode.value = mode
+  // 切换模式时清空筛选条件
+  filters.operatorId = undefined
+  filters.targetType = ''
+  filters.targetId = undefined
+  filters.endTime = ''
+  resetLogs()
+}
 
 /**
  * 获取操作级别颜色
@@ -129,10 +187,13 @@ const formatDateTime = (dateTime: string): string => {
  * 获取操作日志（用于查询按钮）
  */
 const fetchLogs = async (reset = false): Promise<void> => {
+  if (!validateSearchQuery()) {
+    return
+  }
   if (reset) {
     resetLogs()
   }
-  loadMoreLogs({ done: () => {} } as any)
+  loadMoreLogs({ done: () => {} } as never)
 }
 
 /**
@@ -169,27 +230,27 @@ fetchLogs(true)
 
     <!-- 筛选区域 -->
     <v-card flat class="border mb-4">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-filter-variant" size="18" class="mr-2"></v-icon>
-        筛选条件
-      </v-card-title>
       <v-card-text>
-        <v-row dense>
-          <v-col cols="12" md="3">
-            <v-text-field
-              v-model="filters.startTime"
-              label="开始时间"
-              type="datetime-local"
-              variant="outlined"
-              density="compact"
-              hide-details
-              clearable
-            ></v-text-field>
-          </v-col>
-          <v-col cols="12" md="3">
+        <!-- 模式切换 -->
+        <v-btn-toggle v-model="queryMode" mandatory class="mb-4" density="compact">
+          <v-btn
+            v-for="option in queryModeOptions"
+            :key="option.value"
+            :value="option.value"
+            size="small"
+            @click="switchMode(option.value as 'time' | 'type' | 'operator' | 'object')"
+          >
+            <v-icon :icon="option.icon" size="16" class="mr-1"></v-icon>
+            {{ option.text }}
+          </v-btn>
+        </v-btn-toggle>
+
+        <!-- 模式1：时间浏览 -->
+        <v-row v-if="queryMode === 'time'" dense>
+          <v-col cols="12" md="2">
             <v-text-field
               v-model="filters.endTime"
-              label="结束时间"
+              label="截止时间"
               type="datetime-local"
               variant="outlined"
               density="compact"
@@ -198,73 +259,106 @@ fetchLogs(true)
             ></v-text-field>
           </v-col>
           <v-col cols="12" md="2">
-            <v-text-field
-              v-model="filters.operatorId"
-              label="操作人ID"
-              type="number"
-              variant="outlined"
-              density="compact"
-              hide-details
-              clearable
-            ></v-text-field>
-          </v-col>
-          <v-col cols="12" md="2">
-            <v-select
-              v-model="filters.operationLevel"
-              label="操作级别"
-              :items="operationLevels"
-              item-title="text"
-              item-value="value"
-              variant="outlined"
-              density="compact"
-              hide-details
-              clearable
-            ></v-select>
-          </v-col>
-          <v-col cols="12" md="2">
-            <v-btn
-              variant="tonal"
-              color="primary"
-              :loading="loading"
-              block
-              @click="fetchLogs(true)"
-            >
+            <v-btn variant="tonal" color="primary" :loading="loading" block @click="fetchLogs(true)">
               <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
               查询
             </v-btn>
           </v-col>
         </v-row>
 
-        <v-row dense class="mt-2">
-          <v-col cols="12" md="3">
-            <v-text-field
-              v-model="filters.module"
-              label="模块"
-              variant="outlined"
-              density="compact"
-              hide-details
-              clearable
-            ></v-text-field>
-          </v-col>
-          <v-col cols="12" md="3">
-            <v-text-field
-              v-model="filters.operationType"
-              label="操作类型"
-              variant="outlined"
-              density="compact"
-              hide-details
-              clearable
-            ></v-text-field>
-          </v-col>
-          <v-col cols="12" md="3">
-            <v-text-field
+        <!-- 模式2：按类型 -->
+        <v-row v-if="queryMode === 'type'" dense>
+          <v-col cols="12" md="2">
+            <v-select
               v-model="filters.targetType"
               label="目标类型"
+              :items="targetTypeOptions"
+              item-title="text"
+              item-value="value"
+              variant="outlined"
+              density="compact"
+              hide-details
+            ></v-select>
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-text-field
+              v-model="filters.endTime"
+              label="截止时间"
+              type="datetime-local"
               variant="outlined"
               density="compact"
               hide-details
               clearable
             ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-btn variant="tonal" color="primary" :loading="loading" block @click="fetchLogs(true)">
+              <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+              查询
+            </v-btn>
+          </v-col>
+        </v-row>
+
+        <!-- 模式3：按操作人 -->
+        <v-row v-if="queryMode === 'operator'" dense>
+          <v-col cols="12" md="2">
+            <v-text-field
+              v-model.number="filters.operatorId"
+              label="操作人ID"
+              type="number"
+              variant="outlined"
+              density="compact"
+              hide-details
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-text-field
+              v-model="filters.endTime"
+              label="截止时间"
+              type="datetime-local"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-btn variant="tonal" color="primary" :loading="loading" block @click="fetchLogs(true)">
+              <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+              查询
+            </v-btn>
+          </v-col>
+        </v-row>
+
+        <!-- 模式4：按对象 -->
+        <v-row v-if="queryMode === 'object'" dense>
+          <v-col cols="12" md="2">
+            <v-select
+              v-model="filters.targetType"
+              label="目标类型"
+              :items="targetTypeOptions"
+              item-title="text"
+              item-value="value"
+              variant="outlined"
+              density="compact"
+              hide-details
+            ></v-select>
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-text-field
+              v-model.number="filters.targetId"
+              label="目标ID"
+              type="number"
+              variant="outlined"
+              density="compact"
+              hide-details
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-btn variant="tonal" color="primary" :loading="loading" block @click="fetchLogs(true)">
+              <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+              查询
+            </v-btn>
           </v-col>
         </v-row>
       </v-card-text>
@@ -272,10 +366,6 @@ fetchLogs(true)
 
     <!-- 日志列表 -->
     <v-card flat class="border">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-clipboard-text" size="18" class="mr-2"></v-icon>
-        操作日志列表
-      </v-card-title>
       <v-card-text>
         <!-- 空状态 -->
         <div v-if="logs.length === 0 && !loading" class="text-center py-12">

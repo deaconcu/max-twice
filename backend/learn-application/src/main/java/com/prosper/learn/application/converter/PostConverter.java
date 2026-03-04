@@ -87,6 +87,7 @@ public interface PostConverter {
     @Mapping(target = "state")
     @Mapping(target = "reason")
     @Mapping(target = "createdAt")
+    @Mapping(target = "score")
     PostAdminDTO toAdminDTO(PostDO postDO);
 
     /**

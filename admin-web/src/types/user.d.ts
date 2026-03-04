@@ -32,6 +32,25 @@ export interface User {
   updatedAt?: string // 更新时间
   followed?: number // 关注人数
   isFollowing?: boolean // 是否已关注
+  lastViewedMessageId?: number // 最后查看的消息ID
+  reviewCardCount?: number // 复习卡片数量
+
+  // 统计字段
+  viewCount?: number // 总浏览量
+  twiceCount?: number // 总两次能懂点赞数
+  likeCount?: number // 总有用点赞数
+  commentCount?: number // 总评论数
+  learningCourseCount?: number // 正在学习课程数
+  completedCourseCount?: number // 已完成课程数
+  inProgressProfessionCount?: number // 正在学习职业数
+  completedProfessionCount?: number // 已完成职业数
+  followingUserCount?: number // 关注用户数
+  followingCourseCount?: number // 关注课程数
+  followingProfessionCount?: number // 关注职业数
+  createdArticleCount?: number // 创建文章数
+  createdIndexCount?: number // 创建目录数
+  createdRoadmapCount?: number // 创建路线图数
+  createdCardDeckCount?: number // 创建卡片组数
 }
 
 /**

@@ -2,6 +2,8 @@ package com.prosper.learn.application.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.analytics.dto.ContentStatsDTO;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
+import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.NodeConverter;
@@ -85,6 +87,7 @@ public class PostService {
     private final UpvoteDataService upvoteDataService;
     private final UserDataService userDataService;
     private final ContentStatsDomainService contentStatsDomainService;
+    private final ContentStatsDataService contentStatsDataService;
     private final BookmarkService bookmarkService;
 
     // 事件发布
@@ -470,7 +473,7 @@ public class PostService {
     }
 
     /**
-     * 批量填充帖子的 node 和 creator 信息
+     * 批量填充帖子的 node、creator 和统计信息
      */
     private void fillNodeInfo(List<PostDO> postDOList, List<PostAdminDTO> items) {
         // 收集 nodeId
@@ -494,6 +497,14 @@ public class PostService {
         Map<Long, UserDO> creatorMap = creatorIds.isEmpty() ? Map.of() :
                 userDataService.getMapByIds(creatorIds);
 
+        // 批量查询统计数据
+        List<Long> postIds = items.stream()
+                .map(PostAdminDTO::getId)
+                .collect(Collectors.toList());
+        Map<Long, ContentStatsDO> statsMap = postIds.isEmpty() ? Map.of() :
+                contentStatsDataService.batchGetByContentIds(ContentType.post, postIds).stream()
+                        .collect(Collectors.toMap(ContentStatsDO::getContentId, s -> s));
+
         // 创建 postDO 映射
         Map<Long, PostDO> postDOMap = postDOList.stream()
                 .collect(Collectors.toMap(PostDO::getId, p -> p));
@@ -516,6 +527,26 @@ public class PostService {
                         dto.setCreator(userConverter.toBriefDTO(userDO));
                     }
                 }
+            }
+
+            // 填充统计数据
+            ContentStatsDO stats = statsMap.get(dto.getId());
+            if (stats != null) {
+                dto.setViewCount(stats.getViewCount() != null ? stats.getViewCount() : 0);
+                dto.setTwiceCount(stats.getTwiceCount() != null ? stats.getTwiceCount() : 0);
+                dto.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
+                dto.setCommentCount(stats.getCommentCount() != null ? stats.getCommentCount() : 0);
+                dto.setBookmarkCount(stats.getBookmarkCount() != null ? stats.getBookmarkCount() : 0);
+                dto.setCardDeckCount(stats.getCardDeckCount() != null ? stats.getCardDeckCount() : 0);
+                dto.setRejectCount(stats.getRejectCount() != null ? stats.getRejectCount() : 0);
+            } else {
+                dto.setViewCount(0);
+                dto.setTwiceCount(0);
+                dto.setLikeCount(0);
+                dto.setCommentCount(0);
+                dto.setBookmarkCount(0);
+                dto.setCardDeckCount(0);
+                dto.setRejectCount(0);
             }
         }
     }

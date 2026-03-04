@@ -1,7 +1,9 @@
 package com.prosper.learn.application.service;
 
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
+import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
+import com.prosper.learn.analytics.stats.mapper.UserStatsDO;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
@@ -49,6 +51,7 @@ public class UserService {
     private final CourseDataService courseDataService;
     private final FollowDataService followDataService;
     private final ContentStatsDataService contentStatsDataService;
+    private final UserStatsDataService userStatsDataService;
     private final UserLearningDomainService userLearningDomainService;
     private final EmailService emailService;
     private final MessageService messageService;
@@ -130,7 +133,7 @@ public class UserService {
     /**
      * 获取用户列表（管理员使用，返回完整信息）
      */
-    public KeysetPageResponse<UserProfileDTO> getUsers(Long offsetId, int pageSize) {
+    public KeysetPageResponse<UserAdminDTO> getUsers(Long offsetId, int pageSize) {
         List<UserDO> userDOList;
         if (offsetId == null) {
             userDOList = userDataService.getList(pageSize + 1);
@@ -143,7 +146,11 @@ public class UserService {
             userDOList = userDOList.subList(0, pageSize);
         }
 
-        List<UserProfileDTO> items = userConverter.toProfileDTO(userDOList);
+        List<UserAdminDTO> items = userConverter.toAdminDTO(userDOList);
+
+        // 批量填充统计数据
+        fillUserStats(items);
+
         Long nextLastId = hasMore && !items.isEmpty() ? items.get(items.size() - 1).getId() : null;
 
         return KeysetPageResponse.of(items, hasMore, null, nextLastId);
@@ -152,7 +159,7 @@ public class UserService {
     /**
      * 更新用户状态（管理员操作）
      */
-    public UserProfileDTO updateUserState(Long userId, boolean ban, UserDO operator) {
+    public UserAdminDTO updateUserState(Long userId, boolean ban, UserDO operator) {
         // 委托给 DomainService
         userDomainService.updateUserState(userId, ban);
 
@@ -160,7 +167,31 @@ public class UserService {
 
         // 查询并返回 DTO
         UserDO userDO = userDataService.getById(userId);
-        return userConverter.toProfileDTO(userDO);
+        UserAdminDTO dto = userConverter.toAdminDTO(userDO);
+        fillUserStats(List.of(dto));
+        return dto;
+    }
+
+    /**
+     * 获取用户详情（管理员使用）
+     */
+    public UserAdminDTO getUserForAdmin(Long userId) {
+        validateUserId(userId);
+        UserDO userDO = userDataService.getById(userId);
+        UserAdminDTO dto = userConverter.toAdminDTO(userDO);
+        fillUserStats(List.of(dto));
+        return dto;
+    }
+
+    /**
+     * 搜索用户（管理员使用）
+     */
+    public List<UserAdminDTO> searchUsersForAdmin(String name) {
+        validateSearchName(name);
+        List<UserDO> userDOList = userDataService.searchByName(name);
+        List<UserAdminDTO> items = userConverter.toAdminDTO(userDOList);
+        fillUserStats(items);
+        return items;
     }
 
     /**
@@ -168,7 +199,7 @@ public class UserService {
      * 只有管理员可以修改用户角色
      * 只有超级管理员可以设置超级管理员
      */
-    public UserProfileDTO setUserRole(Long userId, Integer roleCode, UserDO operator) {
+    public UserAdminDTO setUserRole(Long userId, Integer roleCode, UserDO operator) {
         validateUserId(userId);
 
         // 委托给 DomainService，传入操作者信息
@@ -180,7 +211,9 @@ public class UserService {
 
         // 查询并返回 DTO
         UserDO userDO = userDataService.getById(userId);
-        return userConverter.toProfileDTO(userDO);
+        UserAdminDTO dto = userConverter.toAdminDTO(userDO);
+        fillUserStats(List.of(dto));
+        return dto;
     }
 
     /**
@@ -255,31 +288,6 @@ public class UserService {
         }
 
         log.info("用户注册成功: {}", email);
-    }
-
-    /**
-     * 管理员创建虚拟用户（跳过邮箱验证）
-     * 用于内容生成工具
-     */
-    @Transactional
-    public UserBriefDTO createVirtualUser(String username, String email, String password) {
-        validateEmailFormat(email);
-        validatePassword(password);
-
-        // 创建用户
-        UserDO user = userDomainService.createUser(email, password);
-
-        // 设置用户名
-        updateCurrentUser(user.getId(), username, null);
-
-        // 直接激活用户，跳过邮箱验证
-        userDataService.updateEmailValidated(user.getId(), true);
-
-        log.info("管理员创建虚拟用户成功: username={}, email={}", username, email);
-
-        // 重新获取更新后的用户
-        user = userDataService.getById(user.getId());
-        return toBriefDTO(user);
     }
 
     /**
@@ -490,6 +498,42 @@ public class UserService {
 
 
     // ========== 私有辅助方法 ==========
+
+    /**
+     * 批量填充用户统计数据
+     */
+    private void fillUserStats(List<UserAdminDTO> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+
+        List<Long> userIds = items.stream()
+                .map(UserAdminDTO::getId)
+                .collect(Collectors.toList());
+
+        Map<Long, UserStatsDO> statsMap = userStatsDataService.batchGetByUserIds(userIds);
+
+        for (UserAdminDTO dto : items) {
+            UserStatsDO stats = statsMap.get(dto.getId());
+            if (stats != null) {
+                dto.setViewCount(stats.getViewCount());
+                dto.setTwiceCount(stats.getTwiceCount());
+                dto.setLikeCount(stats.getLikeCount());
+                dto.setCommentCount(stats.getCommentCount());
+                dto.setLearningCourseCount(stats.getLearningCourseCount());
+                dto.setCompletedCourseCount(stats.getCompletedCourseCount());
+                dto.setInProgressProfessionCount(stats.getInProgressProfessionCount());
+                dto.setCompletedProfessionCount(stats.getCompletedProfessionCount());
+                dto.setFollowingUserCount(stats.getFollowingUserCount());
+                dto.setFollowingCourseCount(stats.getFollowingCourseCount());
+                dto.setFollowingProfessionCount(stats.getFollowingProfessionCount());
+                dto.setCreatedArticleCount(stats.getCreatedArticleCount());
+                dto.setCreatedIndexCount(stats.getCreatedIndexCount());
+                dto.setCreatedRoadmapCount(stats.getCreatedRoadmapCount());
+                dto.setCreatedCardDeckCount(stats.getCreatedCardDeckCount());
+            }
+        }
+    }
 
     private void validateUserId(Long userId) {
         if (userId == null || userId <= 0) {

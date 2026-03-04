@@ -16,6 +16,8 @@ export interface Profession {
   subCategory?: number // 子分类
   icon?: string // 图标
   learnerCount?: number // 学习人数
+  roadmapCount?: number // 路线图数量
+  bookmarkCount?: number // 收藏数
   state?: number // 状态
   reason?: string // 拒绝/屏蔽原因
   creator?: {

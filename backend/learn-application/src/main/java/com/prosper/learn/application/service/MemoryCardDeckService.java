@@ -1,6 +1,8 @@
 package com.prosper.learn.application.service;
 
 
+import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.MemoryCardDeckConverter;
 import com.prosper.learn.application.converter.UserConverter;
@@ -77,6 +79,7 @@ public class MemoryCardDeckService {
     private final ScoreCalculationService scoreCalculationService;
     private final PostQueueService postQueueService;
     private final BookmarkService bookmarkService;
+    private final ContentStatsDataService contentStatsDataService;
 
     // 事件发布
     private final ApplicationEventPublisher eventPublisher;
@@ -520,13 +523,29 @@ public class MemoryCardDeckService {
         Map<Long, MemoryCardDeckDO> deckDOMap = deckList.stream()
                 .collect(Collectors.toMap(MemoryCardDeckDO::getId, d -> d));
 
-        // 填充信息
+        // 填充 creator 信息
         for (DeckAdminDTO dto : items) {
             MemoryCardDeckDO deckDO = deckDOMap.get(dto.getId());
             if (deckDO != null && deckDO.getCreatorId() != null) {
                 UserDO userDO = creatorMap.get(deckDO.getCreatorId());
                 if (userDO != null) {
                     dto.setCreator(userConverter.toBriefDTO(userDO));
+                }
+            }
+        }
+
+        // 批量填充统计数据
+        List<Long> deckIds = deckList.stream().map(MemoryCardDeckDO::getId).collect(Collectors.toList());
+        if (!deckIds.isEmpty()) {
+            List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(Enums.ContentType.memory_card_deck, deckIds);
+            Map<Long, ContentStatsDO> statsMap = statsList.stream()
+                    .collect(Collectors.toMap(ContentStatsDO::getContentId, s -> s));
+            for (DeckAdminDTO dto : items) {
+                ContentStatsDO stats = statsMap.get(dto.getId());
+                if (stats != null) {
+                    dto.setViewCount(stats.getViewCount());
+                    dto.setBookmarkCount(stats.getBookmarkCount());
+                    dto.setRejectCount(stats.getRejectCount());
                 }
             }
         }

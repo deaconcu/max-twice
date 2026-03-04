@@ -3,6 +3,8 @@ package com.prosper.learn.application.listener;
 import com.prosper.learn.application.service.ScoreCalculationService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.content.roadmap.RoadmapDO;
+import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.interaction.comment.CommentDO;
 import com.prosper.learn.interaction.comment.CommentDataService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
@@ -33,6 +35,7 @@ public class ScoreEventListener {
 
     private final ScoreCalculationService scoreCalculationService;
     private final PostDataService postDataService;
+    private final RoadmapDataService roadmapDataService;
     private final CommentDataService commentDataService;
 
     // ==================== 帖子点赞事件 ====================
@@ -114,6 +117,38 @@ public class ScoreEventListener {
                     event.getContentId(), event.getFromType(), event.getToType());
             } catch (Exception e) {
                 log.error("点赞类型切换分数计算失败: postId={}", event.getContentId(), e);
+            }
+        }
+    }
+
+    // ==================== 路线图点赞事件 ====================
+
+    /**
+     * 路线图点赞 - 重新计算分数
+     */
+    @EventListener
+    public void onRoadmapLikeUpvoted(LikeUpvotedEvent<RoadmapDO> event) {
+        if (event.getContentType() == ContentType.roadmap) {
+            try {
+                scoreCalculationService.checkAndUpdateRoadmapScore(event.getContentObject());
+                log.debug("重新计算路线图分数: roadmapId={}", event.getContentId());
+            } catch (Exception e) {
+                log.error("路线图点赞分数计算失败: roadmapId={}", event.getContentId(), e);
+            }
+        }
+    }
+
+    /**
+     * 取消路线图点赞 - 重新计算分数
+     */
+    @EventListener
+    public void onRoadmapLikeUpvoteCancelled(LikeUpvoteCancelledEvent<RoadmapDO> event) {
+        if (event.getContentType() == ContentType.roadmap) {
+            try {
+                scoreCalculationService.checkAndUpdateRoadmapScore(event.getContentObject());
+                log.debug("重新计算路线图分数（取消点赞）: roadmapId={}", event.getContentId());
+            } catch (Exception e) {
+                log.error("取消路线图点赞分数计算失败: roadmapId={}", event.getContentId(), e);
             }
         }
     }

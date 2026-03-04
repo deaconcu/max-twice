@@ -508,9 +508,9 @@ onBeforeUnmount(() => {
         :key="comment.id"
         :data-comment-id="comment.id"
         class="comment-item mb-2"
-        :class="{ 'highlighted': highlightedCommentId === comment.id }"
       >
-        <div class="d-flex">
+        <div class="comment-content" :class="{ 'highlighted': highlightedCommentId === comment.id }">
+          <div class="d-flex">
           <UserAvatar
             :name="comment.creator?.name || '匿名用户'"
             :avatar-url="comment.creator?.avatar"
@@ -593,9 +593,13 @@ onBeforeUnmount(() => {
                 </v-btn>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+      <!-- comment-content 结束 -->
 
-            <!-- 子评论列表 -->
-            <div v-if="comment.children && comment.children.length > 0" class="sub-comments mt-3">
+      <!-- 子评论列表 -->
+      <div v-if="comment.children && comment.children.length > 0" class="sub-comments mt-3 ms-10">
               <!-- 子评论上方省略号 -->
               <div v-if="comment.hasMoreRepliesBefore" class="sub-comments-ellipsis mb-4">
                 <v-icon icon="mdi-dots-horizontal" color="grey" size="20"></v-icon>
@@ -708,9 +712,8 @@ onBeforeUnmount(() => {
                 查看更多回复
               </v-btn>
             </div>
-          </div>
-        </div>
       </div>
+      <!-- comment-item 结束 -->
 
       <!-- 加载更多指示器 -->
       <div v-if="hasMore" ref="loadMoreTrigger" class="text-center mt-6 py-4">
@@ -745,12 +748,11 @@ onBeforeUnmount(() => {
   padding-bottom: 0;
 }
 
-.comment-item.highlighted {
-  background-color: #fff8e1;
-  border-radius: 8px;
-  padding: 8px;
-  margin: -8px;
-  margin-bottom: 2px;
+.comment-content.highlighted {
+  border-left: 4px solid rgb(var(--v-theme-primary));
+  padding-left: 12px;
+  margin-left: -16px;
+  animation: highlight-pulse 1.5s ease-in-out 3;
 }
 
 .sub-comments {
@@ -771,11 +773,19 @@ onBeforeUnmount(() => {
 }
 
 .sub-comment-item.highlighted {
-  background-color: #fff8e1;
-  border-radius: 8px;
-  padding: 8px;
-  margin: -8px;
-  margin-bottom: 2px;
+  border-left: 4px solid rgb(var(--v-theme-primary));
+  padding-left: 12px;
+  margin-left: -16px;
+  animation: highlight-pulse 1.5s ease-in-out 3;
+}
+
+@keyframes highlight-pulse {
+  0%, 100% {
+    border-left-color: rgb(var(--v-theme-primary));
+  }
+  50% {
+    border-left-color: transparent;
+  }
 }
 
 .view-all-hint {

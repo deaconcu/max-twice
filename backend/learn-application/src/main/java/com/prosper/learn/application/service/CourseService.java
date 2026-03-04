@@ -473,7 +473,7 @@ public class CourseService {
     }
 
     // 管理后台：根据状态获取课程列表（返回分页响应）
-    public KeysetPageResponse<CourseDetailDTO> listByState(ContentState state, Long lastId) {
+    public KeysetPageResponse<CourseAdminDTO> listByState(ContentState state, Long lastId) {
         Byte stateValue = state != null ? state.value() : null;
         List<CourseDO> courseDOList = courseDataService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE + 1);
 
@@ -482,9 +482,7 @@ public class CourseService {
             courseDOList = courseDOList.subList(0, DEFAULT_PAGE_SIZE);
         }
 
-        List<CourseDetailDTO> dtoList = courseDOList.stream()
-                .map(this::toDetailDTO)
-                .collect(Collectors.toList());
+        List<CourseAdminDTO> dtoList = courseConverter.toAdminDTO(courseDOList);
 
         // 填充 creator
         Set<Long> creatorIds = courseDOList.stream()
@@ -497,6 +495,40 @@ public class CourseService {
                 Long creatorId = courseDOList.get(i).getCreatorId();
                 if (creatorId != null) {
                     dtoList.get(i).setCreator(creatorMap.get(creatorId));
+                }
+            }
+        }
+
+        // 填充父课程信息
+        Set<Long> parentCourseIds = courseDOList.stream()
+                .map(CourseDO::getParentCourseId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+        if (!parentCourseIds.isEmpty()) {
+            Map<Long, CourseDO> parentCourseMap = courseDataService.getMapByIds(parentCourseIds);
+            for (int i = 0; i < dtoList.size(); i++) {
+                Long parentCourseId = courseDOList.get(i).getParentCourseId();
+                if (parentCourseId != null && parentCourseId > 0) {
+                    CourseDO parentCourse = parentCourseMap.get(parentCourseId);
+                    if (parentCourse != null) {
+                        dtoList.get(i).setParentCourse(courseConverter.toBriefDTO(parentCourse));
+                    }
+                }
+            }
+        }
+
+        // 填充统计数据
+        List<Long> courseIds = courseDOList.stream().map(CourseDO::getId).collect(Collectors.toList());
+        if (!courseIds.isEmpty()) {
+            List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(ContentType.course, courseIds);
+            Map<Long, ContentStatsDO> statsMap = statsList.stream()
+                    .collect(Collectors.toMap(ContentStatsDO::getContentId, s -> s));
+            for (CourseAdminDTO dto : dtoList) {
+                ContentStatsDO stats = statsMap.get(dto.getId());
+                if (stats != null) {
+                    dto.setBookmarkCount(stats.getBookmarkCount());
+                    dto.setCompletedUserCount(stats.getCompletedUserCount());
+                    dto.setLearnerCount(stats.getLearnerCount());
                 }
             }
         }

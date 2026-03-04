@@ -119,6 +119,7 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
     @Mapping(target = "cardCount")
+    @Mapping(target = "score")
     DeckAdminDTO toAdminDTO(MemoryCardDeckDO deckDO);
 
     @IterableMapping(qualifiedByName = "toAdminDTO")

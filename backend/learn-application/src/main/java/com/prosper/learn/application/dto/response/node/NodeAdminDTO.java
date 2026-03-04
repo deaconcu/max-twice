@@ -40,4 +40,17 @@ public class NodeAdminDTO {
     private String createdAt;
 
     private String updatedAt;
+
+    // 统计字段
+    private Integer postCount;
+
+    private Integer articleCount;
+
+    private Integer indexCount;
+
+    private Integer commentCount;
+
+    private Integer nodeReferenceCount;
+
+    private Integer cardDeckCount;
 }

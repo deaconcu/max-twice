@@ -69,23 +69,18 @@ public class OperationLogDomainService {
      * 查询操作日志（keyset分页）
      *
      * @param operatorId 操作人ID（可选）
-     * @param module 模块名称（可选）
-     * @param operationType 操作类型（可选）
-     * @param operationLevel 操作级别（可选）
      * @param targetType 目标类型（可选）
      * @param targetId 目标ID（可选）
-     * @param startTime 开始时间（可选）
-     * @param endTime 结束时间（可选）
+     * @param endTime 截止时间（可选，查询此时间之前的记录）
      * @param lastId 最后一条记录ID（分页游标）
      * @param limit 每页数量
      * @return 操作日志列表
      */
-    public List<OperationLogDO> queryLogs(Long operatorId, String module,
-                                          String operationType, Integer operationLevel,
+    public List<OperationLogDO> queryLogs(Long operatorId,
                                           String targetType, Long targetId,
-                                          LocalDateTime startTime, LocalDateTime endTime,
+                                          LocalDateTime endTime,
                                           Long lastId, int limit) {
-        return operationLogDataService.queryLogs(operatorId, module, operationType,
-                operationLevel, targetType, targetId, startTime, endTime, lastId, limit);
+        return operationLogDataService.queryLogs(operatorId,
+                targetType, targetId, endTime, lastId, limit);
     }
 }

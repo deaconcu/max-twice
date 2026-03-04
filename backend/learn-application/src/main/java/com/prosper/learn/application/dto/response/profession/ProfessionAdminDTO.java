@@ -1,4 +1,4 @@
-package com.prosper.learn.application.dto.response;
+package com.prosper.learn.application.dto.response.profession;
 
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
@@ -35,4 +35,9 @@ public class ProfessionAdminDTO {
     private String createdAt;
 
     private String updatedAt;
+
+    // 统计字段
+    private Integer roadmapCount;
+
+    private Integer bookmarkCount;
 }

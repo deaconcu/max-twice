@@ -22,7 +22,11 @@ export interface Post {
   likeCount?: number // "喜欢"票数
   commentCount?: number // 评论数量
   viewCount?: number // 浏览量
+  bookmarkCount?: number // 收藏数
+  cardDeckCount?: number // 卡片组数量
+  rejectCount?: number // 被拒次数
   state?: ContentState // 帖子状态
+  reason?: string // 拒绝/封禁原因
   score?: number // 帖子得分
   createdAt?: string // 创建时间
   updatedAt?: string // 更新时间
