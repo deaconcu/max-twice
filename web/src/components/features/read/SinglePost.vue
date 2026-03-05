@@ -6,7 +6,7 @@ let globalMermaidIdCounter = 0
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import renderMathInElement from 'katex/contrib/auto-render'
 import 'katex/dist/katex.min.css'
 import mermaid from 'mermaid'
@@ -47,6 +47,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 const router = useRouter()
+const route = useRoute()
 
 const isOverflow = ref(false)
 const contentRef = ref<HTMLElement | null>(null)
@@ -473,7 +474,7 @@ watch(
         <!-- 列表模式：使用 router-link 包裹，浏览器自动保存滚动位置 -->
         <router-link
           v-if="!detail && posting.id"
-          :to="{ path: '/read', query: { postId: String(posting.id) } }"
+          :to="{ path: '/read', query: { ...(route.query.courseId ? { courseId: route.query.courseId } : {}), ...(route.query.nodeId ? { nodeId: route.query.nodeId } : {}), postId: String(posting.id) } }"
           class="text-decoration-none d-block"
         >
           <div ref="contentRef" class="text-limited clickable-content cursor-pointer w-100">
