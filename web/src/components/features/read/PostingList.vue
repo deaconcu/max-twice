@@ -161,21 +161,24 @@ const completeButtonTooltip = () => {
 </script>
 
 <template>
-  <div class="posting-list">
-    <!-- 以下内容只在 list/comment/memoryCards 时显示 -->
-    <template v-if="tab === 'list' || tab === 'comment' || tab === 'memoryCards'">
-      <!-- 节点路径（面包屑） -->
-      <v-row
-        v-if="nodes && nodes.length > 0"
-        class="node-breadcrumb ma-0 text-grey text-body-2 pb-4"
-      >
-        <div class="breadcrumb-wrapper">
-          <template v-for="(item, index) in nodes" :key="item">
-            <span class="breadcrumb-text">{{ data.tocNodeInfos?.[item]?.name || item }}</span
-            ><v-icon v-if="index < nodes.length - 1" icon="mdi-chevron-right" class="breadcrumb-separator"></v-icon>
-          </template>
-        </div>
-      </v-row>
+  <div class="posting-list-wrapper">
+    <!-- 左侧内容区 -->
+    <div class="posting-list-content">
+      <div class="posting-list">
+        <!-- 以下内容只在 list/comment/memoryCards 时显示 -->
+        <template v-if="tab === 'list' || tab === 'comment' || tab === 'memoryCards'">
+          <!-- 节点路径（面包屑） -->
+          <v-row
+            v-if="nodes && nodes.length > 0"
+            class="node-breadcrumb ma-0 text-grey text-body-2 pb-4"
+          >
+            <div class="breadcrumb-wrapper">
+              <template v-for="(item, index) in nodes" :key="item">
+                <span class="breadcrumb-text">{{ data.tocNodeInfos?.[item]?.name || item }}</span
+                ><v-icon v-if="index < nodes.length - 1" icon="mdi-chevron-right" class="breadcrumb-separator"></v-icon>
+              </template>
+            </div>
+          </v-row>
 
       <!-- 节点头部 -->
       <div class="px-0 pb-1 ma-0 mb-0">
@@ -557,10 +560,42 @@ const completeButtonTooltip = () => {
       :node-id="currNodeId"
       @created="handleDeckCreated"
     />
+      </div>
+    </div>
+
+    <!-- 右侧工具栏 -->
+    <div class="right-sidebar">
+      <div class="sidebar-sticky">
+        <v-card class="sidebar-card no-border" rounded="lg">
+          <v-card-title class="pa-4 pa-md-4 text-body-1 text-md-h6">
+            关于本课程
+          </v-card-title>
+          <v-card-text class="pa-4 pa-md-4 pt-0">
+            <div class="info-item">
+              <div class="text-caption text-medium-emphasis mb-2">课程描述</div>
+              <div class="text-body-2">{{ data?.course?.description }}</div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.posting-list-wrapper {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+  width: 100%;
+}
+
+.posting-list-content {
+  flex: 1 1 750px;
+  max-width: 750px;
+  padding: 24px 26px 40px 26px;
+}
+
 .posting-list {
   width: 100%;
 }
@@ -618,6 +653,58 @@ const completeButtonTooltip = () => {
 
   .tabs-actions-bar .action-buttons .v-icon {
     margin-right: 0 !important;
+  }
+
+  .posting-list-content {
+    flex: 1 !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    padding: 16px 4px 32px 4px !important;
+    width: 100% !important;
+  }
+}
+
+/* 右侧边栏 */
+.right-sidebar {
+  flex: 0 1 360px;
+  max-width: 360px;
+  padding: 24px 0 24px 24px;
+}
+
+.sidebar-sticky {
+  position: sticky;
+  top: 110px;
+  max-height: calc(100vh - 125px);
+  transition:
+    top 0.3s ease,
+    max-height 0.3s ease;
+}
+
+.sidebar-card {
+  background-color: white;
+  border: 1px solid rgb(var(--v-theme-border));
+}
+
+.sidebar-card .v-card-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.info-item {
+  padding: 8px 0;
+}
+
+/* 中等屏幕：隐藏右侧栏 */
+@media (max-width: 1700px) {
+  .right-sidebar {
+    display: none;
+  }
+}
+
+/* 小屏幕 */
+@media (max-width: 1280px) and (min-width: 751px) {
+  .posting-list-content {
+    padding: 24px 0 40px 0 !important;
   }
 }
 </style>

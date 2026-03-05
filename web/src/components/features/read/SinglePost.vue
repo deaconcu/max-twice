@@ -474,7 +474,7 @@ watch(
         <!-- 列表模式：使用 router-link 包裹，浏览器自动保存滚动位置 -->
         <router-link
           v-if="!detail && posting.id"
-          :to="{ path: '/read', query: { ...(route.query.courseId ? { courseId: route.query.courseId } : {}), ...(route.query.nodeId ? { nodeId: route.query.nodeId } : {}), postId: String(posting.id) } }"
+          :to="{ path: '/read', query: { ...(route.query.courseId ? { courseId: route.query.courseId } : {}), ...(route.query.nodeId ? { nodeId: route.query.nodeId } : {}), ...(route.query.path ? { path: route.query.path } : {}), postId: String(posting.id) } }"
           class="text-decoration-none d-block"
         >
           <div ref="contentRef" class="text-limited clickable-content cursor-pointer w-100">

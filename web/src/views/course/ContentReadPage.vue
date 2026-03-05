@@ -223,122 +223,38 @@
         <div class="center-right-container">
           <!-- 中间+右侧容器 - 居中 -->
           <div class="center-right-wrapper">
-            <!-- 中间内容区 - 固定宽度居中 -->
+            <!-- 中间内容区 -->
             <div class="center-content">
-              <!-- 加载状态 - 只在非首次加载时显示在内容区 -->
-              <LoadingSpinner v-if="dataLoading && !isInitialLoad" />
-
-              <!-- PostingList 组件 -->
-              <PostingList
-                v-else-if="data"
-                :data="data"
-                :nodes="nodes"
-                :curr-node-id="currNodeId"
-                :curr-node="lastPathNode"
-                :path-text="pathText"
-                :is-learning="isLearning"
-                :loading-more="loadingMore"
-                :has-more="hasMore"
-                :target-comment-id="targetCommentId"
-                :target-sub-comment-id="targetSubCommentId"
-                @switch-tab="handleTabSwitch"
-                @view-deck="handleViewDeck"
-                @load-data="loadData"
-                @mark-node-completed="handleNodeCompleted"
+              <!-- 详情模式：有 postId 时显示 PostDetail -->
+              <PostDetail
+                v-if="route.query.postId"
+                ref="postDetailRef"
+                :show-node-header="true"
+                :show-right-sidebar="true"
               />
-            </div>
 
-            <!-- 右侧工具栏 -->
-            <div v-if="data" class="right-sidebar">
-              <div class="sidebar-sticky">
-                <!-- 文章详情页：显示答疑助手和记忆卡片组侧边栏 -->
-                <template
-                  v-if="
-                    currentTab !== 'list' &&
-                    currentTab !== 'comment' &&
-                    currentTab !== 'memoryCards' &&
-                    currentPosting
-                  "
-                >
-                  <!-- AI答疑助手 -->
-                  <v-card class="sidebar-card mb-4 mb-md-4 no-border" rounded="lg">
-                    <v-card-title class="pa-4 pa-md-4">
-                      <div class="d-flex align-center justify-space-between w-100">
-                        <div class="d-flex align-center">
-                          <v-icon
-                            icon="mdi-robot-excited"
-                            color="primary"
-                            :size="$vuetify.display.mobile ? 20 : 24"
-                            class="mr-2"
-                          ></v-icon>
-                          <span class="text-body-1 text-md-h6">答疑助手</span>
-                        </div>
-                        <v-btn
-                          :icon="isAssistantExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                          variant="text"
-                          color="grey-darken-1"
-                          :size="$vuetify.display.mobile ? 'x-small' : 'x-small'"
-                          @click="isAssistantExpanded = !isAssistantExpanded"
-                        ></v-btn>
-                      </div>
-                    </v-card-title>
+              <!-- 列表模式：用 v-show 保持组件状态和滚动位置 -->
+              <div v-show="!route.query.postId">
+                <!-- 加载状态 - 只在非首次加载时显示在内容区 -->
+                <LoadingSpinner v-if="dataLoading && !isInitialLoad" />
 
-                    <v-expand-transition>
-                      <v-card-text v-show="isAssistantExpanded" class="pa-4 pa-md-4 pt-0">
-                        <div class="text-body-2 text-grey-darken-2 mb-3">
-                          <div class="font-weight-bold w-100">用法：</div>
-                          <div class="mt-2">1）在文章中选中您不太理解的内容</div>
-                          <div>2）在左侧竖线处拖动手柄，调整上下文范围</div>
-                          <div>3）点击面板中的"复制"，将引用和问题复制到剪贴板</div>
-                          <div>4）用复制的内容询问你常用的 AI 引擎</div>
-                        </div>
-
-                        <div class="d-flex flex-wrap mt-5" style="gap: 8px">
-                          <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">
-                            常用 AI 引擎：
-                          </div>
-                          <v-chip
-                            v-for="e in aiEngines"
-                            :key="e.name"
-                            :href="e.href"
-                            target="_blank"
-                            rel="noopener"
-                            :color="e.color"
-                            variant="tonal"
-                            rounded="lg"
-                            :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                            class="engine-link text-caption text-md-body-2"
-                            :prepend-icon="e.icon"
-                            :text="e.name"
-                          />
-                        </div>
-                      </v-card-text>
-                    </v-expand-transition>
-                  </v-card>
-
-                  <!-- 记忆卡片组侧边栏 -->
-                  <MemoryCardSidebar
-                    :post-id="currentPosting.id"
-                    class="mb-4 mb-md-4"
-                    @create-deck="handleCreateDeck"
-                    @view-deck="handleViewDeck"
-                  />
-                </template>
-
-                <!-- 其他页面：显示课程信息 -->
-                <template v-else>
-                  <v-card class="sidebar-card no-border" rounded="lg">
-                    <v-card-title class="pa-4 pa-md-4 text-body-1 text-md-h6">
-                      关于本课程
-                    </v-card-title>
-                    <v-card-text class="pa-4 pa-md-4 pt-0">
-                      <div class="info-item">
-                        <div class="text-caption text-medium-emphasis mb-2">课程描述</div>
-                        <div class="text-body-2">{{ data?.course?.description }}</div>
-                      </div>
-                    </v-card-text>
-                  </v-card>
-                </template>
+                <!-- PostingList 组件 -->
+                <PostingList
+                  v-else-if="data"
+                  :data="data"
+                  :nodes="nodes"
+                  :curr-node-id="currNodeId"
+                  :curr-node="lastPathNode"
+                  :path-text="pathText"
+                  :is-learning="isLearning"
+                  :loading-more="loadingMore"
+                  :has-more="hasMore"
+                  :target-comment-id="targetCommentId"
+                  :target-sub-comment-id="targetSubCommentId"
+                  @view-deck="handleViewDeck"
+                  @load-data="loadData"
+                  @mark-node-completed="handleNodeCompleted"
+                />
               </div>
             </div>
           </div>
@@ -401,9 +317,8 @@ import CourseHeader from '@/components/features/read/CourseHeader.vue'
 import TocSidebar from '@/components/features/read/TocSidebar.vue'
 import TreeNode from '@/components/common/TreeNode.vue'
 import PostingList from '@/components/features/read/PostingList.vue'
+import PostDetail from '@/components/features/read/PostDetail.vue'
 import ConfigContentsDialog from '@/components/features/read/ConfigContentsDialog.vue'
-import CreateDeckDialog from '@/components/features/read/CreateDeckDialog.vue'
-import MemoryCardSidebar from '@/components/features/read/MemoryCardSidebar.vue'
 import DeckDetailDialog from '@/components/features/read/DeckDetailDialog.vue'
 import { pageApi, memoryApi, postApi, progressApi } from '@/api'
 import type { ReadResponse } from '@/api/modules/page'
@@ -430,11 +345,9 @@ const showFixedBar = ref(false)
 const isLearning = ref(false)
 const openContentsList = ref(true)
 const configContents = ref(false)
-const showCreateDeckDialog = ref(false)
 const currContentsIndex = ref(0)
 const isAssistantExpanded = ref(true)
-const currentTab = ref('list')
-const currentPosting = ref(null)
+const postDetailRef = ref<InstanceType<typeof PostDetail> | null>(null)
 const selectedDeck = ref<MemoryCardDeck | null>(null)
 const showDeckDetailDialog = ref(false)
 const loading = ref(false)
@@ -1164,56 +1077,10 @@ onUnmounted(() => {
   max-width: 100%;
 }
 
-/* 中间内容区 - 固定宽度 */
+/* 中间内容区 - 子组件自己管理布局 */
 .center-content {
-  flex: 1 1 750px;
-  max-width: 750px;
-  padding: 6px 26px 40px 26px;
-}
-
-@media (max-width: 750px) {
-  .center-content {
-    padding: 6px 20px 32px 20px;
-  }
-}
-
-/* 右侧边栏 */
-.right-sidebar {
-  flex: 0 1 360px;
-  max-width: 360px;
-  padding: 6px 0 24px 24px;
-}
-
-.sidebar-sticky {
-  position: sticky;
-  top: 110px;
-  max-height: calc(100vh - 125px);
-  transition:
-    top 0.3s ease,
-    max-height 0.3s ease;
-}
-
-.read-page:has(.fixed-top-bar.show) .sidebar-sticky {
-  top: 109px;
-  max-height: calc(100vh - 124px);
-}
-
-.sidebar-card {
-  background-color: white;
-  border: 1px solid rgb(var(--v-theme-border));
-}
-
-.sidebar-card .v-card-title {
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-.engine-link {
-  text-decoration: none !important;
-}
-
-.info-item {
-  padding: 8px 0;
+  flex: 1;
+  min-width: 0;
 }
 
 /* 移动端目录抽屉样式 */
@@ -1296,10 +1163,6 @@ onUnmounted(() => {
   .center-right-wrapper {
     justify-content: center;
   }
-
-  .center-content {
-    padding: 0 !important;
-  }
 }
 
 /* 超小屏幕：内容区可以缩小到屏幕宽度 */
@@ -1324,14 +1187,6 @@ onUnmounted(() => {
   .center-right-wrapper {
     width: 100% !important;
     max-width: none !important;
-  }
-
-  .center-content {
-    flex: 1 !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    padding: 0 4px 40px 4px !important;
-    width: 100% !important;
   }
 }
 </style>

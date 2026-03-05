@@ -14,12 +14,17 @@ const route = useRoute()
 
 // 根据查询参数判断加载哪个页面组件
 const currentComponent = computed(() => {
-  // 帖子详情模式
-  if (route.query.postId) {
+  // 有 courseId 或 nodeId 时，使用带目录的 ContentReadPage
+  if (route.query.courseId || route.query.nodeId) {
+    return ContentReadPage
+  }
+
+  // 只有 postId 或 commentId 时，使用纯文章详情页
+  if (route.query.postId || route.query.commentId) {
     return PostDetailPage
   }
 
-  // 课程/节点模式（统一使用 ContentReadPage）
+  // 默认使用 ContentReadPage
   return ContentReadPage
 })
 </script>
