@@ -8,10 +8,6 @@ import { UserRole } from '@/enums'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
-// 详情对话框
-const detailDialog = ref(false)
-const selectedLog = ref<OperationLogDTO | null>(null)
-
 // 筛选条件
 const filters = reactive<Omit<OperationLogQueryRequest, 'lastId' | 'limit'>>({
   operatorId: undefined,
@@ -54,14 +50,33 @@ const {
 } = useFetchForScroll<OperationLogDTO>({
   fetchFn: (params) => {
     const query: OperationLogQueryRequest = {
-      ...filters,
       lastId: params.lastId ?? undefined,
       limit: 20,
     }
 
-    // 清空空字符串值
-    if (query.targetType === '') delete query.targetType
-    if (query.endTime === '') delete query.endTime
+    // 格式化 endTime: 2026-03-01T23:25 -> 2026-03-01 23:25:00
+    const formatEndTime = (time: string): string => {
+      return time.replace('T', ' ') + ':00'
+    }
+
+    // 根据查询模式添加不同参数
+    switch (queryMode.value) {
+      case 'time':
+        if (filters.endTime) query.endTime = formatEndTime(filters.endTime)
+        break
+      case 'type':
+        if (filters.targetType) query.targetType = filters.targetType
+        if (filters.endTime) query.endTime = formatEndTime(filters.endTime)
+        break
+      case 'operator':
+        if (filters.operatorId) query.operatorId = filters.operatorId
+        if (filters.endTime) query.endTime = formatEndTime(filters.endTime)
+        break
+      case 'object':
+        if (filters.targetType) query.targetType = filters.targetType
+        if (filters.targetId !== undefined && filters.targetId !== null) query.targetId = filters.targetId
+        break
+    }
 
     return adminApi.getOperationLogs(query)
   },
@@ -119,6 +134,10 @@ const switchMode = (mode: 'time' | 'type' | 'operator' | 'object') => {
   filters.targetId = undefined
   filters.endTime = ''
   resetLogs()
+  // 时间浏览模式默认加载一页
+  if (mode === 'time') {
+    loadMoreLogs({ done: () => {} } as never)
+  }
 }
 
 /**
@@ -158,6 +177,8 @@ const getLevelText = (level: OperationLevel): string => {
  */
 const getRoleText = (role: UserRole): string => {
   switch (role) {
+    case UserRole.SUPER_ADMIN:
+      return '超级管理员'
     case UserRole.ADMIN:
       return '管理员'
     case UserRole.MODERATOR:
@@ -212,14 +233,6 @@ const loadMore = async ({
   }
 }
 
-/**
- * 显示详情对话框
- */
-const showDetail = (log: OperationLogDTO): void => {
-  selectedLog.value = log
-  detailDialog.value = true
-}
-
 // 初始加载
 fetchLogs(true)
 </script>
@@ -247,7 +260,7 @@ fetchLogs(true)
 
         <!-- 模式1：时间浏览 -->
         <v-row v-if="queryMode === 'time'" dense>
-          <v-col cols="12" md="2">
+          <v-col cols="auto">
             <v-text-field
               v-model="filters.endTime"
               label="截止时间"
@@ -256,10 +269,11 @@ fetchLogs(true)
               density="compact"
               hide-details
               clearable
+              style="width: 200px"
             ></v-text-field>
           </v-col>
-          <v-col cols="12" md="2">
-            <v-btn variant="tonal" color="primary" :loading="loading" block @click="fetchLogs(true)">
+          <v-col cols="auto">
+            <v-btn variant="tonal" color="primary" :loading="loading" @click="fetchLogs(true)">
               <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
               查询
             </v-btn>
@@ -268,7 +282,7 @@ fetchLogs(true)
 
         <!-- 模式2：按类型 -->
         <v-row v-if="queryMode === 'type'" dense>
-          <v-col cols="12" md="2">
+          <v-col cols="auto">
             <v-select
               v-model="filters.targetType"
               label="目标类型"
@@ -278,9 +292,10 @@ fetchLogs(true)
               variant="outlined"
               density="compact"
               hide-details
+              style="width: 140px"
             ></v-select>
           </v-col>
-          <v-col cols="12" md="2">
+          <v-col cols="auto">
             <v-text-field
               v-model="filters.endTime"
               label="截止时间"
@@ -289,10 +304,11 @@ fetchLogs(true)
               density="compact"
               hide-details
               clearable
+              style="width: 200px"
             ></v-text-field>
           </v-col>
-          <v-col cols="12" md="2">
-            <v-btn variant="tonal" color="primary" :loading="loading" block @click="fetchLogs(true)">
+          <v-col cols="auto">
+            <v-btn variant="tonal" color="primary" :loading="loading" @click="fetchLogs(true)">
               <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
               查询
             </v-btn>
@@ -301,7 +317,7 @@ fetchLogs(true)
 
         <!-- 模式3：按操作人 -->
         <v-row v-if="queryMode === 'operator'" dense>
-          <v-col cols="12" md="2">
+          <v-col cols="auto">
             <v-text-field
               v-model.number="filters.operatorId"
               label="操作人ID"
@@ -309,9 +325,10 @@ fetchLogs(true)
               variant="outlined"
               density="compact"
               hide-details
+              style="width: 120px"
             ></v-text-field>
           </v-col>
-          <v-col cols="12" md="2">
+          <v-col cols="auto">
             <v-text-field
               v-model="filters.endTime"
               label="截止时间"
@@ -320,10 +337,11 @@ fetchLogs(true)
               density="compact"
               hide-details
               clearable
+              style="width: 200px"
             ></v-text-field>
           </v-col>
-          <v-col cols="12" md="2">
-            <v-btn variant="tonal" color="primary" :loading="loading" block @click="fetchLogs(true)">
+          <v-col cols="auto">
+            <v-btn variant="tonal" color="primary" :loading="loading" @click="fetchLogs(true)">
               <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
               查询
             </v-btn>
@@ -332,7 +350,7 @@ fetchLogs(true)
 
         <!-- 模式4：按对象 -->
         <v-row v-if="queryMode === 'object'" dense>
-          <v-col cols="12" md="2">
+          <v-col cols="auto">
             <v-select
               v-model="filters.targetType"
               label="目标类型"
@@ -342,9 +360,10 @@ fetchLogs(true)
               variant="outlined"
               density="compact"
               hide-details
+              style="width: 140px"
             ></v-select>
           </v-col>
-          <v-col cols="12" md="2">
+          <v-col cols="auto">
             <v-text-field
               v-model.number="filters.targetId"
               label="目标ID"
@@ -352,10 +371,11 @@ fetchLogs(true)
               variant="outlined"
               density="compact"
               hide-details
+              style="width: 120px"
             ></v-text-field>
           </v-col>
-          <v-col cols="12" md="2">
-            <v-btn variant="tonal" color="primary" :loading="loading" block @click="fetchLogs(true)">
+          <v-col cols="auto">
+            <v-btn variant="tonal" color="primary" :loading="loading" @click="fetchLogs(true)">
               <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
               查询
             </v-btn>
@@ -388,63 +408,53 @@ fetchLogs(true)
             }"
             class="list-item mb-3"
           >
-            <div class="d-flex align-start justify-space-between">
-              <!-- 左侧：操作信息 -->
-              <div class="flex-grow-1">
-                <div class="d-flex align-center mb-2">
-                  <v-chip
-                    :color="getLevelColor(log.operationLevel)"
-                    size="small"
-                    variant="flat"
-                    class="mr-2"
-                  >
-                    {{ getLevelText(log.operationLevel) }}
-                  </v-chip>
-                  <v-chip size="small" variant="tonal" color="grey" class="mr-2">
-                    {{ log.module }}
-                  </v-chip>
-                  <span class="text-subtitle-1 font-weight-bold text-grey-darken-3">
-                    {{ log.operationType }}
-                  </span>
-                </div>
+            <!-- 标题行 -->
+            <div class="d-flex align-center justify-space-between mb-2">
+              <div class="d-flex align-center">
+                <span class="text-body-1 font-weight-medium text-grey-darken-3 mr-2">
+                  {{ log.operationType }}
+                </span>
+                <v-chip
+                  :color="getLevelColor(log.operationLevel)"
+                  size="x-small"
+                  variant="tonal"
+                  class="mr-2"
+                >
+                  {{ getLevelText(log.operationLevel) }}
+                </v-chip>
+                <v-chip size="small" variant="tonal" color="grey" class="mr-2">
+                  {{ log.module }}
+                </v-chip>
+              </div>
+              <div class="d-flex align-center text-caption text-grey">
+                <span class="text-grey-darken-1">{{ log.operatorName }}</span>
+                <v-chip size="x-small" variant="tonal" color="grey-darken-1" class="ml-1">
+                  {{ getRoleText(log.operatorRole) }}
+                </v-chip>
+                <span class="mx-1">·</span>
+                <span>{{ formatDateTime(log.createdAt) }}</span>
+                <template v-if="log.ipAddress">
+                  <span class="mx-1">·</span>
+                  <span>{{ log.ipAddress }}</span>
+                </template>
+                <span class="mx-1">·</span>
+                <span>#{{ log.id }}</span>
+              </div>
+            </div>
 
-                <div class="content-wrapper">
-                  <div class="text-body-2 text-grey-darken-1 mb-2">
-                    <v-icon icon="mdi-account" size="16" class="mr-1"></v-icon>
-                    <strong>{{ log.operatorName }}</strong> (ID: {{ log.operatorId }})
-                    <v-chip size="x-small" variant="flat" color="grey-lighten-2" class="ml-2">
-                      {{ getRoleText(log.operatorRole) }}
-                    </v-chip>
-                  </div>
-
-                  <div class="text-body-2 text-grey-darken-1 mb-2">
-                    <v-icon icon="mdi-target" size="16" class="mr-1"></v-icon>
-                    目标: <strong>{{ log.targetType }}</strong> (ID: {{ log.targetId }})
-                    <span v-if="log.targetName" class="ml-1">- {{ log.targetName }}</span>
-                  </div>
-
-                  <div v-if="log.reason" class="text-body-2 text-grey-darken-1 mb-2">
-                    <v-icon icon="mdi-comment-text" size="16" class="mr-1"></v-icon>
-                    原因: {{ log.reason }}
-                  </div>
-
-                  <div class="text-body-2 text-grey">
-                    <v-icon icon="mdi-clock-outline" size="16" class="mr-1"></v-icon>
-                    {{ formatDateTime(log.createdAt) }}
-                    <span v-if="log.ipAddress" class="ml-3">
-                      <v-icon icon="mdi-ip" size="16" class="mr-1"></v-icon>
-                      {{ log.ipAddress }}
-                    </span>
-                  </div>
-                </div>
+            <!-- 内容区 -->
+            <div class="content-wrapper">
+              <div class="text-body-2 text-grey-darken-1 my-1">
+                目标: {{ log.targetType }} (ID: {{ log.targetId }})
+                <span v-if="log.targetName" class="ml-1">- {{ log.targetName }}</span>
               </div>
 
-              <!-- 右侧：查看详情 -->
-              <div class="ml-3">
-                <v-btn variant="tonal" color="info" size="small" @click="showDetail(log)">
-                  <v-icon icon="mdi-eye" size="16" class="mr-1"></v-icon>
-                  详情
-                </v-btn>
+              <div v-if="log.reason" class="text-body-2 text-grey-darken-1 my-1">
+                原因: {{ log.reason }}
+              </div>
+
+              <div v-if="log.extraData" class="text-body-2 text-grey-darken-1 my-1">
+                额外数据: {{ JSON.stringify(log.extraData) }}
               </div>
             </div>
           </div>
@@ -462,96 +472,6 @@ fetchLogs(true)
         </div>
       </v-card-text>
     </v-card>
-
-    <!-- 详情对话框 -->
-    <v-dialog v-model="detailDialog" max-width="800">
-      <v-card rounded="lg" variant="flat">
-        <v-card-title class="pa-6 pb-4">
-          <div class="d-flex align-center justify-space-between">
-            <div class="d-flex align-center">
-              <v-icon icon="mdi-clipboard-text-outline" color="blue-darken-1" class="mr-3"></v-icon>
-              <span class="text-h6 font-weight-bold">操作日志详情</span>
-            </div>
-            <v-btn icon variant="text" @click="detailDialog = false">
-              <v-icon>mdi-close</v-icon>
-            </v-btn>
-          </div>
-        </v-card-title>
-
-        <v-card-text v-if="selectedLog" class="pa-6 pt-2">
-          <v-list lines="two">
-            <v-list-item>
-              <v-list-item-title class="font-weight-bold">日志ID</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedLog.id }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item>
-              <v-list-item-title class="font-weight-bold">操作人</v-list-item-title>
-              <v-list-item-subtitle>
-                {{ selectedLog.operatorName }} (ID: {{ selectedLog.operatorId }}) -
-                {{ getRoleText(selectedLog.operatorRole) }}
-              </v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item>
-              <v-list-item-title class="font-weight-bold">模块</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedLog.module }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item>
-              <v-list-item-title class="font-weight-bold">操作类型</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedLog.operationType }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item>
-              <v-list-item-title class="font-weight-bold">操作级别</v-list-item-title>
-              <v-list-item-subtitle>
-                <v-chip :color="getLevelColor(selectedLog.operationLevel)" size="small" variant="flat">
-                  {{ getLevelText(selectedLog.operationLevel) }}
-                </v-chip>
-              </v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item>
-              <v-list-item-title class="font-weight-bold">目标类型</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedLog.targetType }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item>
-              <v-list-item-title class="font-weight-bold">目标ID</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedLog.targetId }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item v-if="selectedLog.targetName">
-              <v-list-item-title class="font-weight-bold">目标名称</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedLog.targetName }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item v-if="selectedLog.reason">
-              <v-list-item-title class="font-weight-bold">原因</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedLog.reason }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item v-if="selectedLog.ipAddress">
-              <v-list-item-title class="font-weight-bold">IP地址</v-list-item-title>
-              <v-list-item-subtitle>{{ selectedLog.ipAddress }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item>
-              <v-list-item-title class="font-weight-bold">操作时间</v-list-item-title>
-              <v-list-item-subtitle>{{ formatDateTime(selectedLog.createdAt) }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-list-item v-if="selectedLog.extraData">
-              <v-list-item-title class="font-weight-bold">额外数据</v-list-item-title>
-              <v-list-item-subtitle>
-                <pre class="text-caption mt-2">{{ JSON.stringify(selectedLog.extraData, null, 2) }}</pre>
-              </v-list-item-subtitle>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
@@ -571,17 +491,5 @@ fetchLogs(true)
   border-radius: 8px;
   padding: 12px;
   background-color: white;
-}
-
-pre {
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  font-size: 12px;
-  line-height: 1.4;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  margin: 0;
-  background-color: #f5f5f5;
-  padding: 8px;
-  border-radius: 4px;
 }
 </style>

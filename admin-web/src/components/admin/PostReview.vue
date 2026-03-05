@@ -116,7 +116,7 @@ const clearFilter = (): void => {
 // 使用 useMutation 批准/拒绝帖子
 const { execute: executeApprovePost } = useMutation(
   (data: { postId: number; approve: boolean }) =>
-    adminApi.operateContent('post', data.postId, { action: data.approve ? 'approve' : 'reject' }),
+    adminApi.operateContent('post', data.postId, { action: data.approve ? 'APPROVE' : 'REJECT' }),
   {
     successMessage: '操作成功',
     onSuccess: (response, data) => {
@@ -202,7 +202,7 @@ const banPost = async (post: Post): Promise<void> => {
 
 // 使用 useMutation 取消屏蔽文章
 const { execute: executeUnbanPost } = useMutation(
-  (postId: number) => adminApi.operateContent('post', postId, { action: 'approve' }),
+  (postId: number) => adminApi.operateContent('post', postId, { action: 'APPROVE' }),
   {
     successMessage: '已取消屏蔽',
     onSuccess: (_, postId) => {
@@ -590,7 +590,7 @@ const getStateColor = (state: number): string => {
 }
 
 .tiptap.post-content {
-  max-height: 200px;
+  max-height: 400px;
   overflow-y: auto;
   overflow-x: auto;
   word-wrap: break-word;

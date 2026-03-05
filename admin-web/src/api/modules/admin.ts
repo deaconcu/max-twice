@@ -310,6 +310,9 @@ export const adminApi = {
     if (query.targetType) {
       params.targetType = query.targetType
     }
+    if (query.targetId !== undefined && query.targetId !== null) {
+      params.targetId = query.targetId
+    }
     if (query.operationLevel !== undefined && query.operationLevel !== null) {
       params.operationLevel = query.operationLevel
     }

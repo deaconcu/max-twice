@@ -348,14 +348,12 @@ public class AdminContentsController {
     @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
         module = "#contentType == 'course' || #contentType == 'profession' || #contentType == 'node' ? '全局内容管理' : '用户内容管理'",
-        type = "#{" +
-               "'APPROVE': '审核通过', " +
-               "'REJECT': '审核拒绝', " +
-               "'REMOVE': '下架', " +
-               "'BAN': '封禁', " +
-               "'RESTORE': '恢复', " +
-               "'DELETE': '删除'" +
-               "}[#request.action] ?: '未知操作'",
+        type = "#request.action.toUpperCase() == 'APPROVE' ? '审核通过' : " +
+               "#request.action.toUpperCase() == 'REJECT' ? '审核拒绝' : " +
+               "#request.action.toUpperCase() == 'REMOVE' ? '下架' : " +
+               "#request.action.toUpperCase() == 'BAN' ? '封禁' : " +
+               "#request.action.toUpperCase() == 'RESTORE' ? '恢复' : " +
+               "#request.action.toUpperCase() == 'DELETE' ? '删除' : #request.action",
         level = OperationLevel.MEDIUM,
         targetType = "#contentType",
         targetId = "#id",

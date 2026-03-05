@@ -55,8 +55,10 @@ public class OperationLogAspect {
 
             EvaluationContext context = createEvaluationContext(method, args);
 
-            // 解析操作类型（支持SpEL表达式）
-            String operationType = parseOperationType(operationLog.type(), context);
+            // 解析支持SpEL表达式的字段
+            String module = parseExpression(operationLog.module(), context, String.class);
+            String operationType = parseExpression(operationLog.type(), context, String.class);
+            String targetType = parseExpression(operationLog.targetType(), context, String.class);
             Long targetId = parseExpression(operationLog.targetId(), context, Long.class);
             String targetName = parseExpression(operationLog.targetName(), context, String.class);
             String reason = parseExpression(operationLog.reason(), context, String.class);
@@ -69,10 +71,10 @@ public class OperationLogAspect {
                     .operatorId(currentUser.getId())
                     .operatorName(currentUser.getName())
                     .operatorRole(currentUser.getRole())
-                    .module(operationLog.module())
+                    .module(module)
                     .operationType(operationType)
                     .operationLevel(operationLog.level().getCode())
-                    .targetType(operationLog.targetType())
+                    .targetType(targetType)
                     .targetId(targetId)
                     .targetName(targetName)
                     .reason(reason)
@@ -125,18 +127,6 @@ public class OperationLogAspect {
         }
 
         return context;
-    }
-
-    /**
-     * 解析操作类型（支持SpEL表达式）
-     */
-    private String parseOperationType(String typeExpression, EvaluationContext context) {
-        // 如果包含 # 符号，说明是SpEL表达式
-        if (typeExpression != null && typeExpression.contains("#")) {
-            return parseExpression(typeExpression, context, String.class);
-        }
-        // 否则直接返回字符串
-        return typeExpression;
     }
 
     /**

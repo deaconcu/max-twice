@@ -106,7 +106,7 @@ const resetFilter = () => {
 
 // 使用 useMutation 批准卡片组
 const { execute: executeApproveDeck } = useMutation(
-  (deckId: number) => adminApi.operateContent('memory_card_deck', deckId, { action: 'approve' }),
+  (deckId: number) => adminApi.operateContent('memory_card_deck', deckId, { action: 'APPROVE' }),
   {
     successMessage: '卡片组审核通过',
     onSuccess: (_, deckId) => {
@@ -180,7 +180,7 @@ const banDeck = async (deck: DeckDetail): Promise<void> => {
 
 // 使用 useMutation 取消屏蔽卡片组
 const { execute: executeUnbanDeck } = useMutation(
-  (deckId: number) => adminApi.operateContent('memory_card_deck', deckId, { action: 'approve' }),
+  (deckId: number) => adminApi.operateContent('memory_card_deck', deckId, { action: 'APPROVE' }),
   {
     successMessage: '卡片组已取消屏蔽',
     onSuccess: (_, deckId) => {
