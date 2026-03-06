@@ -107,53 +107,31 @@ watch([userSubscriptionsData, userTodayStatsData], () => {
   }
 })
 
-// 快速入口 - 4步学习路径
+// 快速入口 - 3步学习路径
 const quickLinks = computed(() => [
   {
     step: 1,
-    title: t('home.exploreCareer.title'),
-    description: t('home.exploreCareer.description'),
+    title: '探索职业',
+    description: '找到你感兴趣的职业方向',
     icon: 'mdi-briefcase-variant',
     color: 'warning',
     path: '/career',
-    stat: t('home.exploreCareer.stat', { count: platformStats.value.careerPathCount }),
-    statDetail: t('home.exploreCareer.statDetail'),
   },
   {
     step: 2,
-    title: t('home.trackCareers.title'),
-    description: t('home.trackCareers.description'),
-    icon: 'mdi-flag-checkered',
-    color: 'success',
-    path: '/roadmap',
-    stat: t('home.trackCareers.stat', {
-      count: platformStats.value.roadmapCount.toLocaleString()
-    }),
-    statDetail: t('home.trackCareers.statDetail'),
+    title: '学习课程',
+    description: '跟随路线系统学习',
+    icon: 'mdi-book-multiple',
+    color: 'info',
+    path: '/courses',
   },
   {
     step: 3,
-    title: t('home.browseCourses.title'),
-    description: t('home.browseCourses.description'),
-    icon: 'mdi-book-multiple',
-    color: 'info',
-    path: '/learning',
-    stat: t('home.browseCourses.stat', { count: platformStats.value.courseCount }),
-    statDetail: t('home.browseCourses.statDetail', {
-      nodes: platformStats.value.knowledgeNodeCount.toLocaleString(),
-    }),
-  },
-  {
-    step: 4,
-    title: t('home.trackCourses.title'),
-    description: t('home.trackCourses.description'),
-    icon: 'mdi-book-open-variant',
-    color: 'purple',
-    path: '/my-courses',
-    stat: t('home.trackCourses.stat', {
-      count: platformStats.value.articleCount.toLocaleString(),
-    }),
-    statDetail: t('home.trackCourses.statDetail'),
+    title: '复习巩固',
+    description: '用间隔重复强化记忆',
+    icon: 'mdi-brain',
+    color: 'success',
+    path: '/review',
   },
 ])
 
@@ -313,78 +291,97 @@ const openCareer = (careerId: number): void => {
 
     <!-- 平台介绍和学习路径 -->
     <div class="guide-section mb-6 mb-md-10">
-      <div class="text-center mb-6 mb-md-8">
-        <h2
-          class="text-h6 text-sm-h5 font-weight-bold mb-2"
-          :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-        >
-          {{ t('home.guideTitle') }}
-        </h2>
-        <p
-          class="text-body-2 text-sm-body-1"
-          :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-        >
-          {{ t('home.guideSubtitle') }}
-        </p>
-      </div>
-
-      <!-- 学习路径步骤 -->
-      <div class="path-steps">
-        <template v-for="(link, index) in quickLinks" :key="link.step">
-          <div class="step-wrapper">
-            <v-card class="step-card" rounded="lg" border hover @click="navigateTo(link.path)">
-              <!-- STEP标签 -->
-              <v-chip class="step-badge" size="small" variant="flat" :color="'surface-variant'">
-                {{ t('home.step') }} {{ link.step }}
-              </v-chip>
-
-              <!-- 图标 -->
-              <v-avatar
-                :color="'rgb(var(--v-theme-surface-variant))'"
-                size="56"
-                rounded="lg"
-                class="mx-auto mb-4"
-              >
-                <v-icon :icon="link.icon" :color="link.color" size="28"></v-icon>
-              </v-avatar>
-
-              <!-- 标题和描述 -->
-              <h3
-                class="text-subtitle-1 text-sm-h6 font-weight-bold text-center mb-2"
-                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-              >
-                {{ link.title }}
-              </h3>
-              <p
-                class="text-caption text-sm-body-2 text-center mb-3 mb-sm-4"
-                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-              >
-                {{ link.description }}
-              </p>
-
-              <!-- 平台数据 -->
-              <v-card class="step-data" rounded="lg" variant="outlined">
-                <div
-                  class="text-body-2 font-weight-bold text-center mb-1"
-                  :class="`text-${link.color}`"
-                >
-                  {{ link.stat }}
-                </div>
-                <p
-                  class="text-caption text-center ma-0"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-                >
-                  {{ link.statDetail }}
-                </p>
-              </v-card>
-            </v-card>
+      <div class="d-flex flex-column flex-md-row ga-6 ga-md-8">
+        <!-- 左侧：3个步骤 -->
+        <div class="flex-grow-1">
+          <div class="text-center text-md-left mb-4 mb-md-6">
+            <h2
+              class="text-h6 text-sm-h5 font-weight-bold mb-2"
+              :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+            >
+              {{ t('home.guideTitle') }}
+            </h2>
+            <p
+              class="text-body-2 text-sm-body-1"
+              :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+            >
+              {{ t('home.guideSubtitle') }}
+            </p>
           </div>
 
-          <!-- 箭头（独立元素） -->
-          <div v-if="index < quickLinks.length - 1" class="step-arrow d-none d-md-flex">
-            <v-icon icon="mdi-arrow-right-thick" :color="'on-surface-variant'" size="36"></v-icon>
+          <!-- 学习路径步骤 -->
+          <div class="path-steps">
+            <template v-for="(link, index) in quickLinks" :key="link.step">
+              <div class="step-wrapper">
+                <v-card class="step-card" rounded="lg" border hover @click="navigateTo(link.path)">
+                  <!-- STEP标签 -->
+                  <v-chip class="step-badge" size="small" variant="flat" :color="'surface-variant'">
+                    {{ t('home.step') }} {{ link.step }}
+                  </v-chip>
+
+                  <!-- 图标 -->
+                  <v-avatar
+                    :color="'rgb(var(--v-theme-surface-variant))'"
+                    size="56"
+                    rounded="lg"
+                    class="mx-auto mb-4"
+                  >
+                    <v-icon :icon="link.icon" :color="link.color" size="28"></v-icon>
+                  </v-avatar>
+
+                  <!-- 标题和描述 -->
+                  <h3
+                    class="text-subtitle-1 text-sm-h6 font-weight-bold text-center mb-2"
+                    :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                  >
+                    {{ link.title }}
+                  </h3>
+                  <p
+                    class="text-caption text-sm-body-2 text-center ma-0"
+                    :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+                  >
+                    {{ link.description }}
+                  </p>
+                </v-card>
+              </div>
+
+              <!-- 箭头（独立元素） -->
+              <div v-if="index < quickLinks.length - 1" class="step-arrow d-none d-md-flex">
+                <v-icon icon="mdi-arrow-right-thick" :color="'on-surface-variant'" size="36"></v-icon>
+              </div>
+            </template>
           </div>
-        </template>
+        </div>
+
+        <!-- 右侧：平台统计 -->
+        <div class="platform-stats-card flex-shrink-0">
+          <v-card rounded="lg" variant="tonal" color="primary" class="pa-4 pa-md-5">
+            <div class="text-subtitle-2 font-weight-bold mb-4 text-center">
+              平台数据
+            </div>
+            <div class="d-flex flex-column ga-3">
+              <div class="d-flex align-center justify-space-between">
+                <span class="text-body-2">职业方向</span>
+                <span class="text-body-1 font-weight-bold">{{ platformStats.careerPathCount }}</span>
+              </div>
+              <v-divider></v-divider>
+              <div class="d-flex align-center justify-space-between">
+                <span class="text-body-2">课程数量</span>
+                <span class="text-body-1 font-weight-bold">{{ platformStats.courseCount }}</span>
+              </div>
+              <v-divider></v-divider>
+              <div class="d-flex align-center justify-space-between">
+                <span class="text-body-2">知识节点</span>
+                <span class="text-body-1 font-weight-bold">{{ platformStats.knowledgeNodeCount.toLocaleString() }}</span>
+              </div>
+              <v-divider></v-divider>
+              <div class="d-flex align-center justify-space-between">
+                <span class="text-body-2">文章数量</span>
+                <span class="text-body-1 font-weight-bold">{{ platformStats.articleCount.toLocaleString() }}</span>
+              </div>
+            </div>
+          </v-card>
+        </div>
       </div>
     </div>
 
@@ -643,6 +640,17 @@ const openCareer = (careerId: number): void => {
   margin: 0 8px;
 }
 
+/* 平台统计卡片 */
+.platform-stats-card {
+  width: 100%;
+}
+
+@media (min-width: 960px) {
+  .platform-stats-card {
+    width: 200px;
+  }
+}
+
 /* 学习路径步骤 */
 .path-steps {
   display: flex;
@@ -684,7 +692,7 @@ const openCareer = (careerId: number): void => {
 @media (min-width: 960px) {
   .step-card {
     padding: 24px;
-    min-height: 260px;
+    min-height: 180px;
   }
 }
 
