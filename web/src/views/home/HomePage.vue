@@ -24,8 +24,8 @@ const stats = ref({
   coursesInProgress: 0, // 从用户订阅课程获取
   completedCourses: 0, // 暂时保持 mock，需要新接口
   careersInProgress: 0, // 暂时保持 mock，需要新接口
-  learningDays: 0, // 暂时保持 mock，需要新接口
-  todayMinutes: 0, // 从今日统计获取
+  learningDays: 0, // 累计学习天数
+  reviewCards: 0, // 待复习卡片数
 })
 
 // 1. 加载平台统计数据（GET /api/v1/stats/platform）
@@ -231,7 +231,8 @@ const openCareer = (careerId: number): void => {
   <DefaultLayout>
     <!-- 欢迎区域 -->
     <div class="welcome-section mb-6 mb-md-10">
-      <div class="d-flex flex-row align-center justify-space-between ga-3 ga-sm-4">
+      <div class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between ga-4 ga-md-6">
+        <!-- 左侧：用户信息 -->
         <div class="d-flex align-center ga-3 ga-sm-4 flex-grow-1" style="min-width: 0">
           <UserAvatar
             :name="userName"
@@ -255,18 +256,56 @@ const openCareer = (careerId: number): void => {
             </p>
           </div>
         </div>
-        <div class="text-center flex-shrink-0">
-          <div
-            class="text-h4 text-sm-h3 font-weight-bold"
-            :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-          >
-            {{ stats.todayMinutes }}
+
+        <!-- 右侧：学习统计指标 -->
+        <div class="d-flex align-center ga-3 ga-md-4 flex-shrink-0">
+          <!-- 累计学习天数 - 突出显示 -->
+          <div class="d-flex align-center ga-2">
+            <v-icon icon="mdi-calendar-check" color="warning" size="24"></v-icon>
+            <div class="text-center">
+              <div class="text-h5 font-weight-bold text-warning">
+                {{ stats.learningDays }} <span class="text-body-2">天</span>
+              </div>
+              <div class="text-caption text-no-wrap text-medium-emphasis">
+                累计学习
+              </div>
+            </div>
           </div>
-          <div
-            class="text-caption text-no-wrap"
-            :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-          >
-            {{ t('home.todayLearning') }}
+
+          <!-- 分隔线 -->
+          <v-divider vertical class="d-none d-sm-block stats-divider"></v-divider>
+
+          <!-- 其他三个指标 -->
+          <div class="d-flex align-center ga-4 ga-md-5">
+            <!-- 进行中课程 -->
+            <div class="text-center">
+              <div class="text-h6 font-weight-bold" :style="{ color: 'rgb(var(--v-theme-on-surface))' }">
+                {{ stats.coursesInProgress }}
+              </div>
+              <div class="text-caption text-no-wrap" :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }">
+                进行中课程
+              </div>
+            </div>
+
+            <!-- 进行中职业 -->
+            <div class="text-center">
+              <div class="text-h6 font-weight-bold" :style="{ color: 'rgb(var(--v-theme-on-surface))' }">
+                {{ stats.careersInProgress }}
+              </div>
+              <div class="text-caption text-no-wrap" :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }">
+                进行中职业
+              </div>
+            </div>
+
+            <!-- 复习卡片数 -->
+            <div class="text-center">
+              <div class="text-h6 font-weight-bold" :style="{ color: 'rgb(var(--v-theme-on-surface))' }">
+                {{ stats.reviewCards || 0 }}
+              </div>
+              <div class="text-caption text-no-wrap" :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }">
+                待复习
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -710,13 +749,29 @@ const openCareer = (careerId: number): void => {
 
 /* 欢迎区域 */
 .welcome-section {
+  padding-top: 16px;
   padding-bottom: 24px;
 }
 
 @media (min-width: 600px) {
   .welcome-section {
+    padding-top: 24px;
     padding-bottom: 32px;
   }
+}
+
+@media (min-width: 960px) {
+  .welcome-section {
+    padding-top: 32px;
+    padding-bottom: 40px;
+  }
+}
+
+/* 统计指标分隔线 */
+.stats-divider {
+  align-self: stretch;
+  opacity: 0.2;
+  margin: 0 8px;
 }
 
 /* 学习路径步骤 */
