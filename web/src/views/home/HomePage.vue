@@ -292,21 +292,44 @@ const openCareer = (careerId: number): void => {
     <!-- 平台介绍和学习路径 -->
     <div class="guide-section mb-6 mb-md-10">
       <div class="d-flex flex-column flex-md-row ga-6 ga-md-8">
-        <!-- 左侧：3个步骤 -->
+        <!-- 左侧：标题 + 3个步骤 -->
         <div class="flex-grow-1">
-          <div class="text-center text-md-left mb-4 mb-md-6">
-            <h2
-              class="text-h6 text-sm-h5 font-weight-bold mb-2"
-              :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-            >
-              {{ t('home.guideTitle') }}
-            </h2>
-            <p
-              class="text-body-2 text-sm-body-1"
-              :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-            >
-              {{ t('home.guideSubtitle') }}
-            </p>
+          <!-- 标题和平台数据 -->
+          <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 mb-4 mb-md-6">
+            <div>
+              <h2
+                class="text-h6 text-sm-h5 font-weight-bold mb-1"
+                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+              >
+                {{ t('home.guideTitle') }}
+              </h2>
+              <p
+                class="text-body-2 text-sm-body-1 ma-0"
+                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+              >
+                {{ t('home.guideSubtitle') }}
+              </p>
+            </div>
+
+            <!-- 平台数据 -->
+            <div class="d-flex align-center ga-6 ga-md-10 flex-shrink-0">
+              <div class="text-center">
+                <div class="text-h6 font-weight-bold text-primary">{{ platformStats.careerPathCount }}</div>
+                <div class="text-caption text-medium-emphasis">职业方向</div>
+              </div>
+              <div class="text-center">
+                <div class="text-h6 font-weight-bold text-primary">{{ platformStats.courseCount }}</div>
+                <div class="text-caption text-medium-emphasis">门课程</div>
+              </div>
+              <div class="text-center">
+                <div class="text-h6 font-weight-bold text-primary">{{ platformStats.knowledgeNodeCount.toLocaleString() }}</div>
+                <div class="text-caption text-medium-emphasis">知识节点</div>
+              </div>
+              <div class="text-center">
+                <div class="text-h6 font-weight-bold text-primary">{{ platformStats.articleCount.toLocaleString() }}</div>
+                <div class="text-caption text-medium-emphasis">篇文章</div>
+              </div>
+            </div>
           </div>
 
           <!-- 学习路径步骤 -->
@@ -314,34 +337,33 @@ const openCareer = (careerId: number): void => {
             <template v-for="(link, index) in quickLinks" :key="link.step">
               <div class="step-wrapper">
                 <v-card class="step-card" rounded="lg" border hover @click="navigateTo(link.path)">
-                  <!-- STEP标签 -->
-                  <v-chip class="step-badge" size="small" variant="flat" :color="'surface-variant'">
-                    {{ t('home.step') }} {{ link.step }}
-                  </v-chip>
+                  <div class="d-flex align-center ga-3">
+                    <!-- 数字 -->
+                    <v-avatar
+                      :color="link.color"
+                      size="40"
+                      rounded="lg"
+                      class="flex-shrink-0"
+                    >
+                      <span class="text-h6 font-weight-bold text-white">{{ link.step }}</span>
+                    </v-avatar>
 
-                  <!-- 图标 -->
-                  <v-avatar
-                    :color="'rgb(var(--v-theme-surface-variant))'"
-                    size="56"
-                    rounded="lg"
-                    class="mx-auto mb-4"
-                  >
-                    <v-icon :icon="link.icon" :color="link.color" size="28"></v-icon>
-                  </v-avatar>
-
-                  <!-- 标题和描述 -->
-                  <h3
-                    class="text-subtitle-1 text-sm-h6 font-weight-bold text-center mb-2"
-                    :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                  >
-                    {{ link.title }}
-                  </h3>
-                  <p
-                    class="text-caption text-sm-body-2 text-center ma-0"
-                    :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-                  >
-                    {{ link.description }}
-                  </p>
+                    <!-- 文字 -->
+                    <div class="flex-grow-1">
+                      <h3
+                        class="text-subtitle-1 font-weight-bold mb-1"
+                        :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                      >
+                        {{ link.title }}
+                      </h3>
+                      <p
+                        class="text-caption ma-0"
+                        :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+                      >
+                        {{ link.description }}
+                      </p>
+                    </div>
+                  </div>
                 </v-card>
               </div>
 
@@ -351,36 +373,6 @@ const openCareer = (careerId: number): void => {
               </div>
             </template>
           </div>
-        </div>
-
-        <!-- 右侧：平台统计 -->
-        <div class="platform-stats-card flex-shrink-0">
-          <v-card rounded="lg" variant="tonal" color="primary" class="pa-4 pa-md-5">
-            <div class="text-subtitle-2 font-weight-bold mb-4 text-center">
-              平台数据
-            </div>
-            <div class="d-flex flex-column ga-3">
-              <div class="d-flex align-center justify-space-between">
-                <span class="text-body-2">职业方向</span>
-                <span class="text-body-1 font-weight-bold">{{ platformStats.careerPathCount }}</span>
-              </div>
-              <v-divider></v-divider>
-              <div class="d-flex align-center justify-space-between">
-                <span class="text-body-2">课程数量</span>
-                <span class="text-body-1 font-weight-bold">{{ platformStats.courseCount }}</span>
-              </div>
-              <v-divider></v-divider>
-              <div class="d-flex align-center justify-space-between">
-                <span class="text-body-2">知识节点</span>
-                <span class="text-body-1 font-weight-bold">{{ platformStats.knowledgeNodeCount.toLocaleString() }}</span>
-              </div>
-              <v-divider></v-divider>
-              <div class="d-flex align-center justify-space-between">
-                <span class="text-body-2">文章数量</span>
-                <span class="text-body-1 font-weight-bold">{{ platformStats.articleCount.toLocaleString() }}</span>
-              </div>
-            </div>
-          </v-card>
         </div>
       </div>
     </div>
@@ -678,48 +670,23 @@ const openCareer = (careerId: number): void => {
   cursor: pointer;
   transition: all 0.2s;
   width: 100%;
-  min-height: auto;
-  display: flex;
-  flex-direction: column;
 }
 
 @media (min-width: 600px) {
   .step-card {
-    padding: 20px;
+    padding: 16px;
   }
 }
 
 @media (min-width: 960px) {
   .step-card {
-    padding: 24px;
-    min-height: 180px;
+    padding: 16px;
   }
 }
 
 .step-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.step-badge {
-  margin: 0 auto 12px auto;
-}
-
-@media (min-width: 960px) {
-  .step-badge {
-    margin: 0 auto 16px auto;
-  }
-}
-
-.step-data {
-  padding: 10px;
-  margin-top: auto;
-}
-
-@media (min-width: 600px) {
-  .step-data {
-    padding: 12px;
-  }
 }
 
 .step-arrow {
