@@ -7,6 +7,7 @@ import CommentSection from '@/components/common/CommentSection.vue'
 import CreateDeckDialog from './CreateDeckDialog.vue'
 import MemoryCardSidebar from './MemoryCardSidebar.vue'
 import DeckDetailDialog from './DeckDetailDialog.vue'
+import AiAssistant from './AiAssistant.vue'
 import { pageApi, memoryApi } from '@/api'
 import type { ReadResponse } from '@/api/modules/page'
 import type { MemoryCardDeck } from '@/types/memory'
@@ -31,11 +32,18 @@ const route = useRoute()
 
 // 基本状态
 const showCreateDeckDialog = ref(false)
-const isAssistantExpanded = ref(true)
 const selectedDeck = ref<MemoryCardDeck | null>(null)
 const showDeckDetailDialog = ref(false)
 const assistantSheetOpen = ref(false)
 const memorySheetOpen = ref(false)
+
+// 答疑助手 - 文章选中文本
+const articleSelectedText = ref('')
+
+// 处理文章区域文本选择
+const handleTextSelected = (text: string) => {
+  articleSelectedText.value = text
+}
 
 // 目标评论ID（从 URL 获取）
 const targetCommentId = computed(() => {
@@ -104,14 +112,6 @@ const {
     })
   },
 })
-
-// AI 引擎列表
-const aiEngines = [
-  { name: 'ChatGPT', href: 'https://chatgpt.com', color: 'grey-darken-1', icon: 'mdi-robot' },
-  { name: 'Claude', href: 'https://claude.ai', color: 'grey-darken-1', icon: 'mdi-alpha-c-circle-outline' },
-  { name: 'Gemini', href: 'https://gemini.google.com', color: 'grey-darken-1', icon: 'mdi-google' },
-  { name: 'DeepSeek', href: 'https://chat.deepseek.com', color: 'grey-darken-1', icon: 'mdi-radar' },
-]
 
 // 处理创建卡片组成功
 const handleDeckCreated = (deck: MemoryCardDeck) => {
@@ -210,39 +210,39 @@ defineExpose({
       <div class="post-detail-content">
         <!-- 中间内容区 -->
         <div class="center-content">
-          <!-- 返回按钮（仅在课程模式下显示） -->
-          <div v-if="isInCourseMode" class="back-button-row mb-4">
-            <v-btn
-              variant="text"
-              color="grey-darken-1"
-              rounded="lg"
-              size="small"
-              prepend-icon="mdi-arrow-left"
-              @click="goBackToList"
-            >
-              返回列表
-            </v-btn>
+          <!-- 节点标题行 -->
+          <div v-if="showNodeHeader && data.node" :class="isInCourseMode ? 'node-header-sticky node-header-compact' : 'node-header'">
+            <div class="d-flex align-center">
+              <!-- 返回按钮（仅在课程模式下显示） -->
+              <v-btn
+                v-if="isInCourseMode"
+                variant="text"
+                color="grey-darken-2"
+                size="default"
+                icon="mdi-arrow-left"
+                class="me-2"
+                density="comfortable"
+                @click="goBackToList"
+              ></v-btn>
+              <v-icon
+                icon="mdi-list-box-outline"
+                color="primary-darken-1"
+                :size="isInCourseMode ? 18 : ($vuetify.display.mobile ? 20 : 24)"
+              ></v-icon>
+              <h2
+                class="font-weight-bold text-grey-darken-4 ms-2 ms-md-3"
+                :class="isInCourseMode ? 'text-body-1' : 'text-h6 text-md-h5'"
+              >
+                {{ data.node.name }}
+              </h2>
+            </div>
           </div>
 
-          <!-- 节点标题和描述 -->
-          <div v-if="showNodeHeader && data.node" class="node-header mb-4 mb-md-6">
-            <div class="d-flex align-center justify-space-between mb-3 mb-md-4">
-              <div class="d-flex align-center">
-                <v-icon
-                  icon="mdi-list-box-outline"
-                  color="primary-darken-1"
-                  :size="$vuetify.display.mobile ? 20 : 24"
-                ></v-icon>
-                <h2 class="text-h6 text-md-h5 font-weight-bold text-grey-darken-4 ms-2 ms-md-3">
-                  {{ data.node.name }}
-                </h2>
-              </div>
-            </div>
-            <div v-if="data.node.description" class="ms-0">
-              <p class="text-body-2 text-md-body-1 text-grey-darken-1 mb-0">
-                {{ data.node.description }}
-              </p>
-            </div>
+          <!-- 节点描述（仅在非课程模式下显示） -->
+          <div v-if="showNodeHeader && !isInCourseMode && data.node?.description" class="node-description mb-4 mb-md-6">
+            <p class="text-body-2 text-md-body-1 text-grey-darken-1 mb-0">
+              {{ data.node.description }}
+            </p>
           </div>
 
           <!-- 文章详情 -->
@@ -251,7 +251,7 @@ defineExpose({
             :data="data"
             :posting="data.currPosting || data.post"
             :detail="true"
-            :show-back-button="false"
+            @text-selected="handleTextSelected"
           />
 
           <!-- 评论区 -->
@@ -271,60 +271,7 @@ defineExpose({
         <div v-if="showRightSidebar && (data.currPosting || data.post)" class="right-sidebar">
           <div class="sidebar-sticky">
             <!-- AI答疑助手 -->
-            <v-card class="sidebar-card mb-4 mb-md-4 no-border" rounded="lg">
-              <v-card-title class="pa-4 pa-md-4">
-                <div class="d-flex align-center justify-space-between w-100">
-                  <div class="d-flex align-center">
-                    <v-icon
-                      icon="mdi-robot-excited"
-                      color="primary"
-                      :size="$vuetify.display.mobile ? 20 : 24"
-                      class="mr-2"
-                    ></v-icon>
-                    <span class="text-body-1 text-md-h6">答疑助手</span>
-                  </div>
-                  <v-btn
-                    :icon="isAssistantExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                    variant="text"
-                    color="grey-darken-1"
-                    :size="$vuetify.display.mobile ? 'x-small' : 'x-small'"
-                    @click="isAssistantExpanded = !isAssistantExpanded"
-                  ></v-btn>
-                </div>
-              </v-card-title>
-
-              <v-expand-transition>
-                <v-card-text v-show="isAssistantExpanded" class="pa-4 pa-md-4 pt-0">
-                  <div class="text-body-2 text-grey-darken-2 mb-3">
-                    <div class="font-weight-bold w-100">用法：</div>
-                    <div class="mt-2">1）在文章中选中您不太理解的内容</div>
-                    <div>2）在左侧竖线处拖动手柄，调整上下文范围</div>
-                    <div>3）点击面板中的"复制"，将引用和问题复制到剪贴板</div>
-                    <div>4）用复制的内容询问你常用的 AI 引擎</div>
-                  </div>
-
-                  <div class="d-flex flex-wrap mt-4 mt-md-5" style="gap: 8px">
-                    <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">
-                      常用 AI 引擎：
-                    </div>
-                    <v-chip
-                      v-for="e in aiEngines"
-                      :key="e.name"
-                      :href="e.href"
-                      target="_blank"
-                      rel="noopener"
-                      :color="e.color"
-                      variant="tonal"
-                      rounded="lg"
-                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                      class="text-caption text-md-body-2"
-                      :prepend-icon="e.icon"
-                      :text="e.name"
-                    />
-                  </div>
-                </v-card-text>
-              </v-expand-transition>
-            </v-card>
+            <AiAssistant v-model:selected-text="articleSelectedText" class="mb-4" />
 
             <!-- 记忆卡片组侧边栏 -->
             <MemoryCardSidebar
@@ -356,7 +303,7 @@ defineExpose({
     <!-- 移动端AI答疑助手底部面板 -->
     <v-bottom-sheet v-if="$vuetify.display.mobile" v-model="assistantSheetOpen" max-height="70vh">
       <v-card rounded="t-xl">
-        <v-card-title class="pa-4 pa-md-4 d-flex align-center justify-space-between">
+        <v-card-title class="pa-4 d-flex align-center justify-space-between">
           <div class="d-flex align-center">
             <v-icon
               icon="mdi-robot-excited"
@@ -364,44 +311,20 @@ defineExpose({
               class="mr-2"
               :size="$vuetify.display.mobile ? 20 : 24"
             />
-            <span class="text-h6 text-md-h5 font-weight-bold">答疑助手</span>
+            <span class="text-h6 font-weight-bold">答疑助手</span>
           </div>
           <v-btn
             icon="mdi-close"
             variant="text"
-            :size="$vuetify.display.mobile ? 'small' : 'default'"
+            size="small"
             @click="assistantSheetOpen = false"
           />
         </v-card-title>
 
         <v-divider />
 
-        <v-card-text class="pa-4 pa-md-4" style="max-height: calc(70vh - 73px); overflow-y: auto">
-          <div class="text-body-2 text-grey-darken-2 mb-3">
-            <div class="font-weight-bold">用法：</div>
-            <div class="mt-2">1）在文章中选中您不太理解的内容</div>
-            <div>2）在左侧竖线处拖动手柄，调整上下文范围</div>
-            <div>3）点击面板中的"复制"，将引用和问题复制到剪贴板</div>
-            <div>4）用复制的内容询问你常用的 AI 引擎</div>
-          </div>
-
-          <div class="d-flex flex-wrap mt-4" style="gap: 8px">
-            <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">常用 AI 引擎：</div>
-            <v-chip
-              v-for="e in aiEngines"
-              :key="e.name"
-              :href="e.href"
-              target="_blank"
-              rel="noopener"
-              :color="e.color"
-              variant="tonal"
-              rounded="lg"
-              :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-              class="text-caption"
-              :prepend-icon="e.icon"
-              :text="e.name"
-            />
-          </div>
+        <v-card-text class="pa-0" style="max-height: calc(70vh - 73px); overflow-y: auto">
+          <AiAssistant v-model:selected-text="articleSelectedText" class="mobile-assistant" />
         </v-card-text>
       </v-card>
     </v-bottom-sheet>
@@ -502,9 +425,32 @@ defineExpose({
   padding: 24px 26px 40px 26px;
 }
 
-/* 节点标题区域 */
+/* 节点标题行 - sticky（课程模式） */
+.node-header-sticky {
+  position: sticky;
+  top: 103px;
+  background-color: white;
+  z-index: 10;
+  padding: 12px 0;
+  margin-bottom: 8px;
+}
+
+/* 节点标题行 - 非 sticky（独立模式） */
 .node-header {
-  padding-top: 0;
+  padding: 4px 0;
+  margin-bottom: 8px;
+}
+
+/* 课程模式下的紧凑样式 */
+.node-header-sticky.node-header-compact {
+  padding: 0 0 4px 0;
+  margin-bottom: 4px;
+  margin-left: -9px;
+}
+
+/* 节点描述 */
+.node-description {
+  margin-top: 0;
 }
 
 /* 右侧边栏 */
@@ -552,6 +498,16 @@ defineExpose({
 /* 移动端记忆卡片侧边栏 - 筛选控件区域增加顶部间距 */
 .mobile-memory-sidebar :deep(.filter-controls) {
   padding-top: 16px !important;
+}
+
+/* 移动端答疑助手 - 隐藏标题和边框 */
+.mobile-assistant :deep(.v-card-title) {
+  display: none;
+}
+
+.mobile-assistant {
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* 中等屏幕：隐藏右侧栏 */

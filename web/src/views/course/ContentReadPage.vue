@@ -271,14 +271,6 @@
       @load-data="loadData"
     />
 
-    <!-- 创建卡片组对话框 -->
-    <CreateDeckDialog
-      v-if="currentPosting"
-      v-model="showCreateDeckDialog"
-      :post-id="currentPosting.id"
-      @created="handleDeckCreated"
-    />
-
     <!-- 卡片组详情对话框 -->
     <DeckDetailDialog
       v-model="showDeckDetailDialog"
@@ -678,29 +670,6 @@ const isMainCourse = computed(() => {
   return true
 })
 
-// AI 引擎列表
-const aiEngines = [
-  { name: 'ChatGPT', href: 'https://chatgpt.com', color: 'grey-darken-1', icon: 'mdi-robot' },
-  {
-    name: 'Claude',
-    href: 'https://claude.ai',
-    color: 'grey-darken-1',
-    icon: 'mdi-alpha-c-circle-outline',
-  },
-  { name: 'Gemini', href: 'https://gemini.google.com', color: 'grey-darken-1', icon: 'mdi-google' },
-  {
-    name: 'DeepSeek',
-    href: 'https://chat.deepseek.com',
-    color: 'grey-darken-1',
-    icon: 'mdi-radar',
-  },
-]
-
-// 处理创建卡片组成功
-const handleDeckCreated = (deck: MemoryCardDeck) => {
-  console.log('Deck created:', deck)
-}
-
 // 处理数据
 const processData = () => {
   console.log('data:', data.value)
@@ -763,23 +732,6 @@ const toggleLearning = () => {
 // 返回上一页
 const goBackToCourse = () => {
   router.back()
-}
-
-// 处理Tab切换
-const handleTabSwitch = (tab: string, posting?: any) => {
-  currentTab.value = tab
-  if (posting && typeof posting === 'object') {
-    currentPosting.value = posting
-  } else if (tab === 'list') {
-    currentPosting.value = null
-  }
-}
-
-// 处理创建卡片组
-const handleCreateDeck = () => {
-  if (currentPosting.value) {
-    showCreateDeckDialog.value = true
-  }
 }
 
 // 处理查看卡片组详情

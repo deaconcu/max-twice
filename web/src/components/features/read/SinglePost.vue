@@ -30,19 +30,18 @@ interface Props {
   data?: any
   detail?: boolean
   isLearning?: boolean
-  showBackButton?: boolean
 }
 
 interface Emits {
   (e: 'switch-tab', tab: string, posting?: any): void
   (e: 'load-data', parts: string[]): void
   (e: 'mark-node-completed'): void
+  (e: 'text-selected', text: string): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   detail: false,
   isLearning: false,
-  showBackButton: true,
 })
 
 const emit = defineEmits<Emits>()
@@ -392,6 +391,16 @@ const handleClickContent = () => {
   }
 }
 
+// 处理文章区域文本选择
+const handleArticleTextSelection = () => {
+  if (!props.detail) return // 只在详情模式下处理
+
+  const selection = window.getSelection()
+  if (selection && selection.toString().trim()) {
+    emit('text-selected', selection.toString().trim())
+  }
+}
+
 onMounted(() => {
   applyEnhancements()
 })
@@ -408,16 +417,7 @@ watch(
 <template>
   <div class="single-post">
     <!-- 作者信息 -->
-    <v-row class="mx-0 my-2 py-1 d-flex align-center" :class="[detail ? 'sticky-top' : '']">
-      <v-btn
-        v-if="detail && showBackButton"
-        variant="flat"
-        class="me-2"
-        color="grey-lighten-4"
-        icon="mdi-arrow-left"
-        size="small"
-        @click="emit('switch-tab', 'list')"
-      ></v-btn>
+    <v-row class="mx-0 my-2 py-1 d-flex align-center">
       <UserAvatar
         :name="posting.creator?.name || '匿名用户'"
         :avatar-url="posting.creator?.avatar"
@@ -491,7 +491,7 @@ watch(
         </router-link>
 
         <!-- 详情模式：普通div -->
-        <div v-else ref="contentRef" class="w-100" @click="handleContentClick">
+        <div v-else ref="contentRef" class="w-100" @click="handleContentClick" @mouseup="handleArticleTextSelection">
           <div class="article-content full-article">
             <div v-html="posting.content"></div>
           </div>
@@ -754,14 +754,6 @@ watch(
 <style scoped>
 .single-post {
   width: 100%;
-}
-
-.sticky-top {
-  position: sticky;
-  top: 102px;
-  background-color: white;
-  z-index: 10;
-  padding-bottom: 12px;
 }
 
 /* 虚线边框 */
