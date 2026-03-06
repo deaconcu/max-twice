@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 
 interface Props {
   selectedText?: string
+  nodeTitle?: string
+  nodeDescription?: string
 }
 
 interface Emits {
@@ -11,54 +13,79 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   selectedText: '',
+  nodeTitle: '',
+  nodeDescription: '',
 })
 
 const emit = defineEmits<Emits>()
 
-// 答疑助手状态
+// 状态
 const userQuestion = ref('请解释引用内容')
-const copySuccess = ref(false)
 const isExpanded = ref(true)
 const isQuoteExpanded = ref(false)
+const copySuccess = ref(false)
 
 // 是否需要展开按钮（超过约2行）
 const needExpand = computed(() => props.selectedText.length > 60)
 
 // AI 引擎列表
 const aiEngines = [
-  { name: 'ChatGPT', href: 'https://chatgpt.com', color: 'grey-darken-1', icon: 'mdi-robot' },
-  { name: 'Claude', href: 'https://claude.ai', color: 'grey-darken-1', icon: 'mdi-alpha-c-circle-outline' },
-  { name: 'Gemini', href: 'https://gemini.google.com', color: 'grey-darken-1', icon: 'mdi-google' },
-  { name: 'DeepSeek', href: 'https://chat.deepseek.com', color: 'grey-darken-1', icon: 'mdi-radar' },
+  { name: 'ChatGPT', href: 'https://chatgpt.com', icon: 'mdi-robot' },
+  { name: 'Claude', href: 'https://claude.ai', icon: 'mdi-alpha-c-circle-outline' },
+  { name: 'Gemini', href: 'https://gemini.google.com', icon: 'mdi-google' },
+  { name: 'DeepSeek', href: 'https://chat.deepseek.com', icon: 'mdi-radar' },
 ]
 
-// 复制到剪贴板
-const copyToClipboard = async () => {
-  if (!props.selectedText && !userQuestion.value) return
-
+// 构建复制内容
+const buildContent = () => {
   let content = ''
+  if (props.nodeTitle) {
+    content += `【主题】${props.nodeTitle}\n`
+    if (props.nodeDescription) {
+      content += `${props.nodeDescription}\n`
+    }
+    content += '\n'
+  }
   if (props.selectedText) {
     content += `【引用内容】\n${props.selectedText}\n\n`
   }
   if (userQuestion.value) {
     content += `【我的问题】\n${userQuestion.value}`
   }
-
-  try {
-    await navigator.clipboard.writeText(content.trim())
-    copySuccess.value = true
-    setTimeout(() => {
-      copySuccess.value = false
-    }, 2000)
-  } catch (err) {
-    console.error('复制失败:', err)
-  }
+  return content.trim()
 }
 
-// 清除选中内容
-const clearSelection = () => {
-  emit('update:selectedText', '')
-  userQuestion.value = ''
+// 复制并跳转到AI引擎
+const copyAndGo = async (engine: { name: string; href: string; icon: string }) => {
+  const content = buildContent()
+
+  if (content) {
+    try {
+      await navigator.clipboard.writeText(content)
+    } catch (err) {
+      console.error('复制失败:', err)
+    }
+  }
+
+  // 跳转到AI引擎
+  window.open(engine.href, '_blank', 'noopener')
+}
+
+// 仅复制到剪贴板
+const copyOnly = async () => {
+  const content = buildContent()
+
+  if (content) {
+    try {
+      await navigator.clipboard.writeText(content)
+      copySuccess.value = true
+      setTimeout(() => {
+        copySuccess.value = false
+      }, 2000)
+    } catch (err) {
+      console.error('复制失败:', err)
+    }
+  }
 }
 
 // 清除引用
@@ -73,12 +100,12 @@ const clearQuote = () => {
       <div class="d-flex align-center justify-space-between w-100">
         <div class="d-flex align-center">
           <v-icon
-            icon="mdi-robot-excited"
+            icon="mdi-chat-question-outline"
             color="primary"
             :size="$vuetify.display.mobile ? 20 : 24"
             class="mr-2"
           ></v-icon>
-          <span class="text-body-1 text-md-h6">答疑助手</span>
+          <span class="text-body-1 text-md-h6">不懂就问</span>
         </div>
         <v-btn
           :icon="isExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
@@ -147,49 +174,32 @@ const clearQuote = () => {
           @focus="($event.target as HTMLTextAreaElement)?.select()"
         ></v-textarea>
 
-        <!-- 操作按钮 -->
-        <div class="d-flex ga-2 mb-4">
-          <v-btn
-            :color="copySuccess ? 'success' : 'primary'"
-            variant="flat"
-            rounded="lg"
-            size="small"
-            :disabled="!selectedText && !userQuestion"
-            :prepend-icon="copySuccess ? 'mdi-check' : 'mdi-content-copy'"
-            @click="copyToClipboard"
-          >
-            {{ copySuccess ? '已复制' : '复制' }}
-          </v-btn>
-          <v-btn
-            v-if="selectedText || userQuestion"
-            variant="tonal"
-            rounded="lg"
-            size="small"
-            color="grey"
-            @click="clearSelection"
-          >
-            清除
-          </v-btn>
+        <!-- AI 引擎链接 - 点击复制并跳转 -->
+        <div class="text-body-2 text-grey-darken-2 mb-2">
+          去问AI（自动复制已引用内容和问题）
         </div>
-
-        <!-- AI 引擎链接 -->
         <div class="d-flex flex-wrap" style="gap: 8px">
-          <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">
-            常用 AI 引擎：
-          </div>
           <v-chip
             v-for="e in aiEngines"
             :key="e.name"
-            :href="e.href"
-            target="_blank"
-            rel="noopener"
-            :color="e.color"
+            color="grey-darken-1"
             variant="tonal"
             rounded="lg"
             :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-            class="text-caption text-md-body-2"
+            class="text-caption text-md-body-2 cursor-pointer"
             :prepend-icon="e.icon"
             :text="e.name"
+            @click="copyAndGo(e)"
+          />
+          <v-chip
+            color="primary"
+            :variant="copySuccess ? 'flat' : 'outlined'"
+            rounded="lg"
+            :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+            class="text-caption text-md-body-2 cursor-pointer"
+            :prepend-icon="copySuccess ? 'mdi-check' : 'mdi-content-copy'"
+            :text="copySuccess ? '已复制' : '手动复制'"
+            @click="copyOnly"
           />
         </div>
       </v-card-text>

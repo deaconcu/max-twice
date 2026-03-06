@@ -271,7 +271,12 @@ defineExpose({
         <div v-if="showRightSidebar && (data.currPosting || data.post)" class="right-sidebar">
           <div class="sidebar-sticky">
             <!-- AI答疑助手 -->
-            <AiAssistant v-model:selected-text="articleSelectedText" class="mb-4" />
+            <AiAssistant
+              v-model:selected-text="articleSelectedText"
+              :node-title="data.node?.name"
+              :node-description="data.node?.description"
+              class="mb-4"
+            />
 
             <!-- 记忆卡片组侧边栏 -->
             <MemoryCardSidebar
@@ -324,7 +329,12 @@ defineExpose({
         <v-divider />
 
         <v-card-text class="pa-0" style="max-height: calc(70vh - 73px); overflow-y: auto">
-          <AiAssistant v-model:selected-text="articleSelectedText" class="mobile-assistant" />
+          <AiAssistant
+            v-model:selected-text="articleSelectedText"
+            :node-title="data.node?.name"
+            :node-description="data.node?.description"
+            class="mobile-assistant"
+          />
         </v-card-text>
       </v-card>
     </v-bottom-sheet>
