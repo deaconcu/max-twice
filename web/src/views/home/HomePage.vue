@@ -314,20 +314,28 @@ const openCareer = (careerId: number): void => {
             <!-- 平台数据 -->
             <div class="d-flex align-center ga-6 ga-md-10 flex-shrink-0">
               <div class="text-center">
-                <div class="text-h6 font-weight-bold text-primary">{{ platformStats.careerPathCount }}</div>
+                <div class="text-h6 font-weight-bold text-primary">
+                  {{ platformStats.careerPathCount }} <span class="text-body-2">个</span>
+                </div>
                 <div class="text-caption text-medium-emphasis">职业方向</div>
               </div>
               <div class="text-center">
-                <div class="text-h6 font-weight-bold text-primary">{{ platformStats.courseCount }}</div>
-                <div class="text-caption text-medium-emphasis">门课程</div>
+                <div class="text-h6 font-weight-bold text-primary">
+                  {{ platformStats.courseCount }} <span class="text-body-2">门</span>
+                </div>
+                <div class="text-caption text-medium-emphasis">课程</div>
               </div>
               <div class="text-center">
-                <div class="text-h6 font-weight-bold text-primary">{{ platformStats.knowledgeNodeCount.toLocaleString() }}</div>
+                <div class="text-h6 font-weight-bold text-primary">
+                  {{ platformStats.knowledgeNodeCount.toLocaleString() }} <span class="text-body-2">个</span>
+                </div>
                 <div class="text-caption text-medium-emphasis">知识节点</div>
               </div>
               <div class="text-center">
-                <div class="text-h6 font-weight-bold text-primary">{{ platformStats.articleCount.toLocaleString() }}</div>
-                <div class="text-caption text-medium-emphasis">篇文章</div>
+                <div class="text-h6 font-weight-bold text-primary">
+                  {{ platformStats.articleCount.toLocaleString() }} <span class="text-body-2">篇</span>
+                </div>
+                <div class="text-caption text-medium-emphasis">文章</div>
               </div>
             </div>
           </div>
