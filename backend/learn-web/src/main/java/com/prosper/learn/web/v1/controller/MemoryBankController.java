@@ -3,7 +3,7 @@ package com.prosper.learn.web.v1.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.AddDeckToMemoryBankRequest;
 import com.prosper.learn.application.dto.request.UpdateCourseSettingRequest;
-import com.prosper.learn.application.dto.response.CourseMemoryBankDTO;
+import com.prosper.learn.application.dto.response.ReviewSummaryDTO;
 import com.prosper.learn.application.service.MemoryBankService;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
@@ -17,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,16 +45,16 @@ public class MemoryBankController {
     }
 
     /**
-     * 获取记忆库课程列表
+     * 获取复习概览（包含课程列表和统计数据）
      */
     @GetMapping("/courses")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<List<CourseMemoryBankDTO>> getMemoryBankCourses(
+    public ApiResponse<ReviewSummaryDTO> getReviewSummary(
             @RequestParam(required = false) @Min(value = 0, message = "状态不能小于0") Integer status,
             @CurrentUser UserDO currentUser) {
 
-        List<CourseMemoryBankDTO> result = memoryBankService.getMemoryBankCourses(currentUser.getId(), status);
+        ReviewSummaryDTO result = memoryBankService.getReviewSummary(currentUser.getId(), status);
         return ApiResponse.success(result);
     }
 

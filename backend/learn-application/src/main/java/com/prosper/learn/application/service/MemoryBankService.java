@@ -6,6 +6,7 @@ import com.prosper.learn.application.converter.UserCourseSrsSettingConverter;
 import com.prosper.learn.application.dto.request.AddDeckToMemoryBankRequest;
 import com.prosper.learn.application.dto.request.UpdateCourseSettingRequest;
 import com.prosper.learn.application.dto.response.CourseMemoryBankDTO;
+import com.prosper.learn.application.dto.response.ReviewSummaryDTO;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.post.PostDO;
@@ -82,6 +83,34 @@ public class MemoryBankService {
 
 
     // ========== Query 方法（读操作）==========
+
+    /**
+     * 获取复习概览（包含课程列表和统计数据）
+     *
+     * @param userId 用户ID
+     * @param state 状态过滤（可选）
+     * @return 复习概览DTO
+     */
+    public ReviewSummaryDTO getReviewSummary(Long userId, Integer state) {
+        ReviewSummaryDTO summary = new ReviewSummaryDTO();
+
+        List<CourseMemoryBankDTO> courses = getMemoryBankCourses(userId, state);
+        summary.setCourses(courses);
+
+        if (!courses.isEmpty()) {
+            // 计算今日待复习总数
+            int todayTotal = courses.stream()
+                    .mapToInt(bank -> bank.getDueCardCount() != null ? bank.getDueCardCount() : 0)
+                    .sum();
+            summary.setTodayTotal(todayTotal);
+        }
+
+        // TODO: 今日已复习数和连续天数需要从其他地方获取
+        summary.setTodayCompleted(0);
+        summary.setStreakDays(0);
+
+        return summary;
+    }
 
     /**
      * 获取记忆库课程列表

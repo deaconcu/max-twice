@@ -231,3 +231,13 @@ export interface ReviewStats {
 export interface ReviewSubmitResult {
   nextCard: MemoryCardView | null // 下一张待复习卡片
 }
+
+/**
+ * 复习概览
+ */
+export interface ReviewSummary {
+  todayTotal: number // 今日待复习总数
+  todayCompleted: number // 今日已复习数
+  streakDays: number // 连续复习天数
+  courses: CourseMemoryBank[] // 课程列表
+}

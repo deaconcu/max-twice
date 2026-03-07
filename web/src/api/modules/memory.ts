@@ -4,7 +4,6 @@
 import client from '../client'
 import type { ApiResponse } from '@/types/api'
 import type {
-  CourseMemoryBank,
   MemoryCardView,
   MemoryCardDeck,
   GetReviewQueueParams,
@@ -14,12 +13,13 @@ import type {
   DeckUpdateDiff,
   CardContentDiff,
   ReviewSubmitResult,
+  ReviewSummary,
 } from '@/types/memory'
 
 /**
- * 获取记忆库课程列表
+ * 获取复习概览（包含记忆库课程列表和统计数据）
  */
-export function getMemoryBankCourses(): Promise<ApiResponse<CourseMemoryBank[]>> {
+export function getReviewSummary(): Promise<ApiResponse<ReviewSummary>> {
   return client.get('/v1/memory/memory-bank/courses')
 }
 
@@ -71,7 +71,9 @@ export function getCardList(params: GetCardListParams): Promise<ApiResponse<Memo
 /**
  * 获取下一张待复习卡片
  */
-export function getNextCard(params?: { courseId?: number }): Promise<ApiResponse<ReviewSubmitResult>> {
+export function getNextCard(params?: {
+  courseId?: number
+}): Promise<ApiResponse<ReviewSubmitResult>> {
   return client.get('/v1/memory/review/next', { params })
 }
 

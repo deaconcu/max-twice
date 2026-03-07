@@ -706,12 +706,7 @@
             </div>
 
             <div class="d-flex ga-3">
-              <v-btn
-                color="primary"
-                variant="flat"
-                rounded="lg"
-                @click="updateCourseSetting"
-              >
+              <v-btn color="primary" variant="flat" rounded="lg" @click="updateCourseSetting">
                 {{ t('common.saveSettings') }}
               </v-btn>
             </div>
@@ -817,11 +812,16 @@ import { useI18n } from '@/composables/useI18n'
 import { useFetch, useMutation } from '@/composables'
 import { memoryApi } from '@/api'
 import type {
-  CourseMemoryBank,
   MemoryCardView,
   CourseStudyStatus,
+  ReviewSummary,
 } from '@/types/memory'
-import { ReviewResult, FrequencySetting, CourseStudyStatus as Status, CardOrder } from '@/types/memory'
+import {
+  ReviewResult,
+  FrequencySetting,
+  CourseStudyStatus as Status,
+  CardOrder,
+} from '@/types/memory'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
@@ -848,12 +848,18 @@ const listLoading = ref(false)
 const listLastId = ref<number | undefined>(undefined)
 const listHasMore = ref(true)
 
-// 使用 useFetch 加载记忆库课程
-const { data: courseMemoryBanks, refresh: refreshCourses } = useFetch<CourseMemoryBank[]>({
-  fetchFn: memoryApi.getMemoryBankCourses,
+// 使用 useFetch 加载复习概览
+const { data: reviewSummary, refresh: refreshSummary } = useFetch<ReviewSummary>({
+  fetchFn: memoryApi.getReviewSummary,
   immediate: true,
-  defaultValue: [],
+  defaultValue: { todayTotal: 0, todayCompleted: 0, streakDays: 0, courses: [] },
 })
+
+// 从复习概览中提取课程列表
+const courseMemoryBanks = computed(() => reviewSummary.value.courses)
+
+// 刷新课程列表的方法（兼容现有代码）
+const refreshCourses = refreshSummary
 
 // 计算属性
 const totalDueCards = computed(() => {

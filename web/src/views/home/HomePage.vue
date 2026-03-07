@@ -1,121 +1,119 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useFetch } from '@/composables'
 import { useUserStore } from '@/stores/modules/user'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
-import { statsApi } from '@/api/modules/stats'
-import { courseApi, subscriptionApi } from '@/api/modules/course'
-import type { PlatformStats } from '@/types/stats'
-import type { UserDailyStatsDTO } from '@/types/user'
-import type { Course } from '@/types/course'
+import { homeApi } from '@/api/modules/home'
+import type { HomePage } from '@/types/home'
 
 const router = useRouter()
 const { t } = useI18n()
 const userStore = useUserStore()
 
 // 用户信息
-const userName = computed(() => userStore.currentUser?.name || t('common.guest'))
+const userName = computed(() => userStore.currentUser?.name ?? t('common.guest'))
 
-// 用户学习统计数据
-const stats = ref({
-  coursesInProgress: 0, // 从用户订阅课程获取
-  completedCourses: 0, // 暂时保持 mock，需要新接口
-  careersInProgress: 0, // 暂时保持 mock，需要新接口
-  learningDays: 0, // 累计学习天数
-  reviewCards: 0, // 待复习卡片数
-})
-
-// 1. 加载平台统计数据（GET /api/v1/stats/platform）
-const { data: platformStatsData } = useFetch<PlatformStats>({
-  fetchFn: () => statsApi.getPlatformStats(),
-  immediate: true,
+// 加载首页聚合数据
+const { data: homeData, loading: homeLoading } = useFetch<HomePage>({
+  fetchFn: () => homeApi.getHomePageData(),
+  immediate: userStore.isLoggedIn,
   defaultValue: {
-    courseCount: 0,
-    careerPathCount: 0,
-    roadmapCount: 0,
-    knowledgeNodeCount: 0,
-    articleCount: 0,
-    lastUpdated: '',
+    platformStats: {
+      courseCount: 0,
+      careerPathCount: 0,
+      roadmapCount: 0,
+      knowledgeNodeCount: 0,
+      articleCount: 0,
+      lastUpdated: '',
+    },
+    userStats: {
+      learningDays: 0,
+      coursesInProgress: 0,
+      careersInProgress: 0,
+    },
+    learningCareers: [],
+    learningCourses: [],
+    reviewSummary: {
+      todayTotal: 0,
+      todayCompleted: 0,
+      streakDays: 0,
+      courses: [],
+    },
+    recommendedCareers: [],
+    recommendedCourses: [],
   },
 })
 
-// 2. 加载用户今日统计（GET /api/v1/stats/users/{userId}/today）
-const { data: userTodayStatsData } = useFetch<UserDailyStatsDTO>({
-  fetchFn: () => {
-    if (!userStore.userId) {
-      return Promise.reject(new Error('用户未登录'))
-    }
-    return statsApi.getUserTodayStats(userStore.userId)
-  },
-  immediate: userStore.isLoggedIn,
-})
-
-// 3. 加载用户订阅的课程（GET /api/v1/users/{userId}/subscriptions）
-const { data: userSubscriptionsData } = useFetch<Course[]>({
-  fetchFn: () => {
-    if (!userStore.userId) {
-      return Promise.reject(new Error('用户未登录'))
-    }
-    return subscriptionApi.getUserSubscriptions(userStore.userId)
-  },
-  immediate: userStore.isLoggedIn,
-  defaultValue: [],
-})
-
-// 4. 加载热门课程（GET /api/v1/courses/hot）
-const { data: hotCoursesData } = useFetch<Course[]>({
-  fetchFn: () => courseApi.getHotCourses(),
-  immediate: true,
-  defaultValue: [],
-})
+// 计算属性：用户学习统计
+const stats = computed(() => ({
+  learningDays: homeData.value.userStats.learningDays,
+  coursesInProgress: homeData.value.userStats.coursesInProgress,
+  careersInProgress: homeData.value.userStats.careersInProgress,
+  reviewCards: homeData.value.reviewSummary.todayTotal,
+}))
 
 // 计算属性：平台统计数据
-const platformStats = computed(() => platformStatsData.value || {
-  courseCount: 0,
-  careerPathCount: 0,
-  roadmapCount: 0,
-  knowledgeNodeCount: 0,
-  articleCount: 0,
-  lastUpdated: '',
+const platformStats = computed(() => homeData.value.platformStats)
+
+// 计算属性：复习数据
+const reviewData = computed(() => ({
+  todayTotal: homeData.value.reviewSummary.todayTotal,
+  todayCompleted: homeData.value.reviewSummary.todayCompleted,
+  streakDays: homeData.value.reviewSummary.streakDays,
+  courses: homeData.value.reviewSummary.courses.slice(0, 3),
+}))
+
+// 计算属性：正在学习的职业路线
+const recentCareers = computed(() => {
+  return homeData.value.learningCareers.map((item) => {
+    const roadmap = item.object as
+      | { id: number; title: string; description?: string; profession?: { name: string } }
+      | undefined
+    return {
+      id: item.id,
+      careerId: item.objectId,
+      name: roadmap?.title ?? roadmap?.profession?.name ?? '未知职业',
+      progress: Math.round(item.progressPercent / 100),
+      description: roadmap?.description ?? '',
+      icon: 'mdi-briefcase-variant',
+      iconColor: 'info',
+    }
+  })
 })
 
-// 计算属性：正在学习的课程（取前3个订阅的课程，如果没有则使用mock数据）
+// 计算属性：正在学习的课程
 const recentCourses = computed(() => {
-  const subscriptions = userSubscriptionsData.value || []
-  if (subscriptions.length > 0) {
-    return subscriptions.slice(0, 3)
-  }
-  // mock 数据
-  return [
-    {
-      id: 101,
-      name: 'JavaScript 入门到精通',
-      description: '从零基础到熟练掌握 JS 核心概念',
-      progress: 45,
-      icon: 'mdi-language-javascript',
-      iconColor: 'warning',
-    },
-    {
-      id: 102,
-      name: 'Vue.js 3 实战开发',
-      description: '组件化开发与状态管理',
-      progress: 30,
-      icon: 'mdi-vuejs',
-      iconColor: 'success',
-    },
-    {
-      id: 103,
-      name: 'TypeScript 完全指南',
-      description: '类型系统与工程化实践',
-      progress: 15,
-      icon: 'mdi-language-typescript',
+  return homeData.value.learningCourses.map((item) => {
+    const course = item.object as { id: number; name: string; description?: string } | undefined
+    return {
+      id: course?.id ?? item.objectId,
+      name: course?.name ?? '未知课程',
+      description: course?.description ?? '',
+      progress: Math.round(item.progressPercent / 100),
+      icon: 'mdi-book-open-variant',
       iconColor: 'info',
-    },
-  ]
+    }
+  })
 })
+
+// 计算属性：推荐职业
+const recommendedCareers = computed(() => {
+  return homeData.value.recommendedCareers.map((career, index) => ({
+    id: index + 1,
+    careerId: career.id,
+    name: career.name,
+    icon: career.icon ?? 'mdi-briefcase-variant',
+    iconColor: ['purple', 'orange', 'teal', 'pink'][index % 4],
+    description: career.description ?? '',
+    learnerCount: career.learnerCount ?? 0,
+  }))
+})
+
+// 计算属性：推荐课程
+const recommendedCourses = computed(() => homeData.value.recommendedCourses)
 
 // 课程图标和颜色池
 const courseIcons = [
@@ -133,36 +131,6 @@ const courseColors = ['primary', 'success', 'warning', 'info', 'purple', 'teal',
 // 根据ID获取课程图标
 const getCourseIcon = (id: number) => courseIcons[id % courseIcons.length]
 const getCourseColor = (id: number) => courseColors[id % courseColors.length]
-
-// 计算属性：推荐课程（取前4个热门课程，如果没有则使用mock数据）
-const recommendedCourses = computed(() => {
-  const hotCourses = hotCoursesData.value || []
-  if (hotCourses.length > 0) {
-    return hotCourses.slice(0, 4)
-  }
-  // mock 数据
-  return [
-    { id: 201, name: 'Python 数据分析', learnerCount: 3200 },
-    { id: 202, name: 'React 18 新特性', learnerCount: 2800 },
-    { id: 203, name: 'Docker 容器化部署', learnerCount: 2100 },
-    { id: 204, name: 'Node.js 后端开发', learnerCount: 1900 },
-  ]
-})
-
-// 监听数据变化，更新统计数据
-watch([userSubscriptionsData, userTodayStatsData], () => {
-  // 更新正在学习的课程数
-  if (userSubscriptionsData.value) {
-    stats.value.coursesInProgress = userSubscriptionsData.value.length
-  }
-
-  // 更新今日学习统计
-  if (userTodayStatsData.value) {
-    // 目前后端只返回基础统计数据（views, twices, likes, comments）
-    // 暂时不更新 todayMinutes，等待后端添加学习时长统计
-    // stats.value.todayMinutes = userTodayStatsData.value.xxx
-  }
-})
 
 // 快速入口 - 3步学习路径
 const quickLinks = computed(() => [
@@ -192,178 +160,30 @@ const quickLinks = computed(() => [
   },
 ])
 
-// 复习数据（mock）
-const reviewData = ref({
-  todayTotal: 12,        // 今日待复习总数
-  todayCompleted: 5,     // 今日已复习
-  streakDays: 7,         // 连续复习天数
-  decks: [
-    {
-      id: 1,
-      title: 'JavaScript 基础概念',
-      cardCount: 24,
-      dueCount: 5,
-      courseName: 'JavaScript 入门',
-      icon: 'mdi-language-javascript',
-      iconColor: 'warning',
-    },
-    {
-      id: 2,
-      title: 'Vue 3 核心知识点',
-      cardCount: 18,
-      dueCount: 3,
-      courseName: 'Vue.js 实战',
-      icon: 'mdi-vuejs',
-      iconColor: 'success',
-    },
-    {
-      id: 3,
-      title: '数据结构与算法',
-      cardCount: 32,
-      dueCount: 4,
-      courseName: '计算机基础',
-      icon: 'mdi-sitemap',
-      iconColor: 'info',
-    },
-  ],
-})
-
-// 正在学习的职业（暂时保持 mock，需要新接口）
-const recentCareers = ref([
-  {
-    id: 1,
-    careerId: 201,
-    name: '前端工程师',
-    progress: 65,
-    icon: 'mdi-laptop',
-    iconColor: 'info',
-    description: '掌握现代前端技术栈',
-    courseCount: 8,
-    completedCourses: 5,
-  },
-  {
-    id: 2,
-    careerId: 202,
-    name: 'UX设计师',
-    progress: 30,
-    icon: 'mdi-palette',
-    iconColor: 'warning',
-    description: '用户体验与界面设计',
-    courseCount: 6,
-    completedCourses: 2,
-  },
-  {
-    id: 3,
-    careerId: 203,
-    name: '后端工程师',
-    progress: 15,
-    icon: 'mdi-server',
-    iconColor: 'success',
-    description: '服务端开发与架构设计',
-    courseCount: 10,
-    completedCourses: 1,
-  },
-])
-
-// 推荐职业（mock）
-const recommendedCareers = ref([
-  {
-    id: 1,
-    careerId: 301,
-    name: '数据分析师',
-    icon: 'mdi-chart-bar',
-    iconColor: 'purple',
-    description: '数据驱动决策，洞察商业价值',
-    courseCount: 6,
-    learnerCount: 2340,
-  },
-  {
-    id: 2,
-    careerId: 302,
-    name: '产品经理',
-    icon: 'mdi-lightbulb-outline',
-    iconColor: 'orange',
-    description: '产品规划与用户需求分析',
-    courseCount: 5,
-    learnerCount: 1890,
-  },
-  {
-    id: 3,
-    careerId: 303,
-    name: '全栈工程师',
-    icon: 'mdi-layers-triple',
-    iconColor: 'teal',
-    description: '前后端全面发展',
-    courseCount: 12,
-    learnerCount: 3210,
-  },
-  {
-    id: 4,
-    careerId: 304,
-    name: 'AI工程师',
-    icon: 'mdi-robot',
-    iconColor: 'pink',
-    description: '人工智能与机器学习',
-    courseCount: 8,
-    learnerCount: 1560,
-  },
-])
-
-// 最近活动
-const recentActivities = ref([
-  {
-    id: 1,
-    type: 'course',
-    title: `${t('home.completed')} Python编程入门 第3章`,
-    time: '2小时前',
-    icon: 'mdi-check-circle',
-    iconColor: 'success',
-  },
-  {
-    id: 2,
-    type: 'career',
-    title: `${t('home.started')} 前端工程师 - React基础`,
-    time: '昨天',
-    icon: 'mdi-play-circle',
-    iconColor: 'info',
-  },
-  {
-    id: 3,
-    type: 'achievement',
-    title: `${t('home.achieved')}：连续学习7天`,
-    time: '2天前',
-    icon: 'mdi-trophy',
-    iconColor: 'warning',
-  },
-  {
-    id: 4,
-    type: 'course',
-    title: `${t('home.completed')} 数据结构与算法 练习题`,
-    time: '3天前',
-    icon: 'mdi-check-circle',
-    iconColor: 'success',
-  },
-])
-
 // 导航函数
 const navigateTo = (path: string): void => {
   router.push(path)
 }
 
 const openCourse = (courseId: number): void => {
-  router.push(`/courses/${courseId}`)
+  router.push(`/courses/${String(courseId)}`)
 }
 
 const openCareer = (careerId: number): void => {
-  router.push(`/careers/${careerId}`)
+  router.push(`/careers/${String(careerId)}`)
 }
+
+// 暴露 homeLoading 供模板使用（可选，用于显示加载状态）
+void homeLoading
 </script>
 
 <template>
   <DefaultLayout>
     <!-- 欢迎区域 -->
     <div class="welcome-section mb-4 mb-md-6">
-      <div class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between ga-4 ga-md-6">
+      <div
+        class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between ga-4 ga-md-6"
+      >
         <!-- 左侧：用户信息 -->
         <div class="d-flex align-center ga-3 ga-sm-4 flex-grow-1" style="min-width: 0">
           <UserAvatar
@@ -398,9 +218,7 @@ const openCareer = (careerId: number): void => {
               <div class="text-h5 font-weight-bold text-warning">
                 {{ stats.learningDays }} <span class="text-body-2">天</span>
               </div>
-              <div class="text-caption text-no-wrap text-medium-emphasis">
-                累计学习
-              </div>
+              <div class="text-caption text-no-wrap text-medium-emphasis">累计学习</div>
             </div>
           </div>
 
@@ -411,30 +229,48 @@ const openCareer = (careerId: number): void => {
           <div class="d-flex align-center ga-4 ga-md-5">
             <!-- 进行中课程 -->
             <div class="text-center">
-              <div class="text-h6 font-weight-bold" :style="{ color: 'rgb(var(--v-theme-on-surface))' }">
+              <div
+                class="text-h6 font-weight-bold"
+                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+              >
                 {{ stats.coursesInProgress }}
               </div>
-              <div class="text-caption text-no-wrap" :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }">
+              <div
+                class="text-caption text-no-wrap"
+                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+              >
                 进行中课程
               </div>
             </div>
 
             <!-- 进行中职业 -->
             <div class="text-center">
-              <div class="text-h6 font-weight-bold" :style="{ color: 'rgb(var(--v-theme-on-surface))' }">
+              <div
+                class="text-h6 font-weight-bold"
+                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+              >
                 {{ stats.careersInProgress }}
               </div>
-              <div class="text-caption text-no-wrap" :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }">
+              <div
+                class="text-caption text-no-wrap"
+                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+              >
                 进行中职业
               </div>
             </div>
 
             <!-- 复习卡片数 -->
             <div class="text-center">
-              <div class="text-h6 font-weight-bold" :style="{ color: 'rgb(var(--v-theme-on-surface))' }">
+              <div
+                class="text-h6 font-weight-bold"
+                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+              >
                 {{ stats.reviewCards || 0 }}
               </div>
-              <div class="text-caption text-no-wrap" :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }">
+              <div
+                class="text-caption text-no-wrap"
+                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+              >
                 待复习
               </div>
             </div>
@@ -449,7 +285,9 @@ const openCareer = (careerId: number): void => {
         <!-- 左侧：标题 + 3个步骤 -->
         <div class="flex-grow-1">
           <!-- 标题和平台数据 -->
-          <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 mb-4 mb-md-6">
+          <div
+            class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 mb-4 mb-md-6"
+          >
             <div>
               <h2
                 class="text-h6 text-sm-h5 font-weight-bold mb-1"
@@ -481,13 +319,15 @@ const openCareer = (careerId: number): void => {
               </div>
               <div class="text-center">
                 <div class="text-h6 font-weight-bold text-primary">
-                  {{ platformStats.knowledgeNodeCount.toLocaleString() }} <span class="text-body-2">个</span>
+                  {{ platformStats.knowledgeNodeCount.toLocaleString() }}
+                  <span class="text-body-2">个</span>
                 </div>
                 <div class="text-caption text-medium-emphasis">知识节点</div>
               </div>
               <div class="text-center">
                 <div class="text-h6 font-weight-bold text-primary">
-                  {{ platformStats.articleCount.toLocaleString() }} <span class="text-body-2">篇</span>
+                  {{ platformStats.articleCount.toLocaleString() }}
+                  <span class="text-body-2">篇</span>
                 </div>
                 <div class="text-caption text-medium-emphasis">文章</div>
               </div>
@@ -501,13 +341,10 @@ const openCareer = (careerId: number): void => {
                 <v-card class="step-card" rounded="lg" border hover @click="navigateTo(link.path)">
                   <div class="d-flex align-center ga-3">
                     <!-- 数字 -->
-                    <v-avatar
-                      color="grey-lighten-4"
-                      size="40"
-                      rounded="lg"
-                      class="flex-shrink-0"
-                    >
-                      <span class="text-h6 font-weight-bold text-grey-darken-1">{{ link.step }}</span>
+                    <v-avatar color="grey-lighten-4" size="40" rounded="lg" class="flex-shrink-0">
+                      <span class="text-h6 font-weight-bold text-grey-darken-1">{{
+                        link.step
+                      }}</span>
                     </v-avatar>
 
                     <!-- 文字 -->
@@ -549,7 +386,9 @@ const openCareer = (careerId: number): void => {
 
     <!-- 复习区域 -->
     <div class="review-section mb-6 mb-md-10">
-      <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 mb-4">
+      <div
+        class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 mb-4"
+      >
         <h2
           class="text-h6 text-sm-h5 font-weight-bold"
           :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
@@ -586,44 +425,54 @@ const openCareer = (careerId: number): void => {
               <div class="text-caption text-medium-emphasis">今日进度</div>
             </div>
             <v-progress-circular
-              :model-value="(reviewData.todayCompleted / reviewData.todayTotal) * 100"
+              :model-value="
+                reviewData.todayTotal > 0
+                  ? (reviewData.todayCompleted / reviewData.todayTotal) * 100
+                  : 0
+              "
               color="success"
               :size="48"
               :width="5"
             >
-              <span class="text-caption font-weight-bold">{{ Math.round((reviewData.todayCompleted / reviewData.todayTotal) * 100) }}%</span>
+              <span class="text-caption font-weight-bold"
+                >{{
+                  reviewData.todayTotal > 0
+                    ? Math.round((reviewData.todayCompleted / reviewData.todayTotal) * 100)
+                    : 0
+                }}%</span
+              >
             </v-progress-circular>
           </v-card-text>
         </v-card>
 
-        <!-- 待复习卡片组列表 -->
+        <!-- 待复习课程列表 -->
         <v-card
-          v-for="deck in reviewData.decks"
-          :key="deck.id"
+          v-for="course in reviewData.courses"
+          :key="course.course.id"
           rounded="lg"
           border
           hover
           class="review-deck-card"
-          @click="navigateTo(`/review/${deck.id}`)"
+          @click="navigateTo('/review')"
         >
           <v-card-text class="pa-3">
             <div class="d-flex align-center ga-3">
               <div class="icon-container-sm flex-shrink-0">
-                <v-icon :icon="deck.icon || 'mdi-cards-outline'" :color="deck.iconColor || 'success'" size="20"></v-icon>
+                <v-icon icon="mdi-book-open-variant" color="success" size="20"></v-icon>
               </div>
               <div class="flex-grow-1" style="min-width: 0">
                 <div
                   class="text-body-2 font-weight-bold mb-1 text-truncate"
                   :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                 >
-                  {{ deck.title }}
+                  {{ course.course.name }}
                 </div>
                 <div class="text-caption text-medium-emphasis text-truncate">
-                  {{ deck.courseName }}
+                  共 {{ course.cardCount }} 张卡片
                 </div>
               </div>
               <v-chip size="small" color="success" variant="tonal" class="flex-shrink-0">
-                {{ deck.dueCount }}
+                {{ course.dueCardCount }}
               </v-chip>
             </div>
           </v-card-text>
@@ -633,19 +482,16 @@ const openCareer = (careerId: number): void => {
 
     <!-- 正在跟踪的职业 -->
     <div class="career-section mb-6 mb-md-10">
-      <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 mb-4">
+      <div
+        class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 mb-4"
+      >
         <h2
           class="text-h6 text-sm-h5 font-weight-bold"
           :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
         >
           正在跟踪的职业路线
         </h2>
-        <v-btn
-          variant="text"
-          size="small"
-          :color="'on-surface'"
-          @click="navigateTo('/career')"
-        >
+        <v-btn variant="text" size="small" :color="'on-surface'" @click="navigateTo('/career')">
           探索更多
           <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
         </v-btn>
@@ -680,12 +526,8 @@ const openCareer = (careerId: number): void => {
               </div>
             </div>
             <div class="d-flex align-center justify-space-between mb-2">
-              <span class="text-caption text-medium-emphasis">
-                {{ career.completedCourses }}/{{ career.courseCount }} 门课程
-              </span>
-              <span class="text-caption font-weight-bold text-grey">
-                {{ career.progress }}%
-              </span>
+              <span class="text-caption text-medium-emphasis"> 学习进度 </span>
+              <span class="text-caption font-weight-bold text-grey"> {{ career.progress }}% </span>
             </div>
             <v-progress-linear
               :model-value="career.progress"
@@ -700,19 +542,16 @@ const openCareer = (careerId: number): void => {
 
     <!-- 正在学习的课程 -->
     <div class="course-section mb-6 mb-md-10">
-      <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 mb-4">
+      <div
+        class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 mb-4"
+      >
         <h2
           class="text-h6 text-sm-h5 font-weight-bold"
           :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
         >
           正在学习的课程
         </h2>
-        <v-btn
-          variant="text"
-          size="small"
-          :color="'on-surface'"
-          @click="navigateTo('/courses')"
-        >
+        <v-btn variant="text" size="small" :color="'on-surface'" @click="navigateTo('/courses')">
           浏览更多
           <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
         </v-btn>
@@ -732,7 +571,11 @@ const openCareer = (careerId: number): void => {
           <v-card-text class="pa-4">
             <div class="d-flex align-center ga-3 mb-3">
               <div class="icon-container flex-shrink-0">
-                <v-icon :icon="course.icon || 'mdi-book-open-variant'" :color="course.iconColor || 'info'" size="24"></v-icon>
+                <v-icon
+                  :icon="course.icon || 'mdi-book-open-variant'"
+                  :color="course.iconColor || 'info'"
+                  size="24"
+                ></v-icon>
               </div>
               <div class="flex-grow-1" style="min-width: 0">
                 <div
@@ -747,9 +590,7 @@ const openCareer = (careerId: number): void => {
               </div>
             </div>
             <div class="d-flex align-center justify-space-between mb-2">
-              <span class="text-caption text-medium-emphasis">
-                学习进度
-              </span>
+              <span class="text-caption text-medium-emphasis"> 学习进度 </span>
               <span class="text-caption font-weight-bold text-grey">
                 {{ course.progress || 0 }}%
               </span>
@@ -776,12 +617,7 @@ const openCareer = (careerId: number): void => {
           >
             推荐职业
           </h2>
-          <v-btn
-            variant="text"
-            size="small"
-            :color="'on-surface'"
-            @click="navigateTo('/career')"
-          >
+          <v-btn variant="text" size="small" :color="'on-surface'" @click="navigateTo('/career')">
             更多
             <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
           </v-btn>
@@ -808,7 +644,7 @@ const openCareer = (careerId: number): void => {
                     {{ career.name }}
                   </div>
                   <div class="text-caption text-medium-emphasis text-truncate">
-                    {{ career.courseCount }} 门课程 · {{ career.learnerCount.toLocaleString() }} 人学习
+                    {{ career.learnerCount.toLocaleString() }} 人学习
                   </div>
                 </div>
                 <v-icon
@@ -832,12 +668,7 @@ const openCareer = (careerId: number): void => {
           >
             推荐课程
           </h2>
-          <v-btn
-            variant="text"
-            size="small"
-            :color="'on-surface'"
-            @click="navigateTo('/courses')"
-          >
+          <v-btn variant="text" size="small" :color="'on-surface'" @click="navigateTo('/courses')">
             更多
             <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
           </v-btn>
@@ -854,7 +685,11 @@ const openCareer = (careerId: number): void => {
             <v-card-text class="pa-3">
               <div class="d-flex align-center ga-3">
                 <div class="icon-container-sm flex-shrink-0">
-                  <v-icon :icon="getCourseIcon(course.id)" :color="getCourseColor(course.id)" size="20"></v-icon>
+                  <v-icon
+                    :icon="getCourseIcon(course.id)"
+                    :color="getCourseColor(course.id)"
+                    size="20"
+                  ></v-icon>
                 </div>
                 <div class="flex-grow-1" style="min-width: 0">
                   <div
