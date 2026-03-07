@@ -477,6 +477,32 @@ void homeLoading
             </div>
           </v-card-text>
         </v-card>
+
+        <!-- 没有数据时显示占位卡片 -->
+        <v-card
+          v-if="reviewData.courses.length === 0"
+          rounded="lg"
+          border
+          class="review-deck-card empty-placeholder-card"
+          @click="navigateTo('/courses')"
+        >
+          <v-card-text class="pa-3">
+            <div class="d-flex align-center ga-3">
+              <div class="icon-container-sm flex-shrink-0 empty-icon-container">
+                <v-icon icon="mdi-cards-outline" color="grey-lighten-1" size="20"></v-icon>
+              </div>
+              <div class="flex-grow-1" style="min-width: 0">
+                <div class="text-body-2 font-weight-bold mb-1 text-truncate text-grey-lighten-1">
+                  暂无复习卡片
+                </div>
+                <div class="text-caption text-grey-lighten-1 text-truncate">
+                  学习课程后会自动添加
+                </div>
+              </div>
+              <v-icon icon="mdi-arrow-right" color="grey-lighten-1" size="16"></v-icon>
+            </div>
+          </v-card-text>
+        </v-card>
       </div>
     </div>
 
@@ -498,46 +524,79 @@ void homeLoading
       </div>
 
       <!-- 职业卡片列表 -->
-      <div class="d-flex flex-wrap ga-3">
-        <v-card
+      <v-row>
+        <!-- 有数据时显示真实卡片 -->
+        <v-col
           v-for="career in recentCareers"
           :key="career.id"
-          rounded="lg"
-          border
-          hover
-          class="career-card"
-          @click="openCareer(career.careerId)"
+          cols="12"
+          sm="6"
+          md="4"
+          lg="3"
         >
-          <v-card-text class="pa-4">
-            <div class="d-flex align-center ga-3 mb-3">
-              <div class="icon-container flex-shrink-0">
-                <v-icon :icon="career.icon" :color="career.iconColor" size="24"></v-icon>
-              </div>
-              <div class="flex-grow-1">
-                <div
-                  class="text-body-1 font-weight-bold mb-1"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                >
-                  {{ career.name }}
+          <v-card
+            rounded="lg"
+            border
+            hover
+            class="h-100"
+            @click="openCareer(career.careerId)"
+          >
+            <v-card-text class="pa-4">
+              <div class="d-flex align-center ga-3 mb-3">
+                <div class="icon-container flex-shrink-0">
+                  <v-icon :icon="career.icon" :color="career.iconColor" size="24"></v-icon>
                 </div>
-                <div class="text-caption text-medium-emphasis">
-                  {{ career.description }}
+                <div class="flex-grow-1">
+                  <div
+                    class="text-body-1 font-weight-bold mb-1"
+                    :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                  >
+                    {{ career.name }}
+                  </div>
+                  <div class="text-caption text-medium-emphasis">
+                    {{ career.description }}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="d-flex align-center justify-space-between mb-2">
-              <span class="text-caption text-medium-emphasis"> 学习进度 </span>
-              <span class="text-caption font-weight-bold text-grey"> {{ career.progress }}% </span>
-            </div>
-            <v-progress-linear
-              :model-value="career.progress"
-              color="grey-lighten-3"
-              height="6"
-              rounded
-            ></v-progress-linear>
-          </v-card-text>
-        </v-card>
-      </div>
+              <div class="d-flex align-center justify-space-between mb-2">
+                <span class="text-caption text-medium-emphasis"> 学习进度 </span>
+                <span class="text-caption font-weight-bold text-grey"> {{ career.progress }}% </span>
+              </div>
+              <v-progress-linear
+                :model-value="career.progress"
+                color="grey-lighten-3"
+                height="6"
+                rounded
+              ></v-progress-linear>
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <!-- 没有数据时显示占位卡片 -->
+        <v-col v-if="recentCareers.length === 0" cols="12" sm="6" md="4" lg="3">
+          <v-card
+            rounded="lg"
+            border
+            class="empty-placeholder-card"
+            @click="navigateTo('/career')"
+          >
+            <v-card-text class="pa-4">
+              <div class="d-flex align-center ga-3">
+                <div class="icon-container flex-shrink-0 empty-icon-container">
+                  <v-icon icon="mdi-briefcase-variant" color="grey-lighten-1" size="24"></v-icon>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="text-body-1 font-weight-bold mb-1 text-grey-lighten-1">
+                    暂无职业路线
+                  </div>
+                  <div class="text-caption text-grey-lighten-1">去职业中心探索适合你的方向</div>
+                </div>
+                <v-icon icon="mdi-arrow-right" color="grey-lighten-1" size="20"></v-icon>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
     </div>
 
     <!-- 正在学习的课程 -->
@@ -558,52 +617,87 @@ void homeLoading
       </div>
 
       <!-- 课程卡片列表 -->
-      <div class="d-flex flex-wrap ga-3">
-        <v-card
+      <v-row>
+        <!-- 有数据时显示真实卡片 -->
+        <v-col
           v-for="course in recentCourses"
           :key="course.id"
-          rounded="lg"
-          border
-          hover
-          class="course-card"
-          @click="openCourse(course.id)"
+          cols="12"
+          sm="6"
+          md="4"
+          lg="3"
         >
-          <v-card-text class="pa-4">
-            <div class="d-flex align-center ga-3 mb-3">
-              <div class="icon-container flex-shrink-0">
-                <v-icon
-                  :icon="course.icon || 'mdi-book-open-variant'"
-                  :color="course.iconColor || 'info'"
-                  size="24"
-                ></v-icon>
-              </div>
-              <div class="flex-grow-1" style="min-width: 0">
-                <div
-                  class="text-body-1 font-weight-bold mb-1 text-truncate"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                >
-                  {{ course.name }}
+          <v-card
+            rounded="lg"
+            border
+            hover
+            class="h-100"
+            @click="openCourse(course.id)"
+          >
+            <v-card-text class="pa-4">
+              <div class="d-flex align-center ga-3 mb-3">
+                <div class="icon-container flex-shrink-0">
+                  <v-icon
+                    :icon="course.icon ?? 'mdi-book-open-variant'"
+                    :color="course.iconColor ?? 'info'"
+                    size="24"
+                  ></v-icon>
                 </div>
-                <div class="text-caption text-medium-emphasis text-truncate">
-                  {{ course.description || '点击查看详情' }}
+                <div class="flex-grow-1" style="min-width: 0">
+                  <div
+                    class="text-body-1 font-weight-bold mb-1 text-truncate"
+                    :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                  >
+                    {{ course.name }}
+                  </div>
+                  <div class="text-caption text-medium-emphasis text-truncate">
+                    {{ course.description ?? '点击查看详情' }}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="d-flex align-center justify-space-between mb-2">
-              <span class="text-caption text-medium-emphasis"> 学习进度 </span>
-              <span class="text-caption font-weight-bold text-grey">
-                {{ course.progress || 0 }}%
-              </span>
-            </div>
-            <v-progress-linear
-              :model-value="course.progress || 0"
-              color="grey-lighten-3"
-              height="6"
-              rounded
-            ></v-progress-linear>
-          </v-card-text>
-        </v-card>
-      </div>
+              <div class="d-flex align-center justify-space-between mb-2">
+                <span class="text-caption text-medium-emphasis"> 学习进度 </span>
+                <span class="text-caption font-weight-bold text-grey">
+                  {{ course.progress ?? 0 }}%
+                </span>
+              </div>
+              <v-progress-linear
+                :model-value="course.progress ?? 0"
+                color="grey-lighten-3"
+                height="6"
+                rounded
+              ></v-progress-linear>
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <!-- 没有数据时显示占位卡片 -->
+        <v-col v-if="recentCourses.length === 0" cols="12" sm="6" md="4" lg="3">
+          <v-card
+            rounded="lg"
+            border
+            class="empty-placeholder-card"
+            @click="navigateTo('/courses')"
+          >
+            <v-card-text class="pa-4">
+              <div class="d-flex align-center ga-3">
+                <div class="icon-container flex-shrink-0 empty-icon-container">
+                  <v-icon icon="mdi-book-open-variant" color="grey-lighten-1" size="24"></v-icon>
+                </div>
+                <div class="flex-grow-1" style="min-width: 0">
+                  <div class="text-body-1 font-weight-bold mb-1 text-truncate text-grey-lighten-1">
+                    暂无学习中的课程
+                  </div>
+                  <div class="text-caption text-grey-lighten-1 text-truncate">
+                    去课程中心发现感兴趣的内容
+                  </div>
+                </div>
+                <v-icon icon="mdi-arrow-right" color="grey-lighten-1" size="20"></v-icon>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
     </div>
 
     <!-- 推荐区域 -->
@@ -845,20 +939,6 @@ void homeLoading
   max-width: 280px;
 }
 
-/* 职业卡片 */
-.career-card {
-  flex: 1 1 280px;
-  min-width: 280px;
-  max-width: 350px;
-}
-
-/* 课程卡片 */
-.course-card {
-  flex: 1 1 280px;
-  min-width: 280px;
-  max-width: 350px;
-}
-
 /* 图标容器 - 大尺寸 */
 .icon-container {
   width: 48px;
@@ -915,5 +995,23 @@ void homeLoading
   position: relative;
   z-index: 1;
   flex-shrink: 0;
+}
+
+/* 空数据占位卡片 */
+.empty-placeholder-card {
+  cursor: pointer;
+  border-style: dashed !important;
+  opacity: 0.7;
+  transition: all 0.2s;
+}
+
+.empty-placeholder-card:hover {
+  opacity: 1;
+  border-color: rgb(var(--v-theme-primary)) !important;
+}
+
+.empty-icon-container {
+  border-style: dashed;
+  border-color: rgb(var(--v-theme-outline));
 }
 </style>

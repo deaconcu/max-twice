@@ -34,8 +34,8 @@ public class HomePageService {
     private final MemoryBankService memoryBankService;
 
     // 首页展示的数量限制
-    private static final int LEARNING_CAREERS_LIMIT = 3;
-    private static final int LEARNING_COURSES_LIMIT = 3;
+    private static final int LEARNING_CAREERS_LIMIT = 8;
+    private static final int LEARNING_COURSES_LIMIT = 8;
     private static final int RECOMMENDED_CAREERS_LIMIT = 4;
     private static final int RECOMMENDED_COURSES_LIMIT = 4;
 
