@@ -3,7 +3,7 @@
     <v-card-text class="pa-6">
       <div class="d-flex align-center mb-4">
         <div class="icon-container flex-shrink-0 mr-4">
-          <v-icon :icon="getRandomIcon()" :color="getRandomColor()" size="28" />
+          <v-icon :icon="getCourseIconById(course.id)" :color="getColorById(course.id)" size="28" />
         </div>
         <div class="flex-grow-1">
           <h3 class="text-h6 font-weight-bold text-grey-darken-4 mb-1">
@@ -28,6 +28,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import type { Course } from '@/types/course'
+import { getCourseIconById, getColorById } from '@/utils/color'
 
 interface Props {
   course: Course
@@ -39,54 +40,6 @@ const props = defineProps<Props>()
 defineEmits<Emits>()
 
 const router = useRouter()
-
-// 随机图标池
-const icons = [
-  'mdi-language-python',
-  'mdi-language-javascript',
-  'mdi-language-java',
-  'mdi-vuejs',
-  'mdi-react',
-  'mdi-nodejs',
-  'mdi-database',
-  'mdi-code-braces',
-  'mdi-cloud',
-  'mdi-server',
-  'mdi-laptop',
-  'mdi-book-open-variant',
-]
-
-// 随机颜色池
-const colors = [
-  'primary',
-  'success',
-  'warning',
-  'error',
-  'info',
-  'purple',
-  'indigo',
-  'blue',
-  'cyan',
-  'teal',
-  'green',
-  'orange',
-]
-
-/**
- * 根据课程 ID 获取一致的随机图标
- */
-const getRandomIcon = () => {
-  const index = props.course.id % icons.length
-  return icons[index]
-}
-
-/**
- * 根据课程 ID 获取一致的随机颜色
- */
-const getRandomColor = () => {
-  const index = props.course.id % colors.length
-  return colors[index]
-}
 
 /**
  * 格式化数字（千位分隔）

@@ -25,6 +25,11 @@ public class RoadmapBriefDTO {
     private String professionName;
 
     /**
+     * 专业图标
+     */
+    private String professionIcon;
+
+    /**
      * 节点数量
      */
     private Integer nodeCount;

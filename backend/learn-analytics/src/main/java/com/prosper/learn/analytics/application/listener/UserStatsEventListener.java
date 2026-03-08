@@ -5,6 +5,7 @@ import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmark
 import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentDeletedEvent;
+import com.prosper.learn.shared.domain.event.user.learning.LearningCancelledEvent;
 import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
 import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
 import com.prosper.learn.shared.domain.event.user.relationship.UserFollowedEvent;
@@ -140,6 +141,21 @@ public class UserStatsEventListener {
             log.debug("增加学习课程统计，用户ID: {}", event.getUserId());
         } catch (Exception e) {
             log.error("处理学习开始事件失败，用户ID: {}", event.getUserId(), e);
+        }
+    }
+
+    /**
+     * 学习取消事件 - 直接写数据库
+     * 学习中的课程减1
+     */
+    @EventListener
+    //@Async
+    public void onLearningCancelled(LearningCancelledEvent event) {
+        try {
+            userStatsService.incrementLearningCourses(event.getUserId(), -1);
+            log.debug("减少学习课程统计，用户ID: {}", event.getUserId());
+        } catch (Exception e) {
+            log.error("处理学习取消事件失败，用户ID: {}", event.getUserId(), e);
         }
     }
 

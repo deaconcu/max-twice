@@ -63,7 +63,7 @@ public interface UserLearningMapper {
      * 根据用户ID和对象类型查询学习记录（支持滚动分页，可选状态过滤）
      * 按 id 降序排列
      * state 为 null 时查询所有状态
-     * state 通过 progress_percent 判断：1=进行中(0<progress<10000), 2=已完成(progress>=10000)
+     * state 通过 progress_percent 判断：1=进行中(progress<10000), 2=已完成(progress>=10000)
      * lastId 为 null 时返回第一页
      */
     @Select("<script>" +
@@ -72,7 +72,7 @@ public interface UserLearningMapper {
             "<if test='state != null'>" +
             "AND (" +
             "  <choose>" +
-            "    <when test='state == 1'>progress_percent &gt; 0 AND progress_percent &lt; 10000</when>" +
+            "    <when test='state == 1'>progress_percent &lt; 10000</when>" +
             "    <when test='state == 2'>progress_percent &gt;= 10000</when>" +
             "  </choose>" +
             ") " +
@@ -92,7 +92,7 @@ public interface UserLearningMapper {
     /**
      * 根据用户、对象类型和父对象ID查询学习记录（支持滚动分页和状态过滤）
      * 用于查询：某个 profession 下正在学习的 roadmap
-     * state 通过 progress_percent 判断：1=进行中, 2=已完成
+     * state 通过 progress_percent 判断：1=进行中(progress<10000), 2=已完成(progress>=10000)
      * lastId 为 null 时返回第一页
      */
     @Select("<script>" +
@@ -101,7 +101,7 @@ public interface UserLearningMapper {
             "<if test='state != null'>" +
             "AND (" +
             "  <choose>" +
-            "    <when test='state == 1'>progress_percent &gt; 0 AND progress_percent &lt; 10000</when>" +
+            "    <when test='state == 1'>progress_percent &lt; 10000</when>" +
             "    <when test='state == 2'>progress_percent &gt;= 10000</when>" +
             "  </choose>" +
             ") " +
@@ -122,7 +122,7 @@ public interface UserLearningMapper {
     /**
      * 根据用户ID查询所有学习记录（支持滚动分页和状态过滤）
      * 按 id 降序排列
-     * state 通过 progress_percent 判断：1=进行中, 2=已完成
+     * state 通过 progress_percent 判断：1=进行中(progress<10000), 2=已完成(progress>=10000)
      * lastId 为 null 时返回第一页
      */
     @Select("<script>" +
@@ -131,7 +131,7 @@ public interface UserLearningMapper {
             "<if test='state != null'>" +
             "AND (" +
             "  <choose>" +
-            "    <when test='state == 1'>progress_percent &gt; 0 AND progress_percent &lt; 10000</when>" +
+            "    <when test='state == 1'>progress_percent &lt; 10000</when>" +
             "    <when test='state == 2'>progress_percent &gt;= 10000</when>" +
             "  </choose>" +
             ") " +

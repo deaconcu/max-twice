@@ -89,7 +89,7 @@ public class UserLearningDO {
 
     /**
      * 根据进度计算学习状态
-     * 1 = 进行中 (0 < progress < 10000)
+     * 1 = 进行中 (progress < 10000)
      * 2 = 已完成 (progress >= 10000)
      */
     public Byte getState() {

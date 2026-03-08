@@ -37,7 +37,7 @@ public class HomePageService {
     private static final int LEARNING_CAREERS_LIMIT = 8;
     private static final int LEARNING_COURSES_LIMIT = 8;
     private static final int RECOMMENDED_CAREERS_LIMIT = 4;
-    private static final int RECOMMENDED_COURSES_LIMIT = 4;
+    private static final int RECOMMENDED_COURSES_LIMIT = 30;
 
     /**
      * 获取首页聚合数据

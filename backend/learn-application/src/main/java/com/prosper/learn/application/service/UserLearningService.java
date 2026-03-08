@@ -2,6 +2,7 @@ package com.prosper.learn.application.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.application.assembler.RoadmapAssembler;
 import com.prosper.learn.application.converter.RoadmapConverter;
 import com.prosper.learn.application.converter.UserLearningConverter;
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
@@ -16,6 +17,7 @@ import com.prosper.learn.learning.enrollment.UserLearningDO;
 import com.prosper.learn.learning.enrollment.UserLearningDomainService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.event.user.learning.LearningCancelledEvent;
 import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +50,7 @@ public class UserLearningService {
     private final CourseService courseService;
     private final TocDomainService tocDomainService;
     private final ObjectMapper objectMapper;
-    //private final RoadmapService roadmapService;
+    private final RoadmapAssembler roadmapAssembler;
     private final ApplicationEventPublisher eventPublisher;
 
     // ========== Query 方法 ==========
@@ -316,6 +318,9 @@ public class UserLearningService {
         // 2. 取消学习节点
         userLearningDomainService.cancelLearning(userId, Enums.ContentType.node, course.getRootNodeId());
 
+        // 3. 发布学习取消事件（事件中使用 courseId）
+        eventPublisher.publishEvent(new LearningCancelledEvent(userId, courseId, Enums.ContentType.course));
+
         log.info("用户 {} 取消学习课程 {} (rootNodeId={})", userId, courseId, course.getRootNodeId());
     }
 
@@ -354,12 +359,11 @@ public class UserLearningService {
             .map(UserLearningDO::getObjectId)
             .collect(Collectors.toList());
 
-        // 批量查询路径
+        // 批量查询路径并转换为 DTO
         List<RoadmapDO> roadmaps = roadmapDataService.getByIds(roadmapIds);
-        //List<RoadmapBriefDTO> roadmapDTOs = roadmapService.toBriefDTO(roadmaps);
-        //Map<Long, RoadmapBriefDTO> roadmapMap = roadmapDTOs.stream()
-        Map<Long, RoadmapDO> roadmapMap = roadmaps.stream()
-            .collect(Collectors.toMap(r -> (long) r.getId(), r -> r));
+        List<RoadmapBriefDTO> roadmapDTOs = roadmapAssembler.toBriefDTO(roadmaps);
+        Map<Long, RoadmapBriefDTO> roadmapMap = roadmapDTOs.stream()
+            .collect(Collectors.toMap(RoadmapBriefDTO::getId, r -> r));
 
         // 组装 DTO
         List<UserLearningDTO<Object>> result = new ArrayList<>();

@@ -6,6 +6,7 @@ import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmark
 import com.prosper.learn.shared.domain.event.content.interaction.ContentSharedEvent;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.*;
+import com.prosper.learn.shared.domain.event.user.learning.LearningCancelledEvent;
 import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
 import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
 import lombok.RequiredArgsConstructor;
@@ -108,6 +109,22 @@ public class ContentStatsEventListener {
             log.debug("增加学习中用户数: contentType={}, contentId={}", event.getContentType(), event.getContentId());
         } catch (Exception e) {
             log.error("处理学习开始事件失败: contentType={}, contentId={}",
+                event.getContentType(), event.getContentId(), e);
+        }
+    }
+
+    /**
+     * 课程/路线图学习取消事件 - 直接写数据库
+     * 学习中用户减1
+     */
+    @EventListener
+    //@Async
+    public void onLearningCancelled(LearningCancelledEvent event) {
+        try {
+            contentStatsDataService.incrementInProgressUsers(event.getContentType(), event.getContentId(), -1);
+            log.debug("减少学习中用户数: contentType={}, contentId={}", event.getContentType(), event.getContentId());
+        } catch (Exception e) {
+            log.error("处理学习取消事件失败: contentType={}, contentId={}",
                 event.getContentType(), event.getContentId(), e);
         }
     }
