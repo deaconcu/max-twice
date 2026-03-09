@@ -26,6 +26,12 @@ public interface CourseMapper {
             "</script>")
     List<CourseDO> searchByName(@Param("name") String name, @Param("lastId") Long lastId, @Param("limit") int limit);
 
+    /**
+     * 用户端搜索已发布的课程（简单搜索，不分页）
+     */
+    @Select("SELECT * FROM course WHERE name LIKE CONCAT('%', #{name}, '%') AND state = " + ContentState.PUBLISHED_VALUE + " LIMIT #{limit}")
+    List<CourseDO> searchPublishedByName(@Param("name") String name, @Param("limit") int limit);
+
     @Select("SELECT * FROM course where state = #{state.value} and parent_course_id = #{parentCourseId} ORDER BY created_at DESC")
     List<CourseDO> listByParentAndState(ContentState state, long parentCourseId);
 

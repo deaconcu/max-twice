@@ -355,6 +355,14 @@ public class CourseService {
     }
 
     /**
+     * 用户端按名称搜索已发布的课程（简单搜索，不分页）
+     */
+    public List<CourseBriefDTO> searchPublishedCourses(String name) {
+        List<CourseDO> courseList = courseDataService.searchPublishedByName(name, 20);
+        return toBriefDTO(courseList);
+    }
+
+    /**
      * 获取子课程列表（仅包含已批准的子课程）, 用于展示在课程详情页面
      * @param parentCourseId
      * @return

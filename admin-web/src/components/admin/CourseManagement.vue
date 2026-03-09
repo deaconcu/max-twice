@@ -661,8 +661,8 @@ onMounted(() => {
           </v-tab>
         </v-tabs>
 
-        <!-- 搜索加载状态 -->
-        <div v-if="searchLoading || searchByNameLoading" class="text-center py-8">
+        <!-- 搜索加载状态（仅首次加载时显示） -->
+        <div v-if="searchLoading || (searchByNameLoading && searchedCourseList.length === 0)" class="text-center py-8">
           <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
           <span class="ml-2 text-grey-darken-1">查询中...</span>
         </div>
