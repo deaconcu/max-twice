@@ -337,10 +337,21 @@ public class CourseService {
         return toSummaryWithStatsAndProgressDTO(course, userId);
     }
 
-    public List<CourseSummaryDTO> searchCoursesByName(String name) {
-        int searchLimit = systemProperties.getCourse().getSearchLimit();
-        List<CourseDO> courseList = courseDataService.searchByName(name, searchLimit);
-        return toSummaryDTO(courseList);
+    /**
+     * 管理后台按名称搜索课程（搜索所有状态，支持滚动分页）
+     */
+    public KeysetPageResponse<CourseAdminDTO> searchCoursesByName(String name, Long lastId) {
+        List<CourseDO> courseList = courseDataService.searchByName(name, lastId, DEFAULT_PAGE_SIZE + 1);
+
+        boolean hasMore = courseList.size() > DEFAULT_PAGE_SIZE;
+        if (hasMore) {
+            courseList = courseList.subList(0, DEFAULT_PAGE_SIZE);
+        }
+
+        List<CourseAdminDTO> dtoList = courseConverter.toAdminDTO(courseList);
+
+        Long nextLastId = dtoList.isEmpty() ? null : dtoList.get(dtoList.size() - 1).getId();
+        return KeysetPageResponse.of(dtoList, hasMore, null, nextLastId);
     }
 
     /**
@@ -377,7 +388,8 @@ public class CourseService {
             request.getName(),
             request.getDescription(),
             request.getMainCategory(),
-            request.getSubCategory()
+            request.getSubCategory(),
+            request.getIcon()
         );
     }
 

@@ -141,6 +141,15 @@ export const adminApi = {
     return apiClient.put(`/v1/admin/contents/course/${id}`, request)
   },
 
+  /**
+   * 按名称搜索课程（管理后台）
+   */
+  searchCoursesByName(name: string, lastId?: number): Promise<ApiResponse<KeysetPageResponse<any>>> {
+    const params: Record<string, unknown> = { name }
+    if (lastId !== undefined) params.lastId = lastId
+    return apiClient.get('/v1/admin/contents/course/search', { params })
+  },
+
   // ========== 职业管理 ==========
 
   /**

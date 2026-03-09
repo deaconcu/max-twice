@@ -40,13 +40,14 @@ public class CourseDomainService {
      */
     @Transactional
     public void updateCourse(long courseId, String name, String description,
-                            Integer mainCategory, Integer subCategory) {
+                            Integer mainCategory, Integer subCategory, String icon) {
         CourseDO courseDO = courseDataService.validateAndGet(courseId);
 
         courseDO.setName(name);
         courseDO.setDescription(description);
         courseDO.setMainCategory(mainCategory);
         courseDO.setSubCategory(subCategory);
+        courseDO.setIcon(icon);
         courseDataService.update(courseDO);
     }
 

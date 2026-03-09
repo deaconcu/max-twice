@@ -27,6 +27,8 @@ public class CourseDO {
 
     private String reason; // 拒绝原因，默认为空字符串
 
+    private String icon; // 图标，可以是 MDI 图标名或图片 URL
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

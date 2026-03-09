@@ -6,8 +6,9 @@ import { useFetch } from '@/composables'
 import { useUserStore } from '@/stores/modules/user'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import DynamicIcon from '@/components/common/DynamicIcon.vue'
 import { homeApi } from '@/api/modules/home'
-import { getColorByString, getColorById, getCourseIconById } from '@/utils/color'
+import { getColorByString } from '@/utils/color'
 import type { HomePage } from '@/types/home'
 
 const router = useRouter()
@@ -89,7 +90,9 @@ const recentCareers = computed(() => {
 // 计算属性：正在学习的课程
 const recentCourses = computed(() => {
   return homeData.value.learningCourses.map((item) => {
-    const course = item.object as { id: number; name: string; description?: string } | undefined
+    const course = item.object as
+      | { id: number; name: string; description?: string; icon?: string }
+      | undefined
     const courseId = course?.id ?? item.objectId
     const name = course?.name ?? '未知课程'
     return {
@@ -97,8 +100,8 @@ const recentCourses = computed(() => {
       name,
       description: course?.description ?? '',
       progress: Math.round(item.progressPercent / 100),
-      icon: getCourseIconById(courseId),
-      iconColor: getColorById(courseId),
+      icon: course?.icon,
+      iconColor: getColorByString(name),
     }
   })
 })
@@ -175,7 +178,7 @@ const navigateTo = (path: string): void => {
 }
 
 const openCourse = (courseId: number): void => {
-  router.push(`/read?courseId=${courseId}`)
+  router.push(`/read?courseId=${String(courseId)}`)
 }
 
 const openCareer = (careerId: number): void => {
@@ -467,11 +470,12 @@ void homeLoading
           <v-card-text class="pa-3">
             <div class="d-flex align-center ga-3">
               <div class="icon-container-sm flex-shrink-0">
-                <v-icon
-                  :icon="getCourseIconById(course.course.id)"
-                  :color="getColorById(course.course.id)"
-                  size="20"
-                ></v-icon>
+                <DynamicIcon
+                  :icon="course.course.icon"
+                  default-icon="mdi-book-open-variant"
+                  :size="20"
+                  :color="getColorByString(course.course.name)"
+                />
               </div>
               <div class="flex-grow-1" style="min-width: 0">
                 <div
@@ -539,25 +543,17 @@ void homeLoading
       <!-- 职业卡片列表 -->
       <v-row>
         <!-- 有数据时显示真实卡片 -->
-        <v-col
-          v-for="career in displayCareers"
-          :key="career.id"
-          cols="12"
-          sm="6"
-          md="4"
-          lg="3"
-        >
-          <v-card
-            rounded="lg"
-            border
-            hover
-            class="h-100"
-            @click="openCareer(career.careerId)"
-          >
+        <v-col v-for="career in displayCareers" :key="career.id" cols="12" sm="6" md="4" lg="3">
+          <v-card rounded="lg" border hover class="h-100" @click="openCareer(career.careerId)">
             <v-card-text class="pa-4">
               <div class="d-flex align-center ga-3 mb-3">
                 <div class="icon-container flex-shrink-0">
-                  <v-icon :icon="career.icon" :color="career.iconColor" size="24"></v-icon>
+                  <DynamicIcon
+                    :icon="career.icon"
+                    default-icon="mdi-briefcase-variant"
+                    :size="24"
+                    :color="career.iconColor"
+                  />
                 </div>
                 <div class="flex-grow-1">
                   <div
@@ -573,7 +569,9 @@ void homeLoading
               </div>
               <div class="d-flex align-center justify-space-between mb-2">
                 <span class="text-caption text-medium-emphasis"> 学习进度 </span>
-                <span class="text-caption font-weight-bold text-grey"> {{ career.progress }}% </span>
+                <span class="text-caption font-weight-bold text-grey">
+                  {{ career.progress }}%
+                </span>
               </div>
               <v-progress-linear
                 :model-value="career.progress"
@@ -587,12 +585,7 @@ void homeLoading
 
         <!-- 没有数据时显示占位卡片 -->
         <v-col v-if="recentCareers.length === 0" cols="12" sm="6" md="4" lg="3">
-          <v-card
-            rounded="lg"
-            border
-            class="empty-placeholder-card"
-            @click="navigateTo('/career')"
-          >
+          <v-card rounded="lg" border class="empty-placeholder-card" @click="navigateTo('/career')">
             <v-card-text class="pa-4">
               <div class="d-flex align-center ga-3">
                 <div class="icon-container flex-shrink-0 empty-icon-container">
@@ -622,9 +615,7 @@ void homeLoading
             <v-card-text class="pa-4 d-flex align-center justify-center h-100">
               <div class="text-center">
                 <v-icon icon="mdi-dots-horizontal" color="grey" size="32" class="mb-2"></v-icon>
-                <div class="text-body-2 text-grey">
-                  查看全部 {{ stats.careersInProgress }} 个
-                </div>
+                <div class="text-body-2 text-grey">查看全部 {{ stats.careersInProgress }} 个</div>
               </div>
             </v-card-text>
           </v-card>
@@ -652,29 +643,17 @@ void homeLoading
       <!-- 课程卡片列表 -->
       <v-row>
         <!-- 有数据时显示真实卡片 -->
-        <v-col
-          v-for="course in displayCourses"
-          :key="course.id"
-          cols="12"
-          sm="6"
-          md="4"
-          lg="3"
-        >
-          <v-card
-            rounded="lg"
-            border
-            hover
-            class="h-100"
-            @click="openCourse(course.id)"
-          >
+        <v-col v-for="course in displayCourses" :key="course.id" cols="12" sm="6" md="4" lg="3">
+          <v-card rounded="lg" border hover class="h-100" @click="openCourse(course.id)">
             <v-card-text class="pa-4">
               <div class="d-flex align-center ga-3 mb-3">
                 <div class="icon-container flex-shrink-0">
-                  <v-icon
-                    :icon="course.icon ?? 'mdi-book-open-variant'"
-                    :color="course.iconColor ?? 'info'"
-                    size="24"
-                  ></v-icon>
+                  <DynamicIcon
+                    :icon="course.icon"
+                    default-icon="mdi-book-open-variant"
+                    :size="24"
+                    :color="course.iconColor"
+                  />
                 </div>
                 <div class="flex-grow-1" style="min-width: 0">
                   <div
@@ -743,9 +722,7 @@ void homeLoading
             <v-card-text class="pa-4 d-flex align-center justify-center h-100">
               <div class="text-center">
                 <v-icon icon="mdi-dots-horizontal" color="grey" size="32" class="mb-2"></v-icon>
-                <div class="text-body-2 text-grey">
-                  查看全部 {{ stats.coursesInProgress }} 门
-                </div>
+                <div class="text-body-2 text-grey">查看全部 {{ stats.coursesInProgress }} 门</div>
               </div>
             </v-card-text>
           </v-card>
@@ -778,11 +755,17 @@ void homeLoading
             rounded="lg"
             @click="openCareer(career.careerId)"
           >
-            <v-icon :icon="career.icon" :color="career.iconColor" size="18" start></v-icon>
+            <DynamicIcon
+              :icon="career.icon"
+              default-icon="mdi-briefcase-variant"
+              :size="18"
+              :color="career.iconColor"
+              start
+            />
             {{ career.name }}
-            <span class="text-caption ml-1 text-medium-emphasis"
-              >{{ career.learnerCount.toLocaleString() }}</span
-            >
+            <span class="text-caption ml-1 text-medium-emphasis">{{
+              career.learnerCount.toLocaleString()
+            }}</span>
           </v-btn>
         </div>
       </v-col>
@@ -810,12 +793,13 @@ void homeLoading
             rounded="lg"
             @click="openCourse(course.id)"
           >
-            <v-icon
-              :icon="getCourseIconById(course.id)"
-              :color="getColorById(course.id)"
-              size="18"
+            <DynamicIcon
+              :icon="course.icon"
+              default-icon="mdi-book-open-variant"
+              :size="18"
+              :color="getColorByString(course.name)"
               start
-            ></v-icon>
+            />
             {{ course.name }}
             <span class="text-caption ml-1 text-medium-emphasis">{{
               course.learnerCount?.toLocaleString() || 0

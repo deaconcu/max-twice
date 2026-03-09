@@ -63,18 +63,6 @@ public class CoursesController {
     }
 
     /**
-     * 搜索课程
-     * 映射: GET /course/search?name=xxx → GET /api/v1/courses/search?name=xxx
-     */
-    @GetMapping("/courses/search")
-    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<List<CourseSummaryDTO>> searchCourses(
-            @RequestParam @NotBlank(message = "搜索名称不能为空") String name) {
-        List<CourseSummaryDTO> courseList = courseService.searchCoursesByName(name);
-        return ApiResponse.query(courseList);
-    }
-
-    /**
      * 获取课程列表（用户接口）
      * 映射: GET /course/list?mainCategory=1&subCategory=2 → GET /api/v1/courses?mainCategory=1&subCategory=2
      *

@@ -101,10 +101,10 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
     // ========== QUERY 查询操作 ==========
 
     /**
-     * 根据名称搜索课程（不缓存）
+     * 根据名称搜索所有状态的课程（不缓存，支持分页）
      */
-    public List<CourseDO> searchByName(String name, int limit) {
-        return courseMapper.searchByName(name, limit);
+    public List<CourseDO> searchByName(String name, Long lastId, int limit) {
+        return courseMapper.searchByName(name, lastId, limit);
     }
 
     private static final int DEFAULT_PAGE_SIZE = 21;

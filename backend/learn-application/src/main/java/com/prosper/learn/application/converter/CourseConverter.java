@@ -93,13 +93,14 @@ public interface CourseConverter {
     // ==================== 新版语义化方法 ====================
 
     /**
-     * 转换为课程简要 DTO（仅 id + name）
+     * 转换为课程简要 DTO（仅 id + name + icon）
      * 用途：搜索结果列表、父课程引用
      */
     @Named("toBriefDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "name")
+    @Mapping(target = "icon")
     CourseBriefDTO toBriefDTO(CourseDO courseDO);
 
     /**
@@ -121,6 +122,7 @@ public interface CourseConverter {
     @Mapping(target = "description")
     @Mapping(target = "mainCategory")
     @Mapping(target = "subCategory")
+    @Mapping(target = "icon")
     CourseSummaryDTO toSummaryDTO(CourseDO courseDO);
 
     /**
@@ -193,6 +195,7 @@ public interface CourseConverter {
     @Mapping(target = "description")
     @Mapping(target = "mainCategory")
     @Mapping(target = "subCategory")
+    @Mapping(target = "icon")
     CourseWithStatsDTO toWithStatsDTO(CourseDO courseDO);
 
     /**
@@ -214,6 +217,7 @@ public interface CourseConverter {
     @Mapping(target = "mainCategory")
     @Mapping(target = "subCategory")
     @Mapping(target = "parentCourseId")
+    @Mapping(target = "icon")
     CourseSummaryWithStatsAndProgressDTO toSummaryWithStatsAndProgressDTO(CourseDO courseDO);
 
     /**
@@ -238,6 +242,7 @@ public interface CourseConverter {
     @Mapping(target = "parentCourseId")
     @Mapping(target = "state")
     @Mapping(target = "reason")
+    @Mapping(target = "icon")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     CourseAdminDTO toAdminDTO(CourseDO courseDO);

@@ -267,6 +267,20 @@ public class AdminContentsController {
     }
 
     /**
+     * 按名称搜索课程（管理后台）
+     * GET /api/v1/admin/contents/course/search?name=xxx&lastId=xxx
+     * 搜索所有状态的课程，不限制状态，支持滚动分页
+     */
+    @GetMapping("/course/search")
+    @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<?> searchCoursesByName(
+            @RequestParam @NotBlank(message = "搜索名称不能为空") String name,
+            @RequestParam(required = false) Long lastId) {
+        return ApiResponse.query(courseService.searchCoursesByName(name, lastId));
+    }
+
+    /**
      * 更新职业信息
      * PUT /api/v1/admin/contents/profession/{id}
      */

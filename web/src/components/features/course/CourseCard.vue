@@ -3,7 +3,12 @@
     <v-card-text class="pa-6">
       <div class="d-flex align-center mb-4">
         <div class="icon-container flex-shrink-0 mr-4">
-          <v-icon :icon="getCourseIconById(course.id)" :color="getColorById(course.id)" size="28" />
+          <DynamicIcon
+            :icon="course.icon"
+            default-icon="mdi-book-open-variant"
+            :size="28"
+            :color="getColorByString(course.name)"
+          />
         </div>
         <div class="flex-grow-1">
           <h3 class="text-h6 font-weight-bold text-grey-darken-4 mb-1">
@@ -28,7 +33,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import type { Course } from '@/types/course'
-import { getCourseIconById, getColorById } from '@/utils/color'
+import { getColorByString } from '@/utils/color'
+import DynamicIcon from '@/components/common/DynamicIcon.vue'
 
 interface Props {
   course: Course

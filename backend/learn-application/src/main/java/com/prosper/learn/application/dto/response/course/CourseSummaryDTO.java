@@ -72,4 +72,11 @@ public class CourseSummaryDTO {
      * 何时填充：如果有 parentCourseId，则额外查询父课程名称填充
      */
     private String parentCourseName;
+
+    /**
+     * 课程图标
+     * 说明：可以是 MDI 图标名（如 mdi-book）或图片 URL
+     * 何时填充：从 course 表的 icon 字段读取
+     */
+    private String icon;
 }

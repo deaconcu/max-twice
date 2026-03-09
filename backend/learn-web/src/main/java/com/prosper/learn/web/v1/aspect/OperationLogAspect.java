@@ -131,11 +131,31 @@ public class OperationLogAspect {
 
     /**
      * 解析SpEL表达式
+     * 只有以 # 开头的字符串才作为 SpEL 表达式解析，否则直接返回原字符串
      */
+    @SuppressWarnings("unchecked")
     private <T> T parseExpression(String expressionString, EvaluationContext context, Class<T> desiredResultType) {
         if (expressionString == null || expressionString.trim().isEmpty()) {
             return null;
         }
+
+        // 只有包含 # 的字符串才作为 SpEL 表达式解析
+        if (!expressionString.contains("#")) {
+            // 纯字符串，直接返回
+            if (desiredResultType == String.class) {
+                return (T) expressionString;
+            }
+            // 尝试转换为目标类型
+            if (desiredResultType == Long.class) {
+                try {
+                    return (T) Long.valueOf(expressionString);
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
+            return null;
+        }
+
         try {
             Expression expression = parser.parseExpression(expressionString);
             return expression.getValue(context, desiredResultType);

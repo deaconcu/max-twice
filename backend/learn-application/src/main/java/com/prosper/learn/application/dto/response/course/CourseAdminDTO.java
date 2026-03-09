@@ -45,6 +45,12 @@ public class CourseAdminDTO {
      */
     private String reason;
 
+    /**
+     * 课程图标
+     * 可以是 MDI 图标名或图片 URL
+     */
+    private String icon;
+
     private String createdAt;
 
     private String updatedAt;

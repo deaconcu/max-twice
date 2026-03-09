@@ -17,16 +17,14 @@ public interface CourseMapper {
             "</script>"})
     List<CourseDO> getByIds(List<Long> ids);
 
-    @Select("SELECT * FROM course " +
+    @Select("<script>" +
+            "SELECT * FROM course " +
             "WHERE name LIKE CONCAT('%', #{name}, '%') " +
-            "AND parent_course_id = 0 " +
-            "ORDER BY " +
-            "  name = #{name} DESC, " +
-            "  name LIKE CONCAT(#{name}, '%') DESC, " +
-            "  LENGTH(name), " +
-            "  id DESC " +
-            "LIMIT #{limit}")
-    List<CourseDO> searchByName(String name, int limit);
+            "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
+            "ORDER BY id DESC " +
+            "LIMIT #{limit}" +
+            "</script>")
+    List<CourseDO> searchByName(@Param("name") String name, @Param("lastId") Long lastId, @Param("limit") int limit);
 
     @Select("SELECT * FROM course where state = #{state.value} and parent_course_id = #{parentCourseId} ORDER BY created_at DESC")
     List<CourseDO> listByParentAndState(ContentState state, long parentCourseId);
@@ -80,7 +78,7 @@ public interface CourseMapper {
     int insert(CourseDO course);
 
     @Update("UPDATE course SET name = #{name}, description = #{description}, creator_id = #{creatorId}, root_node_id = #{rootNodeId}, " +
-            "parent_course_id = #{parentCourseId}, state = #{state}, main_category = #{mainCategory}, sub_category = #{subCategory} where id = #{id}")
+            "parent_course_id = #{parentCourseId}, state = #{state}, main_category = #{mainCategory}, sub_category = #{subCategory}, icon = #{icon} where id = #{id}")
     void update(CourseDO course);
 
     // 新增：课程状态操作方法

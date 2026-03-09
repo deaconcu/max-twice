@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { inject, ref, onMounted, nextTick, computed } from 'vue'
-import { adminApi, systemApi, professionApi } from '@/api'
+import { adminApi, systemApi, professionApi, imageApi } from '@/api'
 import { ContentState } from '@/enums'
 import type { Profession, ProfessionCategory, CategoryMapping } from '@/types/profession.d'
 import type { StateOption } from '@/types/common'
@@ -61,6 +61,64 @@ const showEditDialog = ref<boolean>(false)
 const editProfession = ref<EditProfessionForm>({})
 const editFormValid = ref<boolean>(false)
 const editForm = ref(null)
+
+// 图标上传相关
+const iconFileInput = ref<HTMLInputElement | null>(null)
+
+// 使用 useMutation 上传图标
+const { execute: uploadIcon, loading: iconUploading } = useMutation(
+  (file: File) => imageApi.upload(file, 'profession'),
+  { showToast: false }
+)
+
+// 判断当前图标类型
+const currentIconType = computed(() => {
+  const icon = editProfession.value.icon
+  if (!icon) return 'none'
+  if (icon.startsWith('http')) return 'image'
+  return 'mdi'
+})
+
+// 触发图标文件选择
+const triggerIconUpload = (): void => {
+  iconFileInput.value?.click()
+}
+
+// 处理图标上传
+const handleIconUpload = async (event: Event): Promise<void> => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    showSnackbar?.('请上传图片文件', 'error')
+    return
+  }
+
+  // 验证文件大小 (最大 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    showSnackbar?.('图片大小不能超过 2MB', 'error')
+    return
+  }
+
+  try {
+    const response = await uploadIcon(file)
+    if (response?.fileUrl) {
+      editProfession.value.icon = response.fileUrl
+      showSnackbar?.('图标上传成功', 'success')
+    }
+  } catch {
+    showSnackbar?.('上传失败', 'error')
+  } finally {
+    if (target) target.value = ''
+  }
+}
+
+// 清除图标
+const clearIcon = (): void => {
+  editProfession.value.icon = ''
+}
 
 // 动态类别数据
 const mainCategories = ref<ProfessionCategory[]>([])
@@ -735,18 +793,82 @@ onMounted(() => {
               />
             </div>
 
-            <!-- 图标输入 -->
-            <v-text-field
-              v-model="editProfession.icon"
-              label="图标（Material Design Icons）"
-              variant="outlined"
-              rounded="lg"
-              bg-color="grey-lighten-5"
-              placeholder="例如：mdi-briefcase, mdi-laptop, mdi-palette"
-              class="mb-4"
-              hint="请输入Material Design Icons图标名称，如：mdi-briefcase"
-              persistent-hint
-            ></v-text-field>
+            <!-- 图标设置 -->
+            <div class="mb-4">
+              <div class="text-body-2 font-weight-medium mb-2">职业图标</div>
+
+              <!-- 隐藏的文件输入 -->
+              <input
+                ref="iconFileInput"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                style="display: none"
+                @change="handleIconUpload"
+              />
+
+              <!-- MDI 图标输入 -->
+              <v-text-field
+                v-model="editProfession.icon"
+                label="MDI 图标名称或图片链接"
+                variant="outlined"
+                rounded="lg"
+                bg-color="grey-lighten-5"
+                placeholder="例如：mdi-briefcase, mdi-laptop"
+                density="compact"
+                hide-details
+                class="mb-2"
+              >
+                <!-- 左侧：图标预览 -->
+                <template #prepend-inner>
+                  <v-icon
+                    v-if="!editProfession.icon || currentIconType === 'mdi'"
+                    :icon="editProfession.icon || 'mdi-palette'"
+                    size="20"
+                    :color="editProfession.icon ? 'grey-darken-2' : 'grey'"
+                    class="mr-1"
+                  />
+                  <v-img
+                    v-else
+                    :src="editProfession.icon"
+                    width="24"
+                    height="24"
+                    cover
+                    class="rounded mr-1"
+                  />
+                </template>
+                <!-- 右侧：清除按钮 -->
+                <template v-if="editProfession.icon" #append-inner>
+                  <v-icon
+                    icon="mdi-close-circle"
+                    size="18"
+                    color="grey"
+                    class="cursor-pointer"
+                    @click="clearIcon"
+                  />
+                </template>
+              </v-text-field>
+
+              <div class="d-flex align-center my-2">
+                <v-divider class="flex-grow-1" />
+                <span class="text-caption text-grey mx-3">或</span>
+                <v-divider class="flex-grow-1" />
+              </div>
+
+              <!-- 上传图片按钮 -->
+              <v-btn
+                variant="tonal"
+                color="primary"
+                size="small"
+                :loading="iconUploading"
+                @click="triggerIconUpload"
+              >
+                <v-icon icon="mdi-upload" size="16" class="mr-1" />
+                上传图片
+              </v-btn>
+              <div class="text-caption text-grey mt-1">
+                支持 JPG、PNG、WebP、SVG 格式，最大 2MB
+              </div>
+            </div>
 
             <!-- 拒绝原因（仅在拒绝状态时显示） -->
             <v-textarea

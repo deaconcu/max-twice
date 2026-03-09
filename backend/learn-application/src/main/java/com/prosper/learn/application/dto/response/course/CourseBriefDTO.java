@@ -32,4 +32,10 @@ public class CourseBriefDTO {
      * 说明：课程的显示名称
      */
     private String name;
+
+    /**
+     * 课程图标
+     * 说明：可以是 MDI 图标名（如 mdi-book）或图片 URL
+     */
+    private String icon;
 }

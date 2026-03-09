@@ -38,4 +38,11 @@ public class UpdateCourseRequest {
      */
     @NotNull(message = "子分类不能为空")
     private Integer subCategory;
+
+    /**
+     * 课程图标
+     * 可以是 MDI 图标名（如 mdi-book）或图片 URL
+     */
+    @Size(max = 500, message = "图标长度不能超过500字符")
+    private String icon;
 }
