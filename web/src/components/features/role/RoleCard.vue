@@ -3,7 +3,7 @@
     <v-card-text class="pa-5">
       <div class="d-flex align-center mb-4">
         <div class="icon-container flex-shrink-0 mr-4">
-          <v-icon :icon="getRandomIcon()" :color="getRandomColor()" size="28" />
+          <v-icon :icon="getRoleIcon()" :color="getIconColor()" size="28" />
         </div>
         <div class="flex-grow-1">
           <h3 class="text-h6 font-weight-bold text-grey-darken-4 mb-1">
@@ -44,6 +44,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
+import { getColorByString } from '@/utils/color'
 import type { Profession } from '@/types/profession'
 
 interface Props {
@@ -56,52 +57,18 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
 
-// 随机图标池 - 职业相关
-const icons = [
-  'mdi-briefcase-variant',
-  'mdi-laptop',
-  'mdi-palette',
-  'mdi-bullhorn',
-  'mdi-chart-bar',
-  'mdi-code-braces',
-  'mdi-database',
-  'mdi-cloud',
-  'mdi-server',
-  'mdi-account-tie',
-  'mdi-lightbulb',
-  'mdi-rocket',
-]
-
-// 随机颜色池
-const colors = [
-  'primary',
-  'success',
-  'warning',
-  'error',
-  'info',
-  'purple',
-  'indigo',
-  'blue',
-  'cyan',
-  'teal',
-  'green',
-  'orange',
-]
-
 /**
- * 根据职业 ID 获取一致的随机图标
+ * 获取职业图标
  */
-const getRandomIcon = () => {
-  const index = props.role.id % icons.length
-  return icons[index]
+const getRoleIcon = () => {
+  return props.role.icon || 'mdi-briefcase-outline'
 }
 
 /**
- * 根据职业 ID 获取一致的随机颜色
+ * 获取图标颜色
  */
-const getRandomColor = () => {
-  const index = props.role.id % colors.length
-  return colors[index]
+const getIconColor = () => {
+  return getColorByString(props.role.name)
 }
 
 /**

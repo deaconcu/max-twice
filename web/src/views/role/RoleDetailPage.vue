@@ -18,18 +18,19 @@
           >
             <!-- 左侧：职业信息 -->
             <div class="flex-grow-1" style="min-width: 0">
-              <div class="d-flex align-center mb-4 mb-md-5 role-title-row">
+              <div class="d-flex align-center mb-3 mb-md-4 role-title-row">
                 <!-- 职业图标和标题 -->
                 <div class="d-flex align-center" style="min-width: 0">
                   <v-avatar
-                    color="primary"
-                    :size="$vuetify.display.mobile ? 40 : 48"
+                    :color="'rgb(var(--v-theme-surface-variant))'"
+                    :size="$vuetify.display.mobile ? 36 : 44"
+                    rounded="lg"
                     class="mr-3 flex-shrink-0"
                   >
                     <v-icon
                       :icon="getRoleIcon()"
-                      color="white"
-                      :size="$vuetify.display.mobile ? 20 : 24"
+                      :size="$vuetify.display.mobile ? 18 : 22"
+                      color="grey-darken-1"
                     />
                   </v-avatar>
                   <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 text-truncate">
@@ -424,6 +425,7 @@ import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useUserStore } from '@/stores'
 import { professionApi, roadmapApi, progressApi, upvoteApi, bookmarkApi } from '@/api'
 import { ObjectType, VoteType } from '@/enums'
+import { getColorByString } from '@/utils/color'
 import type { Profession } from '@/types/profession'
 import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
@@ -562,6 +564,11 @@ const getRoleIcon = () => {
   return role.value?.icon || 'mdi-briefcase-outline'
 }
 
+// 获取图标颜色
+const getIconColor = () => {
+  return getColorByString(role.value?.name || '')
+}
+
 // 格式化数字
 const formatNumber = (num?: number) => {
   if (!num) return '0'
@@ -680,6 +687,24 @@ const handleCopy = (roadmap: { id: number }): void => {
 @media (max-width: 960px) {
   .role-detail-page {
     padding-top: 16px;
+  }
+}
+
+.icon-container {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgb(var(--v-theme-outline));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 960px) {
+  .icon-container {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
   }
 }
 
