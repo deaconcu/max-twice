@@ -1,28 +1,14 @@
 <template>
-  <v-card flat class="pa-1 category-nav-card" rounded="xl">
-    <div class="bg-surface-variant pa-3 pb-2 rounded-xl">
-      <!-- 标题区域 -->
-      <div class="d-flex align-center pb-4 title-divider">
-        <div class="pa-3 rounded-xl bg-white mr-3">
-          <v-icon icon="mdi-book-multiple" color="primary" size="24"></v-icon>
-        </div>
-        <div>
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3 mb-1">课程分类</h3>
-          <p class="text-caption text-grey-darken-1 mb-0">
-            <v-icon icon="mdi-filter-outline" size="12" class="mr-1"></v-icon>
-            选择分类查看课程
-          </p>
-        </div>
-      </div>
-
+  <v-card flat class="category-nav-card" rounded="xl">
+    <div class="bg-surface-variant pa-4 rounded-xl">
       <!-- 一级分类按钮组 -->
-      <div class="d-flex flex-wrap pt-5 mb-5 category-buttons-gap">
+      <div class="d-flex flex-wrap category-buttons-gap">
         <!-- 全部分类 -->
         <v-btn
           :color="!selectedMainCategory ? 'primary' : 'white'"
           variant="flat"
           rounded="xl"
-          class="font-weight-medium category-btn"
+                    class="font-weight-medium category-btn"
           @click="selectMainCategory(undefined)"
         >
           <v-icon
@@ -43,7 +29,7 @@
           :color="selectedMainCategory === category.id ? 'primary' : 'white'"
           variant="flat"
           rounded="xl"
-          class="font-weight-medium category-btn"
+                    class="font-weight-medium category-btn"
           @click="selectMainCategory(category.id)"
         >
           <v-icon
@@ -60,16 +46,7 @@
 
       <!-- 二级分类 -->
       <div v-if="selectedMainCategory && subCategories.length > 0" class="mt-4">
-        <!-- 二级分类卡片 -->
-        <div class="pa-4 mb-1 rounded-xl bg-white">
-          <!-- 二级分类标题 -->
-          <div class="d-flex align-center mb-3">
-            <v-icon icon="mdi-chevron-right" color="primary" size="16" class="mr-2" />
-            <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-3 mb-0">
-              {{ getCategoryName(selectedMainCategory) }} - 具体方向
-            </h4>
-          </div>
-
+        <div class="pa-4 rounded-xl bg-white">
           <!-- 二级分类按钮组 -->
           <div class="d-flex flex-wrap subcategory-buttons-gap">
             <!-- 二级全部 -->
@@ -77,17 +54,11 @@
               :color="!selectedSubCategory ? 'orange-darken-1' : 'grey-lighten-5'"
               variant="flat"
               rounded="xl"
-              class="font-weight-medium subcategory-btn"
+                            class="font-weight-medium subcategory-btn"
               @click="selectSubCategory(undefined)"
             >
-              <v-icon
-                :icon="!selectedSubCategory ? 'mdi-folder-open' : 'mdi-folder-outline'"
-                size="14"
-                class="mr-1"
-                :color="!selectedSubCategory ? 'white' : 'grey-darken-2'"
-              />
               <span :class="!selectedSubCategory ? 'text-white' : 'text-grey-darken-3'">
-                {{ t('common.all') }}
+                全部{{ getCategoryName(selectedMainCategory) }}
               </span>
             </v-btn>
 
@@ -98,15 +69,9 @@
               :color="selectedSubCategory === sub.id ? 'orange-darken-1' : 'grey-lighten-5'"
               variant="flat"
               rounded="xl"
-              class="font-weight-medium subcategory-btn"
+                            class="font-weight-medium subcategory-btn"
               @click="selectSubCategory(sub.id)"
             >
-              <v-icon
-                :icon="selectedSubCategory === sub.id ? 'mdi-folder-open' : 'mdi-folder-outline'"
-                size="14"
-                class="mr-1"
-                :color="selectedSubCategory === sub.id ? 'white' : 'grey-darken-2'"
-              />
               <span :class="selectedSubCategory === sub.id ? 'text-white' : 'text-grey-darken-3'">
                 {{ sub.name }}
               </span>
@@ -222,16 +187,6 @@ const emitChange = () => {
 </script>
 
 <style scoped>
-/* 分类导航卡片 */
-.category-nav-card {
-  border: 1px solid #d0d0d0 !important;
-}
-
-/* 标题分隔线 */
-.title-divider {
-  border-bottom: 1px solid #e0e0e0;
-}
-
 /* 一级分类按钮样式 */
 .category-btn {
   transition: all 0.2s ease-in-out;
@@ -262,10 +217,10 @@ const emitChange = () => {
 
 /* 按钮间距 */
 .category-buttons-gap {
-  gap: 16px;
+  gap: 12px;
 }
 
 .subcategory-buttons-gap {
-  gap: 12px;
+  gap: 10px;
 }
 </style>

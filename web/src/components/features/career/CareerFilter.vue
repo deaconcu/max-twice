@@ -8,7 +8,7 @@
           :color="!selectedMainCategory ? 'primary' : 'white'"
           variant="flat"
           rounded="xl"
-          class="font-weight-medium category-btn"
+                    class="font-weight-medium category-btn"
           @click="selectMainCategory(undefined)"
         >
           <v-icon
@@ -29,7 +29,7 @@
           :color="selectedMainCategory === category.id ? 'primary' : 'white'"
           variant="flat"
           rounded="xl"
-          class="font-weight-medium category-btn"
+                    class="font-weight-medium category-btn"
           @click="selectMainCategory(category.id)"
         >
           <v-icon
@@ -54,7 +54,7 @@
               :color="!selectedSubCategory ? 'orange-darken-1' : 'grey-lighten-5'"
               variant="flat"
               rounded="xl"
-              class="font-weight-medium subcategory-btn"
+                            class="font-weight-medium subcategory-btn"
               @click="selectSubCategory(undefined)"
             >
               <span :class="!selectedSubCategory ? 'text-white' : 'text-grey-darken-3'">
@@ -69,7 +69,7 @@
               :color="selectedSubCategory === sub.id ? 'orange-darken-1' : 'grey-lighten-5'"
               variant="flat"
               rounded="xl"
-              class="font-weight-medium subcategory-btn"
+                            class="font-weight-medium subcategory-btn"
               @click="selectSubCategory(sub.id)"
             >
               <span :class="selectedSubCategory === sub.id ? 'text-white' : 'text-grey-darken-3'">

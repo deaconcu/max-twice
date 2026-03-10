@@ -113,7 +113,6 @@
                     <span v-else>全部职业</span>
                   </h2>
                 </div>
-                <p class="text-body-2 text-grey-darken-2">共 {{ filteredCareers.length }} 个职业</p>
               </div>
             </div>
 
