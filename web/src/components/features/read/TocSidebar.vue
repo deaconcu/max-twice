@@ -129,8 +129,8 @@ const isTocHovering = ref(false)
 
 .toc-sticky-wrapper {
   position: sticky;
-  top: 75px;
-  height: calc(100vh - 90px);
+  top: 65px;
+  height: calc(100vh - 80px);
   display: flex;
   flex-direction: column;
 }
