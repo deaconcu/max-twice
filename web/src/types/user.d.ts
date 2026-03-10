@@ -32,6 +32,7 @@ export interface User {
   updatedAt?: string // 更新时间
   followed?: number // 关注人数
   isFollowing?: boolean // 是否已关注
+  timezone?: string // 用户时区（IANA格式，如 America/Los_Angeles）
 }
 
 /**
@@ -58,6 +59,7 @@ export interface EmailValidationRequest {
 export interface UpdateUserRequest {
   name: string
   biography: string
+  timezone?: string
 }
 
 /**

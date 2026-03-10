@@ -225,6 +225,73 @@
 
             <v-divider class="my-4 my-md-6" />
 
+            <!-- 时区 -->
+            <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
+              <div class="label-section mb-2 mb-sm-0">
+                <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
+                  >时区</span
+                >
+              </div>
+              <div class="flex-grow-1">
+                <div
+                  v-if="!displayModifyTimezone"
+                  class="d-flex flex-column flex-sm-row align-start align-sm-center"
+                >
+                  <span class="text-body-2 text-md-body-1 text-grey-darken-3 mb-2 mb-sm-0">{{
+                    getTimezoneLabel(localUserInfo.timezone)
+                  }}</span>
+                  <v-btn
+                    variant="text"
+                    color="primary"
+                    size="small"
+                    rounded="lg"
+                    class="ml-sm-3"
+                    @click="displayModifyTimezone = true"
+                  >
+                    <v-icon icon="mdi-pencil" size="16" class="mr-1" />
+                    修改
+                  </v-btn>
+                </div>
+                <div v-else class="d-flex flex-column flex-sm-row align-start">
+                  <v-select
+                    v-model="localUserInfo.timezone"
+                    :items="timezoneOptions"
+                    item-title="label"
+                    item-value="value"
+                    density="comfortable"
+                    variant="outlined"
+                    rounded="lg"
+                    class="mb-2 mb-sm-0"
+                    style="max-width: 350px"
+                  />
+                  <div class="d-flex ga-2">
+                    <v-btn
+                      variant="flat"
+                      color="primary"
+                      size="small"
+                      rounded="lg"
+                      class="ml-sm-3"
+                      @click="onModifyTimezone"
+                    >
+                      <v-icon icon="mdi-check" size="16" class="mr-1" />
+                      确定
+                    </v-btn>
+                    <v-btn
+                      variant="text"
+                      color="grey"
+                      size="small"
+                      rounded="lg"
+                      @click="displayModifyTimezone = false"
+                    >
+                      取消
+                    </v-btn>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <v-divider class="my-4 my-md-6" />
+
             <!-- 加入日期 -->
             <div class="d-flex flex-column flex-sm-row align-start">
               <div class="label-section mb-2 mb-sm-0">
@@ -282,6 +349,7 @@ const props = defineProps<{
     bio: string
     joinDate: string
     avatar?: string
+    timezone?: string
   }
 }>()
 
@@ -291,12 +359,54 @@ const emit = defineEmits<{
 }>()
 
 // 本地状态
-const localUserInfo = ref({ ...props.userInfo })
+const localUserInfo = ref({
+  ...props.userInfo,
+  timezone: props.userInfo.timezone || DEFAULT_TIMEZONE,
+})
 const showSuccessAlert = ref(false)
 
 // 显示修改状态
 const displayModifyName = ref(false)
 const displayModifyBio = ref(false)
+const displayModifyTimezone = ref(false)
+
+// 默认时区
+const DEFAULT_TIMEZONE = 'America/Los_Angeles'
+
+// 常用时区选项
+const timezoneOptions = [
+  { label: '(UTC-12:00) 国际日期变更线西', value: 'Etc/GMT+12' },
+  { label: '(UTC-11:00) 中途岛', value: 'Pacific/Midway' },
+  { label: '(UTC-10:00) 夏威夷', value: 'Pacific/Honolulu' },
+  { label: '(UTC-09:00) 阿拉斯加', value: 'America/Anchorage' },
+  { label: '(UTC-08:00) 太平洋时间 (美国/加拿大)', value: 'America/Los_Angeles' },
+  { label: '(UTC-07:00) 山地时间 (美国/加拿大)', value: 'America/Denver' },
+  { label: '(UTC-06:00) 中部时间 (美国/加拿大)', value: 'America/Chicago' },
+  { label: '(UTC-05:00) 东部时间 (美国/加拿大)', value: 'America/New_York' },
+  { label: '(UTC-04:00) 大西洋时间 (加拿大)', value: 'America/Halifax' },
+  { label: '(UTC-03:00) 巴西利亚', value: 'America/Sao_Paulo' },
+  { label: '(UTC+00:00) 伦敦, 都柏林', value: 'Europe/London' },
+  { label: '(UTC+01:00) 巴黎, 柏林, 罗马', value: 'Europe/Paris' },
+  { label: '(UTC+02:00) 开罗, 雅典', value: 'Europe/Athens' },
+  { label: '(UTC+03:00) 莫斯科, 伊斯坦布尔', value: 'Europe/Moscow' },
+  { label: '(UTC+04:00) 迪拜', value: 'Asia/Dubai' },
+  { label: '(UTC+05:00) 卡拉奇', value: 'Asia/Karachi' },
+  { label: '(UTC+05:30) 孟买, 新德里', value: 'Asia/Kolkata' },
+  { label: '(UTC+06:00) 达卡', value: 'Asia/Dhaka' },
+  { label: '(UTC+07:00) 曼谷, 河内', value: 'Asia/Bangkok' },
+  { label: '(UTC+08:00) 北京, 上海, 香港, 台北', value: 'Asia/Shanghai' },
+  { label: '(UTC+08:00) 新加坡', value: 'Asia/Singapore' },
+  { label: '(UTC+09:00) 东京, 首尔', value: 'Asia/Tokyo' },
+  { label: '(UTC+10:00) 悉尼, 墨尔本', value: 'Australia/Sydney' },
+  { label: '(UTC+12:00) 奥克兰', value: 'Pacific/Auckland' },
+]
+
+// 获取时区显示标签
+const getTimezoneLabel = (timezone?: string) => {
+  const tz = timezone || DEFAULT_TIMEZONE
+  const option = timezoneOptions.find((o) => o.value === tz)
+  return option ? option.label : tz
+}
 
 // 头像上传相关
 const fileInput = ref<HTMLInputElement>()
@@ -355,8 +465,8 @@ const handleAvatarUpload = async (event: Event) => {
 
 // 使用 useMutation 更新用户信息
 const { execute: updateUser, loading: updating } = useMutation(
-  (data: { name: string; biography: string; avatar?: string }) =>
-    userApi.updateCurrentUser(data.name, data.biography, data.avatar),
+  (data: { name: string; biography: string; avatar?: string; timezone?: string }) =>
+    userApi.updateCurrentUser(data.name, data.biography, data.avatar, data.timezone),
   {
     successMessage: '个人信息已成功保存！',
     showToast: false, // 我们使用自定义的 alert
@@ -373,7 +483,10 @@ const { execute: updateUser, loading: updating } = useMutation(
 watch(
   () => props.userInfo,
   (newVal) => {
-    localUserInfo.value = { ...newVal }
+    localUserInfo.value = {
+      ...newVal,
+      timezone: newVal.timezone || DEFAULT_TIMEZONE,
+    }
   },
   { deep: true }
 )
@@ -393,6 +506,16 @@ const onModifyBio = async () => {
   await updateUser({
     name: localUserInfo.value.name,
     biography: localUserInfo.value.bio,
+  })
+}
+
+// 修改时区
+const onModifyTimezone = async () => {
+  displayModifyTimezone.value = false
+  await updateUser({
+    name: localUserInfo.value.name,
+    biography: localUserInfo.value.bio,
+    timezone: localUserInfo.value.timezone,
   })
 }
 </script>

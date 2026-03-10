@@ -86,6 +86,7 @@ const userInfo = computed(() => {
       avatar: '',
       joinDate: '',
       bio: '',
+      timezone: '',
     }
   }
 
@@ -97,6 +98,7 @@ const userInfo = computed(() => {
       ? new Date(user.createdAt).toLocaleDateString('zh-CN')
       : '',
     bio: user.biography || '',
+    timezone: user.timezone || '',
   }
 })
 

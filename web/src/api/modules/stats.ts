@@ -62,4 +62,12 @@ export const statsApi = {
   getPlatformStats(): Promise<ApiResponse<PlatformStats>> {
     return apiClient.get('/v1/stats/platform')
   },
+
+  /**
+   * 上报每日学习（阅读文章）
+   * 前端在 read 页满足条件后调用（停留 5 分钟 + 3 次交互）
+   */
+  reportDailyLearning(): Promise<ApiResponse<void>> {
+    return apiClient.post('/v1/stats/daily-learning')
+  },
 }

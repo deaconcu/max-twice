@@ -22,11 +22,15 @@ export const userApi = {
   updateCurrentUser(
     name: string,
     biography: string,
-    avatar?: string
+    avatar?: string,
+    timezone?: string
   ): Promise<ApiResponse<User>> {
-    const data: any = { name, biography }
+    const data: Record<string, string> = { name, biography }
     if (avatar) {
       data.avatar = avatar
+    }
+    if (timezone) {
+      data.timezone = timezone
     }
     return apiClient.put('/v1/users/current', data)
   },
