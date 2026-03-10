@@ -2,6 +2,7 @@ package com.prosper.learn.application.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.application.assembler.CourseAssembler;
 import com.prosper.learn.application.assembler.RoadmapAssembler;
 import com.prosper.learn.application.converter.RoadmapConverter;
 import com.prosper.learn.application.converter.UserLearningConverter;
@@ -48,6 +49,7 @@ public class UserLearningService {
     private final CourseDataService courseDataService;
     private final RoadmapDataService roadmapDataService;
     private final CourseService courseService;
+    private final CourseAssembler courseAssembler;
     private final TocDomainService tocDomainService;
     private final ObjectMapper objectMapper;
     private final RoadmapAssembler roadmapAssembler;
@@ -89,7 +91,7 @@ public class UserLearningService {
         copyProperties(learning, dto);
 
         // 3. 填充课程对象
-        CourseBriefDTO courseDTO = courseService.toBriefDTO(courseDO);
+        CourseBriefDTO courseDTO = courseAssembler.toBriefDTO(courseDO);
         dto.setObject(courseDTO);
 
         return dto;
@@ -153,7 +155,7 @@ public class UserLearningService {
 
         // 批量查询课程（通过 rootNodeId）
         List<CourseDO> courses = courseDataService.getByRootNodeIds(rootNodeIds);
-        List<CourseBriefDTO> courseDTOs = courseService.toBriefDTO(courses);
+        List<CourseBriefDTO> courseDTOs = courseAssembler.toBriefDTO(courses);
 
         // 建立 rootNodeId → Course 映射
         Map<Long, CourseBriefDTO> rootNodeToCourseMap = new HashMap<>();

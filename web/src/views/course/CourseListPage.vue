@@ -537,16 +537,16 @@ const handleSubscribe = async (courseId: number) => {
     const course = courses.value.find((c) => c.id === courseId)
     if (course) {
       course.bookmarked = true
-      if (course.subscriptionCount) {
-        course.subscriptionCount += 1
+      if (course.bookmarkCount) {
+        course.bookmarkCount += 1
       }
     }
     // 同时更新热门课程列表中的状态
     const hotCourse = hotCourses.value.find((c) => c.id === courseId)
     if (hotCourse) {
       hotCourse.bookmarked = true
-      if (hotCourse.subscriptionCount) {
-        hotCourse.subscriptionCount += 1
+      if (hotCourse.bookmarkCount) {
+        hotCourse.bookmarkCount += 1
       }
     }
   } catch (error) {
@@ -564,16 +564,16 @@ const handleUnsubscribe = async (courseId: number) => {
     const course = courses.value.find((c) => c.id === courseId)
     if (course) {
       course.bookmarked = false
-      if (course.subscriptionCount && course.subscriptionCount > 0) {
-        course.subscriptionCount -= 1
+      if (course.bookmarkCount && course.bookmarkCount > 0) {
+        course.bookmarkCount -= 1
       }
     }
     // 同时更新热门课程列表中的状态
     const hotCourse = hotCourses.value.find((c) => c.id === courseId)
     if (hotCourse) {
       hotCourse.bookmarked = false
-      if (hotCourse.subscriptionCount && hotCourse.subscriptionCount > 0) {
-        hotCourse.subscriptionCount -= 1
+      if (hotCourse.bookmarkCount && hotCourse.bookmarkCount > 0) {
+        hotCourse.bookmarkCount -= 1
       }
     }
   } catch (error) {

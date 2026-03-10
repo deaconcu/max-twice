@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.profession.ProfessionDTO;
-import com.prosper.learn.application.dto.response.course.CourseSummaryWithStatsAndProgressDTO;
+import com.prosper.learn.application.dto.response.course.CourseFullDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.service.CourseService;
 import com.prosper.learn.application.service.PageService;
@@ -232,21 +232,21 @@ public class PublicController {
      */
     @GetMapping("/courses")
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO>> getCourses(
+    public ApiResponse<KeysetPageResponse<CourseFullDTO>> getCourses(
             @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
             @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
             @RequestParam(required = false) @Positive(message = "子分类必须大于0") Integer subCategory,
             @RequestParam(required = false) @Positive(message = "父课程ID必须大于0") Long parentId) {
 
-        KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO> response;
+        KeysetPageResponse<CourseFullDTO> response;
 
         // userId = null 表示未登录用户，不返回个性化数据
         if (mainCategory != null) {
-            response = courseService.getListByCategoryWithStatsPage(mainCategory, subCategory, lastId, null);
+            response = courseService.getListByCategoryPage(mainCategory, subCategory, lastId, null);
         } else if (parentId != null) {
-            response = courseService.getListByParentWithStatsPage(parentId, ContentState.PUBLISHED, lastId, null);
+            response = courseService.getListByParentPage(parentId, ContentState.PUBLISHED, lastId, null);
         } else {
-            response = courseService.getListByStateWithStatsPage(ContentState.PUBLISHED, lastId, null);
+            response = courseService.getListByStatePage(ContentState.PUBLISHED, lastId, null);
         }
 
         return ApiResponse.query(response);
@@ -258,10 +258,10 @@ public class PublicController {
      */
     @GetMapping("/courses/{id}")
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<CourseSummaryWithStatsAndProgressDTO> getCourse(
+    public ApiResponse<CourseFullDTO> getCourse(
             @PathVariable @Positive(message = "课程ID必须大于0") Long id) {
         // userId = null 表示未登录用户，不返回个性化数据
-        CourseSummaryWithStatsAndProgressDTO course = courseService.getCourseWithStatsAndProgress(id, null);
+        CourseFullDTO course = courseService.getCourseById(id, null);
         return ApiResponse.query(course);
     }
 }

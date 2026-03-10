@@ -82,8 +82,8 @@
                       </v-avatar>
                       <div class="min-w-0">
                         <h4 class="text-body-1 text-md-h6 font-weight-bold mb-1 text-truncate">
-                          <template v-if="course.course.parentCourseName">
-                            <span>{{ course.course.parentCourseName }} - </span>
+                          <template v-if="course.course.parentCourse?.name">
+                            <span>{{ course.course.parentCourse.name }} - </span>
                           </template>
                           {{ course.course.name }}
                         </h4>
@@ -203,7 +203,7 @@ const formattedSubscriptions = computed(() => {
         iconColor: '#42b883',
         learnerCount: course.learnerCount || 0,
         category: '未分类',
-        parentCourseName: course.parentCourseName, // 添加父课程名称
+        parentCourse: course.parentCourse,
       },
       order: index + 1,
     }

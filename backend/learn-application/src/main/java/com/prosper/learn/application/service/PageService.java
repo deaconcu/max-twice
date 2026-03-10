@@ -6,13 +6,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.prosper.learn.analytics.dto.ContentStatsDTO;
 import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
+import com.prosper.learn.application.assembler.CourseAssembler;
 import com.prosper.learn.application.converter.NodeConverter;
 import com.prosper.learn.application.converter.PostConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.response.NodeTocDTO;
 import com.prosper.learn.application.dto.response.course.CourseSummaryDTO;
-import com.prosper.learn.application.dto.response.course.CourseSummaryWithStatsAndProgressDTO;
-import com.prosper.learn.application.dto.response.course.CourseWithProgressDTO;
+import com.prosper.learn.application.dto.response.course.CourseFullDTO;
 import com.prosper.learn.application.dto.response.node.NodeSimpleDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
 import com.prosper.learn.application.dto.response.post.PostWithVoteDTO;
@@ -70,6 +70,7 @@ public class PageService {
     private final PostConverter postConverter;
     private final UserConverter userConverter;
     private final CourseService courseService;
+    private final CourseAssembler courseAssembler;
     private final UserLearningService userLearningService;
     private final ApplicationEventPublisher eventPublisher;
     private final ContentStatsDomainService contentStatsDomainService;
@@ -283,7 +284,7 @@ public class PageService {
         Integer courseProgress = userLearningService.getProgress(userId, Enums.ContentType.node, courseDO.getRootNodeId());
 
         // 构建课程信息
-        CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
+        CourseFullDTO parentCourse = buildParentCourse(courseDO, userId);
         List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
 
         // 构建响应
@@ -329,7 +330,7 @@ public class PageService {
         Integer courseProgress = userLearningService.getProgress(userId, Enums.ContentType.node, courseDO.getRootNodeId());
 
         // 构建课程信息
-        CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
+        CourseFullDTO parentCourse = buildParentCourse(courseDO, userId);
         List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
 
         // 构建响应
@@ -343,7 +344,7 @@ public class PageService {
 
         data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toSummaryWithStatsAndProgressDTO(courseDO, userId));
+        data.put("course", courseAssembler.toFullDTO(courseDO, userId));
         data.put("subCourseList", subCourseList);
         data.put("post", postDTO);
         data.put("users", new ArrayList<>(userMap.values()));
@@ -411,7 +412,7 @@ public class PageService {
         Integer courseProgress = userLearningService.getProgress(userId, Enums.ContentType.node, courseDO.getRootNodeId());
 
         // 构建课程信息
-        CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
+        CourseFullDTO parentCourse = buildParentCourse(courseDO, userId);
         List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
 
         // 构建响应
@@ -425,7 +426,7 @@ public class PageService {
 
         data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toSummaryWithStatsAndProgressDTO(courseDO, userId));
+        data.put("course", courseAssembler.toFullDTO(courseDO, userId));
         data.put("subCourseList", subCourseList);
         if (postDTO != null) {
             data.put("post", postDTO);
@@ -505,7 +506,7 @@ public class PageService {
         long lastId = calculateLastId(chosenPosting, otherPostings);
 
         boolean learning = checkLearningStatus(userId, courseDO.getId());
-        CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
+        CourseFullDTO parentCourse = buildParentCourse(courseDO, userId);
         List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
 
         boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
@@ -550,12 +551,12 @@ public class PageService {
         long lastId = calculateLastId(chosenPosting, otherPostings);
 
         // 构建父课程（无个性化信息）
-        CourseWithProgressDTO parentCourse;
+        CourseFullDTO parentCourse;
         if (courseDO.getParentCourseId() != 0) {
             CourseDO parentCourseDO = courseDataService.getById(courseDO.getParentCourseId());
-            parentCourse = courseService.toWithProgressDTO(parentCourseDO, false, 0);
+            parentCourse = courseAssembler.toFullDTO(parentCourseDO, null);
         } else {
-            parentCourse = courseService.toWithProgressDTO(courseDO, false, 0);
+            parentCourse = courseAssembler.toFullDTO(courseDO, null);
         }
 
         List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
@@ -809,38 +810,17 @@ public class PageService {
         return userLearningService.isLearningCourse(userId, courseId);
     }
 
-    private CourseWithProgressDTO buildParentCourse(CourseDO courseDO, long userId) {
-        boolean subscribed = checkSubscriptionStatus(userId, courseDO.getParentCourseId() != 0 ? courseDO.getParentCourseId() : courseDO.getId());
-
+    private CourseFullDTO buildParentCourse(CourseDO courseDO, long userId) {
         if (courseDO.getParentCourseId() != 0) {
             CourseDO parentCourseDO = courseDataService.getById(courseDO.getParentCourseId());
-            return courseService.toWithProgressDTO(parentCourseDO, subscribed, 0);
+            return courseAssembler.toFullDTO(parentCourseDO, userId);
         } else {
-            return courseService.toWithProgressDTO(courseDO, subscribed, 0);
+            return courseAssembler.toFullDTO(courseDO, userId);
         }
     }
-    
-    private boolean checkSubscriptionStatus(long userId, long courseId) {
-        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
-        if (userProfileDO == null || userProfileDO.getSubscription() == null || userProfileDO.getSubscription().trim().isEmpty()) {
-            return false;
-        }
-        
-        try {
-            List<Integer> subscriptionIds = Arrays.stream(userProfileDO.getSubscription().split(","))
-                .filter(s -> !s.trim().isEmpty())
-                .map(String::trim)
-                .map(Integer::parseInt)
-                .collect(Collectors.toList());
-            return subscriptionIds.contains(courseId);
-        } catch (NumberFormatException e) {
-            log.error("订阅数据解析失败: {}", userProfileDO.getSubscription(), e);
-            return false;
-        }
-    }
-    
+
     private Map<String, Object> buildPageDataResponse(NodeTocDTO nodeTocDTO, NodeDO nodeDO,
-                                                      CourseWithProgressDTO parentCourse, CourseDO courseDO, List<CourseSummaryDTO> subCourseList,
+                                                      CourseFullDTO parentCourse, CourseDO courseDO, List<CourseSummaryDTO> subCourseList,
                                                       PostWithVoteDTO chosenPosting, List<PostWithVoteDTO> otherPostings,
                                                       long lastId, String path, Collection<UserBriefDTO> users, boolean learning,
                                                       PostWithVoteDTO postDTO, boolean nodeCompleted, Integer courseProgress, Long rootNodeId, Long userId) {
@@ -863,7 +843,7 @@ public class PageService {
 
         data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toSummaryWithStatsAndProgressDTO(courseDO, userId));
+        data.put("course", courseAssembler.toFullDTO(courseDO, userId));
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
         data.put("otherPostings", otherPostings);
@@ -894,7 +874,7 @@ public class PageService {
      * 不包含个性化字段：learning=false, nodeCompleted=false, courseProgress=0
      */
     private Map<String, Object> buildPageDataResponsePublic(NodeTocDTO nodeTocDTO, NodeDO nodeDO,
-                                                            CourseWithProgressDTO parentCourse, CourseDO courseDO, List<CourseSummaryDTO> subCourseList,
+                                                            CourseFullDTO parentCourse, CourseDO courseDO, List<CourseSummaryDTO> subCourseList,
                                                             PostWithVoteDTO chosenPosting, List<PostWithVoteDTO> otherPostings,
                                                             long lastId, String path, Collection<UserBriefDTO> users, Long rootNodeId) {
 
@@ -915,7 +895,7 @@ public class PageService {
 
         data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toSummaryWithStatsAndProgressDTO(courseDO, null)); // 未登录用户
+        data.put("course", courseAssembler.toFullDTO(courseDO, null)); // 未登录用户
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
         data.put("otherPostings", otherPostings);

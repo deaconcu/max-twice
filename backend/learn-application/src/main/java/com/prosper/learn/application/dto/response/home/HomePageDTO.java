@@ -2,7 +2,7 @@ package com.prosper.learn.application.dto.response.home;
 
 import com.prosper.learn.application.dto.response.PlatformStatsDTO;
 import com.prosper.learn.application.dto.response.ReviewSummaryDTO;
-import com.prosper.learn.application.dto.response.course.CourseWithStatsDTO;
+import com.prosper.learn.application.dto.response.course.CourseFullDTO;
 import com.prosper.learn.application.dto.response.profession.ProfessionDTO;
 import com.prosper.learn.application.dto.response.userlearning.UserLearningDTO;
 import lombok.Data;
@@ -49,5 +49,5 @@ public class HomePageDTO {
     /**
      * 推荐课程列表
      */
-    private List<CourseWithStatsDTO> recommendedCourses;
+    private List<CourseFullDTO> recommendedCourses;
 }

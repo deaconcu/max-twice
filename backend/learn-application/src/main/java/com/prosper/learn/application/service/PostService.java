@@ -211,7 +211,7 @@ public class PostService {
                 // 填充课程简要信息
                 CourseDO courseDO = courseDataService.getById(nodeDO.getCourseId());
                 if (courseDO != null) {
-                    nodeDTO.setCourse(courseService.toBriefDTO(courseDO));
+                    nodeDTO.setCourse(courseConverter.toBriefDTO(courseDO));
                 }
                 postDTO.setNode(nodeDTO);
             }

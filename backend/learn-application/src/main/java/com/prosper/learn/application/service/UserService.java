@@ -8,7 +8,7 @@ import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.SubscriptionDTO;
-import com.prosper.learn.application.dto.response.course.CourseSummaryWithStatsAndProgressDTO;
+import com.prosper.learn.application.dto.response.course.CourseFullDTO;
 import com.prosper.learn.application.dto.response.user.*;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
@@ -215,36 +215,6 @@ public class UserService {
         fillUserStats(List.of(dto));
         return dto;
     }
-
-    /**
-     * 填充父课程名称
-     * 对于子课程，查询并填充其父课程名称
-     */
-    private void fillParentCourseNames(List<CourseSummaryWithStatsAndProgressDTO> dtoList) {
-        // 收集所有需要查询的父课程ID
-        List<Long> parentCourseIds = dtoList.stream()
-            .filter(dto -> dto.getParentCourseId() != null)
-            .map(CourseSummaryWithStatsAndProgressDTO::getParentCourseId)
-            .distinct()
-            .collect(Collectors.toList());
-
-        if (parentCourseIds.isEmpty()) {
-            return;
-        }
-
-        // 批量查询父课程信息
-        List<CourseDO> parentCourses = courseDataService.getByIds(parentCourseIds);
-        Map<Long, String> parentCourseNameMap = parentCourses.stream()
-            .collect(Collectors.toMap(CourseDO::getId, CourseDO::getName));
-
-        // 填充父课程名称
-        for (CourseSummaryWithStatsAndProgressDTO dto : dtoList) {
-            if (dto.getParentCourseId() != null) {
-                dto.setParentCourseName(parentCourseNameMap.get(dto.getParentCourseId()));
-            }
-        }
-    }
-
 
     // ========== 公共方法 Command ==========
 
@@ -614,14 +584,14 @@ public class UserService {
     /**
      * 批量填充课程统计信息和用户进度信息
      */
-    private void fillStatsAndProgressForCourses(List<CourseSummaryWithStatsAndProgressDTO> dtoList, Long userId) {
+    private void fillStatsAndProgressForCourses(List<CourseFullDTO> dtoList, Long userId) {
         if (dtoList == null || dtoList.isEmpty()) {
             return;
         }
 
         // 收集所有课程ID
         List<Long> courseIds = dtoList.stream()
-                .map(CourseSummaryWithStatsAndProgressDTO::getId)
+                .map(CourseFullDTO::getId)
                 .toList();
 
         // 批量查询课程实体（获取 rootNodeId）
@@ -658,7 +628,7 @@ public class UserService {
         }
 
         // 填充每个课程的统计字段和用户字段
-        for (CourseSummaryWithStatsAndProgressDTO dto : dtoList) {
+        for (CourseFullDTO dto : dtoList) {
             // 填充统计信息
             ContentStatsDO stats = statsMap.get(dto.getId());
             if (stats != null) {

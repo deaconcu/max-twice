@@ -16,9 +16,7 @@ export interface Course {
   icon?: string // 课程图标（MDI图标名或图片URL）
   creator?: User // 创建者
   rootNodeId?: number // 根节点ID
-  parentCourseId?: number // 父课程ID（子课程才有）
   parentCourse?: Course // 父课程信息
-  parentCourseName?: string // 父课程名称（子课程才有）
   state?: ContentState // 课程状态
   mainCategory?: number // 主分类ID
   subCategory?: number // 子分类ID
@@ -28,7 +26,7 @@ export interface Course {
 
   // 统计字段
   learnerCount?: number // 学习人数
-  subscriptionCount?: number // 收藏人数
+  bookmarkCount?: number // 收藏人数
   bookmarked?: boolean // 是否已收藏
   progress?: number // 课程进度（万分位：0-10000）
 }

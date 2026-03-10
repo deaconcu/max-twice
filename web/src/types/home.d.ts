@@ -39,7 +39,7 @@ export interface UserLearning<T = unknown> {
  */
 export interface CourseWithStats extends Course {
   learnerCount?: number
-  subscriptionCount?: number
+  bookmarkCount?: number
 }
 
 /**

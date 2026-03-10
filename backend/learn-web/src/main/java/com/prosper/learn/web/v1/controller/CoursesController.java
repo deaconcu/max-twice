@@ -6,10 +6,7 @@ import com.prosper.learn.application.dto.request.CreateCourseRequest;
 import com.prosper.learn.application.dto.request.CreateSubcourseRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
-import com.prosper.learn.application.dto.response.course.CourseDetailDTO;
-import com.prosper.learn.application.dto.response.course.CourseSummaryDTO;
-import com.prosper.learn.application.dto.response.course.CourseSummaryWithStatsAndProgressDTO;
-import com.prosper.learn.application.dto.response.course.CourseWithStatsDTO;
+import com.prosper.learn.application.dto.response.course.CourseFullDTO;
 import com.prosper.learn.application.service.CourseService;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
@@ -51,14 +48,11 @@ public class CoursesController {
      */
     @GetMapping("/courses/{id}")
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<CourseSummaryWithStatsAndProgressDTO> getCourse(
+    public ApiResponse<CourseFullDTO> getCourse(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID不正确") Long id,
             @CurrentUser UserDO currentUser) {
-        CourseSummaryWithStatsAndProgressDTO course = courseService.getCourseWithStatsAndProgress(
-            id,
-            currentUser.getId()
-        );
+        CourseFullDTO course = courseService.getCourseById(id, currentUser.getId());
         return ApiResponse.query(course);
     }
 
@@ -77,7 +71,7 @@ public class CoursesController {
      */
     @GetMapping("/courses")
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO>> getCourses(
+    public ApiResponse<KeysetPageResponse<CourseFullDTO>> getCourses(
             @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
             @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
             @RequestParam(required = false) @Positive(message = "子分类必须大于0") Integer subCategory,
@@ -86,19 +80,19 @@ public class CoursesController {
 
         Long userId = currentUser.getId();
 
-        KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO> response;
+        KeysetPageResponse<CourseFullDTO> response;
 
         // 1. 按分类筛选（支持只传主分类）
         if (mainCategory != null) {
-            response = courseService.getListByCategoryWithStatsPage(mainCategory, subCategory, lastId, userId);
+            response = courseService.getListByCategoryPage(mainCategory, subCategory, lastId, userId);
         }
         // 2. 获取子课程
         else if (parentId != null) {
-            response = courseService.getListByParentWithStatsPage(parentId, ContentState.PUBLISHED, lastId, userId);
+            response = courseService.getListByParentPage(parentId, ContentState.PUBLISHED, lastId, userId);
         }
         // 3. 默认：返回所有已发布课程（分页）
         else {
-            response = courseService.getListByStateWithStatsPage(ContentState.PUBLISHED, lastId, userId);
+            response = courseService.getListByStatePage(ContentState.PUBLISHED, lastId, userId);
         }
 
         return ApiResponse.query(response);
@@ -123,12 +117,12 @@ public class CoursesController {
      */
     @GetMapping("/courses/hot")
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<Object> getHotCourses(
+    public ApiResponse<List<CourseFullDTO>> getHotCourses(
             @RequestParam(value = "limit", defaultValue = "10")
             @Positive(message = "限制数量必须大于0")
             Integer limit) {
         log.info("开始获取热门课程，limit: {}", limit);
-        List<CourseWithStatsDTO> hotCourses = courseService.getHotCourses(limit);
+        List<CourseFullDTO> hotCourses = courseService.getHotCourses(limit);
         log.info("成功获取热门课程数量: {}", hotCourses.size());
         return ApiResponse.query(hotCourses);
     }

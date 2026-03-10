@@ -60,23 +60,16 @@ public class CourseSummaryDTO {
     private Integer subCategory;
 
     /**
-     * 父课程ID
-     * 说明：如果是子课程，则记录父课程ID；主课程则为null
-     * 何时填充：从 course 表的 parent_course_id 字段读取
-     */
-    private Long parentCourseId;
-
-    /**
-     * 父课程名称
-     * 说明：如果是子课程，则记录父课程名称；主课程则为null
-     * 何时填充：如果有 parentCourseId，则额外查询父课程名称填充
-     */
-    private String parentCourseName;
-
-    /**
      * 课程图标
      * 说明：可以是 MDI 图标名（如 mdi-book）或图片 URL
      * 何时填充：从 course 表的 icon 字段读取
      */
     private String icon;
+
+    /**
+     * 父课程信息
+     * 说明：如果是子课程，包含父课程的简要信息（仅 id + name + icon）
+     * 何时填充：当 parentCourseId > 0 时动态查询并填充，否则为 null
+     */
+    private CourseBriefDTO parentCourse;
 }

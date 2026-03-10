@@ -4,7 +4,7 @@ import com.prosper.learn.analytics.dto.UserStatsDTO;
 import com.prosper.learn.analytics.stats.service.UserStatsDomainService;
 import com.prosper.learn.application.dto.response.PlatformStatsDTO;
 import com.prosper.learn.application.dto.response.ReviewSummaryDTO;
-import com.prosper.learn.application.dto.response.course.CourseWithStatsDTO;
+import com.prosper.learn.application.dto.response.course.CourseFullDTO;
 import com.prosper.learn.application.dto.response.home.HomePageDTO;
 import com.prosper.learn.application.dto.response.home.UserLearningStatsDTO;
 import com.prosper.learn.application.dto.response.profession.ProfessionDTO;
@@ -159,7 +159,7 @@ public class HomePageService {
     /**
      * 获取推荐课程
      */
-    private List<CourseWithStatsDTO> getRecommendedCourses() {
+    private List<CourseFullDTO> getRecommendedCourses() {
         try {
             return courseService.getHotCourses(RECOMMENDED_COURSES_LIMIT);
         } catch (Exception e) {
