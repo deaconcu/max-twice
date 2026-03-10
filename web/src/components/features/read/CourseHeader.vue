@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { getColorByString } from '@/utils/color'
 
 interface Props {
   parentCourseInfo?: any
@@ -30,6 +31,17 @@ const progressPercent = computed(() => {
   return props.courseProgress ? props.courseProgress / 100 : 0
 })
 
+// 获取课程图标
+const courseIcon = computed(() => {
+  return props.parentCourseInfo?.icon || props.currentCourse?.icon || 'mdi-book-open-variant'
+})
+
+// 获取课程颜色
+const courseColor = computed(() => {
+  const name = props.parentCourseInfo?.name || props.currentCourse?.name || ''
+  return getColorByString(name)
+})
+
 const goToCourse = () => {
   if (props.parentCourseInfo?.id) {
     router.push(`/courses/${props.parentCourseInfo.id}`)
@@ -46,131 +58,138 @@ const toggleSubscribe = () => {
 </script>
 
 <template>
-  <div class="subcourse-info-section">
-    <div class="d-flex align-center justify-space-between">
-      <!-- 左侧：课程路径 -->
-      <div class="d-flex align-center course-breadcrumb">
-        <v-chip size="small" density="comfortable" color="grey-darken-1" variant="tonal"
-          >课程</v-chip
-        >
-        <v-btn variant="text" class="course-link-btn px-1" @click="goToCourse">
-          {{ parentCourseInfo?.name || currentCourse?.name }}
-        </v-btn>
-        <template v-if="!isMainCourse && currentCourse">
-          <v-icon icon="mdi-chevron-right" size="18" color="grey-darken-1" class="mx-1"></v-icon>
-          <v-chip size="small" density="comfortable" color="grey-darken-1" variant="tonal"
-            >子课程</v-chip
-          >
-          <span class="course-link-btn px-1">
-            {{ currentCourse.name }}
-          </span>
-        </template>
-        <template v-if="currentCourse?.subCourseCount && currentCourse.subCourseCount > 0">
-          <span class="text-caption text-grey mx-2">·</span>
-          <span class="text-caption text-grey">{{ currentCourse.subCourseCount }} 个子课程</span>
-        </template>
-        <span class="text-caption text-grey mx-2">·</span>
-        <span class="text-caption text-grey">{{ currentCourse?.learnerCount?.toLocaleString() || 0 }} 人学习</span>
+  <div class="course-header">
+    <div class="header-content">
+      <!-- 课程图标 + 课程名称 -->
+      <div class="course-info" @click="goToCourse">
+        <v-icon :icon="courseIcon" size="20" :color="courseColor" class="course-icon"></v-icon>
+        <span class="course-name">{{ parentCourseInfo?.name || currentCourse?.name }}</span>
       </div>
 
-      <!-- 右侧按钮 -->
-      <div class="d-flex align-center flex-shrink-0" style="gap: 8px">
-        <!-- 学习进度显示（只在学习中时显示） -->
-        <div v-if="isLearning" class="progress-container me-3">
-          <div class="d-flex align-center justify-space-between mb-1">
+      <!-- 收藏按钮 -->
+      <v-btn
+        :icon="parentCourseInfo?.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+        :color="parentCourseInfo?.bookmarked ? 'amber-darken-2' : 'grey'"
+        variant="text"
+        size="default"
+        density="comfortable"
+        @click="toggleSubscribe"
+      ></v-btn>
+
+      <!-- 学习信息 -->
+      <div class="learning-info">
+        <v-btn
+          :color="isLearning ? 'teal' : 'primary'"
+          :variant="isLearning ? 'tonal' : 'flat'"
+          size="small"
+          rounded="pill"
+          class="text-none"
+          elevation="0"
+          @click="toggleLearning"
+        >
+          <v-icon size="12" class="mr-1">{{ isLearning ? 'mdi-check-circle' : 'mdi-play-circle' }}</v-icon>
+          {{ isLearning ? '学习中' : '开始学习' }}
+        </v-btn>
+
+        <div v-if="isLearning" class="progress-info">
+          <div class="progress-header">
             <span class="progress-label">进度</span>
-            <span class="progress-value">{{ Math.round(progressPercent) }}%</span>
+            <span class="progress-text">{{ Math.round(progressPercent) }}%</span>
           </div>
           <v-progress-linear
             :model-value="progressPercent"
             height="4"
             rounded
-            color="primary"
+            color="teal"
             bg-color="grey-lighten-3"
+            class="progress-bar"
           ></v-progress-linear>
         </div>
+      </div>
 
-        <v-btn
-          :color="isLearning ? 'success' : 'primary'"
-          :variant="isLearning ? 'tonal' : 'flat'"
-          :icon="$vuetify.display.smAndDown"
-          density="comfortable"
-          rounded="pill"
-          class="text-none px-4"
-          elevation="0"
-          @click="toggleLearning"
-        >
-          <v-icon
-            :size="$vuetify.display.smAndDown ? 20 : 16"
-            :class="$vuetify.display.smAndDown ? '' : 'mr-1'"
-            >{{ isLearning ? 'mdi-check-circle' : 'mdi-play-circle' }}</v-icon
-          >
-          <span v-if="!$vuetify.display.smAndDown">{{ isLearning ? '学习中' : '开始学习' }}</span>
-          <v-tooltip v-if="$vuetify.display.smAndDown" activator="parent" location="bottom">
-            {{ isLearning ? '学习中' : '开始学习' }}
-          </v-tooltip>
-        </v-btn>
-        <v-btn
-          :icon="parentCourseInfo?.bookmarked ? 'mdi-heart' : 'mdi-heart-outline'"
-          :color="parentCourseInfo?.bookmarked ? 'error' : 'grey-lighten-1'"
-          :variant="parentCourseInfo?.bookmarked ? 'flat' : 'text'"
-          density="comfortable"
-          rounded="circle"
-          @click="toggleSubscribe"
-        ></v-btn>
+      <!-- 课程统计 - 放到最右侧 -->
+      <div class="course-stats">
+        <v-icon icon="mdi-account-group" size="14" color="grey"></v-icon>
+        <span>{{ currentCourse?.learnerCount?.toLocaleString() || 0 }} 人学习</span>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.course-breadcrumb {
-  display: flex;
-  align-items: center;
+.course-header {
+  padding: 12px 0;
+  margin-bottom: 8px;
 }
 
-/* 进度容器 */
-.progress-container {
-  min-width: 140px;
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.course-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.course-info:hover .course-name {
+  color: rgb(var(--v-theme-primary));
+}
+
+.course-icon {
+  flex-shrink: 0;
+}
+
+.course-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  transition: color 0.2s;
+}
+
+.course-stats {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #888;
+  margin-left: auto;
+}
+
+.learning-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .progress-label {
   font-size: 12px;
-  color: #999;
-  font-weight: 500;
+  color: #888;
 }
 
-.progress-value {
+.progress-text {
   font-size: 13px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #009688;
 }
 
-/* 宽屏样式 */
-@media (min-width: 1500px) {
-  .subcourse-info-section {
-    /* 移除向左延伸 */
-  }
-}
-
-/* 中等屏幕隐藏进度条 */
-@media (max-width: 1280px) {
-  .progress-container {
-    display: none;
-  }
-}
-
-.course-link-btn {
-  font-size: 16px;
-  font-weight: 600;
-  color: #666;
-  text-transform: none;
-  letter-spacing: normal;
-  height: auto;
-  min-width: auto;
-}
-
-.course-link-btn:hover {
-  color: rgb(var(--v-theme-primary));
+.progress-bar {
+  width: 100%;
 }
 </style>
