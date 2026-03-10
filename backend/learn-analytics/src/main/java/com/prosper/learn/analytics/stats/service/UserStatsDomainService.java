@@ -187,6 +187,54 @@ public class UserStatsDomainService {
 //    }
 // --注释掉检查 STOP (2025/12/10 11:32)
 
+    // ==================== 记忆卡片复习统计 ====================
+
+    /**
+     * 更新用户的记忆卡片复习连续天数
+     *
+     * @param userId 用户ID
+     * @param userToday 用户时区的今天日期（由调用方根据用户时区计算）
+     */
+    @Transactional
+    public void updateReviewStreak(Long userId, LocalDate userToday) {
+        userStatsDataService.updateReviewStreak(userId, userToday);
+    }
+
+    /**
+     * 获取用户的记忆卡片复习连续天数
+     *
+     * @param userId 用户ID
+     * @param userToday 用户时区的今天日期（由调用方根据用户时区计算）
+     * @return 有效的连续复习天数
+     */
+    public int getReviewStreakDays(Long userId, LocalDate userToday) {
+        return userStatsDataService.getReviewStreakDays(userId, userToday);
+    }
+
+    // ==================== 学习统计（阅读文章）====================
+
+    /**
+     * 更新用户的连续学习天数
+     *
+     * @param userId 用户ID
+     * @param userToday 用户时区的今天日期（由调用方根据用户时区计算）
+     */
+    @Transactional
+    public void updateLearningStreak(Long userId, LocalDate userToday) {
+        userStatsDataService.updateLearningStreak(userId, userToday);
+    }
+
+    /**
+     * 获取用户的连续学习天数
+     *
+     * @param userId 用户ID
+     * @param userToday 用户时区的今天日期（由调用方根据用户时区计算）
+     * @return 有效的连续学习天数
+     */
+    public int getLearningStreakDays(Long userId, LocalDate userToday) {
+        return userStatsDataService.getLearningStreakDays(userId, userToday);
+    }
+
     // ==================== 内容创作统计 ====================
 
     /**

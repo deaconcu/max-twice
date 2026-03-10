@@ -10,7 +10,7 @@ import lombok.Data;
 public class UserLearningStatsDTO {
 
     /**
-     * 累计学习天数
+     * 连续学习天数
      */
     private Integer learningDays;
 

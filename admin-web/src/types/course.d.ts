@@ -13,6 +13,7 @@ export interface Course {
   id: number
   name: string
   description?: string // 课程描述
+  icon?: string // 课程图标（MDI图标名或图片URL）
   creator?: User // 创建者
   rootNodeId?: number // 根节点ID
   parentCourseId?: number // 父课程ID（子课程才有）

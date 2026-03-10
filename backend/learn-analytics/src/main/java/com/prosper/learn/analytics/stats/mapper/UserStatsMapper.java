@@ -13,11 +13,13 @@ public interface UserStatsMapper {
     @Insert("INSERT INTO user_stats (user_id, view_count, twice_count, like_count, comment_count, " +
             "learning_course_count, completed_course_count, in_progress_profession_count, completed_profession_count, " +
             "following_user_count, following_course_count, following_profession_count, " +
-            "created_article_count, created_index_count, created_roadmap_count, created_card_deck_count) " +
+            "created_article_count, created_index_count, created_roadmap_count, created_card_deck_count, " +
+            "review_streak_days, last_card_review_date, learning_streak_days, last_learning_date) " +
             "VALUES (#{userId}, #{viewCount}, #{twiceCount}, #{likeCount}, #{commentCount}, " +
             "#{learningCourseCount}, #{completedCourseCount}, #{inProgressProfessionCount}, #{completedProfessionCount}, " +
             "#{followingUserCount}, #{followingCourseCount}, #{followingProfessionCount}, " +
-            "#{createdArticleCount}, #{createdIndexCount}, #{createdRoadmapCount}, #{createdCardDeckCount})")
+            "#{createdArticleCount}, #{createdIndexCount}, #{createdRoadmapCount}, #{createdCardDeckCount}, " +
+            "#{reviewStreakDays}, #{lastCardReviewDate}, #{learningStreakDays}, #{lastLearningDate})")
     int insert(UserStatsDO userStats);
 
     @Select("SELECT * FROM user_stats WHERE user_id = #{userId}")
@@ -75,4 +77,20 @@ public interface UserStatsMapper {
 
     @Select("SELECT * FROM user_stats ORDER BY ${field} DESC LIMIT #{limit}")
     List<UserStatsDO> getTopUsersByField(@Param("field") String field, @Param("limit") int limit);
+
+    // ===== 记忆卡片复习统计 =====
+
+    @Update("UPDATE user_stats SET review_streak_days = #{streakDays}, last_card_review_date = #{lastReviewDate}, " +
+            "updated_at = NOW() WHERE user_id = #{userId}")
+    int updateReviewStreak(@Param("userId") long userId,
+                           @Param("streakDays") int streakDays,
+                           @Param("lastReviewDate") LocalDate lastReviewDate);
+
+    // ===== 学习统计（阅读文章）=====
+
+    @Update("UPDATE user_stats SET learning_streak_days = #{streakDays}, last_learning_date = #{lastLearningDate}, " +
+            "updated_at = NOW() WHERE user_id = #{userId}")
+    int updateLearningStreak(@Param("userId") long userId,
+                             @Param("streakDays") int streakDays,
+                             @Param("lastLearningDate") LocalDate lastLearningDate);
 }

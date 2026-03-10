@@ -10,6 +10,7 @@ import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEven
 import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
 import com.prosper.learn.shared.domain.event.user.relationship.UserFollowedEvent;
 import com.prosper.learn.shared.domain.event.user.relationship.UserUnfollowedEvent;
+import com.prosper.learn.shared.domain.event.user.review.CardReviewedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -241,6 +242,21 @@ public class UserStatsEventListener {
             }
         } catch (Exception e) {
             log.error("处理内容删除事件失败，创建者ID: {}", event.getCreatorId(), e);
+        }
+    }
+
+    // ==================== 记忆卡片复习统计 ====================
+
+    /**
+     * 记忆卡片复习完成事件 - 更新连续复习天数
+     */
+    @EventListener
+    public void onCardReviewed(CardReviewedEvent event) {
+        try {
+            userStatsService.updateReviewStreak(event.getUserId(), event.getUserToday());
+            log.debug("更新复习连续天数，用户ID: {}", event.getUserId());
+        } catch (Exception e) {
+            log.error("处理卡片复习事件失败，用户ID: {}", event.getUserId(), e);
         }
     }
 }

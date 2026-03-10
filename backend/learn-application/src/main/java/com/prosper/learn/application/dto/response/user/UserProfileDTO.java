@@ -65,4 +65,10 @@ public class UserProfileDTO extends UserSummaryDTO {
      * 说明：用户信息最后更新时间
      */
     private String updatedAt;
+
+    /**
+     * 用户时区
+     * 说明：IANA 时区格式，如 America/Los_Angeles
+     */
+    private String timezone;
 }

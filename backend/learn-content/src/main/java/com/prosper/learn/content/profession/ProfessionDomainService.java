@@ -270,10 +270,17 @@ public class ProfessionDomainService {
     }
 
     /**
-     * 搜索职业（按关键词）
+     * 搜索职业（按关键词，用户端）
      */
     public List<ProfessionDO> searchByKeyword(String keyword) {
         return professionDataService.searchByKeyword(keyword);
+    }
+
+    /**
+     * 管理后台按名称搜索职业（搜索所有状态，支持分页）
+     */
+    public List<ProfessionDO> searchByName(String name, Long lastId, int limit) {
+        return professionDataService.searchByName(name, lastId, limit);
     }
 
     /**

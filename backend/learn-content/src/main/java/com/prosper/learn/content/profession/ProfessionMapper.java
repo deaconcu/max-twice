@@ -46,6 +46,18 @@ public interface ProfessionMapper {
     @Select("SELECT * FROM profession WHERE state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL AND name LIKE CONCAT('%', #{keyword}, '%') ORDER BY id DESC LIMIT 20")
     List<ProfessionDO> searchByKeyword(String keyword);
 
+    /**
+     * 管理后台按名称搜索职业（搜索所有状态，支持分页）
+     */
+    @Select("<script>" +
+            "SELECT * FROM profession " +
+            "WHERE deleted_at IS NULL AND name LIKE CONCAT('%', #{name}, '%') " +
+            "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
+            "ORDER BY id DESC " +
+            "LIMIT #{limit}" +
+            "</script>")
+    List<ProfessionDO> searchByName(@Param("name") String name, @Param("lastId") Long lastId, @Param("limit") int limit);
+
     @Select({"<script>SELECT * FROM profession WHERE deleted_at IS NULL AND id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})

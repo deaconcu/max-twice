@@ -40,13 +40,30 @@ const selectedStateIndex = ref<number>(0)
 
 // 筛选条件
 const filterProfessionId = ref<number | null>(null)
+const filterProfessionName = ref<string>('')
 const isFilterMode = ref<boolean>(false)
 const filterResult = ref<ProfessionWithUIState | null>(null)
+
+// 按名称搜索（使用 useFetchForScroll）
+const {
+  items: searchedProfessionList,
+  loading: searchByNameLoading,
+  hasMore: searchByNameHasMore,
+  loadMore: loadMoreSearchResults,
+  reset: resetSearchResults,
+} = useFetchForScroll<ProfessionWithUIState>({
+  fetchFn: (params) => adminApi.searchProfessionsByName(filterProfessionName.value.trim(), params.lastId ?? undefined),
+  initialParams: { lastId: null },
+  immediate: false,
+})
 
 // 显示的职业列表
 const displayList = computed<ProfessionWithUIState[]>(() => {
   if (isFilterMode.value && filterResult.value) {
     return [filterResult.value]
+  }
+  if (searchedProfessionList.value && searchedProfessionList.value.length > 0) {
+    return searchedProfessionList.value
   }
   return professionList.value
 })
@@ -225,12 +242,39 @@ const onStateChange = (): void => {
   loadMoreData()
 }
 
+// 无限滚动回调接口
+type InfiniteScrollCallback = (status: 'ok' | 'empty' | 'error') => void
+
+// 名称搜索加载更多回调
+const onSearchLoadMore = async ({ done }: { done: InfiniteScrollCallback }): Promise<void> => {
+  if (!searchByNameHasMore.value || searchByNameLoading.value) {
+    done('empty')
+    return
+  }
+
+  try {
+    await loadMoreSearchResults()
+    if (searchByNameHasMore.value) {
+      done('ok')
+    } else {
+      done('empty')
+    }
+  } catch {
+    done('error')
+  }
+}
+
 // 按ID筛选职业
 const searchById = async (): Promise<void> => {
   if (!filterProfessionId.value) {
     showSnackbar?.('请输入职业ID', 'warning')
     return
   }
+
+  // 清除名称搜索
+  filterProfessionName.value = ''
+  resetSearchResults()
+
   try {
     const response = await adminApi.getProfessionById(filterProfessionId.value)
     if (response.data) {
@@ -244,11 +288,36 @@ const searchById = async (): Promise<void> => {
   }
 }
 
-// 清除筛选
-const clearFilter = (): void => {
+// 按名称搜索职业
+const searchByName = async (): Promise<void> => {
+  if (!filterProfessionName.value || filterProfessionName.value.trim() === '') {
+    showSnackbar?.('请输入职业名称', 'error')
+    return
+  }
+
+  // 清除ID搜索
   filterProfessionId.value = null
   filterResult.value = null
   isFilterMode.value = false
+
+  // 重置并加载
+  resetSearchResults()
+  await loadMoreSearchResults()
+
+  if (searchedProfessionList.value && searchedProfessionList.value.length > 0) {
+    showSnackbar?.(`找到 ${searchedProfessionList.value.length} 个职业`, 'success')
+  } else {
+    showSnackbar?.('未找到相关职业', 'warning')
+  }
+}
+
+// 清除筛选
+const clearFilter = (): void => {
+  filterProfessionId.value = null
+  filterProfessionName.value = ''
+  filterResult.value = null
+  isFilterMode.value = false
+  resetSearchResults()
 }
 
 // 使用 useMutation 操作职业申请
@@ -476,11 +545,11 @@ onMounted(() => {
   <div>
     <h2 class="text-h5 font-weight-bold mb-4">职业管理</h2>
 
-    <!-- ID查询 -->
+    <!-- 查询 -->
     <v-card flat class="border mb-4">
       <v-card-text>
         <v-row align="center">
-          <v-col cols="3">
+          <v-col cols="2">
             <v-text-field
               v-model.number="filterProfessionId"
               type="number"
@@ -493,12 +562,45 @@ onMounted(() => {
             ></v-text-field>
           </v-col>
           <v-col cols="auto">
-            <v-btn variant="tonal" size="default" @click="searchById">
+            <v-btn
+              variant="tonal"
+              size="default"
+              :disabled="!filterProfessionId"
+              @click="searchById"
+            >
               <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
               查询
             </v-btn>
+          </v-col>
+          <v-col cols="auto" class="text-body-2 text-grey-darken-1">
+            或
+          </v-col>
+          <v-col cols="3">
+            <v-text-field
+              v-model="filterProfessionName"
+              label="职业名称"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="searchByName"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="auto">
             <v-btn
-              v-if="isFilterMode"
+              variant="tonal"
+              size="default"
+              :loading="searchByNameLoading"
+              :disabled="!filterProfessionName"
+              @click="searchByName"
+            >
+              <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+              查询
+            </v-btn>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn
+              v-if="isFilterMode || (searchedProfessionList && searchedProfessionList.length > 0)"
               variant="text"
               size="default"
               @click="clearFilter"
@@ -515,7 +617,7 @@ onMounted(() => {
       <v-card-text>
         <!-- 状态标签 -->
         <v-tabs
-          v-if="!isFilterMode"
+          v-if="!isFilterMode && (!searchedProfessionList || searchedProfessionList.length === 0)"
           v-model="selectedStateIndex"
           color="primary"
           density="compact"
@@ -534,8 +636,184 @@ onMounted(() => {
           </v-tab>
         </v-tabs>
 
+        <!-- 搜索加载状态（仅首次加载时显示） -->
+        <div v-if="searchByNameLoading && searchedProfessionList.length === 0" class="text-center py-8">
+          <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+          <span class="ml-2 text-grey-darken-1">查询中...</span>
+        </div>
+
+        <!-- 名称搜索结果 -->
+        <template v-else-if="searchedProfessionList && searchedProfessionList.length > 0">
+          <div class="text-body-2 font-weight-medium text-grey-darken-2 mb-3">
+            搜索结果 ({{ searchedProfessionList.length }}个)
+          </div>
+          <v-infinite-scroll
+            :empty="!searchByNameHasMore"
+            @load="onSearchLoadMore"
+          >
+            <div
+              v-for="profession in searchedProfessionList"
+              :key="profession.id"
+              class="list-item mb-3"
+            >
+              <div class="d-flex align-start">
+                <!-- 操作区 -->
+                <div class="action-area mr-4">
+                  <!-- 待审核 -->
+                  <div v-if="profession.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
+                    <v-btn variant="tonal" color="success" size="small" block :loading="profession.approving" @click="approveProfession(profession)">
+                      批准
+                    </v-btn>
+                    <v-btn variant="tonal" color="error" size="small" block @click="showRejectModal(profession)">
+                      拒绝
+                    </v-btn>
+                    <v-btn variant="tonal" color="grey" size="small" block @click="showBanModal(profession)">
+                      屏蔽
+                    </v-btn>
+                  </div>
+
+                  <!-- 已通过 -->
+                  <div v-if="profession.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
+                    <v-btn variant="tonal" color="warning" size="small" block @click="showRejectModal(profession)">
+                      撤回
+                    </v-btn>
+                    <v-btn variant="tonal" color="info" size="small" block @click="showEditModal(profession)">
+                      编辑
+                    </v-btn>
+                    <v-btn variant="tonal" color="grey" size="small" block @click="showBanModal(profession)">
+                      屏蔽
+                    </v-btn>
+                  </div>
+
+                  <!-- 已拒绝 -->
+                  <div v-if="profession.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
+                    <v-btn variant="tonal" color="success" size="small" block :loading="profession.restoring" @click="restoreProfession(profession)">
+                      通过
+                    </v-btn>
+                    <v-btn variant="tonal" color="grey" size="small" block @click="showBanModal(profession)">
+                      屏蔽
+                    </v-btn>
+                  </div>
+
+                  <!-- 已屏蔽 -->
+                  <div v-if="profession.state === ContentState.BANNED" class="d-flex flex-column ga-2">
+                    <v-btn variant="tonal" color="info" size="small" block @click="unbanProfession(profession)">
+                      解封
+                    </v-btn>
+                  </div>
+
+                  <!-- 编辑按钮（非已通过状态） -->
+                  <div v-if="profession.state !== ContentState.PUBLISHED" class="mt-2">
+                    <v-btn variant="tonal" color="info" size="small" block @click="showEditModal(profession)">
+                      编辑
+                    </v-btn>
+                  </div>
+                </div>
+
+                <!-- 内容区 -->
+                <div class="flex-grow-1">
+                  <!-- 标题行 -->
+                  <div class="d-flex align-center justify-space-between mb-2">
+                    <div class="d-flex align-center">
+                      <v-icon v-if="profession.icon" :icon="profession.icon" size="18" class="mr-2 text-grey-darken-2"></v-icon>
+                      <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                        {{ profession.name || '职业名称' }}
+                      </div>
+                      <a :href="systemConfigStore.getProfessionUrl(profession.id)" target="_blank" class="ml-1">
+                        <v-icon icon="mdi-open-in-new" size="14" color="grey"></v-icon>
+                      </a>
+                      <v-chip variant="flat" :color="getStateConfig(profession.state).color" size="x-small" class="ml-2">
+                        {{ getStateConfig(profession.state).text }}
+                      </v-chip>
+                      <v-chip v-if="profession.price" variant="flat" color="green-lighten-4" size="x-small" class="ml-1">
+                        $ {{ profession.price }}
+                      </v-chip>
+                    </div>
+                    <div class="d-flex align-center text-caption text-grey-darken-1">
+                      <a v-if="profession.creator" :href="`/user/${profession.creator.id}`" target="_blank" class="text-grey-darken-1">{{ profession.creator.name }}</a>
+                      <span v-else>未知</span>
+                      <span class="mx-1">·</span>
+                      <span>{{ profession.createdAt }}</span>
+                      <span class="mx-1">·</span>
+                      <span>ID: {{ profession.id }}</span>
+                    </div>
+                  </div>
+
+                  <!-- 内容 -->
+                  <div class="content-wrapper">
+                    <div class="text-body-2 text-grey-darken-1 mb-3">
+                      {{ profession.description || '暂无描述' }}
+                    </div>
+
+                    <!-- 技能要求 -->
+                    <div v-if="profession.skills" class="mb-2 d-flex align-center flex-wrap">
+                      <span class="text-caption text-grey-darken-1 mr-2 mb-1">技能：</span>
+                      <v-chip
+                        v-for="skill in getSkillsArray(profession.skills)"
+                        :key="skill"
+                        variant="flat"
+                        color="grey-lighten-4"
+                        size="x-small"
+                        class="mr-1 mb-1"
+                      >
+                        {{ skill }}
+                      </v-chip>
+                    </div>
+
+                    <!-- 分类信息和统计 -->
+                    <div class="d-flex align-center text-caption text-grey-darken-1">
+                      <template v-if="profession.mainCategory || profession.subCategory">
+                        <span class="d-inline-flex align-center">
+                          <v-icon icon="mdi-tag-outline" size="12" class="mr-1"></v-icon>
+                          <v-tooltip activator="parent" location="top">分类</v-tooltip>
+                        </span>
+                        <span v-if="profession.mainCategory">{{ getCategoryName(profession.mainCategory) }}</span>
+                        <span v-if="profession.mainCategory && profession.subCategory" class="mx-1">|</span>
+                        <span v-if="profession.subCategory">{{ getSubCategoryName(profession.mainCategory, profession.subCategory) }}</span>
+                        <span class="mx-2"></span>
+                      </template>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-map-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">路线图数量</v-tooltip>
+                      </span>
+                      {{ profession.roadmapCount ?? 0 }}
+                      <span class="mx-2"></span>
+                      <span class="d-inline-flex align-center">
+                        <v-icon icon="mdi-bookmark-outline" size="12" class="mr-1"></v-icon>
+                        <v-tooltip activator="parent" location="top">收藏数</v-tooltip>
+                      </span>
+                      {{ profession.bookmarkCount ?? 0 }}
+                    </div>
+
+                    <!-- 拒绝/屏蔽原因 -->
+                    <div
+                      v-if="profession.reason && (profession.state === ContentState.REJECTED || profession.state === ContentState.BANNED)"
+                      class="text-caption text-error mt-2"
+                    >
+                      原因: {{ profession.reason }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <template #empty>
+              <div class="text-center py-4 text-caption text-grey">
+                没有更多了
+              </div>
+            </template>
+
+            <template #loading>
+              <div class="text-center py-4">
+                <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+                <span class="ml-2 text-grey-darken-1">加载中...</span>
+              </div>
+            </template>
+          </v-infinite-scroll>
+        </template>
+
         <!-- 首次加载状态 -->
-        <div v-if="loading && displayList.length === 0" class="text-center py-8">
+        <div v-else-if="loading && displayList.length === 0" class="text-center py-8">
           <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
           <span class="ml-2 text-grey-darken-1">加载中...</span>
         </div>

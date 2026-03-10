@@ -426,4 +426,16 @@ public interface UserCardSrsMapper {
                                        @Param("reviewCardCount") long reviewCardCount,
                                        @Param("newFirst") boolean newFirst);
 
+    // ========== 复习统计 ==========
+
+    /**
+     * 统计指定日期范围内复习过的卡片数（用于"今日已复习"）
+     */
+    @Select("SELECT COUNT(*) FROM user_card_srs " +
+            "WHERE user_id = #{userId} " +
+            "AND last_reviewed_at >= #{startTime} AND last_reviewed_at < #{endTime}")
+    long countReviewedInRange(@Param("userId") long userId,
+                              @Param("startTime") LocalDateTime startTime,
+                              @Param("endTime") LocalDateTime endTime);
+
 }

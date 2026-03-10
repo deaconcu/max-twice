@@ -163,6 +163,15 @@ export const adminApi = {
   },
 
   /**
+   * 按名称搜索职业（管理后台）
+   */
+  searchProfessionsByName(name: string, lastId?: number): Promise<ApiResponse<KeysetPageResponse<any>>> {
+    const params: Record<string, unknown> = { name }
+    if (lastId !== undefined) params.lastId = lastId
+    return apiClient.get('/v1/admin/contents/profession/search', { params })
+  },
+
+  /**
    * 获取职业详情（管理后台）
    */
   getProfessionById(id: number): Promise<ApiResponse<any>> {

@@ -64,7 +64,7 @@ public class UsersController {
     public ApiResponse<Void> updateCurrentUser(
             @RequestBody @Valid UpdateUserRequest request,
             @CurrentUser UserDO currentUser) {
-        userService.updateCurrentUser(currentUser.getId(), request.getName(), request.getBiography());
+        userService.updateCurrentUser(currentUser.getId(), request.getName(), request.getBiography(), request.getTimezone());
         return ApiResponse.success();
     }
 

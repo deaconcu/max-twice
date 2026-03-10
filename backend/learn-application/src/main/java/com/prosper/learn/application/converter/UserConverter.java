@@ -201,6 +201,7 @@ public interface UserConverter {
     @Mapping(target = "role")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
+    @Mapping(target = "timezone")
     UserProfileDTO toProfileDTO(UserDO userDO);
 
     /**

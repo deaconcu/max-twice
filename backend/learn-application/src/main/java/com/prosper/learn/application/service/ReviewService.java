@@ -13,15 +13,20 @@ import com.prosper.learn.memory.review.UserCourseSrsSettingDO;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDataService;
 import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.Enums.CardOrder;
+import com.prosper.learn.shared.domain.event.user.review.CardReviewedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDataService;
 import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +50,8 @@ public class ReviewService {
     private final MemoryCardService memoryCardService;
     private final UserCourseSrsSettingDataService courseSettingDataService;
     private final UserCardSrsDataService srsDataService;
+    private final ApplicationEventPublisher eventPublisher;
+    private final SystemProperties systemProperties;
 
     // ========== 业务方法 ==========
 
@@ -109,10 +116,14 @@ public class ReviewService {
         // 2. 处理 SRS 算法
         reviewDomainService.submitReview(userId, cardId, rating, reviewCardCount);
 
-        // 3. 获取卡片顺序设置
+        // 3. 发布复习完成事件（用于更新连续复习天数等统计）
+        LocalDate userToday = getUserToday(userId);
+        eventPublisher.publishEvent(new CardReviewedEvent(userId, cardId, rating, userToday));
+
+        // 4. 获取卡片顺序设置
         boolean newFirst = getNewFirst(userId, courseId);
 
-        // 4. 获取下一张卡片
+        // 5. 获取下一张卡片
         UserCardSrsDO nextSrs = reviewDomainService.getNextCard(userId, courseId, reviewCardCount, newFirst);
         if (nextSrs == null) {
             return ReviewSubmitResultDTO.empty();
@@ -222,5 +233,21 @@ public class ReviewService {
         dto.setAverageScore(stats.getAverageScore() != null ? stats.getAverageScore() : 0.0);
         dto.setTimeSpent(stats.getTimeSpent() != null ? stats.getTimeSpent().intValue() : 0);
         return dto;
+    }
+
+    /**
+     * 获取用户时区的"今天"日期
+     */
+    private LocalDate getUserToday(Long userId) {
+        try {
+            UserDO user = userDataService.getById(userId);
+            if (user != null && user.getTimezone() != null && !user.getTimezone().isEmpty()) {
+                ZoneId userZone = ZoneId.of(user.getTimezone());
+                return LocalDate.now(userZone);
+            }
+        } catch (Exception e) {
+            log.warn("获取用户时区失败，使用默认时区: userId={}", userId, e);
+        }
+        return LocalDate.now(ZoneId.of(systemProperties.getUser().getDefaultTimezone()));
     }
 }

@@ -132,10 +132,17 @@ public class ProfessionDataService extends AbstractDataService<ProfessionDO, Pro
     }
 
     /**
-     * 搜索职业（按关键词）
+     * 搜索职业（按关键词，用户端）
      */
     public List<ProfessionDO> searchByKeyword(String keyword) {
         return professionMapper.searchByKeyword(keyword);
+    }
+
+    /**
+     * 管理后台按名称搜索职业（搜索所有状态，支持分页）
+     */
+    public List<ProfessionDO> searchByName(String name, Long lastId, int limit) {
+        return professionMapper.searchByName(name, lastId, limit);
     }
 
     /**

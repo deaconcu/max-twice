@@ -218,4 +218,22 @@ public final class TimeZoneUtil {
         ZonedDateTime zdt = ZonedDateTime.now(SYSTEM_ZONE_ID);
         return zdt.getOffset().toString();
     }
+
+    /**
+     * 获取用户时区的当前日期
+     *
+     * @param userTimezone 用户时区（IANA格式，如 "America/Los_Angeles"）
+     * @return 用户时区的当前日期，如果时区无效则返回系统时区日期
+     */
+    public static LocalDate getUserToday(String userTimezone) {
+        if (userTimezone != null && !userTimezone.isEmpty()) {
+            try {
+                ZoneId userZone = ZoneId.of(userTimezone);
+                return LocalDate.now(userZone);
+            } catch (Exception e) {
+                // 时区无效，使用系统时区
+            }
+        }
+        return now();
+    }
 }

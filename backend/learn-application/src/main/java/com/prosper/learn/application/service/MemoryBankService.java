@@ -1,5 +1,6 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.analytics.stats.service.UserStatsDomainService;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.CourseMemoryBankConverter;
 import com.prosper.learn.application.converter.UserCourseSrsSettingConverter;
@@ -18,6 +19,7 @@ import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.memory.review.*;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,6 +54,9 @@ public class MemoryBankService {
     private final CourseConverter courseConverter;
     private final UserCourseSrsSettingConverter courseSrsSettingConverter;
     private final CourseMemoryBankConverter courseMemoryBankConverter;
+    private final UserStatsDomainService userStatsDomainService;
+    private final UserCardSrsDataService userCardSrsDataService;
+    private final SystemProperties systemProperties;
 
     // ========== DTO 转换方法 ==========
 
@@ -105,11 +112,44 @@ public class MemoryBankService {
             summary.setTodayTotal(todayTotal);
         }
 
-        // TODO: 今日已复习数和连续天数需要从其他地方获取
-        summary.setTodayCompleted(0);
-        summary.setStreakDays(0);
+        // 获取今日已复习数（今天 last_reviewed_at 被更新的卡片数）
+        LocalDate userToday = getUserToday(userId);
+        int todayCompleted = getTodayCompletedCount(userId, userToday);
+        summary.setTodayCompleted(todayCompleted);
+
+        // 获取连续复习天数
+        int streakDays = userStatsDomainService.getReviewStreakDays(userId, userToday);
+        summary.setStreakDays(streakDays);
 
         return summary;
+    }
+
+    /**
+     * 获取今日已复习卡片数
+     */
+    private int getTodayCompletedCount(Long userId, LocalDate userToday) {
+        try {
+            return (int) userCardSrsDataService.countTodayReviewed(userId, userToday);
+        } catch (Exception e) {
+            log.error("获取今日已复习数失败: userId={}", userId, e);
+            return 0;
+        }
+    }
+
+    /**
+     * 获取用户时区的"今天"日期
+     */
+    private LocalDate getUserToday(Long userId) {
+        try {
+            UserDO user = userDataService.getById(userId);
+            if (user != null && user.getTimezone() != null && !user.getTimezone().isEmpty()) {
+                ZoneId userZone = ZoneId.of(user.getTimezone());
+                return LocalDate.now(userZone);
+            }
+        } catch (Exception e) {
+            log.warn("获取用户时区失败，使用默认时区: userId={}", userId, e);
+        }
+        return LocalDate.now(ZoneId.of(systemProperties.getUser().getDefaultTimezone()));
     }
 
     /**

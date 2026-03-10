@@ -9,11 +9,14 @@ import com.prosper.learn.application.dto.response.home.HomePageDTO;
 import com.prosper.learn.application.dto.response.home.UserLearningStatsDTO;
 import com.prosper.learn.application.dto.response.profession.ProfessionDTO;
 import com.prosper.learn.application.dto.response.userlearning.UserLearningDTO;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,17 +45,18 @@ public class HomePageService {
     /**
      * 获取首页聚合数据
      *
-     * @param userId 当前用户ID
+     * @param user 当前用户
      * @return 首页聚合数据
      */
-    public HomePageDTO getHomePageData(Long userId) {
+    public HomePageDTO getHomePageData(UserDO user) {
+        Long userId = user.getId();
         HomePageDTO homePageDTO = new HomePageDTO();
 
         // 1. 平台统计数据
         homePageDTO.setPlatformStats(platformStatsService.getPlatformStats());
 
         // 2. 用户学习统计
-        homePageDTO.setUserStats(getUserLearningStats(userId));
+        homePageDTO.setUserStats(getUserLearningStats(user));
 
         // 3. 正在学习的职业路线
         homePageDTO.setLearningCareers(getLearningCareers(userId));
@@ -75,7 +79,8 @@ public class HomePageService {
     /**
      * 获取用户学习统计
      */
-    private UserLearningStatsDTO getUserLearningStats(Long userId) {
+    private UserLearningStatsDTO getUserLearningStats(UserDO user) {
+        Long userId = user.getId();
         UserLearningStatsDTO stats = new UserLearningStatsDTO();
 
         try {
@@ -86,8 +91,10 @@ public class HomePageService {
                 stats.setCareersInProgress(userStats.getInProgressProfessionCount() != null
                         ? userStats.getInProgressProfessionCount() : 0);
             }
-            // TODO: 累计学习天数需要从其他地方获取
-            stats.setLearningDays(0);
+            // 获取连续学习天数
+            LocalDate userToday = TimeZoneUtil.getUserToday(user.getTimezone());
+            int streakDays = userStatsDomainService.getLearningStreakDays(userId, userToday);
+            stats.setLearningDays(streakDays);
         } catch (Exception e) {
             log.error("获取用户学习统计失败, userId={}", userId, e);
         }

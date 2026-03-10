@@ -5,6 +5,7 @@ import { useI18n } from '@/composables/useI18n'
 import { useFetch } from '@/composables'
 import { useUserStore } from '@/stores/modules/user'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import DynamicIcon from '@/components/common/DynamicIcon.vue'
 import { homeApi } from '@/api/modules/home'
@@ -191,6 +192,10 @@ void homeLoading
 
 <template>
   <DefaultLayout>
+    <!-- 加载状态 -->
+    <LoadingSpinner v-if="homeLoading" />
+
+    <template v-else>
     <!-- 欢迎区域 -->
     <div class="welcome-section mb-4 mb-md-6">
       <div
@@ -223,14 +228,14 @@ void homeLoading
 
         <!-- 右侧：学习统计指标 -->
         <div class="d-flex align-center ga-3 ga-md-4 flex-shrink-0">
-          <!-- 累计学习天数 - 突出显示 -->
+          <!-- 连续学习天数 - 突出显示 -->
           <div class="d-flex align-center ga-2">
-            <v-icon icon="mdi-calendar-check" color="warning" size="24"></v-icon>
+            <v-icon icon="mdi-fire" color="warning" size="24"></v-icon>
             <div class="text-center">
               <div class="text-h5 font-weight-bold text-warning">
                 {{ stats.learningDays }} <span class="text-body-2">天</span>
               </div>
-              <div class="text-caption text-no-wrap text-medium-emphasis">累计学习</div>
+              <div class="text-caption text-no-wrap text-medium-emphasis">连续学习</div>
             </div>
           </div>
 
@@ -808,6 +813,7 @@ void homeLoading
         </div>
       </v-col>
     </v-row>
+    </template>
   </DefaultLayout>
 </template>
 

@@ -11,7 +11,7 @@ import type { ReviewSummary } from './memory'
  * 用户学习统计
  */
 export interface UserLearningStats {
-  learningDays: number // 累计学习天数
+  learningDays: number // 连续学习天数
   coursesInProgress: number // 正在学习的课程数
   careersInProgress: number // 正在学习的职业数
 }

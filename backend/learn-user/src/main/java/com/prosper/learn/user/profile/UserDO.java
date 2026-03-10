@@ -39,6 +39,13 @@ public class UserDO {
      */
     private Long reviewCardCount;
 
+    /**
+     * 用户时区
+     * 注册时由前端传入，用户可修改
+     * 例如：Asia/Shanghai, America/New_York
+     */
+    private String timezone;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

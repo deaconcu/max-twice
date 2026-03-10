@@ -97,15 +97,16 @@ public class UserDomainService {
      * 更新用户基本信息
      */
     @Transactional
-    public void updateUserInfo(Long userId, String name, String biography) {
+    public void updateUserInfo(Long userId, String name, String biography, String timezone) {
         UserDO userDO = userDataService.validateAndGet(userId);
 
         // 处理null值，数据库字段不允许null
         userDO.setName(name == null ? "" : name);
         userDO.setBiography(biography == null ? "" : biography);
+        userDO.setTimezone(timezone);
         userDataService.update(userDO);
 
-        log.info("User {} info updated: name={}", userId, name);
+        log.info("User {} info updated: name={}, timezone={}", userId, name, timezone);
     }
 
     /**

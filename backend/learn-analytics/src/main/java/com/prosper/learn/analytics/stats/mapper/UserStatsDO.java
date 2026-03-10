@@ -2,6 +2,7 @@ package com.prosper.learn.analytics.stats.mapper;
 
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -32,6 +33,14 @@ public class UserStatsDO {
     private Integer createdIndexCount;
     private Integer createdRoadmapCount;
     private Integer createdCardDeckCount;
+
+    // 复习统计（记忆卡片）
+    private Integer reviewStreakDays;       // 记忆卡片连续复习天数
+    private LocalDate lastCardReviewDate;   // 记忆卡片最后复习日期
+
+    // 学习统计（阅读文章）
+    private Integer learningStreakDays;     // 连续学习天数
+    private LocalDate lastLearningDate;     // 最后学习日期
 
     /**
      * 最后同步日期

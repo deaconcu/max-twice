@@ -191,6 +191,39 @@ public class ProfessionService {
         return toDTO(professionDOList);
     }
 
+    /**
+     * 管理后台按名称搜索职业（搜索所有状态，支持滚动分页）
+     */
+    public KeysetPageResponse<ProfessionAdminDTO> searchByName(String name, Long lastId) {
+        int pageSize = 20;
+        List<ProfessionDO> professionDOList = professionDomainService.searchByName(name, lastId, pageSize + 1);
+
+        boolean hasMore = professionDOList.size() > pageSize;
+        if (hasMore) {
+            professionDOList = professionDOList.subList(0, pageSize);
+        }
+
+        List<ProfessionAdminDTO> dtoList = professionConverter.toAdminDTO(professionDOList);
+
+        // 填充 creator
+        Set<Long> creatorIds = professionDOList.stream()
+                .map(ProfessionDO::getCreatorId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+        if (!creatorIds.isEmpty()) {
+            Map<Long, UserBriefDTO> creatorMap = userService.getUserBriefMapByIds(creatorIds);
+            for (int i = 0; i < dtoList.size(); i++) {
+                Long creatorId = professionDOList.get(i).getCreatorId();
+                if (creatorId != null) {
+                    dtoList.get(i).setCreator(creatorMap.get(creatorId));
+                }
+            }
+        }
+
+        Long nextLastId = dtoList.isEmpty() ? null : dtoList.get(dtoList.size() - 1).getId();
+        return KeysetPageResponse.of(dtoList, hasMore, null, nextLastId);
+    }
+
     // ========== Command 方法 ==========
 
     public Long create(CreateProfessionRequest request, UserDO creator) {

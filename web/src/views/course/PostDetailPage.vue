@@ -30,6 +30,10 @@ import { ref, computed } from 'vue'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import CourseHeader from '@/components/features/read/CourseHeader.vue'
 import PostDetail from '@/components/features/read/PostDetail.vue'
+import { useLearningTracker } from '@/composables/useLearningTracker'
+
+// 学习追踪（停留5分钟+3次交互后上报）
+useLearningTracker()
 
 const postDetailRef = ref<InstanceType<typeof PostDetail> | null>(null)
 

@@ -354,6 +354,12 @@ public class SystemProperties {
          * 验证码发送间隔（秒）
          */
         private int verificationCodeSendIntervalSeconds = 60;
+
+        /**
+         * 默认时区（IANA格式）
+         * 当用户未设置时区时使用
+         */
+        private String defaultTimezone = "America/Los_Angeles";
     }
 
     @Data

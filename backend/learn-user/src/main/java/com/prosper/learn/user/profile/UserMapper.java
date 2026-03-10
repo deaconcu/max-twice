@@ -42,7 +42,7 @@ public interface UserMapper {
 
     // 只更新基本信息字段，不更新敏感字段(password, email, email_validated, state, role)
     @Update("UPDATE user SET name = #{name}, phone = #{phone}, biography = #{biography}, " +
-            "avatar = #{avatar}, updated_at = #{updatedAt} WHERE id = #{id}")
+            "avatar = #{avatar}, timezone = #{timezone}, updated_at = #{updatedAt} WHERE id = #{id}")
     void update(UserDO user);
 
     @Update("UPDATE user SET avatar = #{avatar} WHERE id = #{userId}")

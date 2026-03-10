@@ -251,11 +251,11 @@ public class UserService {
     /**
      * 更新当前用户信息
      */
-    public void updateCurrentUser(Long userId, String name, String biography) {
+    public void updateCurrentUser(Long userId, String name, String biography, String timezone) {
         validateUsername(name);
 
         // 委托给 DomainService
-        userDomainService.updateUserInfo(userId, name, biography);
+        userDomainService.updateUserInfo(userId, name, biography, timezone);
     }
 
     /**

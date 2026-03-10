@@ -38,7 +38,7 @@ public class HomeController {
     @SaCheckLogin
     @RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<HomePageDTO> getHomePageData(@CurrentUser UserDO currentUser) {
-        HomePageDTO data = homePageService.getHomePageData(currentUser.getId());
+        HomePageDTO data = homePageService.getHomePageData(currentUser);
         return ApiResponse.success(data);
     }
 }

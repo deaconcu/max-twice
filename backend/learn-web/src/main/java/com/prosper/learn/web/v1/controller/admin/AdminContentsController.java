@@ -281,6 +281,20 @@ public class AdminContentsController {
     }
 
     /**
+     * 按名称搜索职业（管理后台）
+     * GET /api/v1/admin/contents/profession/search?name=xxx
+     * 搜索所有状态的职业，支持滚动分页
+     */
+    @GetMapping("/profession/search")
+    @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<?> searchProfessionsByName(
+            @RequestParam @NotBlank(message = "搜索名称不能为空") String name,
+            @RequestParam(required = false) Long lastId) {
+        return ApiResponse.query(professionService.searchByName(name, lastId));
+    }
+
+    /**
      * 更新职业信息
      * PUT /api/v1/admin/contents/profession/{id}
      */

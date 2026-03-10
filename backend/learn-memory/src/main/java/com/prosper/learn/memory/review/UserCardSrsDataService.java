@@ -506,4 +506,19 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
         return userCardSrsMapper.getNextCardByCourse(userId, courseId, reviewCardCount, newFirst);
     }
 
+    // ========== 复习统计 ==========
+
+    /**
+     * 统计今天复习过的卡片数（基于用户时区）
+     *
+     * @param userId 用户ID
+     * @param userToday 用户时区的今天日期
+     * @return 今天复习的卡片数
+     */
+    public long countTodayReviewed(long userId, LocalDate userToday) {
+        LocalDateTime startOfDay = userToday.atStartOfDay();
+        LocalDateTime endOfDay = userToday.plusDays(1).atStartOfDay();
+        return userCardSrsMapper.countReviewedInRange(userId, startOfDay, endOfDay);
+    }
+
 }
