@@ -11,6 +11,7 @@ import com.prosper.learn.application.converter.PostConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.response.NodeTocDTO;
 import com.prosper.learn.application.dto.response.course.CourseSummaryDTO;
+import com.prosper.learn.application.dto.response.course.CourseSummaryWithStatsAndProgressDTO;
 import com.prosper.learn.application.dto.response.course.CourseWithProgressDTO;
 import com.prosper.learn.application.dto.response.node.NodeSimpleDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
@@ -342,7 +343,7 @@ public class PageService {
 
         data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
+        data.put("course", courseService.toSummaryWithStatsAndProgressDTO(courseDO, userId));
         data.put("subCourseList", subCourseList);
         data.put("post", postDTO);
         data.put("users", new ArrayList<>(userMap.values()));
@@ -424,7 +425,7 @@ public class PageService {
 
         data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
+        data.put("course", courseService.toSummaryWithStatsAndProgressDTO(courseDO, userId));
         data.put("subCourseList", subCourseList);
         if (postDTO != null) {
             data.put("post", postDTO);
@@ -862,7 +863,7 @@ public class PageService {
 
         data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
+        data.put("course", courseService.toSummaryWithStatsAndProgressDTO(courseDO, userId));
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
         data.put("otherPostings", otherPostings);
@@ -914,7 +915,7 @@ public class PageService {
 
         data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toWithProgressDTO(courseDO, false, 0)); // 未订阅，进度0
+        data.put("course", courseService.toSummaryWithStatsAndProgressDTO(courseDO, null)); // 未登录用户
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
         data.put("otherPostings", otherPostings);

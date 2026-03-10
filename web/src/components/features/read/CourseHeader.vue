@@ -8,7 +8,6 @@ interface Props {
   subCourseList?: any[]
   isMainCourse?: boolean
   isLearning?: boolean
-  showBackButton?: boolean
   courseProgress?: number // 课程进度（万分位：0-10000）
 }
 
@@ -20,7 +19,6 @@ const props = withDefaults(defineProps<Props>(), {
   subCourseList: () => [],
   isMainCourse: true,
   isLearning: false,
-  showBackButton: true,
   courseProgress: 0,
 })
 
@@ -32,8 +30,10 @@ const progressPercent = computed(() => {
   return props.courseProgress ? props.courseProgress / 100 : 0
 })
 
-const goBackToCourse = () => {
-  router.back()
+const goToCourse = () => {
+  if (props.parentCourseInfo?.id) {
+    router.push(`/courses/${props.parentCourseInfo.id}`)
+  }
 }
 
 const toggleLearning = () => {
@@ -48,21 +48,12 @@ const toggleSubscribe = () => {
 <template>
   <div class="subcourse-info-section">
     <div class="d-flex align-center justify-space-between">
-      <!-- 左侧：返回按钮 + 课程路径 -->
+      <!-- 左侧：课程路径 -->
       <div class="d-flex align-center course-breadcrumb">
-        <v-btn
-          v-if="showBackButton"
-          icon="mdi-arrow-left"
-          variant="flat"
-          color="grey-lighten-5"
-          :size="$vuetify.display.mobile ? 'small' : 'default'"
-          class="flex-shrink-0 mr-3"
-          @click="goBackToCourse"
-        ></v-btn>
         <v-chip size="small" density="comfortable" color="grey-darken-1" variant="tonal"
           >课程</v-chip
         >
-        <v-btn variant="text" class="course-link-btn px-1" @click="goBackToCourse">
+        <v-btn variant="text" class="course-link-btn px-1" @click="goToCourse">
           {{ parentCourseInfo?.name || currentCourse?.name }}
         </v-btn>
         <template v-if="!isMainCourse && currentCourse">
@@ -70,14 +61,16 @@ const toggleSubscribe = () => {
           <v-chip size="small" density="comfortable" color="grey-darken-1" variant="tonal"
             >子课程</v-chip
           >
-          <v-btn variant="text" class="course-link-btn px-1" @click="goBackToCourse">
+          <span class="course-link-btn px-1">
             {{ currentCourse.name }}
-          </v-btn>
+          </span>
+        </template>
+        <template v-if="subCourseList && subCourseList.length > 0">
+          <span class="text-caption text-grey mx-2">·</span>
+          <span class="text-caption text-grey">{{ subCourseList.length }} 个子课程</span>
         </template>
         <span class="text-caption text-grey mx-2">·</span>
-        <span class="text-caption text-grey">{{ currentCourse?.totalNodes || 0 }} 个节点</span>
-        <span class="text-caption text-grey mx-2">·</span>
-        <span class="text-caption text-grey">1,234 人学习</span>
+        <span class="text-caption text-grey">{{ currentCourse?.learnerCount?.toLocaleString() || 0 }} 人学习</span>
       </div>
 
       <!-- 右侧按钮 -->
@@ -153,10 +146,10 @@ const toggleSubscribe = () => {
   color: #1a1a1a;
 }
 
-/* 宽屏时向左延伸，让后退按钮露出到页面外 */
+/* 宽屏样式 */
 @media (min-width: 1500px) {
   .subcourse-info-section {
-    margin-left: -56px;
+    /* 移除向左延伸 */
   }
 }
 
