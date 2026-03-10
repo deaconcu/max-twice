@@ -830,20 +830,24 @@ void homeLoading
 
 /* 欢迎区域 */
 .welcome-section {
-  padding-top: 16px;
+  padding-top: 24px;
   padding-bottom: 24px;
+}
+
+@media (max-width: 960px) {
+  .welcome-section {
+    padding-top: 16px;
+  }
 }
 
 @media (min-width: 600px) {
   .welcome-section {
-    padding-top: 24px;
     padding-bottom: 32px;
   }
 }
 
 @media (min-width: 960px) {
   .welcome-section {
-    padding-top: 32px;
     padding-bottom: 40px;
   }
 }

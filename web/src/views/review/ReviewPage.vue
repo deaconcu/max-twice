@@ -1,5 +1,6 @@
 <template>
   <DefaultLayout>
+    <div class="review-page">
     <!-- 页面标题 -->
     <div class="mb-4 mb-md-6">
       <div class="d-flex align-center justify-space-between mb-4">
@@ -803,6 +804,7 @@
         </v-card>
       </v-col>
     </v-row>
+    </div>
   </DefaultLayout>
 </template>
 
@@ -1218,6 +1220,13 @@ onBeforeUnmount(() => {
 .review-page {
   max-width: 1550px;
   margin: 0 auto;
+  padding-top: 24px;
+}
+
+@media (max-width: 960px) {
+  .review-page {
+    padding-top: 16px;
+  }
 }
 
 .sticky-nav {

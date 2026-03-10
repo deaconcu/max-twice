@@ -1,5 +1,6 @@
 <template>
   <DefaultLayout>
+    <div class="course-list-page">
     <!-- 页面标题和搜索栏 -->
     <div class="page-header mb-6 mb-md-10">
       <div class="d-flex flex-column flex-sm-row align-start align-sm-end ga-4 header-wrapper">
@@ -181,6 +182,7 @@
       :reset-form="resetCreateForm"
       @submit="handleCreateCourse"
     />
+    </div>
   </DefaultLayout>
 </template>
 
@@ -596,7 +598,13 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
 
 <style scoped>
 .course-list-page {
-  /* 使用 DefaultLayout 的默认 padding */
+  padding-top: 24px;
+}
+
+@media (max-width: 960px) {
+  .course-list-page {
+    padding-top: 16px;
+  }
 }
 
 .page-header {

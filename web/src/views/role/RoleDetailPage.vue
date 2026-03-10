@@ -559,7 +559,7 @@ const filterRoadmaps = (): void => {
 
 // 获取职业图标
 const getRoleIcon = () => {
-  return 'mdi-briefcase-outline'
+  return role.value?.icon || 'mdi-briefcase-outline'
 }
 
 // 格式化数字
@@ -674,7 +674,13 @@ const handleCopy = (roadmap: { id: number }): void => {
 
 <style scoped>
 .role-detail-page {
-  /* 使用 DefaultLayout 的默认 padding */
+  padding-top: 24px;
+}
+
+@media (max-width: 960px) {
+  .role-detail-page {
+    padding-top: 16px;
+  }
 }
 
 /* 宽屏时向左延伸，让后退按钮露出到页面外 */

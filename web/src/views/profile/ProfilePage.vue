@@ -548,7 +548,13 @@ watch(activeTab, (newTab) => {
 .profile-container {
   max-width: 1550px;
   margin: 0 auto;
-  padding-top: 1rem;
+  padding-top: 24px;
+}
+
+@media (max-width: 960px) {
+  .profile-container {
+    padding-top: 16px;
+  }
 }
 
 /* 用户信息卡片 */

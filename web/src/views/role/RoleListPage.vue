@@ -728,6 +728,16 @@ const submitApplication = async () => {
 </script>
 
 <style scoped>
+.role-list-page {
+  padding-top: 24px;
+}
+
+@media (max-width: 960px) {
+  .role-list-page {
+    padding-top: 16px;
+  }
+}
+
 .page-header {
   margin-bottom: 16px;
 }
