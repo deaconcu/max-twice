@@ -432,13 +432,13 @@ defineExpose({
 .center-content {
   flex: 1 1 750px;
   max-width: 750px;
-  padding: 24px 26px 40px 26px;
+  padding: 4px 26px 40px 26px;
 }
 
 /* 节点标题行 - sticky（课程模式） */
 .node-header-sticky {
   position: sticky;
-  top: 103px;
+  top: 56px;
   background-color: white;
   z-index: 10;
   padding: 12px 0;
@@ -472,11 +472,8 @@ defineExpose({
 
 .sidebar-sticky {
   position: sticky;
-  top: 110px;
-  max-height: calc(100vh - 125px);
-  transition:
-    top 0.3s ease,
-    max-height 0.3s ease;
+  top: 46px;
+  max-height: calc(100vh - 61px);
 }
 
 .sidebar-card {

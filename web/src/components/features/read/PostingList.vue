@@ -593,7 +593,7 @@ const completeButtonTooltip = () => {
 .posting-list-content {
   flex: 1 1 750px;
   max-width: 750px;
-  padding: 24px 26px 40px 26px;
+  padding: 10px 26px 40px 26px;
 }
 
 .posting-list {
@@ -622,7 +622,7 @@ const completeButtonTooltip = () => {
 /* Tab栏和操作按钮行 - 固定在顶部 */
 .tabs-actions-bar {
   position: sticky;
-  top: 92px;
+  top: 46px;
   background-color: white;
   z-index: 900;
   padding: 12px 0 !important;
@@ -673,11 +673,8 @@ const completeButtonTooltip = () => {
 
 .sidebar-sticky {
   position: sticky;
-  top: 110px;
-  max-height: calc(100vh - 125px);
-  transition:
-    top 0.3s ease,
-    max-height 0.3s ease;
+  top: 46px;
+  max-height: calc(100vh - 61px);
 }
 
 .sidebar-card {

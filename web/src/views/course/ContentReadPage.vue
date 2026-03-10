@@ -834,12 +834,9 @@ onUnmounted(() => {
   background-color: #ffffff;
 }
 
-/* 固定课程头部 */
+/* 课程头部 */
 .course-header-sticky {
-  position: sticky;
-  top: 56px;
   background-color: white;
-  z-index: 999;
   padding-bottom: 0px;
   max-width: 1470px;
   margin: 0 auto;
@@ -877,18 +874,10 @@ onUnmounted(() => {
 
 .toc-sticky-wrapper {
   position: sticky;
-  top: 110px;
-  max-height: calc(100vh - 125px);
+  top: 56px;
+  max-height: calc(100vh - 71px);
   display: flex;
   flex-direction: column;
-  transition:
-    top 0.3s ease,
-    max-height 0.3s ease;
-}
-
-.read-page:has(.fixed-top-bar.show) .toc-sticky-wrapper {
-  top: 109px;
-  max-height: calc(100vh - 124px);
 }
 
 .toc-card {
