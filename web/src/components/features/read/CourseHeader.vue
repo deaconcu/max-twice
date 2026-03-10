@@ -119,7 +119,7 @@ const toggleSubscribe = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0;
+  padding: 0 0 12px 0;
   border-bottom: 1px solid #eee;
   margin-bottom: 12px;
 }
@@ -168,7 +168,7 @@ const toggleSubscribe = () => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  width: 100px;
+  width: 200px;
 }
 
 .progress-header {
