@@ -56,50 +56,61 @@ const toggleSubscribe = () => {
 
 <template>
   <div class="course-header">
-    <!-- 课程图标 -->
-    <div class="course-icon-wrapper">
-      <v-icon :icon="courseIcon" size="18" :color="courseColor"></v-icon>
+    <!-- 左侧：课程信息 -->
+    <div class="course-left">
+      <!-- 课程图标 -->
+      <div class="course-icon-wrapper">
+        <v-icon :icon="courseIcon" size="18" :color="courseColor"></v-icon>
+      </div>
+
+      <!-- 课程名称 -->
+      <span class="course-name" @click="goToCourse">{{ parentCourseInfo?.name || currentCourse?.name }}</span>
+
+      <!-- 学习人数 -->
+      <span class="course-meta">{{ currentCourse?.learnerCount?.toLocaleString() || 0 }} 人学习</span>
+
+      <!-- 收藏 -->
+      <v-btn
+        :icon="parentCourseInfo?.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+        :color="parentCourseInfo?.bookmarked ? 'amber-darken-2' : 'grey-lighten-1'"
+        variant="text"
+        size="small"
+        @click.stop="toggleSubscribe"
+      ></v-btn>
     </div>
 
-    <!-- 课程名称 -->
-    <span class="course-name" @click="goToCourse">{{ parentCourseInfo?.name || currentCourse?.name }}</span>
+    <!-- 右侧：学习信息 -->
+    <div class="course-right">
+      <!-- 进度（学习中显示） -->
+      <div v-if="isLearning" class="progress-info">
+        <div class="progress-header">
+          <span class="progress-label">进度</span>
+          <span class="progress-text">{{ Math.round(progressPercent) }}%</span>
+        </div>
+        <v-progress-linear
+          :model-value="progressPercent"
+          height="4"
+          rounded
+          color="teal"
+          bg-color="grey-lighten-3"
+          class="progress-bar"
+        ></v-progress-linear>
+      </div>
 
-    <!-- 学习人数 -->
-    <span class="course-meta">{{ currentCourse?.learnerCount?.toLocaleString() || 0 }} 人学习</span>
-
-    <!-- 收藏 -->
-    <v-btn
-      :icon="parentCourseInfo?.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
-      :color="parentCourseInfo?.bookmarked ? 'amber-darken-2' : 'grey-lighten-1'"
-      variant="text"
-      size="small"
-      @click.stop="toggleSubscribe"
-    ></v-btn>
-
-    <!-- 学习按钮 -->
-    <v-btn
-      :color="isLearning ? 'teal' : 'primary'"
-      :variant="isLearning ? 'tonal' : 'flat'"
-      size="small"
-      rounded="pill"
-      class="text-none"
-      elevation="0"
-      @click.stop="toggleLearning"
-    >
-      <v-icon size="14" class="mr-1">{{ isLearning ? 'mdi-check-circle' : 'mdi-play-circle' }}</v-icon>
-      {{ isLearning ? '学习中' : '开始学习' }}
-    </v-btn>
-
-    <!-- 进度（学习中显示） -->
-    <v-progress-circular
-      v-if="isLearning"
-      :model-value="progressPercent"
-      :size="32"
-      :width="3"
-      color="teal"
-    >
-      <span class="progress-value">{{ Math.round(progressPercent) }}</span>
-    </v-progress-circular>
+      <!-- 学习按钮 -->
+      <v-btn
+        color="success"
+        :variant="isLearning ? 'tonal' : 'flat'"
+        size="small"
+        rounded="pill"
+        class="text-none"
+        elevation="0"
+        @click.stop="toggleLearning"
+      >
+        <v-icon size="14" class="mr-1">{{ isLearning ? 'mdi-check-circle' : 'mdi-play-circle' }}</v-icon>
+        {{ isLearning ? '学习中' : '开始学习' }}
+      </v-btn>
+    </div>
   </div>
 </template>
 
@@ -107,10 +118,22 @@ const toggleSubscribe = () => {
 .course-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   padding: 12px 0;
   border-bottom: 1px solid #eee;
   margin-bottom: 12px;
+}
+
+.course-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.course-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .course-icon-wrapper {
@@ -141,9 +164,31 @@ const toggleSubscribe = () => {
   color: #999;
 }
 
-.progress-value {
-  font-size: 10px;
-  font-weight: 700;
+.progress-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-label {
+  font-size: 12px;
+  color: #888;
+}
+
+.progress-text {
+  font-size: 13px;
+  font-weight: 600;
   color: #009688;
+}
+
+.progress-bar {
+  width: 100%;
 }
 </style>
