@@ -19,16 +19,6 @@
             <!-- 左侧：职业信息 -->
             <div class="flex-grow-1" style="min-width: 0">
               <div class="d-flex align-center mb-4 mb-md-5 career-title-row">
-                <!-- 返回按钮 -->
-                <v-btn
-                  icon="mdi-arrow-left"
-                  variant="flat"
-                  color="grey-lighten-5"
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
-                  class="back-button mr-3 mr-md-4 flex-shrink-0"
-                  @click="handleBack"
-                ></v-btn>
-
                 <!-- 职业图标和标题 -->
                 <div class="d-flex align-center" style="min-width: 0">
                   <v-avatar
@@ -591,14 +581,9 @@ const getTimeDisplay = (date: string): string => {
   return date
 }
 
-// 返回上一页
-const handleBack = (): void => {
-  router.back()
-}
-
 // 创建新路径
 const handleCreateRoadmap = (): void => {
-  void router.push(`/career/${careerId.value}/roadmap/create`)
+  void router.push(`/role/${careerId.value}/roadmap/create`)
 }
 
 // 切换职业收藏状态
@@ -683,7 +668,7 @@ const handleStartLearning = async (roadmap: { id: number; learning: boolean }): 
 // 复制路径
 const handleCopy = (roadmap: { id: number }): void => {
   console.log('复制路径:', roadmap.id)
-  void router.push(`/career/${careerId.value}/roadmap/create?copy=${roadmap.id}`)
+  void router.push(`/role/${careerId.value}/roadmap/create?copy=${roadmap.id}`)
 }
 </script>
 

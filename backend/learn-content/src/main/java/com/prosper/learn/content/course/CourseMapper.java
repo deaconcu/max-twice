@@ -111,4 +111,28 @@ public interface CourseMapper {
             "<foreach item='id' collection='rootNodeIds' open='(' separator=',' close=')'>#{id}</foreach>" +
             "</script>"})
     List<CourseDO> getByRootNodeIds(@Param("rootNodeIds") List<Long> rootNodeIds);
+
+    /**
+     * 增加子课程数量
+     */
+    @Update("UPDATE course SET sub_course_count = COALESCE(sub_course_count, 0) + 1 WHERE id = #{id}")
+    int incrementSubCourseCount(long id);
+
+    /**
+     * 减少子课程数量
+     */
+    @Update("UPDATE course SET sub_course_count = GREATEST(COALESCE(sub_course_count, 0) - 1, 0) WHERE id = #{id}")
+    int decrementSubCourseCount(long id);
+
+    /**
+     * 更新子课程数量
+     */
+    @Update("UPDATE course SET sub_course_count = #{count} WHERE id = #{id}")
+    int updateSubCourseCount(@Param("id") long id, @Param("count") int count);
+
+    /**
+     * 统计某个父课程的已发布子课程数量
+     */
+    @Select("SELECT COUNT(*) FROM course WHERE parent_course_id = #{parentCourseId} AND state = " + ContentState.PUBLISHED_VALUE)
+    int countPublishedSubCourses(long parentCourseId);
 }

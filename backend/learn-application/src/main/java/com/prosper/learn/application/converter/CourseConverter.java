@@ -51,6 +51,7 @@ public interface CourseConverter {
     @Mapping(target = "mainCategory")
     @Mapping(target = "subCategory")
     @Mapping(target = "icon")
+    @Mapping(target = "subCourseCount")
     CourseSummaryDTO toSummaryDTO(CourseDO courseDO);
 
     /**
@@ -73,6 +74,7 @@ public interface CourseConverter {
     @Mapping(target = "mainCategory")
     @Mapping(target = "subCategory")
     @Mapping(target = "icon")
+    @Mapping(target = "subCourseCount")
     CourseFullDTO toFullDTO(CourseDO courseDO);
 
     /**
@@ -100,6 +102,7 @@ public interface CourseConverter {
     @Mapping(target = "icon")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
+    @Mapping(target = "subCourseCount")
     CourseAdminDTO toAdminDTO(CourseDO courseDO);
 
     /**

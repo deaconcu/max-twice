@@ -12,7 +12,7 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
   {
     icon: 'mdi-briefcase-search-outline',
     textKey: 'nav.career',
-    path: '/career',
+    path: '/role',
   },
   {
     icon: 'mdi-book-open-page-variant-outline',

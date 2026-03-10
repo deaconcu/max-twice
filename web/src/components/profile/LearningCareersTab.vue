@@ -80,7 +80,7 @@
             variant="text"
             rounded="lg"
             :size="$vuetify.display.mobile ? 'small' : 'default'"
-            to="/career"
+            to="/role"
           >
             <span class="d-none d-sm-inline">浏览全部职业</span>
             <span class="d-sm-none">浏览</span>
@@ -284,7 +284,7 @@ const formatLastActivity = (date: Date) => {
 
 // 跳转到职业详情
 const goToCareer = (careerId: number) => {
-  router.push(`/career/${careerId}`)
+  router.push(`/role/${careerId}`)
 }
 
 // 取消学习职业

@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.domain.Enums.*;
@@ -260,6 +261,11 @@ public class CourseService {
             throw StatusCode.OPERATION_FAILED.exception();
         }
 
+        // 如果是子课程，增加父课程的子课程数量
+        if (courseDO.getParentCourseId() != null && courseDO.getParentCourseId() > 0) {
+            courseDataService.incrementSubCourseCount(courseDO.getParentCourseId());
+        }
+
         // 发布审核通过事件，触发消息通知
         eventPublisher.publishEvent(ContentApprovedEvent.forCourse(
             courseDO.getCreatorId(),
@@ -300,9 +306,17 @@ public class CourseService {
         CourseDO courseDO = courseDataService.validateAndGet(id);
         Utils.validateStateTransition(courseDO.getState(), ContentState.BANNED);
 
+        // 如果是已发布的子课程，减少父课程的子课程数量
+        boolean wasPublished = courseDO.getState() == ContentState.PUBLISHED.value();
+
         int rowsAffected = courseDataService.ban(id, reason);
         if (rowsAffected == 0) {
             throw StatusCode.OPERATION_FAILED.exception();
+        }
+
+        // 只有之前是已发布状态的子课程，才减少父课程的计数
+        if (wasPublished && courseDO.getParentCourseId() != null && courseDO.getParentCourseId() > 0) {
+            courseDataService.decrementSubCourseCount(courseDO.getParentCourseId());
         }
 
         // ban 不发送任何消息或事件
@@ -313,6 +327,14 @@ public class CourseService {
      * 删除课程
      */
     public void delete(long id, UserDO operator) {
+        CourseDO courseDO = courseDataService.validateAndGet(id);
+
+        // 如果是已发布的子课程，减少父课程的子课程数量
+        boolean wasPublished = courseDO.getState() == ContentState.PUBLISHED.value();
+        if (wasPublished && courseDO.getParentCourseId() != null && courseDO.getParentCourseId() > 0) {
+            courseDataService.decrementSubCourseCount(courseDO.getParentCourseId());
+        }
+
         courseDomainService.deleteCourse(id);
     }
 
@@ -413,5 +435,65 @@ public class CourseService {
         } catch (Exception e) {
             throw StatusCode.COURSE_OPERATION_FAILED.exception(e);
         }
+    }
+
+    /**
+     * 重新计算所有课程的子课程数量
+     * 分批处理，只更新不一致的记录
+     *
+     * @param progressCallback 进度回调，传入当前进度信息
+     * @return 包含 checked（检查的父课程数）、updated（更新的数量）、timeout（是否超时）
+     */
+    public Map<String, Integer> recalculateAllSubCourseCounts(java.util.function.Consumer<Object> progressCallback) {
+        long startTime = System.currentTimeMillis();
+        long timeout = 10 * 60 * 1000; // 10分钟超时
+
+        int checked = 0;
+        int updated = 0;
+        Long lastId = null;
+
+        while (true) {
+            // 每批检查是否超时
+            if ((System.currentTimeMillis() - startTime) > timeout) {
+                log.warn("子课程数量重算任务超时，已处理 {} 个，更新 {} 个", checked, updated);
+                return Map.of("checked", checked, "updated", updated, "timeout", 1);
+            }
+
+            // 分页查询所有课程
+            List<CourseDO> courses = courseDataService.listByLastId(lastId);
+            if (courses.isEmpty()) {
+                break;
+            }
+
+            for (CourseDO course : courses) {
+                // 跳过子课程
+                if (course.getParentCourseId() != null && course.getParentCourseId() > 0) {
+                    continue;
+                }
+
+                checked++;
+                int actualCount = courseDataService.countPublishedSubCourses(course.getId());
+                int currentCount = course.getSubCourseCount() != null ? course.getSubCourseCount() : 0;
+
+                // 只有不一致时才更新
+                if (actualCount != currentCount) {
+                    courseDataService.updateSubCourseCount(course.getId(), actualCount);
+                    updated++;
+                    log.info("课程 {} 子课程数量从 {} 更新为 {}", course.getId(), currentCount, actualCount);
+                }
+            }
+
+            lastId = courses.get(courses.size() - 1).getId();
+
+            // 每批处理完后报告进度
+            if (progressCallback != null) {
+                final int currentChecked = checked;
+                final int currentUpdated = updated;
+                progressCallback.accept(Map.of("checked", currentChecked, "updated", currentUpdated));
+            }
+        }
+
+        log.info("子课程数量重算完成: 检查 {} 个父课程, 更新 {} 个", checked, updated);
+        return Map.of("checked", checked, "updated", updated, "timeout", 0);
     }
 }

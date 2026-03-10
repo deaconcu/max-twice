@@ -11,22 +11,12 @@
 
       <!-- 内容区 -->
       <div v-else-if="course">
-        <!-- 返回按钮和标题行 -->
+        <!-- 页面标题行 -->
         <div class="page-header-row d-flex align-center mb-4 mb-md-5">
-          <v-btn
-            icon="mdi-arrow-left"
-            variant="flat"
-            color="grey-lighten-5"
-            :size="$vuetify.display.mobile ? 'small' : 'default'"
-            class="flex-shrink-0 mr-3"
-            @click="handleBack"
-          ></v-btn>
-          <div class="d-flex align-center">
-            <v-icon icon="mdi-text-box-outline" size="20" color="grey" class="mr-2" />
-            <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-0">
-              课程详情
-            </h2>
-          </div>
+          <v-icon icon="mdi-text-box-outline" size="20" color="grey" class="mr-2" />
+          <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-0">
+            课程详情
+          </h2>
         </div>
 
         <!-- 左右两栏内容 -->
@@ -86,7 +76,7 @@
                         class="mr-2"
                       />
                       <span class="text-caption text-md-body-2 text-grey">
-                        {{ subCourses?.length ?? 0 }}{{ t('course.subCourses') }}
+                        {{ course?.subCourseCount ?? 0 }}{{ t('course.subCourses') }}
                       </span>
                     </div>
                     <div class="d-flex align-center">
@@ -532,13 +522,6 @@ const hasExercisesCourse = computed(() =>
 const formatNumber = (num?: number) => {
   if (!num) return '0'
   return num.toLocaleString()
-}
-
-/**
- * 返回上一页
- */
-const handleBack = () => {
-  router.back()
 }
 
 /**

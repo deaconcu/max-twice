@@ -31,6 +31,7 @@ export interface Course {
   bookmarkCount?: number // 收藏数
   bookmarked?: boolean // 是否已收藏
   progress?: number // 课程进度（万分位：0-10000）
+  subCourseCount?: number // 子课程数量
 }
 
 /**

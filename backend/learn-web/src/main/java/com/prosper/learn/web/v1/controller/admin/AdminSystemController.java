@@ -10,6 +10,8 @@ import com.prosper.learn.application.dto.response.SystemConfigDTO;
 import com.prosper.learn.application.converter.SystemConfigConverter;
 import com.prosper.learn.shared.infrastructure.config.SystemDomainService;
 import com.prosper.learn.application.dto.ApiResponse;
+import com.prosper.learn.application.service.AsyncTaskService;
+import com.prosper.learn.application.service.CourseService;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.JsonParam;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.prosper.learn.shared.domain.Enums.*;
@@ -44,6 +47,8 @@ public class AdminSystemController {
     private final SystemDomainService systemDomainService;
     private final SystemConfigConverter systemConfigConverter;
     private final ObjectMapper objectMapper;
+    private final AsyncTaskService asyncTaskService;
+    private final CourseService courseService;
 
     /**
      * 获取系统配置
@@ -214,5 +219,48 @@ public class AdminSystemController {
             log.error("Failed to set readonly mode", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
+    }
+
+    // ==================== 后台任务接口 ====================
+
+    /**
+     * 启动重算课程子课程数量任务
+     * POST /api/v1/admin/tasks/recalculate-sub-course-counts
+     */
+    @PostMapping("/tasks/recalculate-sub-course-counts")
+    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @OperationLog(
+        module = "系统任务",
+        type = "重算子课程数量",
+        level = OperationLevel.HIGH,
+        targetType = "Task",
+        targetId = "0",
+        targetName = "'recalculate-sub-course-counts'"
+    )
+    public ApiResponse<Map<String, String>> startRecalculateSubCourseCounts() {
+        String taskId = asyncTaskService.generateTaskId();
+        asyncTaskService.initTask(taskId);
+        asyncTaskService.runAsyncWithProgress(taskId, progressCallback -> {
+            Map<String, Integer> result = courseService.recalculateAllSubCourseCounts(progressCallback);
+            asyncTaskService.completeTask(taskId, result);
+        });
+
+        log.info("启动重算子课程数量任务: {}", taskId);
+        return ApiResponse.success(Map.of("taskId", taskId, "status", "RUNNING"));
+    }
+
+    /**
+     * 查询任务状态
+     * GET /api/v1/admin/tasks/{taskId}
+     */
+    @GetMapping("/tasks/{taskId}")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<Map<String, Object>> getTaskResult(
+            @PathVariable @NotBlank(message = "任务ID不能为空") String taskId) {
+        Map<String, Object> result = asyncTaskService.getTaskResult(taskId);
+        if (result == null) {
+            return ApiResponse.error("任务不存在或已过期");
+        }
+        return ApiResponse.success(result);
     }
 }

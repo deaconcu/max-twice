@@ -14,11 +14,19 @@
           <h3 class="text-h6 font-weight-bold text-grey-darken-4 mb-1">
             {{ course.name }}
           </h3>
-          <div class="d-flex align-center">
-            <v-icon icon="mdi-account-group" size="14" color="grey" class="mr-1" />
-            <span class="text-caption text-grey-darken-2">
-              {{ formatNumber(course.learnerCount) }} 人学习
-            </span>
+          <div class="d-flex align-center ga-3">
+            <div class="d-flex align-center">
+              <v-icon icon="mdi-account-group" size="14" color="grey" class="mr-1" />
+              <span class="text-caption text-grey-darken-2">
+                {{ formatNumber(course.learnerCount) }} 人学习
+              </span>
+            </div>
+            <div v-if="course.subCourseCount && course.subCourseCount > 0" class="d-flex align-center">
+              <v-icon icon="mdi-book-multiple" size="14" color="grey" class="mr-1" />
+              <span class="text-caption text-grey-darken-2">
+                {{ course.subCourseCount }} 个子课程
+              </span>
+            </div>
           </div>
         </div>
       </div>

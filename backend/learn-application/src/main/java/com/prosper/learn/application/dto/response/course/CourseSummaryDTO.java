@@ -72,4 +72,11 @@ public class CourseSummaryDTO {
      * 何时填充：当 parentCourseId > 0 时动态查询并填充，否则为 null
      */
     private CourseBriefDTO parentCourse;
+
+    /**
+     * 子课程数量
+     * 说明：该课程拥有的已发布子课程数量
+     * 何时填充：从数据库读取
+     */
+    private Integer subCourseCount;
 }

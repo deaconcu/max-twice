@@ -153,7 +153,7 @@ const quickLinks = computed(() => [
     description: '职业方向与学习路线规划',
     icon: 'mdi-briefcase-variant',
     color: 'warning',
-    path: '/career',
+    path: '/role',
   },
   {
     step: 2,
@@ -183,7 +183,7 @@ const openCourse = (courseId: number): void => {
 }
 
 const openCareer = (careerId: number): void => {
-  router.push(`/careers/${String(careerId)}`)
+  router.push(`/role/${String(careerId)}`)
 }
 
 // 暴露 homeLoading 供模板使用（可选，用于显示加载状态）
@@ -539,7 +539,7 @@ void homeLoading
         >
           正在跟踪的职业路线
         </h2>
-        <v-btn variant="text" size="small" :color="'on-surface'" @click="navigateTo('/career')">
+        <v-btn variant="text" size="small" :color="'on-surface'" @click="navigateTo('/role')">
           探索更多
           <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
         </v-btn>
@@ -590,7 +590,7 @@ void homeLoading
 
         <!-- 没有数据时显示占位卡片 -->
         <v-col v-if="recentCareers.length === 0" cols="12" sm="6" md="4" lg="3">
-          <v-card rounded="lg" border class="empty-placeholder-card" @click="navigateTo('/career')">
+          <v-card rounded="lg" border class="empty-placeholder-card" @click="navigateTo('/role')">
             <v-card-text class="pa-4">
               <div class="d-flex align-center ga-3">
                 <div class="icon-container flex-shrink-0 empty-icon-container">
@@ -746,7 +746,7 @@ void homeLoading
           >
             热门职业
           </h2>
-          <v-btn variant="text" size="small" :color="'on-surface'" @click="navigateTo('/career')">
+          <v-btn variant="text" size="small" :color="'on-surface'" @click="navigateTo('/role')">
             更多
             <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
           </v-btn>

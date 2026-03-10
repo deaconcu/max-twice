@@ -342,7 +342,7 @@ const goToRoadmapDetail = (roadmapId: number) => {
 // 编辑路线图
 const editRoadmap = (roadmapId: number, professionId?: number) => {
   if (professionId) {
-    const editPath = `/career/${professionId}/roadmap/${roadmapId}/edit`
+    const editPath = `/role/${professionId}/roadmap/${roadmapId}/edit`
     console.log('跳转到编辑页面:', editPath)
     router.push(editPath)
   } else {

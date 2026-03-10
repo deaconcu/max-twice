@@ -8,19 +8,10 @@
         <div class="content-layout pt-4 pt-md-5">
           <!-- 左侧：Header + 流程图 -->
           <div class="main-content">
-            <!-- 返回按钮和职业信息 -->
+            <!-- 职业信息 -->
             <div class="back-button-wrapper mb-2 mb-md-2 sticky-header">
               <div class="d-flex align-center justify-space-between">
                 <div class="d-flex align-center">
-                  <v-btn
-                    icon="mdi-arrow-left"
-                    variant="flat"
-                    color="grey-lighten-5"
-                    :size="$vuetify.display.mobile ? 'small' : 'default'"
-                    class="back-button mr-3 mr-md-4 flex-shrink-0"
-                    @click="handleBack"
-                  ></v-btn>
-
                   <!-- 职业信息 -->
                   <div v-if="roadmap?.profession" class="d-flex align-center">
                     <v-avatar
@@ -459,11 +450,6 @@ const flowEdges = computed<Edge[]>(() => {
   return edges
 })
 
-// 返回上一页
-const handleBack = (): void => {
-  router.back()
-}
-
 // 投票
 const { execute: toggleUpvote } = useMutation(
   () => upvoteApi.upvote(roadmapId.value, ObjectType.ROADMAP, VoteType.NORMAL),
@@ -520,7 +506,7 @@ const handleStartLearning = async (): Promise<void> => {
 
 // 复制路径
 const handleCopy = (): void => {
-  void router.push(`/career/${careerId.value}/roadmap/create?copy=${roadmapId.value}`)
+  void router.push(`/role/${careerId.value}/roadmap/create?copy=${roadmapId.value}`)
 }
 
 // 切换收藏状态

@@ -247,7 +247,7 @@ const currentResults = computed(() => {
 const navigateTo = (type: string, id: number) => {
   switch (type) {
     case 'professions':
-      router.push(`/career/${id}`)
+      router.push(`/role/${id}`)
       break
     case 'courses':
       router.push(`/course/${id}`)

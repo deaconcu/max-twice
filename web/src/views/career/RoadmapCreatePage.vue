@@ -4,16 +4,6 @@
       <!-- 页面标题 -->
       <div class="mb-6 mb-md-8">
         <div class="d-flex align-center title-row">
-          <!-- 返回按钮 -->
-          <v-btn
-            icon="mdi-arrow-left"
-            variant="flat"
-            color="grey-lighten-5"
-            :size="$vuetify.display.mobile ? 'small' : 'default'"
-            class="back-button mr-3 mr-md-4 flex-shrink-0"
-            @click="handleBack"
-          ></v-btn>
-
           <!-- 图标和标题 -->
           <div class="d-flex align-center" style="min-width: 0">
             <v-avatar
@@ -933,28 +923,6 @@ const onEdgesChange = (changes: any[]) => {
       }
     }
   })
-}
-
-// 返回上一页
-const handleBack = () => {
-  if (nodes.value.length > 1 || edges.value.length > 0) {
-    confirmDialogConfig.value = {
-      title: '确认离开',
-      message: '有未保存的更改，确定要离开吗？',
-      confirmText: '离开',
-      cancelText: '取消',
-      confirmColor: 'warning',
-      icon: 'mdi-alert-outline',
-      iconColor: 'warning-lighten-4',
-      iconForeground: 'warning',
-      onConfirm: () => {
-        router.back()
-      },
-    }
-    confirmDialogVisible.value = true
-  } else {
-    router.back()
-  }
 }
 
 // 显示保存对话框

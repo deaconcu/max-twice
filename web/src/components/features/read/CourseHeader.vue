@@ -65,9 +65,9 @@ const toggleSubscribe = () => {
             {{ currentCourse.name }}
           </span>
         </template>
-        <template v-if="subCourseList && subCourseList.length > 0">
+        <template v-if="currentCourse?.subCourseCount && currentCourse.subCourseCount > 0">
           <span class="text-caption text-grey mx-2">·</span>
-          <span class="text-caption text-grey">{{ subCourseList.length }} 个子课程</span>
+          <span class="text-caption text-grey">{{ currentCourse.subCourseCount }} 个子课程</span>
         </template>
         <span class="text-caption text-grey mx-2">·</span>
         <span class="text-caption text-grey">{{ currentCourse?.learnerCount?.toLocaleString() || 0 }} 人学习</span>

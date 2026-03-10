@@ -2,6 +2,7 @@
 import { inject, ref } from 'vue'
 import { statsApi, systemApi, adminApi } from '@/api'
 import { useFetch, useMutation } from '@/composables'
+import SubCourseCountTask from './SubCourseCountTask.vue'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
@@ -319,6 +320,9 @@ setTimeout(() => {
         </div>
       </v-card-text>
     </v-card>
+
+    <!-- 子课程数量重算 -->
+    <SubCourseCountTask class="mb-4" />
 
     <!-- 搜索索引同步 -->
     <v-card flat class="border mb-4">

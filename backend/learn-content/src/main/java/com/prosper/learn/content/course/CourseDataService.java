@@ -233,4 +233,35 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
     public int delete(long id) {
         return courseMapper.delete(id);
     }
+
+    /**
+     * 增加子课程数量
+     */
+    @CacheEvict(value = "courses", key = "#parentCourseId")
+    public int incrementSubCourseCount(long parentCourseId) {
+        return courseMapper.incrementSubCourseCount(parentCourseId);
+    }
+
+    /**
+     * 减少子课程数量
+     */
+    @CacheEvict(value = "courses", key = "#parentCourseId")
+    public int decrementSubCourseCount(long parentCourseId) {
+        return courseMapper.decrementSubCourseCount(parentCourseId);
+    }
+
+    /**
+     * 更新子课程数量
+     */
+    @CacheEvict(value = "courses", key = "#id")
+    public int updateSubCourseCount(long id, int count) {
+        return courseMapper.updateSubCourseCount(id, count);
+    }
+
+    /**
+     * 统计某个父课程的已发布子课程数量
+     */
+    public int countPublishedSubCourses(long parentCourseId) {
+        return courseMapper.countPublishedSubCourses(parentCourseId);
+    }
 }

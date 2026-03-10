@@ -651,4 +651,25 @@ export const adminApi = {
   syncProfessionIndexes(): Promise<ApiResponse<number>> {
     return apiClient.post('/v1/admin/search/sync-professions')
   },
+
+  // ========== 后台任务 ==========
+
+  /**
+   * 启动重算子课程数量任务
+   */
+  startRecalculateSubCourseCounts(): Promise<ApiResponse<{ taskId: string; status: string }>> {
+    return apiClient.post('/v1/admin/tasks/recalculate-sub-course-counts')
+  },
+
+  /**
+   * 查询任务状态
+   */
+  getTaskResult(taskId: string): Promise<ApiResponse<{
+    taskId: string
+    status: 'RUNNING' | 'COMPLETED' | 'FAILED'
+    result?: { checked: number; updated: number; timeout: number }
+    error?: string
+  }>> {
+    return apiClient.get(`/v1/admin/tasks/${taskId}`)
+  },
 }

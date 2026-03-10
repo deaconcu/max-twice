@@ -29,6 +29,8 @@ public class CourseDO {
 
     private String icon; // 图标，可以是 MDI 图标名或图片 URL
 
+    private Integer subCourseCount; // 子课程数量
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

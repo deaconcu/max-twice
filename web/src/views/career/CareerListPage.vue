@@ -679,8 +679,7 @@ onBeforeUnmount(() => {
  * 跳转到职业详情（路线图列表）
  */
 const goToCareerDetail = (career: Profession) => {
-  // TODO: 创建职业详情页面路由
-  void router.push(`/career/${String(career.id)}`)
+  void router.push(`/role/${String(career.id)}`)
 }
 
 /**

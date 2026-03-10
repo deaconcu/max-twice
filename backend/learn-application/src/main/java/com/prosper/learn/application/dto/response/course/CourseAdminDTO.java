@@ -71,4 +71,9 @@ public class CourseAdminDTO {
      * 正在学习人数
      */
     private Integer learnerCount;
+
+    /**
+     * 子课程数量
+     */
+    private Integer subCourseCount;
 }
