@@ -84,30 +84,7 @@
         </div>
 
         <!-- 课程列表 -->
-        <div v-else>
-          <!-- 分类标题 -->
-          <div class="mb-4 mt-6 mt-md-10">
-            <div class="d-flex align-center justify-space-between">
-              <div class="d-flex align-center">
-                <v-icon
-                  icon="mdi-format-list-bulleted"
-                  size="20"
-                  class="mr-2 text-grey-darken-2"
-                ></v-icon>
-                <h2 class="text-h6 font-weight-regular text-grey-darken-4">
-                  <span v-if="searchText">搜索结果</span>
-                  <span v-else-if="selectedSubCategory">
-                    {{ getCategoryName(selectedMainCategory) }} -
-                    {{ getSubCategoryName(selectedSubCategory) }}
-                  </span>
-                  <span v-else-if="selectedMainCategory">{{ getCategoryName(selectedMainCategory) }}</span>
-                  <span v-else>全部课程</span>
-                </h2>
-              </div>
-              <p class="text-body-2 text-grey-darken-2">共 {{ filteredCourses.length }} 门课程</p>
-            </div>
-          </div>
-
+        <div v-else class="mt-6 mt-md-8">
           <!-- 课程网格 -->
           <div class="course-grid mb-16">
             <CourseCard

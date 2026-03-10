@@ -1,6 +1,6 @@
 <template>
   <v-card flat class="category-nav-card" rounded="xl">
-    <div class="bg-surface-variant pa-4 rounded-xl">
+    <div class="bg-surface-variant pa-3 rounded-xl">
       <!-- 一级分类按钮组 -->
       <div class="d-flex flex-wrap category-buttons-gap">
         <!-- 全部分类 -->
