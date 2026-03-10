@@ -107,23 +107,22 @@
         </v-card>
       </v-dialog>
 
-      <!-- 课程头部 - 固定在顶部 -->
-      <div v-if="data" class="course-header-sticky">
-        <CourseHeader
-          :parent-course-info="data.parentCourse"
-          :current-course="data.course"
-          :sub-course-list="data.subCourseList"
-          :is-main-course="isMainCourse"
-          :is-learning="isLearning"
-          :course-progress="data.course?.progressPercent || 0"
-          @start-learning="handleToggleLearning"
-        />
-      </div>
-
       <div class="read-content">
         <!-- 左侧目录 -->
         <div class="toc-sidebar">
           <div class="toc-sticky-wrapper">
+            <!-- 课程头部 - 放到目录上方 -->
+            <CourseHeader
+              v-if="data"
+              :parent-course-info="data.parentCourse"
+              :current-course="data.course"
+              :sub-course-list="data.subCourseList"
+              :is-main-course="isMainCourse"
+              :is-learning="isLearning"
+              :course-progress="data.course?.progressPercent || 0"
+              @start-learning="handleToggleLearning"
+            />
+
             <!-- 目录为空的占位 -->
             <div v-if="data && (!data.toc || data.toc.length === 0)" class="toc-placeholder">
               <!-- 目录组占位 -->
