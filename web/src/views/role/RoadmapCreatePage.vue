@@ -22,7 +22,7 @@
                 {{ isEditMode ? '编辑学习路径' : (copyId ? '复制学习路径' : '创建学习路径') }}
               </h1>
               <p class="text-caption text-sm-body-2 text-grey-darken-2 text-truncate">
-                {{ isEditMode ? '修改' : '为' }} {{ careerName }} {{ isEditMode ? '的学习路径' : '创建新的学习路径' }}
+                {{ isEditMode ? '修改' : '为' }} {{ roleName }} {{ isEditMode ? '的学习路径' : '创建新的学习路径' }}
               </p>
             </div>
           </div>
@@ -511,7 +511,7 @@ const roadmapDescriptionRules = useValidationRules('roadmap-description')
 const roadmapDescriptionMaxLength = useMaxLength('roadmap-description')
 
 // 从路由获取参数
-const careerId = computed(() => {
+const roleId = computed(() => {
   const id = route.params.id
   return typeof id === 'string' ? parseInt(id, 10) : 0
 })
@@ -531,7 +531,7 @@ const roadmapDescription = ref('')
 const savedDraftDescription = ref('') // 已保存的草稿描述
 const draftRoadmapId = ref<number | null>(null) // 草稿路线图ID
 const roadmapState = ref<number | null>(null) // 路线图状态：0=草稿，1=审核中，2=已发布
-const careerName = ref('前端工程师') // TODO: 从 API 获取
+const roleName = ref('前端工程师') // TODO: 从 API 获取
 
 // Tab 切换状态
 const searchTab = ref<'course' | 'node'>('course')
@@ -698,7 +698,7 @@ const nodes = ref<Node[]>([
   {
     id: '0',
     type: 'default',
-    data: { label: careerName.value },
+    data: { label: roleName.value },
     position: { x: 400, y: 100 },
     sourcePosition: undefined,
     targetPosition: Position.Left,
@@ -1035,7 +1035,7 @@ const saveRoadmap = async (type: 'draft' | 'publish') => {
     } else {
       // 首次创建
       response = await roadmapApi.createRoadmap(
-        careerId.value,
+        roleId.value,
         content,
         roadmapDescription.value.trim(),
         state
@@ -1195,7 +1195,7 @@ const resetAll = () => {
         {
           id: '0',
           type: 'default',
-          data: { label: careerName.value },
+          data: { label: roleName.value },
           position: { x: 400, y: 100 },
           sourcePosition: undefined,
           targetPosition: Position.Left,
@@ -1276,7 +1276,7 @@ watch(roadmapData, (newData) => {
             return {
               id: '0',
               type: 'default',
-              data: { label: careerName.value },
+              data: { label: roleName.value },
               position: { x: 0, y: 0 },
               sourcePosition: undefined,
               targetPosition: Position.Left,
@@ -1338,7 +1338,7 @@ watch(copyRoadmapData, (newData) => {
             return {
               id: '0',
               type: 'default',
-              data: { label: careerName.value },
+              data: { label: roleName.value },
               position: { x: 0, y: 0 },
               sourcePosition: undefined,
               targetPosition: Position.Left,

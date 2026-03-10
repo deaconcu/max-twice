@@ -3,19 +3,19 @@ import type { RouteRecordRaw } from 'vue-router'
 /**
  * 角色相关路由
  */
-export const careerRoutes: RouteRecordRaw[] = [
+export const roleRoutes: RouteRecordRaw[] = [
   {
     path: '/role',
-    name: 'CareerList',
-    component: () => import('@/views/career/CareerListPage.vue'),
+    name: 'RoleList',
+    component: () => import('@/views/role/RoleListPage.vue'),
     meta: {
       requiresAuth: false,
     },
   },
   {
     path: '/role/:id',
-    name: 'CareerDetail',
-    component: () => import('@/views/career/CareerDetailPage.vue'),
+    name: 'RoleDetail',
+    component: () => import('@/views/role/RoleDetailPage.vue'),
     meta: {
       requiresAuth: false,
     },
@@ -23,7 +23,7 @@ export const careerRoutes: RouteRecordRaw[] = [
   {
     path: '/role/:id/roadmap/create',
     name: 'RoadmapCreate',
-    component: () => import('@/views/career/RoadmapCreatePage.vue'),
+    component: () => import('@/views/role/RoadmapCreatePage.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -31,7 +31,7 @@ export const careerRoutes: RouteRecordRaw[] = [
   {
     path: '/role/:id/roadmap/:roadmapId/edit',
     name: 'RoadmapEdit',
-    component: () => import('@/views/career/RoadmapCreatePage.vue'),
+    component: () => import('@/views/role/RoadmapCreatePage.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -39,7 +39,7 @@ export const careerRoutes: RouteRecordRaw[] = [
   {
     path: '/roadmap/:id',
     name: 'RoadmapDetail',
-    component: () => import('@/views/career/RoadmapDetailPage.vue'),
+    component: () => import('@/views/role/RoadmapDetailPage.vue'),
     meta: {
       requiresAuth: false,
     },

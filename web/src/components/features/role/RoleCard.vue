@@ -1,29 +1,29 @@
 <template>
-  <v-card rounded="xl" class="career-card hoverable" border hover @click="handleClick">
-    <v-card-text class="pa-6">
+  <v-card rounded="xl" class="role-card hoverable" border hover @click="handleClick">
+    <v-card-text class="pa-5">
       <div class="d-flex align-center mb-4">
         <div class="icon-container flex-shrink-0 mr-4">
           <v-icon :icon="getRandomIcon()" :color="getRandomColor()" size="28" />
         </div>
         <div class="flex-grow-1">
           <h3 class="text-h6 font-weight-bold text-grey-darken-4 mb-1">
-            {{ career.name }}
+            {{ role.name }}
           </h3>
           <div class="d-flex align-center">
             <v-icon icon="mdi-account-group" size="14" color="grey" class="mr-1" />
             <span class="text-caption text-grey-darken-2">
-              {{ formatNumber(career.learnerCount) }} {{ t('careerCard.learnersCount') }}
+              {{ formatNumber(role.learnerCount) }} {{ t('roleCard.learnersCount') }}
             </span>
           </div>
         </div>
       </div>
 
-      <p v-if="career.description" class="text-body-2 text-grey-darken-2 career-description mb-5">
-        {{ career.description }}
+      <p v-if="role.description" class="text-body-2 text-grey-darken-2 role-description mb-5">
+        {{ role.description }}
       </p>
 
       <!-- 核心技能标签 -->
-      <div v-if="career.skills" class="skills-section">
+      <div v-if="role.skills" class="skills-section">
         <div class="skills-chips">
           <v-chip
             v-for="(skill, index) in getSkillsList"
@@ -47,10 +47,10 @@ import { useI18n } from '@/composables/useI18n'
 import type { Profession } from '@/types/profession'
 
 interface Props {
-  career: Profession
+  role: Profession
 }
 
-type Emits = (e: 'click', career: Profession) => void
+type Emits = (e: 'click', role: Profession) => void
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
@@ -92,7 +92,7 @@ const colors = [
  * 根据职业 ID 获取一致的随机图标
  */
 const getRandomIcon = () => {
-  const index = props.career.id % icons.length
+  const index = props.role.id % icons.length
   return icons[index]
 }
 
@@ -100,7 +100,7 @@ const getRandomIcon = () => {
  * 根据职业 ID 获取一致的随机颜色
  */
 const getRandomColor = () => {
-  const index = props.career.id % colors.length
+  const index = props.role.id % colors.length
   return colors[index]
 }
 
@@ -116,8 +116,8 @@ const formatNumber = (num?: number) => {
  * 获取技能列表（最多显示4个）
  */
 const getSkillsList = computed(() => {
-  if (!props.career.skills) return []
-  const skills = props.career.skills.split(',').map((s) => s.trim())
+  if (!props.role.skills) return []
+  const skills = props.role.skills.split(',').map((s) => s.trim())
   return skills.slice(0, 4)
 })
 
@@ -125,12 +125,12 @@ const getSkillsList = computed(() => {
  * 处理卡片点击
  */
 const handleClick = () => {
-  emit('click', props.career)
+  emit('click', props.role)
 }
 </script>
 
 <style scoped>
-.career-card {
+.role-card {
   background-color: rgb(var(--v-theme-surface));
 }
 
@@ -144,7 +144,7 @@ const handleClick = () => {
   justify-content: center;
 }
 
-.career-description {
+.role-description {
   line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 3;

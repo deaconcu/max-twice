@@ -1,6 +1,6 @@
 <template>
   <DefaultLayout>
-    <div class="career-detail-page">
+    <div class="role-detail-page">
       <!-- 加载状态 -->
       <LoadingSpinner v-if="loading" />
 
@@ -10,7 +10,7 @@
       </v-alert>
 
       <!-- 内容区 -->
-      <div v-else-if="career" class="content-wrapper">
+      <div v-else-if="role" class="content-wrapper">
         <!-- 职业信息头部 -->
         <div class="profession-header mb-6 mb-md-8 pa-0">
           <div
@@ -18,7 +18,7 @@
           >
             <!-- 左侧：职业信息 -->
             <div class="flex-grow-1" style="min-width: 0">
-              <div class="d-flex align-center mb-4 mb-md-5 career-title-row">
+              <div class="d-flex align-center mb-4 mb-md-5 role-title-row">
                 <!-- 职业图标和标题 -->
                 <div class="d-flex align-center" style="min-width: 0">
                   <v-avatar
@@ -27,13 +27,13 @@
                     class="mr-3 flex-shrink-0"
                   >
                     <v-icon
-                      :icon="getCareerIcon()"
+                      :icon="getRoleIcon()"
                       color="white"
                       :size="$vuetify.display.mobile ? 20 : 24"
                     />
                   </v-avatar>
                   <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 text-truncate">
-                    {{ career.name }}
+                    {{ role.name }}
                   </h1>
                 </div>
               </div>
@@ -41,7 +41,7 @@
               <!-- 简介 -->
               <div>
                 <p class="text-body-2 text-grey-darken-2 mb-0">
-                  {{ career.description }}
+                  {{ role.description }}
                 </p>
               </div>
             </div>
@@ -52,8 +52,8 @@
                 <template #activator="{ props }">
                   <v-btn
                     v-bind="props"
-                    :icon="career.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
-                    :color="career.bookmarked ? 'primary' : 'grey-darken-1'"
+                    :icon="role.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+                    :color="role.bookmarked ? 'primary' : 'grey-darken-1'"
                     variant="tonal"
                     density="comfortable"
                     :size="$vuetify.display.mobile ? 'default' : 'large'"
@@ -61,7 +61,7 @@
                     @click="handleToggleBookmark"
                   />
                 </template>
-                {{ career.bookmarked ? '取消收藏' : '收藏职业' }}
+                {{ role.bookmarked ? '取消收藏' : '收藏职业' }}
               </v-tooltip>
               <v-btn
                 color="primary"
@@ -437,18 +437,18 @@ const userStore = useUserStore()
 const currentUserId = computed(() => userStore.currentUser?.id)
 
 // 从路由获取职业ID
-const careerId = computed(() => {
+const roleId = computed(() => {
   const id = route.params.id
   return typeof id === 'string' ? parseInt(id, 10) : 0
 })
 
 // 使用 useFetch 加载职业详情
 const {
-  data: career,
+  data: role,
   loading,
   error: fetchError,
 } = useFetch<Profession>({
-  fetchFn: () => professionApi.getProfession(careerId.value),
+  fetchFn: () => professionApi.getProfession(roleId.value),
   immediate: true,
   defaultValue: null,
 })
@@ -475,7 +475,7 @@ const {
   reset: resetRoadmaps,
 } = useInfiniteScroll({
   fetchFn: async (params) => {
-    const response = await roadmapApi.getProfessionRoadmaps(careerId.value, params.lastId, sortBy.value)
+    const response = await roadmapApi.getProfessionRoadmaps(roleId.value, params.lastId, sortBy.value)
     return {
       code: response.code,
       data: response.data || [],
@@ -503,7 +503,7 @@ watch(filterStatus, async (newStatus) => {
   if (newStatus === 'learning' && learningRoadmaps.value.length === 0) {
     loadingRoadmaps.value = true
     try {
-      const response = await progressApi.getLearningRoadmapsByProfession(careerId.value)
+      const response = await progressApi.getLearningRoadmapsByProfession(roleId.value)
       if (response.code === 200) {
         learningRoadmaps.value = response.data || []
       }
@@ -558,7 +558,7 @@ const filterRoadmaps = (): void => {
 }
 
 // 获取职业图标
-const getCareerIcon = () => {
+const getRoleIcon = () => {
   return 'mdi-briefcase-outline'
 }
 
@@ -583,12 +583,12 @@ const getTimeDisplay = (date: string): string => {
 
 // 创建新路径
 const handleCreateRoadmap = (): void => {
-  void router.push(`/role/${careerId.value}/roadmap/create`)
+  void router.push(`/role/${roleId.value}/roadmap/create`)
 }
 
 // 切换职业收藏状态
 const { execute: executeToggleBookmark, loading: bookmarking } = useMutation(
-  () => bookmarkApi.toggle('profession', careerId.value),
+  () => bookmarkApi.toggle('profession', roleId.value),
   {
     successMessage: '',
     showToast: false,
@@ -596,11 +596,11 @@ const { execute: executeToggleBookmark, loading: bookmarking } = useMutation(
 )
 
 const handleToggleBookmark = async () => {
-  if (!career.value) return
+  if (!role.value) return
 
   const result = await executeToggleBookmark()
-  if (result !== null && career.value) {
-    career.value.bookmarked = result
+  if (result !== null && role.value) {
+    role.value.bookmarked = result
   }
 }
 
@@ -668,18 +668,18 @@ const handleStartLearning = async (roadmap: { id: number; learning: boolean }): 
 // 复制路径
 const handleCopy = (roadmap: { id: number }): void => {
   console.log('复制路径:', roadmap.id)
-  void router.push(`/role/${careerId.value}/roadmap/create?copy=${roadmap.id}`)
+  void router.push(`/role/${roleId.value}/roadmap/create?copy=${roadmap.id}`)
 }
 </script>
 
 <style scoped>
-.career-detail-page {
+.role-detail-page {
   /* 使用 DefaultLayout 的默认 padding */
 }
 
 /* 宽屏时向左延伸，让后退按钮露出到页面外 */
 @media (min-width: 1800px) {
-  .career-title-row {
+  .role-title-row {
     margin-left: -56px;
   }
 }

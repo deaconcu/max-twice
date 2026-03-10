@@ -38,12 +38,12 @@
     "keepLearning": "Keep up the great learning today 🎯",
     "todayLearning": "Today's Learning (min)",
     "guideTitle": "Start Your Learning Journey",
-    "guideSubtitle": "Begin systematic learning in 3 steps, with vast resources to help you achieve your career goals",
+    "guideSubtitle": "Begin systematic learning in 3 steps, with vast resources to help you achieve your role goals",
     "step": "STEP",
-    "exploreCareer": {
-      "title": "Explore Careers",
-      "description": "Explore career directions and plan your career development path",
-      "stat": "{count} career directions",
+    "exploreRole": {
+      "title": "Explore Roles",
+      "description": "Explore role directions and plan your role development path",
+      "stat": "{count} role directions",
       "statDetail": "Covering popular fields such as technology, design, and management"
     },
     "browseCourses": {
@@ -58,20 +58,20 @@
       "stat": "{count}+ learners",
       "statDetail": "{growth}+ new active users daily"
     },
-    "trackCareers": {
-      "title": "Track Career Progress",
-      "description": "Track career progress and achieve career goals",
+    "trackRoles": {
+      "title": "Track Role Progress",
+      "description": "Track role progress and achieve role goals",
       "stat": "{rate}% completion rate",
       "statDetail": "Systematic path helps achieve goals"
     },
     "stats": {
       "coursesInProgress": "Courses in Progress",
       "completedCourses": "Completed Courses",
-      "careersInProgress": "Careers in Progress",
+      "rolesInProgress": "Roles in Progress",
       "learningDays": "Total Learning Days"
     },
     "learningCourses": "Courses in Progress",
-    "learningCareers": "Careers in Progress",
+    "learningRoles": "Roles in Progress",
     "recommendedCourses": "Recommended Courses",
     "recentActivities": "Recent Activities",
     "viewAll": "View All",
@@ -116,7 +116,7 @@
     "dashboard": "Dashboard",
     "learning": "Learning",
     "courses": "Courses",
-    "career": "Career",
+    "role": "Role",
     "memoryReview": "Review",
     "profile": "Profile",
     "roadmap": "Roadmap",
@@ -378,7 +378,7 @@
     "unpinSuccess": "Roadmap unpinned",
     "pinFailed": "Pin operation failed, please try again later",
     "fillDescription": "Please fill in roadmap description",
-    "systematicLearning": "Systematic learning path for career development",
+    "systematicLearning": "Systematic learning path for role development",
     "skills": {
       "javaBasics": "Java Basic Syntax",
       "oop": "Object-Oriented Programming",
@@ -413,7 +413,7 @@
     "roadmapMoveDown": "Roadmap moved down",
     "loadFailed": "Failed to load learning data",
     "unknownStatus": "Unknown status",
-    "careerCenter": "Career Center",
+    "roleCenter": "Role Center",
     "courseCenter": "Course Center",
     "startTime": "Start Time",
     "studyDuration": "Study Duration",
@@ -495,59 +495,59 @@
       "stopLearningSuccess": "Stopped learning"
     }
   },
-  "careerCenter": {
-    "title": "Career Center",
-    "subtitle": "Explore career paths and plan your bright future",
+  "roleCenter": {
+    "title": "Role Center",
+    "subtitle": "Explore role paths and plan your bright future",
     "navigation": {
       "learning": "Learning",
-      "career": "Career Center",
+      "role": "Role Center",
       "courses": "Course Center"
     },
     "search": {
-      "placeholder": "Search for careers, skills or companies you're interested in...",
+      "placeholder": "Search for roles, skills or companies you're interested in...",
       "button": "Search",
-      "applyJob": "Apply to Add Career"
+      "applyJob": "Apply to Add Role"
     },
     "category": {
-      "title": "Career Field Filter",
-      "subtitle": "Select career fields of interest to further filter specific directions",
+      "title": "Role Field Filter",
+      "subtitle": "Select role fields of interest to further filter specific directions",
       "specificDirection": "Specific Direction"
     },
     "listing": {
-      "hotProfessions": "Hot Career Recommendations ({count} careers in total)",
-      "categoryJobs": "{category} Careers ({count} in total)",
-      "specificJobs": "{count} careers in total",
-      "loadingMore": "Loading more careers...",
-      "allLoaded": "- All careers loaded -",
-      "loading": "Loading career information..."
+      "hotProfessions": "Hot Role Recommendations ({count} roles in total)",
+      "categoryJobs": "{category} Roles ({count} in total)",
+      "specificJobs": "{count} roles in total",
+      "loadingMore": "Loading more roles...",
+      "allLoaded": "- All roles loaded -",
+      "loading": "Loading role information..."
     },
     "empty": {
-      "noJobs": "No career information available",
+      "noJobs": "No role information available",
       "noJobsDesc": "Please try again later or contact administrator",
-      "noRelatedJobs": "No related careers",
-      "noRelatedJobsDesc": "No career information in this category at the moment",
-      "noCategoryJobs": "No careers in this category",
-      "noCategoryJobsDesc": "Please select a specific subcategory or wait for more careers to be added",
-      "noSearchResults": "No related careers found",
+      "noRelatedJobs": "No related roles",
+      "noRelatedJobsDesc": "No role information in this category at the moment",
+      "noCategoryJobs": "No roles in this category",
+      "noCategoryJobsDesc": "Please select a specific subcategory or wait for more roles to be added",
+      "noSearchResults": "No related roles found",
       "noSearchResultsDesc": "Try other keywords or browse categories"
     },
     "application": {
-      "title": "Apply for New Career",
-      "subtitle": "Submit career application, will be added to career database after review",
-      "name": "Career Name",
-      "nameRequired": "Please enter career name",
-      "jobName": "Career Name",
+      "title": "Apply for New Role",
+      "subtitle": "Submit role application, will be added to role database after review",
+      "name": "Role Name",
+      "nameRequired": "Please enter role name",
+      "jobName": "Role Name",
       "jobNamePlaceholder": "e.g.: Full Stack Developer",
-      "category": "Career Category",
-      "description": "Career Description",
-      "descriptionRequired": "Please enter career description",
-      "descriptionPlaceholder": "Describe in detail the job content and responsibilities of this career...",
+      "category": "Role Category",
+      "description": "Role Description",
+      "descriptionRequired": "Please enter role description",
+      "descriptionPlaceholder": "Describe in detail the job content and responsibilities of this role...",
       "skills": "Core Skills (optional, separated by commas)",
       "skillsHint": "Separate multiple skills with commas, e.g.: JavaScript, Vue.js, Node.js",
       "skillsPlaceholder": "e.g.: JavaScript, Vue.js, Node.js",
       "cancel": "Cancel",
       "submit": "Submit Application",
-      "submittedSuccess": "Career application submitted, we will review it within 3 business days",
+      "submittedSuccess": "Role application submitted, we will review it within 3 business days",
       "submitFailed": "Failed to submit application, please try again later"
     },
     "difficulty": {
@@ -557,9 +557,9 @@
       "advanced": "Advanced"
     },
     "errors": {
-      "loadFailed": "Failed to load career data",
-      "loadCategoryFailed": "Failed to load main category careers",
-      "loadSubcategoryFailed": "Failed to load subcategory careers"
+      "loadFailed": "Failed to load role data",
+      "loadCategoryFailed": "Failed to load main category roles",
+      "loadSubcategoryFailed": "Failed to load subcategory roles"
     }
   },
   "confirmDialog": {
@@ -575,14 +575,14 @@
     "confirmResetButton": "Confirm Reset"
   },
   "rightSidebar": {
-    "vision": "If career is about exploring and experiencing the world, not a deep binding",
+    "vision": "If role is about exploring and experiencing the world, not a deep binding",
     "platformData": "Platform Data",
     "myLearning": "My Learning",
     "learningTips": "Learning Tips",
-    "hotCareers": "Hot Careers",
+    "hotRoles": "Hot Roles",
     "hotCourses": "Hot Courses",
     "courseTotal": "Total Courses",
-    "careerPaths": "Career Paths",
+    "rolePaths": "Role Paths",
     "learningRoadmaps": "Learning Roadmaps",
     "knowledgeNodes": "Knowledge Nodes",
     "articleCount": "Articles",
@@ -590,7 +590,7 @@
     "studying": "I'm Learning",
     "viewAll": "View All",
     "progress": "Progress",
-    "noLearningCareers": "No learning careers",
+    "noLearningRoles": "No learning roles",
     "noLearningCourses": "No learning courses",
     "learningQuotes": {
       "quote1": "Learning and practicing regularly brings joy",
@@ -624,7 +624,7 @@
   },
   "roadmapCreate": {
     "title": "Create New Roadmap",
-    "rootNodeTitle": "Career",
+    "rootNodeTitle": "Role",
     "searchCourses": "Search Courses",
     "deleteSelected": "Delete Selected",
     "reset": "Reset",
@@ -655,11 +655,11 @@
     "collapse": "Collapse",
     "viewMore": "View More"
   },
-  "careerCard": {
+  "roleCard": {
     "coreSkills": "Core Skills",
     "courses": "{count} courses",
     "learnersCount": "learners",
-    "exploreCareer": "Explore Career",
+    "exploreRole": "Explore Role",
     "difficulty": {
       "beginner": "Beginner",
       "intermediate": "Intermediate",
@@ -924,7 +924,7 @@
     "contactUs": "Contact Us",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
-    "careerPhilosophy": "Career should be self-realization"
+    "rolePhilosophy": "Role should be self-realization"
   },
   "categorySelector": {
     "mainCategory": "Main Category",

@@ -26,7 +26,7 @@ const { data: homeData, loading: homeLoading } = useFetch<HomePage>({
   defaultValue: {
     platformStats: {
       courseCount: 0,
-      careerPathCount: 0,
+      rolePathCount: 0,
       roadmapCount: 0,
       knowledgeNodeCount: 0,
       articleCount: 0,
@@ -35,9 +35,9 @@ const { data: homeData, loading: homeLoading } = useFetch<HomePage>({
     userStats: {
       learningDays: 0,
       coursesInProgress: 0,
-      careersInProgress: 0,
+      professionsInProgress: 0,
     },
-    learningCareers: [],
+    learningProfessions: [],
     learningCourses: [],
     reviewSummary: {
       todayTotal: 0,
@@ -45,7 +45,7 @@ const { data: homeData, loading: homeLoading } = useFetch<HomePage>({
       streakDays: 0,
       courses: [],
     },
-    recommendedCareers: [],
+    recommendedProfessions: [],
     recommendedCourses: [],
   },
 })
@@ -54,7 +54,7 @@ const { data: homeData, loading: homeLoading } = useFetch<HomePage>({
 const stats = computed(() => ({
   learningDays: homeData.value.userStats.learningDays,
   coursesInProgress: homeData.value.userStats.coursesInProgress,
-  careersInProgress: homeData.value.userStats.careersInProgress,
+  professionsInProgress: homeData.value.userStats.professionsInProgress,
   reviewCards: homeData.value.reviewSummary.todayTotal,
 }))
 
@@ -70,15 +70,15 @@ const reviewData = computed(() => ({
 }))
 
 // 计算属性：正在学习的职业路线
-const recentCareers = computed(() => {
-  return homeData.value.learningCareers.map((item) => {
+const recentRoles = computed(() => {
+  return homeData.value.learningProfessions.map((item) => {
     const roadmap = item.object as
       | { id: number; professionName: string; professionIcon?: string; nodeCount?: number }
       | undefined
     const name = roadmap?.professionName ?? '未知职业'
     return {
       id: item.id,
-      careerId: item.objectId,
+      roleId: item.objectId,
       name,
       progress: Math.round(item.progressPercent / 100),
       icon: roadmap?.professionIcon ?? 'mdi-briefcase-variant',
@@ -108,15 +108,15 @@ const recentCourses = computed(() => {
 })
 
 // 计算属性：推荐职业
-const recommendedCareers = computed(() => {
-  return homeData.value.recommendedCareers.map((career, index) => ({
+const recommendedProfessions = computed(() => {
+  return homeData.value.recommendedProfessions.map((item, index) => ({
     id: index + 1,
-    careerId: career.id,
-    name: career.name,
-    icon: career.icon ?? 'mdi-briefcase-variant',
-    iconColor: getColorByString(career.name),
-    description: career.description ?? '',
-    learnerCount: career.learnerCount ?? 0,
+    roleId: item.id,
+    name: item.name,
+    icon: item.icon ?? 'mdi-briefcase-variant',
+    iconColor: getColorByString(item.name),
+    description: item.description ?? '',
+    learnerCount: item.learnerCount ?? 0,
   }))
 })
 
@@ -124,17 +124,17 @@ const recommendedCareers = computed(() => {
 const recommendedCourses = computed(() => homeData.value.recommendedCourses)
 
 // 是否有更多职业（总数超过8个时，第8个显示为"更多"）
-const hasMoreCareers = computed(() => stats.value.careersInProgress > 8)
+const hasMoreRoles = computed(() => stats.value.professionsInProgress > 8)
 
 // 是否有更多课程（总数超过8个时，第8个显示为"更多"）
 const hasMoreCourses = computed(() => stats.value.coursesInProgress > 8)
 
 // 显示的职业列表（如果有更多，只显示前7个）
-const displayCareers = computed(() => {
-  if (hasMoreCareers.value) {
-    return recentCareers.value.slice(0, 7)
+const displayRoles = computed(() => {
+  if (hasMoreRoles.value) {
+    return recentRoles.value.slice(0, 7)
   }
-  return recentCareers.value
+  return recentRoles.value
 })
 
 // 显示的课程列表（如果有更多，只显示前7个）
@@ -182,8 +182,8 @@ const openCourse = (courseId: number): void => {
   router.push(`/read?courseId=${String(courseId)}`)
 }
 
-const openCareer = (careerId: number): void => {
-  router.push(`/role/${String(careerId)}`)
+const openRole = (roleId: number): void => {
+  router.push(`/role/${String(roleId)}`)
 }
 
 // 暴露 homeLoading 供模板使用（可选，用于显示加载状态）
@@ -266,7 +266,7 @@ void homeLoading
                 class="text-h6 font-weight-bold"
                 :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
               >
-                {{ stats.careersInProgress }}
+                {{ stats.professionsInProgress }}
               </div>
               <div
                 class="text-caption text-no-wrap"
@@ -324,7 +324,7 @@ void homeLoading
             <div class="d-flex align-center ga-6 ga-md-10 flex-shrink-0">
               <div class="text-center">
                 <div class="text-h6 font-weight-bold text-primary">
-                  {{ platformStats.careerPathCount }} <span class="text-body-2">个</span>
+                  {{ platformStats.rolePathCount }} <span class="text-body-2">个</span>
                 </div>
                 <div class="text-caption text-medium-emphasis">职业方向</div>
               </div>
@@ -529,7 +529,7 @@ void homeLoading
     </div>
 
     <!-- 正在跟踪的职业 -->
-    <div class="career-section mb-6 mb-md-10">
+    <div class="role-section mb-6 mb-md-10">
       <div
         class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 mb-4"
       >
@@ -548,16 +548,16 @@ void homeLoading
       <!-- 职业卡片列表 -->
       <v-row>
         <!-- 有数据时显示真实卡片 -->
-        <v-col v-for="career in displayCareers" :key="career.id" cols="12" sm="6" md="4" lg="3">
-          <v-card rounded="lg" border hover class="h-100" @click="openCareer(career.careerId)">
+        <v-col v-for="role in displayRoles" :key="role.id" cols="12" sm="6" md="4" lg="3">
+          <v-card rounded="lg" border hover class="h-100" @click="openRole(role.roleId)">
             <v-card-text class="pa-4">
               <div class="d-flex align-center ga-3 mb-3">
                 <div class="icon-container flex-shrink-0">
                   <DynamicIcon
-                    :icon="career.icon"
+                    :icon="role.icon"
                     default-icon="mdi-briefcase-variant"
                     :size="24"
-                    :color="career.iconColor"
+                    :color="role.iconColor"
                   />
                 </div>
                 <div class="flex-grow-1">
@@ -565,21 +565,21 @@ void homeLoading
                     class="text-body-1 font-weight-bold"
                     :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                   >
-                    {{ career.name }}
+                    {{ role.name }}
                   </div>
                   <div class="text-caption text-medium-emphasis">
-                    {{ career.nodeCount }} 个知识节点
+                    {{ role.nodeCount }} 个知识节点
                   </div>
                 </div>
               </div>
               <div class="d-flex align-center justify-space-between mb-2">
                 <span class="text-caption text-medium-emphasis"> 学习进度 </span>
                 <span class="text-caption font-weight-bold text-grey">
-                  {{ career.progress }}%
+                  {{ role.progress }}%
                 </span>
               </div>
               <v-progress-linear
-                :model-value="career.progress"
+                :model-value="role.progress"
                 color="grey-lighten-3"
                 height="6"
                 rounded
@@ -589,7 +589,7 @@ void homeLoading
         </v-col>
 
         <!-- 没有数据时显示占位卡片 -->
-        <v-col v-if="recentCareers.length === 0" cols="12" sm="6" md="4" lg="3">
+        <v-col v-if="recentRoles.length === 0" cols="12" sm="6" md="4" lg="3">
           <v-card rounded="lg" border class="empty-placeholder-card" @click="navigateTo('/role')">
             <v-card-text class="pa-4">
               <div class="d-flex align-center ga-3">
@@ -609,18 +609,18 @@ void homeLoading
         </v-col>
 
         <!-- 查看更多卡片 -->
-        <v-col v-if="hasMoreCareers" cols="12" sm="6" md="4" lg="3">
+        <v-col v-if="hasMoreRoles" cols="12" sm="6" md="4" lg="3">
           <v-card
             rounded="lg"
             border
             hover
             class="h-100 view-more-card"
-            @click="navigateTo('/my/careers')"
+            @click="navigateTo('/my/roles')"
           >
             <v-card-text class="pa-4 d-flex align-center justify-center h-100">
               <div class="text-center">
                 <v-icon icon="mdi-dots-horizontal" color="grey" size="32" class="mb-2"></v-icon>
-                <div class="text-body-2 text-grey">查看全部 {{ stats.careersInProgress }} 个</div>
+                <div class="text-body-2 text-grey">查看全部 {{ stats.professionsInProgress }} 个</div>
               </div>
             </v-card-text>
           </v-card>
@@ -753,23 +753,23 @@ void homeLoading
         </div>
         <div class="d-flex flex-wrap ga-2">
           <v-btn
-            v-for="career in recommendedCareers"
-            :key="career.id"
+            v-for="role in recommendedProfessions"
+            :key="role.id"
             variant="tonal"
             color="default"
             rounded="lg"
-            @click="openCareer(career.careerId)"
+            @click="openRole(role.roleId)"
           >
             <DynamicIcon
-              :icon="career.icon"
+              :icon="role.icon"
               default-icon="mdi-briefcase-variant"
               :size="18"
-              :color="career.iconColor"
+              :color="role.iconColor"
               start
             />
-            {{ career.name }}
+            {{ role.name }}
             <span class="text-caption ml-1 text-medium-emphasis">{{
-              career.learnerCount.toLocaleString()
+              role.learnerCount.toLocaleString()
             }}</span>
           </v-btn>
         </div>

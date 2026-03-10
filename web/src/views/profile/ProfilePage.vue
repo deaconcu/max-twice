@@ -15,7 +15,7 @@ import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import UserInfoTab from '@/components/profile/UserInfoTab.vue'
-import LearningCareersTab from '@/components/profile/LearningCareersTab.vue'
+import LearningRolesTab from '@/components/profile/LearningRolesTab.vue'
 import LearningCoursesTab from '@/components/profile/LearningCoursesTab.vue'
 import CreatorStatsTab from '@/components/profile/CreatorStatsTab.vue'
 import SubscriptionTab from '@/components/profile/SubscriptionTab.vue'
@@ -116,7 +116,7 @@ const handleUpdateAvatar = (avatarUrl: string) => {
 const stats = ref({
   totalCourses: 0,
   completedCourses: 0,
-  totalCareers: 0,
+  totalRoles: 0,
   studyDays: 0,
   studyHours: 0,
   followers: 0,
@@ -247,7 +247,7 @@ watch(activeTab, (newTab) => {
                     />
                     <span class="text-caption text-md-body-2 text-grey-darken-2">
                       <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                        stats.totalCareers
+                        stats.totalRoles
                       }}</span>
                       关注职业
                     </span>
@@ -363,7 +363,7 @@ watch(activeTab, (newTab) => {
           density="comfortable"
           show-arrows
         >
-          <v-tab value="careers" rounded="lg">
+          <v-tab value="roles" rounded="lg">
             <v-icon
               icon="mdi-briefcase"
               :size="$vuetify.display.mobile ? 16 : 18"
@@ -482,8 +482,8 @@ watch(activeTab, (newTab) => {
         <!-- 学习者模式的内容 -->
         <template v-if="currentMode === 'learner'">
           <!-- 学习的职业 -->
-          <v-window-item value="careers">
-            <LearningCareersTab />
+          <v-window-item value="roles">
+            <LearningRolesTab />
           </v-window-item>
 
           <!-- 学习的课程 -->

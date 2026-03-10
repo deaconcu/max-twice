@@ -40,7 +40,7 @@
     "guideTitle": "开始你的学习之旅",
     "guideSubtitle": "3步开启系统化学习，海量资源助你实现职业目标",
     "step": "步骤",
-    "exploreCareer": {
+    "exploreRole": {
       "title": "探索职业",
       "description": "探索职业方向，制定职业发展路线",
       "stat": "{count}个职业方向",
@@ -58,7 +58,7 @@
       "stat": "{count}篇文章",
       "statDetail": "涵盖技术、理论和实战经验分享"
     },
-    "trackCareers": {
+    "trackRoles": {
       "title": "选择学习路径",
       "description": "选择适合的学习路径，进行系统化学习",
       "stat": "{count}个学习路径",
@@ -67,11 +67,11 @@
     "stats": {
       "coursesInProgress": "进行中课程",
       "completedCourses": "已完成课程",
-      "careersInProgress": "进行中职业",
+      "rolesInProgress": "进行中职业",
       "learningDays": "累计学习天数"
     },
     "learningCourses": "正在学习的课程",
-    "learningCareers": "正在学习的职业",
+    "learningRoles": "正在学习的职业",
     "recommendedCourses": "推荐课程",
     "recentActivities": "最近活动",
     "viewAll": "查看全部",
@@ -156,7 +156,7 @@
     "dashboard": "仪表板",
     "learning": "学习",
     "courses": "课程",
-    "career": "职业",
+    "role": "职业",
     "memoryReview": "复习",
     "profile": "我的",
     "roadmap": "学习路线",
@@ -468,7 +468,7 @@
     "roadmapMoveDown": "路线图下移",
     "loadFailed": "加载学习数据失败",
     "unknownStatus": "未知状态",
-    "careerCenter": "职业中心",
+    "roleCenter": "职业中心",
     "courseCenter": "课程中心",
     "startTime": "开始时间",
     "studyDuration": "学习时长",
@@ -553,12 +553,12 @@
       "stopLearningSuccess": "已停止学习"
     }
   },
-  "careerCenter": {
+  "roleCenter": {
     "title": "职业中心",
     "subtitle": "探索职业道路，规划美好未来",
     "navigation": {
       "learning": "正在学习",
-      "career": "职业中心",
+      "role": "职业中心",
       "courses": "课程中心"
     },
     "search": {
@@ -637,10 +637,10 @@
     "platformData": "平台数据",
     "myLearning": "我的学习",
     "learningTips": "学习小贴士",
-    "hotCareers": "热门职业",
+    "hotRoles": "热门职业",
     "hotCourses": "热门课程",
     "courseTotal": "课程总数",
-    "careerPaths": "职业路径",
+    "rolePaths": "职业路径",
     "learningRoadmaps": "学习路线",
     "knowledgeNodes": "知识节点",
     "articleCount": "文章数量",
@@ -648,7 +648,7 @@
     "studying": "我在学习",
     "viewAll": "查看全部",
     "progress": "进度",
-    "noLearningCareers": "暂无学习职业",
+    "noLearningRoles": "暂无学习职业",
     "noLearningCourses": "暂无学习课程",
     "learningQuotes": {
       "quote1": "学而时习之，不亦说乎",
@@ -713,11 +713,11 @@
     "collapse": "收起",
     "viewMore": "查看更多"
   },
-  "careerCard": {
+  "roleCard": {
     "coreSkills": "核心技能",
     "courses": "{count} 门课程",
     "learnersCount": "人学习",
-    "exploreCareer": "探索职业",
+    "exploreRole": "探索职业",
     "difficulty": {
       "beginner": "初级",
       "intermediate": "中级",
@@ -991,7 +991,7 @@
     "contactUs": "联系我们",
     "privacyPolicy": "隐私政策",
     "termsOfService": "服务条款",
-    "careerPhilosophy": "职业应该是自我实现"
+    "rolePhilosophy": "职业应该是自我实现"
   },
   "categorySelector": {
     "mainCategory": "主分类",

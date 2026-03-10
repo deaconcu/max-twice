@@ -1,7 +1,7 @@
 <template>
   <v-card rounded="xl" class="course-card hoverable" border hover @click="handleClick">
-    <v-card-text class="pa-6">
-      <div class="d-flex align-center mb-4">
+    <v-card-text class="pa-4">
+      <div class="d-flex align-center mb-5">
         <div class="icon-container flex-shrink-0 mr-4">
           <DynamicIcon
             :icon="course.icon"

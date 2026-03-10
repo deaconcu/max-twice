@@ -37,9 +37,9 @@ public class HomePageService {
     private final MemoryBankService memoryBankService;
 
     // 首页展示的数量限制
-    private static final int LEARNING_CAREERS_LIMIT = 8;
+    private static final int LEARNING_PROFESSIONS_LIMIT = 8;
     private static final int LEARNING_COURSES_LIMIT = 8;
-    private static final int RECOMMENDED_CAREERS_LIMIT = 4;
+    private static final int RECOMMENDED_PROFESSIONS_LIMIT = 4;
     private static final int RECOMMENDED_COURSES_LIMIT = 30;
 
     /**
@@ -59,7 +59,7 @@ public class HomePageService {
         homePageDTO.setUserStats(getUserLearningStats(user));
 
         // 3. 正在学习的职业路线
-        homePageDTO.setLearningCareers(getLearningCareers(userId));
+        homePageDTO.setLearningProfessions(getLearningProfessions(userId));
 
         // 4. 正在学习的课程
         homePageDTO.setLearningCourses(getLearningCourses(userId));
@@ -68,7 +68,7 @@ public class HomePageService {
         homePageDTO.setReviewSummary(getReviewSummary(userId));
 
         // 6. 推荐职业
-        homePageDTO.setRecommendedCareers(getRecommendedCareers());
+        homePageDTO.setRecommendedProfessions(getRecommendedProfessions());
 
         // 7. 推荐课程
         homePageDTO.setRecommendedCourses(getRecommendedCourses());
@@ -88,7 +88,7 @@ public class HomePageService {
             if (userStats != null) {
                 stats.setCoursesInProgress(userStats.getLearningCourseCount() != null
                         ? userStats.getLearningCourseCount() : 0);
-                stats.setCareersInProgress(userStats.getInProgressProfessionCount() != null
+                stats.setProfessionsInProgress(userStats.getInProgressProfessionCount() != null
                         ? userStats.getInProgressProfessionCount() : 0);
             }
             // 获取连续学习天数
@@ -105,14 +105,14 @@ public class HomePageService {
     /**
      * 获取正在学习的职业路线
      */
-    private List<UserLearningDTO<Object>> getLearningCareers(Long userId) {
+    private List<UserLearningDTO<Object>> getLearningProfessions(Long userId) {
         try {
             return userLearningService.getByUserWithObjects(
                     userId,
                     Enums.ContentType.roadmap,
                     Enums.UserProgressState.IN_PROGRESS.value(),
                     null,
-                    LEARNING_CAREERS_LIMIT
+                    LEARNING_PROFESSIONS_LIMIT
             );
         } catch (Exception e) {
             log.error("获取正在学习的职业路线失败, userId={}", userId, e);
@@ -147,9 +147,9 @@ public class HomePageService {
     /**
      * 获取推荐职业
      */
-    private List<ProfessionDTO> getRecommendedCareers() {
+    private List<ProfessionDTO> getRecommendedProfessions() {
         try {
-            return professionService.getHotProfessions(RECOMMENDED_CAREERS_LIMIT);
+            return professionService.getHotProfessions(RECOMMENDED_PROFESSIONS_LIMIT);
         } catch (Exception e) {
             log.error("获取推荐职业失败", e);
             return new ArrayList<>();

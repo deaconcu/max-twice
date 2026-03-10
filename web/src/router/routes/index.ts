@@ -2,7 +2,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import { baseRoutes } from './base'
 import { authRoutes } from './auth'
 import { courseRoutes } from './course'
-import { careerRoutes } from './career'
+import { roleRoutes } from './role'
 import reviewRoutes from './review'
 import { adminRoutes } from './admin'
 
@@ -13,7 +13,7 @@ export const routes: RouteRecordRaw[] = [
   ...baseRoutes,
   ...authRoutes,
   ...courseRoutes,
-  ...careerRoutes,
+  ...roleRoutes,
   ...reviewRoutes,
   ...adminRoutes,
   // TODO: 添加更多路由模块

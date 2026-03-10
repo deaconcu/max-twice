@@ -13,7 +13,7 @@ import type { ReviewSummary } from './memory'
 export interface UserLearningStats {
   learningDays: number // 连续学习天数
   coursesInProgress: number // 正在学习的课程数
-  careersInProgress: number // 正在学习的职业数
+  professionsInProgress: number // 正在学习的职业数
 }
 
 /**
@@ -48,9 +48,9 @@ export interface CourseWithStats extends Course {
 export interface HomePage {
   platformStats: PlatformStats // 平台统计
   userStats: UserLearningStats // 用户学习统计
-  learningCareers: UserLearning[] // 正在学习的职业路线
+  learningProfessions: UserLearning[] // 正在学习的职业路线
   learningCourses: UserLearning[] // 正在学习的课程
   reviewSummary: ReviewSummary // 复习概览
-  recommendedCareers: Profession[] // 推荐职业
+  recommendedProfessions: Profession[] // 推荐职业
   recommendedCourses: CourseWithStats[] // 推荐课程
 }

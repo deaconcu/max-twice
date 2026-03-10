@@ -29,7 +29,7 @@ public class HomePageDTO {
     /**
      * 正在学习的职业路线（带进度）
      */
-    private List<UserLearningDTO<Object>> learningCareers;
+    private List<UserLearningDTO<Object>> learningProfessions;
 
     /**
      * 正在学习的课程（带进度）
@@ -44,7 +44,7 @@ public class HomePageDTO {
     /**
      * 推荐职业列表
      */
-    private List<ProfessionDTO> recommendedCareers;
+    private List<ProfessionDTO> recommendedProfessions;
 
     /**
      * 推荐课程列表

@@ -1,6 +1,6 @@
 <template>
   <DefaultLayout>
-    <div class="career-list-page">
+    <div class="role-list-page">
       <!-- 页面标题和搜索栏 -->
       <div class="page-header mb-6 mb-md-10">
         <div class="d-flex flex-column flex-sm-row align-start align-sm-end ga-4 header-wrapper">
@@ -20,10 +20,10 @@
             </v-avatar>
             <div style="min-width: 0; overflow: hidden">
               <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 text-truncate">
-                {{ t('careerCenter.title') }}
+                {{ t('roleCenter.title') }}
               </h1>
               <p class="text-caption text-md-body-2 text-grey-darken-2 mt-1 text-truncate">
-                {{ t('careerCenter.subtitle') }}
+                {{ t('roleCenter.subtitle') }}
               </p>
             </div>
           </div>
@@ -53,7 +53,7 @@
 
           <template v-else>
             <!-- 分类导航 -->
-            <CareerFilter
+            <RoleFilter
               v-model:main-category="selectedMainCategory"
               v-model:sub-category="selectedSubCategory"
               :categories="categories"
@@ -65,17 +65,17 @@
             <LoadingSpinner v-if="loading" />
 
             <!-- 空状态 -->
-            <div v-else-if="filteredCareers.length === 0" class="text-center py-12">
+            <div v-else-if="filteredRoles.length === 0" class="text-center py-12">
             <v-card rounded="lg" class="pa-12 empty-state no-border">
               <v-icon icon="mdi-briefcase-outline" size="80" color="grey-lighten-1" class="mb-4" />
               <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
-                {{ t('careerCenter.empty.noJobs') }}
+                {{ t('roleCenter.empty.noJobs') }}
               </h3>
               <p class="text-body-1 text-grey-darken-1 mb-4">
                 {{
                   searchText
-                    ? t('careerCenter.empty.noSearchResultsDesc')
-                    : t('careerCenter.empty.noRelatedJobsDesc')
+                    ? t('roleCenter.empty.noSearchResultsDesc')
+                    : t('roleCenter.empty.noRelatedJobsDesc')
                 }}
               </p>
               <v-btn
@@ -94,12 +94,12 @@
           <div v-else class="mt-6 mt-md-8">
 
             <!-- 职业网格 -->
-            <div class="career-grid mb-16">
-              <CareerCard
-                v-for="career in displayedCareers"
-                :key="career.id"
-                :career="career"
-                @click="goToCareerDetail"
+            <div class="role-grid">
+              <RoleCard
+                v-for="role in displayedRoles"
+                :key="role.id"
+                :role="role"
+                @click="goToRoleDetail"
               />
             </div>
 
@@ -117,7 +117,7 @@
             <!-- 申请职业按钮 -->
             <v-card
               rounded="xl"
-              class="mb-4 create-career-card"
+              class="mb-4 create-role-card"
               elevation="0"
               @click="openApplicationDialog"
             >
@@ -128,7 +128,7 @@
                   </v-avatar>
                   <div class="flex-grow-1">
                     <div class="text-subtitle-1 font-weight-bold text-grey-darken-4">
-                      {{ t('careerCenter.search.applyJob') }}
+                      {{ t('roleCenter.search.applyJob') }}
                     </div>
                     <div class="text-caption text-grey">申请新的职业方向</div>
                   </div>
@@ -158,19 +158,19 @@
               </v-card-title>
               <v-card-text class="px-0 popular-list pb-4">
                 <div
-                  v-for="(career, index) in popularCareers"
-                  :key="career.id"
+                  v-for="(role, index) in popularRoles"
+                  :key="role.id"
                   class="popular-item"
-                  @click="goToCareerDetail(career)"
+                  @click="goToRoleDetail(role)"
                 >
                   <div class="rank-badge" :class="index < 3 ? 'rank-top' : ''">
                     {{ index + 1 }}
                   </div>
                   <div class="flex-grow-1">
-                    <div class="popular-name">{{ career.name }}</div>
+                    <div class="popular-name">{{ role.name }}</div>
                     <div class="popular-count">
                       <v-icon icon="mdi-account-group" size="12" color="grey" />
-                      {{ formatNumber(career.learnerCount) }}
+                      {{ formatNumber(role.learnerCount) }}
                     </div>
                   </div>
                 </div>
@@ -187,20 +187,20 @@
             <div class="d-flex align-center">
               <v-icon icon="mdi-plus-circle" color="primary" size="32" class="mr-3" />
               <span class="text-h6 font-weight-bold">{{
-                t('careerCenter.application.title')
+                t('roleCenter.application.title')
               }}</span>
             </div>
           </v-card-title>
 
           <v-card-text class="px-6 pb-0">
             <p class="text-body-2 text-grey-darken-1 mb-4">
-              {{ t('careerCenter.application.subtitle') }}
+              {{ t('roleCenter.application.subtitle') }}
             </p>
             <v-form v-model="applicationValid">
               <v-text-field
                 v-model="applicationForm.name"
-                :label="t('careerCenter.application.jobName')"
-                :placeholder="t('careerCenter.application.jobNamePlaceholder')"
+                :label="t('roleCenter.application.jobName')"
+                :placeholder="t('roleCenter.application.jobNamePlaceholder')"
                 :rules="jobNameRules"
                 :counter="professionNameMaxLength"
                 variant="outlined"
@@ -214,7 +214,7 @@
                 :items="categories"
                 item-title="title"
                 item-value="id"
-                :label="t('careerCenter.application.category')"
+                :label="t('roleCenter.application.category')"
                 :rules="categoryRules"
                 variant="outlined"
                 class="mb-4"
@@ -227,7 +227,7 @@
                 :items="getSubCategoriesForMain(applicationForm.mainCategory)"
                 item-title="name"
                 item-value="id"
-                :label="t('careerCenter.category.specificDirection')"
+                :label="t('roleCenter.category.specificDirection')"
                 :rules="categoryRules"
                 variant="outlined"
                 class="mb-4"
@@ -238,8 +238,8 @@
 
               <v-textarea
                 v-model="applicationForm.description"
-                :label="t('careerCenter.application.description')"
-                :placeholder="t('careerCenter.application.descriptionPlaceholder')"
+                :label="t('roleCenter.application.description')"
+                :placeholder="t('roleCenter.application.descriptionPlaceholder')"
                 :rules="descriptionRules"
                 :counter="professionDescriptionMaxLength"
                 variant="outlined"
@@ -251,9 +251,9 @@
 
               <v-text-field
                 v-model="applicationForm.skills"
-                :label="t('careerCenter.application.skills')"
-                :placeholder="t('careerCenter.application.skillsPlaceholder')"
-                :hint="t('careerCenter.application.skillsHint')"
+                :label="t('roleCenter.application.skills')"
+                :placeholder="t('roleCenter.application.skillsPlaceholder')"
+                :hint="t('roleCenter.application.skillsHint')"
                 variant="outlined"
                 persistent-hint
                 class="mb-4"
@@ -269,7 +269,7 @@
               :disabled="submitting"
               @click="closeApplicationDialog"
             >
-              {{ t('careerCenter.application.cancel') }}
+              {{ t('roleCenter.application.cancel') }}
             </v-btn>
             <v-btn
               color="primary"
@@ -279,7 +279,7 @@
               :loading="submitting"
               @click="submitApplication"
             >
-              {{ t('careerCenter.application.submit') }}
+              {{ t('roleCenter.application.submit') }}
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -290,7 +290,7 @@
 
 <script lang="ts">
 export default {
-  name: 'CareerListPage',
+  name: 'RoleListPage',
 }
 </script>
 
@@ -306,8 +306,8 @@ import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { useCategoryStore } from '@/stores'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import CareerCard from '@/components/features/career/CareerCard.vue'
-import CareerFilter from '@/components/features/career/CareerFilter.vue'
+import RoleCard from '@/components/features/role/RoleCard.vue'
+import RoleFilter from '@/components/features/role/RoleFilter.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -340,7 +340,7 @@ const applicationForm = ref({
 const currentCategory = ref<{ mainCategory: number; subCategory: number } | null>(null)
 
 // 职业列表状态
-const careers = ref<Profession[]>([])
+const roles = ref<Profession[]>([])
 const loading = ref(false)
 const loadingMore = ref(false)
 const hasMore = ref(true)
@@ -352,7 +352,7 @@ onMounted(async () => {
 })
 
 // 使用 useFetch 加载热门职业
-const { data: hotCareersData, loading: _loadingHotCareers } = useFetch<Profession[]>({
+const { data: hotRolesData, loading: _loadingHotRoles } = useFetch<Profession[]>({
   fetchFn: () => professionApi.getHotProfessions(15),
   immediate: true,
   defaultValue: [],
@@ -380,20 +380,20 @@ const subCategories = computed(() => {
   return allSubCategories
 })
 
-const hotCareers = computed(() => hotCareersData.value ?? [])
+const hotRoles = computed(() => hotRolesData.value ?? [])
 
 // 筛选后的职业（只在前端筛选搜索关键词）
-const filteredCareers = computed(() => {
-  let result = careers.value
+const filteredRoles = computed(() => {
+  let result = roles.value
 
   // 按搜索关键词筛选
   if (searchText.value) {
     const keyword = searchText.value.toLowerCase()
     result = result.filter(
-      (career) =>
-        career.name.toLowerCase().includes(keyword) ||
-        (career.description?.toLowerCase().includes(keyword) ?? false) ||
-        (career.skills?.toLowerCase().includes(keyword) ?? false)
+      (role) =>
+        role.name.toLowerCase().includes(keyword) ||
+        (role.description?.toLowerCase().includes(keyword) ?? false) ||
+        (role.skills?.toLowerCase().includes(keyword) ?? false)
     )
   }
 
@@ -401,21 +401,21 @@ const filteredCareers = computed(() => {
 })
 
 // 显示的职业列表
-const displayedCareers = computed(() => {
-  return filteredCareers.value
+const displayedRoles = computed(() => {
+  return filteredRoles.value
 })
 
 // 热门职业 - 前15个
-const popularCareers = computed(() => {
-  return hotCareers.value.slice(0, 15)
+const popularRoles = computed(() => {
+  return hotRoles.value.slice(0, 15)
 })
 
 /**
  * 加载职业列表（初始加载或重新加载）
  */
-const loadCareers = async (reset = false) => {
+const loadRoles = async (reset = false) => {
   if (reset) {
-    careers.value = []
+    roles.value = []
     lastId.value = undefined
     hasMore.value = true
   }
@@ -440,7 +440,7 @@ const loadCareers = async (reset = false) => {
     })
 
     if (result && result.items && result.items.length > 0) {
-      careers.value = [...careers.value, ...result.items]
+      roles.value = [...roles.value, ...result.items]
       lastId.value = result.items[result.items.length - 1].id
       hasMore.value = result.hasMore
     } else {
@@ -477,7 +477,7 @@ const loadMore = async () => {
     })
 
     if (result && result.items && result.items.length > 0) {
-      careers.value = [...careers.value, ...result.items]
+      roles.value = [...roles.value, ...result.items]
       lastId.value = result.items[result.items.length - 1].id
       hasMore.value = result.hasMore
     } else {
@@ -528,15 +528,15 @@ const clearAll = () => {
   selectedSubCategory.value = undefined
   searchText.value = ''
   currentCategory.value = null
-  void loadCareers(true)
+  void loadRoles(true)
 }
 
 /**
  * 根据分类加载职业
  */
-const loadCareersByCategory = async (mainCategory: number, subCategory: number): Promise<void> => {
+const loadRolesByCategory = async (mainCategory: number, subCategory: number): Promise<void> => {
   currentCategory.value = { mainCategory, subCategory }
-  await loadCareers(true)
+  await loadRoles(true)
 }
 
 /**
@@ -545,7 +545,7 @@ const loadCareersByCategory = async (mainCategory: number, subCategory: number):
 const handleSearch = async () => {
   if (!searchText.value) {
     currentCategory.value = null
-    await loadCareers(true)
+    await loadRoles(true)
     return
   }
 
@@ -559,7 +559,7 @@ const handleSearch = async () => {
     })
 
     if (result) {
-      careers.value = result
+      roles.value = result
       hasMore.value = false // 搜索结果不分页
     }
   } finally {
@@ -583,10 +583,10 @@ watch([selectedMainCategory, selectedSubCategory], async () => {
   cleanupInfiniteScroll()
 
   if (selectedMainCategory.value && selectedSubCategory.value) {
-    await loadCareersByCategory(selectedMainCategory.value, selectedSubCategory.value)
+    await loadRolesByCategory(selectedMainCategory.value, selectedSubCategory.value)
   } else {
     currentCategory.value = null
-    await loadCareers(true)
+    await loadRoles(true)
   }
 
   // 数据加载完成后，重新设置无限滚动
@@ -639,7 +639,7 @@ onMounted(async () => {
   // 加载分类数据
   await categoryStore.checkAndLoad()
   // 加载职业数据
-  await loadCareers(true)
+  await loadRoles(true)
   // 数据加载完成后设置无限滚动
   setTimeout(setupInfiniteScroll, 100)
 })
@@ -654,8 +654,8 @@ onBeforeUnmount(() => {
 /**
  * 跳转到职业详情（路线图列表）
  */
-const goToCareerDetail = (career: Profession) => {
-  void router.push(`/role/${String(career.id)}`)
+const goToRoleDetail = (role: Profession) => {
+  void router.push(`/role/${String(role.id)}`)
 }
 
 /**
@@ -700,11 +700,11 @@ const { execute: executeSubmit, loading: submitting } = useMutation(
     skills: string
   }) => professionApi.createProfession(data),
   {
-    successMessage: t('careerCenter.application.submittedSuccess'),
+    successMessage: t('roleCenter.application.submittedSuccess'),
     onSuccess: () => {
       closeApplicationDialog()
       // 刷新职业列表
-      void loadCareers(true)
+      void loadRoles(true)
     },
   }
 )
@@ -779,7 +779,7 @@ const submitApplication = async () => {
   background-color: rgb(var(--v-theme-surface));
 }
 
-.career-grid {
+.role-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
@@ -818,14 +818,14 @@ const submitApplication = async () => {
   flex-direction: column;
 }
 
-.create-career-card {
+.create-role-card {
   cursor: pointer;
   background: #ffffff;
   border: 1px solid #e9ecef;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.create-career-card:hover {
+.create-role-card:hover {
   border-color: rgb(var(--v-theme-primary));
   transform: translateY(-2px);
 }
@@ -912,7 +912,7 @@ const submitApplication = async () => {
 
 /* 移动端响应式 */
 @media (max-width: 960px) {
-  .career-grid {
+  .role-grid {
     grid-template-columns: 1fr;
   }
 

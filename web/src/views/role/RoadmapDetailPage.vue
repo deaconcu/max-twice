@@ -232,8 +232,8 @@ const router = useRouter()
 const route = useRoute()
 
 // 从路由获取参数
-const careerId = computed(() => {
-  // careerId 不再从路由获取，从 roadmap 数据中获取
+const roleId = computed(() => {
+  // roleId 不再从路由获取，从 roadmap 数据中获取
   return roadmap.value?.professionId || 0
 })
 const roadmapId = computed(() => {
@@ -506,7 +506,7 @@ const handleStartLearning = async (): Promise<void> => {
 
 // 复制路径
 const handleCopy = (): void => {
-  void router.push(`/role/${careerId.value}/roadmap/create?copy=${roadmapId.value}`)
+  void router.push(`/role/${roleId.value}/roadmap/create?copy=${roadmapId.value}`)
 }
 
 // 切换收藏状态

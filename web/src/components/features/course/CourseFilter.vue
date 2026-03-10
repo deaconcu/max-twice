@@ -5,19 +5,14 @@
       <div class="d-flex flex-wrap category-buttons-gap">
         <!-- 全部分类 -->
         <v-btn
-          :color="!selectedMainCategory ? 'primary' : 'white'"
-          variant="flat"
+          :color="!selectedMainCategory ? 'grey-darken-2' : 'white'"
+          variant="tonal"
           rounded="xl"
-                    class="font-weight-medium category-btn"
+          class="font-weight-medium category-btn"
           @click="selectMainCategory(undefined)"
         >
-          <v-icon
-            icon="mdi-view-grid"
-            size="18"
-            class="mr-2"
-            :color="!selectedMainCategory ? 'white' : 'grey-darken-2'"
-          />
-          <span :class="!selectedMainCategory ? 'text-white' : 'text-grey-darken-3'">
+          <v-icon icon="mdi-view-grid" size="18" class="mr-2" :color="'grey-darken-2'" />
+          <span class="text-grey-darken-3">
             {{ t('common.all') }}
           </span>
         </v-btn>
@@ -26,19 +21,19 @@
         <v-btn
           v-for="category in categories"
           :key="category.id"
-          :color="selectedMainCategory === category.id ? 'primary' : 'white'"
-          variant="flat"
+          :color="selectedMainCategory === category.id ? 'grey-darken-2' : 'white'"
+          variant="tonal"
           rounded="xl"
-                    class="font-weight-medium category-btn"
+          class="font-weight-medium category-btn"
           @click="selectMainCategory(category.id)"
         >
           <v-icon
             :icon="category.icon"
             size="18"
             class="mr-2"
-            :color="selectedMainCategory === category.id ? 'white' : 'grey-darken-2'"
+            color="grey-darken-2"
           />
-          <span :class="selectedMainCategory === category.id ? 'text-white' : 'text-grey-darken-3'">
+          <span class="text-grey-darken-3">
             {{ category.name }}
           </span>
         </v-btn>
@@ -51,13 +46,13 @@
           <div class="d-flex flex-wrap subcategory-buttons-gap">
             <!-- 二级全部 -->
             <v-btn
-              :color="!selectedSubCategory ? 'orange-darken-1' : 'grey-lighten-5'"
-              variant="flat"
+              :color="!selectedSubCategory ? 'grey' : 'white'"
+              variant="tonal"
               rounded="xl"
-                            class="font-weight-medium subcategory-btn"
+              class="font-weight-medium subcategory-btn"
               @click="selectSubCategory(undefined)"
             >
-              <span :class="!selectedSubCategory ? 'text-white' : 'text-grey-darken-3'">
+              <span class="text-grey-darken-3">
                 全部{{ getCategoryName(selectedMainCategory) }}
               </span>
             </v-btn>
@@ -66,13 +61,13 @@
             <v-btn
               v-for="sub in subCategories"
               :key="sub.id"
-              :color="selectedSubCategory === sub.id ? 'orange-darken-1' : 'grey-lighten-5'"
-              variant="flat"
+              :color="selectedSubCategory === sub.id ? 'grey' : 'white'"
+              variant="tonal"
               rounded="xl"
-                            class="font-weight-medium subcategory-btn"
+              class="font-weight-medium subcategory-btn"
               @click="selectSubCategory(sub.id)"
             >
-              <span :class="selectedSubCategory === sub.id ? 'text-white' : 'text-grey-darken-3'">
+              <span class="text-grey-darken-3">
                 {{ sub.name }}
               </span>
             </v-btn>

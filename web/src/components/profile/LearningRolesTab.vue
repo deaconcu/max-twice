@@ -96,30 +96,30 @@
         <LoadingSpinner v-if="loading" />
 
         <!-- 职业列表 -->
-        <div v-else-if="filteredCareers.length > 0">
+        <div v-else-if="filteredRoles.length > 0">
           <v-row>
-            <v-col v-for="career in filteredCareers" :key="career.id" cols="12" md="6">
-              <v-card rounded="xl" hover border elevation="0" class="career-card hoverable">
-                <v-card-text class="pa-4 pa-sm-6" @click="goToCareer(career.careerId)">
+            <v-col v-for="role in filteredRoles" :key="role.id" cols="12" md="6">
+              <v-card rounded="xl" hover border elevation="0" class="role-card hoverable">
+                <v-card-text class="pa-4 pa-sm-6" @click="goToRole(role.roleId)">
                   <div class="d-flex align-start justify-space-between mb-3 mb-md-4">
                     <div class="d-flex align-center flex-grow-1">
                       <v-avatar
-                        :color="career.iconColor"
+                        :color="role.iconColor"
                         :size="$vuetify.display.mobile ? 48 : 56"
                         rounded="lg"
                         class="mr-3 mr-sm-4 flex-shrink-0"
                       >
                         <v-icon
-                          :icon="career.icon"
+                          :icon="role.icon"
                           color="white"
                           :size="$vuetify.display.mobile ? 24 : 28"
                         />
                       </v-avatar>
                       <div class="min-w-0">
                         <h4 class="text-body-1 text-md-h6 font-weight-bold mb-1 text-truncate">
-                          {{ career.title }}
+                          {{ role.title }}
                         </h4>
-                        <p class="text-caption text-grey mb-0">{{ career.lastActivity }}</p>
+                        <p class="text-caption text-grey mb-0">{{ role.lastActivity }}</p>
                       </div>
                     </div>
                     <v-btn
@@ -127,12 +127,12 @@
                       variant="text"
                       :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                       icon="mdi-close"
-                      @click.stop="cancelLearning(career.id)"
+                      @click.stop="cancelLearning(role.id)"
                     />
                   </div>
 
                   <v-progress-linear
-                    :model-value="career.progress"
+                    :model-value="role.progress"
                     color="primary"
                     bg-color="grey-lighten-3"
                     :height="$vuetify.display.mobile ? 6 : 8"
@@ -148,10 +148,10 @@
                         color="success"
                         class="mr-1"
                       />
-                      {{ career.completedCourses }} / {{ career.totalCourses }} 门课程
+                      {{ role.completedCourses }} / {{ role.totalCourses }} 门课程
                     </span>
                     <span class="text-body-2 text-md-body-1 font-weight-bold text-primary"
-                      >{{ career.progress }}%</span
+                      >{{ role.progress }}%</span
                     >
                   </div>
                 </v-card-text>
@@ -229,7 +229,7 @@ const { execute: deleteProgress } = useMutation(
 )
 
 // 转换路线图数据为组件所需格式
-const careers = computed(() => {
+const roles = computed(() => {
   if (!roadmaps.value) return []
 
   return roadmaps.value.map((userRoadmap) => {
@@ -247,7 +247,7 @@ const careers = computed(() => {
 
     return {
       id: userRoadmap.id,
-      careerId: roadmap?.id || 0,
+      roleId: roadmap?.id || 0,
       title: roadmap?.profession?.name || '未知职业',
       progress,
       totalCourses: roadmap?.nodeCount || 0,
@@ -261,8 +261,8 @@ const careers = computed(() => {
 })
 
 // 根据状态过滤职业列表
-const filteredCareers = computed(() => {
-  return careers.value.filter((career) => career.status === statusTab.value)
+const filteredRoles = computed(() => {
+  return roles.value.filter((role) => role.status === statusTab.value)
 })
 
 // 格式化最后活动时间
@@ -283,8 +283,8 @@ const formatLastActivity = (date: Date) => {
 }
 
 // 跳转到职业详情
-const goToCareer = (careerId: number) => {
-  router.push(`/role/${careerId}`)
+const goToRole = (roleId: number) => {
+  router.push(`/role/${roleId}`)
 }
 
 // 取消学习职业
@@ -311,7 +311,7 @@ const confirmDelete = async () => {
   overflow-y: auto;
 }
 
-.career-card {
+.role-card {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: rgb(var(--v-theme-surface));

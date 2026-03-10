@@ -52,7 +52,7 @@ const CACHE_TIMEOUT = 12 * 60 * 60 * 1000 // 12小时（毫秒）
 const cachedComponents = ref<string[]>([
   'ProfilePage',
   'ReadPageRouter',
-  'CareerListPage',
+  'RoleListPage',
   'CourseListPage',
 ])
 const cacheTimestamps = new Map<string, number>()

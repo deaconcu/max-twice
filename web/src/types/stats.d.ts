@@ -8,7 +8,7 @@
  */
 export interface PlatformStats {
   courseCount: number // 课程总数
-  careerPathCount: number // 职业路径总数
+  rolePathCount: number // 职业路径总数
   roadmapCount: number // 学习路线图总数
   knowledgeNodeCount: number // 知识节点总数
   articleCount: number // 文章数量

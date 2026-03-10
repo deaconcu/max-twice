@@ -48,7 +48,7 @@ export interface CategoryMapping {
 /**
  * 带显示属性的职业信息（用于前端展示）
  */
-export interface CareerWithDisplay extends Profession {
+export interface RoleWithDisplay extends Profession {
   icon?: string
   iconColor?: string
 }

@@ -22,17 +22,17 @@ public class UserLearningStatsDTO {
     /**
      * 进行中的职业路线数
      */
-    private Integer careersInProgress;
+    private Integer professionsInProgress;
 
     public UserLearningStatsDTO() {
         this.learningDays = 0;
         this.coursesInProgress = 0;
-        this.careersInProgress = 0;
+        this.professionsInProgress = 0;
     }
 
-    public UserLearningStatsDTO(Integer learningDays, Integer coursesInProgress, Integer careersInProgress) {
+    public UserLearningStatsDTO(Integer learningDays, Integer coursesInProgress, Integer professionsInProgress) {
         this.learningDays = learningDays;
         this.coursesInProgress = coursesInProgress;
-        this.careersInProgress = careersInProgress;
+        this.professionsInProgress = professionsInProgress;
     }
 }
