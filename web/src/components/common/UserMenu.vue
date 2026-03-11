@@ -3,16 +3,17 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useUserStore } from '@/stores'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 
 const router = useRouter()
 const { t } = useI18n()
 const userStore = useUserStore()
 
-// TODO: 替换为真实用户数据，从用户状态管理（Pinia store）或 API 获取
-// 用户信息（当前为模拟数据）
+// 用户信息
 const userInfo = computed(() => ({
-  name: userStore.userName || '张三',
+  name: userStore.userName || '用户',
   role: userStore.userRole,
+  avatar: userStore.currentUser?.avatar,
 }))
 
 // 用户角色显示文本
@@ -22,10 +23,9 @@ const userRoleText = computed(() => {
   return t('userMenu.learner')
 })
 
-// TODO: 实现真实的设置页面跳转逻辑
 // 跳转到设置页面
 const goToSettings = () => {
-  router.push('/settings')
+  router.push({ path: '/users/me', query: { tab: 'info' } })
 }
 
 // TODO: 实现真实的退出登录逻辑
@@ -52,7 +52,12 @@ const handleLogout = () => {
   >
     <template #activator="{ props }">
       <button class="icon-btn" :title="t('userMenu.profileCenter')" v-bind="props">
-        <v-icon size="22">mdi-account-circle-outline</v-icon>
+        <UserAvatar
+          :name="userInfo.name"
+          :avatar-url="userInfo.avatar"
+          size="28"
+          rounded="lg"
+        />
       </button>
     </template>
 
@@ -60,9 +65,13 @@ const handleLogout = () => {
       <!-- 用户信息 -->
       <v-card-text class="pa-4">
         <div class="d-flex flex-column align-center">
-          <v-avatar size="56" color="primary" class="mb-3 user-avatar">
-            <v-icon size="28" color="white">mdi-account</v-icon>
-          </v-avatar>
+          <UserAvatar
+            :name="userInfo.name"
+            :avatar-url="userInfo.avatar"
+            size="56"
+            rounded="xl"
+            class="mb-3 user-avatar"
+          />
           <div class="user-name text-center mb-1">{{ userInfo.name }}</div>
           <div class="user-role">{{ userRoleText }}</div>
         </div>
@@ -115,7 +124,7 @@ const handleLogout = () => {
 
 /* 用户头像 */
 .user-avatar {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* no shadow */
 }
 
 /* 用户信息 */

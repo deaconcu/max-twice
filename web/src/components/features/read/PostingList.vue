@@ -668,9 +668,9 @@ const completeButtonTooltip = () => {
 }
 
 .guide-section {
-  padding-bottom: 12px;
+  padding-bottom: 24px;
   border-bottom: 1px solid rgb(var(--v-theme-border));
-  margin-bottom: 0;
+  margin-bottom: 24px;
 }
 
 .guide-section .sidebar-header {
@@ -699,7 +699,11 @@ const completeButtonTooltip = () => {
 .sidebar-header {
   display: flex;
   align-items: center;
-  padding: 12px 0;
+  padding-bottom: 12px;
+}
+
+.guide-section .sidebar-header {
+  padding-bottom: 12px;
 }
 
 .sidebar-title {
