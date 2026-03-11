@@ -1,7 +1,9 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.analytics.dto.ContentStatsDTO;
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
+import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.CommentConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.request.CreateCommentRequest;
@@ -62,6 +64,7 @@ public class CommentService {
     private final UserConverter userConverter;
     private final ApplicationEventPublisher eventPublisher;
     private final ContentStatsDataService contentStatsDataService;
+    private final ContentStatsDomainService contentStatsDomainService;
 
     // ========== Command 方法（写操作）==========
 
@@ -423,7 +426,7 @@ public class CommentService {
     }
 
     /**
-     * 批量填充评论的统计字段
+     * 批量填充评论的统计字段（包含 Redis 增量）
      */
     private void fillStatsForComments(List<? extends CommentSummaryDTO> commentDTOList) {
         if (commentDTOList == null || commentDTOList.isEmpty()) {
@@ -435,14 +438,12 @@ public class CommentService {
                 .map(CommentSummaryDTO::getId)
                 .toList();
 
-        // 批量查询统计数据
-        List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(comment, commentIds);
-        Map<Long, ContentStatsDO> statsMap = statsList.stream()
-                .collect(HashMap::new, (map, stats) -> map.put(stats.getContentId(), stats), HashMap::putAll);
+        // 批量查询统计数据（包含 Redis 增量）
+        Map<Long, ContentStatsDTO> statsMap = contentStatsDomainService.batchGetContentStats(comment, commentIds);
 
         // 填充每个评论的统计字段
         for (CommentSummaryDTO commentDTO : commentDTOList) {
-            ContentStatsDO stats = statsMap.get(commentDTO.getId());
+            ContentStatsDTO stats = statsMap.get(commentDTO.getId());
             if (stats != null) {
                 commentDTO.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
                 commentDTO.setReplyCount(stats.getCommentCount() != null ? stats.getCommentCount() : 0);
@@ -536,12 +537,12 @@ public class CommentService {
         commentDTO.setLikeCount(0);
         commentDTO.setReplyCount(0);
 
-        // 填充统计字段
-        Optional<ContentStatsDO> contentState = contentStatsDataService.getByContent(comment, commentDO.getId());
-        contentState.ifPresent(contentStatsDO -> {
-            commentDTO.setLikeCount(contentStatsDO.getLikeCount());
-            commentDTO.setReplyCount(contentStatsDO.getCommentCount());
-        });
+        // 填充统计字段（包含 Redis 增量）
+        ContentStatsDTO stats = contentStatsDomainService.getContentStats(comment, commentDO.getId());
+        if (stats != null) {
+            commentDTO.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
+            commentDTO.setReplyCount(stats.getCommentCount() != null ? stats.getCommentCount() : 0);
+        }
 
         // 填充点赞状态
         commentDTO.setLiked(false);
@@ -591,12 +592,12 @@ public class CommentService {
         commentDTO.setLikeCount(0);
         commentDTO.setReplyCount(0);
 
-        // 填充统计字段（刚创建的评论，初始值为0）
-        Optional<ContentStatsDO> contentState = contentStatsDataService.getByContent(comment, commentDO.getId());
-        contentState.ifPresent(contentStatsDO -> {
-            commentDTO.setLikeCount(contentStatsDO.getLikeCount());
-            commentDTO.setReplyCount(contentStatsDO.getCommentCount());
-        });
+        // 填充统计字段（包含 Redis 增量）
+        ContentStatsDTO stats = contentStatsDomainService.getContentStats(comment, commentDO.getId());
+        if (stats != null) {
+            commentDTO.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
+            commentDTO.setReplyCount(stats.getCommentCount() != null ? stats.getCommentCount() : 0);
+        }
 
         return commentDTO;
     }

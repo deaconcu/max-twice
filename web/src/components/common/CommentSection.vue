@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { commentApi } from '@/api'
+import { upvoteApi } from '@/api'
 import { useFetch, useMutation } from '@/composables'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
-import { ObjectType } from '@/enums'
+import { ObjectType, VoteType } from '@/enums'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import { useUserStore } from '@/stores/modules/user'
 
 interface Props {
   postId?: number
@@ -29,6 +31,15 @@ const emit = defineEmits<{
 // 验证规则
 const commentRules = useValidationRules('comment-content')
 const commentMaxLength = useMaxLength('comment-content')
+
+// 用户信息
+const userStore = useUserStore()
+const currentUserId = computed(() => userStore.userId)
+
+// 判断是否是自己的评论
+const isOwnComment = (comment: any) => {
+  return currentUserId.value && comment.creatorId === currentUserId.value
+}
 
 const newComment = ref('')
 const isCommentFocused = ref(false)
@@ -392,9 +403,29 @@ const cancelReply = () => {
 }
 
 // 点赞评论
-const handleUpvoteComment = (commentId: number) => {
-  console.log('Upvote comment:', commentId)
-  // TODO: 实现点赞逻辑
+const upvotingCommentId = ref<number | null>(null)
+let currentUpvoteComment: any = null
+
+const { execute: doUpvote } = useMutation(
+  () => upvoteApi.upvote(
+    currentUpvoteComment.id,
+    ObjectType.COMMENT,
+    VoteType.LIKE
+  ),
+  {
+    onSuccess: (result) => {
+      currentUpvoteComment.liked = result.liked
+      currentUpvoteComment.likeCount = result.likeCount
+      upvotingCommentId.value = null
+    },
+  }
+)
+
+const handleUpvoteComment = async (comment: any) => {
+  if (upvotingCommentId.value === comment.id) return
+  upvotingCommentId.value = comment.id
+  currentUpvoteComment = comment
+  await doUpvote()
 }
 
 // Intersection Observer 实例
@@ -453,10 +484,10 @@ onBeforeUnmount(() => {
         rounded="lg"
         :rows="isCommentFocused ? 3 : 1"
         :rules="isCommentFocused ? commentRules : []"
-        :counter="commentMaxLength"
+        :counter="isCommentFocused ? commentMaxLength : false"
         auto-grow
         hide-details="auto"
-        class="mb-2"
+        class="mb-3"
         @focus="isCommentFocused = true"
         @blur="isCommentFocused = false"
       ></v-textarea>
@@ -538,10 +569,11 @@ onBeforeUnmount(() => {
               <v-btn
                 size="small"
                 variant="text"
-                color="grey-darken-2"
-                @click="handleUpvoteComment(comment.id)"
+                :color="comment.liked ? 'primary' : 'grey-darken-2'"
+                :disabled="isOwnComment(comment)"
+                @click="handleUpvoteComment(comment)"
               >
-                <v-icon icon="mdi-thumb-up-outline" size="16" class="mr-1"></v-icon>
+                <v-icon :icon="comment.liked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'" size="16" class="mr-1"></v-icon>
                 {{ comment.likeCount || 0 }}
               </v-btn>
               <v-btn
@@ -642,10 +674,11 @@ onBeforeUnmount(() => {
                       <v-btn
                         size="small"
                         variant="text"
-                        color="grey-darken-2"
-                        @click="handleUpvoteComment(subComment.id)"
+                        :color="subComment.liked ? 'primary' : 'grey-darken-2'"
+                        :disabled="isOwnComment(subComment)"
+                        @click="handleUpvoteComment(subComment)"
                       >
-                        <v-icon icon="mdi-thumb-up-outline" size="16" class="mr-1"></v-icon>
+                        <v-icon :icon="subComment.liked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'" size="16" class="mr-1"></v-icon>
                         {{ subComment.likeCount || 0 }}
                       </v-btn>
                       <v-btn
