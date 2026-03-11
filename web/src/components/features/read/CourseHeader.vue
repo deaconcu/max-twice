@@ -63,12 +63,17 @@ const toggleSubscribe = () => {
         <span class="course-meta">{{ currentCourse?.learnerCount?.toLocaleString() || 0 }} 人在学</span>
       </div>
       <v-btn
-        :icon="parentCourseInfo?.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
-        :color="parentCourseInfo?.bookmarked ? 'amber-darken-2' : 'grey-lighten-1'"
         variant="text"
         size="small"
+        icon
         @click.stop="toggleSubscribe"
-      ></v-btn>
+      >
+        <v-icon
+          :icon="parentCourseInfo?.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+          :color="parentCourseInfo?.bookmarked ? 'amber-darken-2' : 'grey-lighten-1'"
+        ></v-icon>
+        <v-tooltip activator="parent" location="top">{{ parentCourseInfo?.bookmarked ? '取消收藏' : '收藏' }}</v-tooltip>
+      </v-btn>
       <v-btn
         v-if="!isLearning"
         color="success"
