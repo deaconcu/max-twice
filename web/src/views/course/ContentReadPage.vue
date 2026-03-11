@@ -849,13 +849,14 @@ onUnmounted(() => {
   max-width: 1470px;
   width: 100%;
   margin: 0 auto;
+  padding-top: 24px;
 }
 
 /* 左侧 TOC 目录栏 */
 .toc-sidebar {
   flex: 0 1 360px;
   max-width: 360px;
-  padding: 6px 0px 24px 0;
+  padding: 0 0 24px 0;
   position: relative;
   margin-right: 20px;
   min-height: calc(100vh - 125px);
@@ -881,7 +882,7 @@ onUnmounted(() => {
 
 .toc-card {
   background-color: white;
-  padding: 10px 0;
+  padding: 4px 0;
   border-radius: 16px;
   flex: 1;
   min-height: 0;
@@ -934,7 +935,7 @@ onUnmounted(() => {
 .toc-groups-card {
   padding: 0;
   margin-right: 42px;
-  margin-bottom: 6px;
+  margin-bottom: 0;
 }
 
 .toc-chips {

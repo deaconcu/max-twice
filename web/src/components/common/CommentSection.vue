@@ -444,7 +444,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="comments-section">
     <!-- 评论输入 -->
-    <div class="comment-input-section mb-9">
+    <div class="comment-input-section">
       <v-textarea
         v-model="newComment"
         placeholder="写下你的评论..."
@@ -455,7 +455,8 @@ onBeforeUnmount(() => {
         :rules="isCommentFocused ? commentRules : []"
         :counter="commentMaxLength"
         auto-grow
-        class="mb-3"
+        hide-details="auto"
+        class="mb-2"
         @focus="isCommentFocused = true"
         @blur="isCommentFocused = false"
       ></v-textarea>
@@ -528,7 +529,7 @@ onBeforeUnmount(() => {
                 {{ comment.createdAt }}
               </span>
             </div>
-            <p class="text-body-1 mb-2">
+            <p class="text-body-2 mb-2">
               {{ comment.content }}
             </p>
 
@@ -567,6 +568,7 @@ onBeforeUnmount(() => {
                 :rules="isReplyFocused ? commentRules : []"
                 :counter="commentMaxLength"
                 auto-grow
+                hide-details="auto"
                 class="mb-2"
                 @focus="isReplyFocused = true"
                 @blur="isReplyFocused = false"
@@ -630,7 +632,7 @@ onBeforeUnmount(() => {
                         {{ subComment.createdAt }}
                       </span>
                     </div>
-                    <p class="text-body-1 mb-2">
+                    <p class="text-body-2 mb-2">
                       <span v-if="subComment.toUser?.name" class="text-primary font-weight-medium">
                         @{{ subComment.toUser.name }}
                       </span>
@@ -670,6 +672,7 @@ onBeforeUnmount(() => {
                         :rules="isReplyFocused ? commentRules : []"
                         :counter="commentMaxLength"
                         auto-grow
+                        hide-details="auto"
                         class="mb-2"
                         @focus="isReplyFocused = true"
                         @blur="isReplyFocused = false"
@@ -729,7 +732,7 @@ onBeforeUnmount(() => {
 }
 
 .comment-input-section {
-  margin-bottom: 48px;
+  margin-bottom: 24px;
 }
 
 .comment-list {
