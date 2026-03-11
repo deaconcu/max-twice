@@ -933,6 +933,8 @@ onUnmounted(() => {
 /* 目录组选择卡片 */
 .toc-groups-card {
   padding: 0;
+  margin-right: 42px;
+  margin-bottom: 6px;
 }
 
 .toc-chips {
@@ -940,7 +942,6 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  padding-right: 47px;
 }
 
 .chip-active .chip-number {

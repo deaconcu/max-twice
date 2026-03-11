@@ -56,47 +56,49 @@ const toggleSubscribe = () => {
 
 <template>
   <div class="course-header">
-    <!-- 课程名称行 -->
-    <div class="course-title-row" @click="goToCourse">
-      <div class="course-icon-wrapper">
-        <v-icon :icon="courseIcon" size="16" :color="courseColor"></v-icon>
+    <div class="course-row">
+      <v-icon :icon="courseIcon" size="35" :color="courseColor"></v-icon>
+      <div class="course-info">
+        <span class="course-name" @click="goToCourse">{{ parentCourseInfo?.name || currentCourse?.name }}</span>
+        <span class="course-meta">{{ currentCourse?.learnerCount?.toLocaleString() || 0 }} 人在学</span>
       </div>
-      <span class="course-name">{{ parentCourseInfo?.name || currentCourse?.name }}</span>
-    </div>
-
-    <!-- 统计/收藏/学习 一行 -->
-    <div class="action-row">
-      <span class="course-meta">{{ currentCourse?.learnerCount?.toLocaleString() || 0 }} 人学习</span>
       <v-btn
         :icon="parentCourseInfo?.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
         :color="parentCourseInfo?.bookmarked ? 'amber-darken-2' : 'grey-lighten-1'"
         variant="text"
-        size="x-small"
+        size="small"
         @click.stop="toggleSubscribe"
       ></v-btn>
-      <div class="learning-area">
-        <v-btn
-          color="success"
-          :variant="isLearning ? 'tonal' : 'flat'"
-          size="x-small"
-          rounded="lg"
-          class="text-none"
-          elevation="0"
-          @click.stop="toggleLearning"
-        >
-          {{ isLearning ? '学习中' : '开始学习' }}
-        </v-btn>
-        <template v-if="isLearning">
-          <v-progress-linear
-            :model-value="progressPercent"
-            height="4"
-            rounded
-            color="success"
-            bg-color="grey-lighten-3"
-            class="progress-bar"
-          ></v-progress-linear>
-          <span class="progress-text">{{ Math.round(progressPercent) }}%</span>
-        </template>
+      <v-btn
+        v-if="!isLearning"
+        color="success"
+        variant="tonal"
+        size="small"
+        rounded="lg"
+        class="text-none"
+        @click.stop="toggleLearning"
+      >
+        学习
+      </v-btn>
+      <div v-else class="progress-area" @click.stop="toggleLearning">
+        <v-tooltip location="bottom" text="点击退出学习">
+          <template #activator="{ props }">
+            <div class="progress-ring" v-bind="props">
+              <svg viewBox="0 0 36 36">
+                <path
+                  class="ring-bg"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <path
+                  class="ring-progress"
+                  :stroke-dasharray="`${progressPercent}, 100`"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+              </svg>
+              <span class="progress-num">{{ Math.round(progressPercent) }}</span>
+            </div>
+          </template>
+        </v-tooltip>
       </div>
     </div>
   </div>
@@ -104,66 +106,79 @@ const toggleSubscribe = () => {
 
 <style scoped>
 .course-header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-bottom: 8px;
-  margin-right: 42px;
+  padding-right: 42px;
   margin-bottom: 8px;
 }
 
-.course-title-row {
+.course-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer;
+  gap: 10px;
 }
 
-.course-title-row:hover .course-name {
-  color: rgb(var(--v-theme-primary));
-}
-
-.course-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+.course-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .course-name {
+  display: block;
   font-size: 14px;
   font-weight: 600;
   color: #333;
-  transition: color 0.2s;
+  cursor: pointer;
   line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.action-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.learning-area {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: auto;
-}
-
-.progress-bar {
-  flex: 1;
-  max-width: 60px;
+.course-name:hover {
+  color: rgb(var(--v-theme-primary));
 }
 
 .course-meta {
-  font-size: 12px;
-  color: #888;
+  display: block;
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 2px;
 }
 
-.progress-text {
-  font-size: 12px;
-  font-weight: 600;
+.progress-area {
+  flex-shrink: 0;
+}
+
+.progress-ring {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+}
+
+.progress-ring svg {
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  fill: none;
+  stroke: #eee;
+  stroke-width: 3;
+}
+
+.ring-progress {
+  fill: none;
+  stroke: rgb(var(--v-theme-success));
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.progress-num {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 700;
   color: rgb(var(--v-theme-success));
 }
 </style>
