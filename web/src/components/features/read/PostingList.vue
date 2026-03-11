@@ -529,9 +529,9 @@ const completeButtonTooltip = () => {
       <div class="sidebar-sticky">
         <!-- 引导说明区域 -->
         <div class="guide-section">
-          <div class="guide-title">
-            <v-icon icon="mdi-lightbulb-outline" size="16" color="amber-darken-2"></v-icon>
-            <span>使用提示</span>
+          <div class="sidebar-header">
+            <v-icon icon="mdi-lightbulb-outline" size="18" color="amber-darken-2" class="mr-2"></v-icon>
+            <span class="sidebar-title">使用提示</span>
           </div>
           <div class="guide-list">
             <div class="guide-item">
@@ -668,19 +668,13 @@ const completeButtonTooltip = () => {
 }
 
 .guide-section {
-  padding: 14px 0;
+  padding-bottom: 12px;
   border-bottom: 1px solid rgb(var(--v-theme-border));
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
-.guide-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 10px;
+.guide-section .sidebar-header {
+  padding-top: 0;
 }
 
 .guide-list {

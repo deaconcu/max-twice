@@ -27,6 +27,7 @@ import com.prosper.learn.interaction.comment.CommentDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
 import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.CommentDeletedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
@@ -146,6 +147,20 @@ public class CommentService {
             commentTargetType,         // 内容类型
             contentCreatorId           // 被评论内容的创建者ID
         ));
+
+        // 如果是回复评论，还需要为父评论增加 commentCount
+        if (commentDO.getReplyToCommentId() != null && commentDO.getReplyToCommentId() > 0) {
+            CommentDO parentComment = commentDataService.getById(commentDO.getReplyToCommentId());
+            if (parentComment != null) {
+                eventPublisher.publishEvent(new CommentCreatedEvent(
+                    commentDO.getCreatorId(),           // 评论者ID
+                    commentDO.getId(),                  // 评论ID
+                    commentDO.getReplyToCommentId(),    // 父评论ID
+                    ContentType.comment,                // 内容类型为 comment
+                    parentComment.getCreatorId()        // 父评论的创建者ID
+                ));
+            }
+        }
     }
 
     /**
@@ -191,6 +206,21 @@ public class CommentService {
             commentDO.getObjectId(),
             reason
         ));
+
+        // 如果是回复评论且之前状态是 PUBLISHED，需要减少父评论的 commentCount
+        if (previousState == ContentState.PUBLISHED.value() &&
+            commentDO.getReplyToCommentId() != null && commentDO.getReplyToCommentId() > 0) {
+            CommentDO parentComment = commentDataService.getById(commentDO.getReplyToCommentId());
+            if (parentComment != null) {
+                eventPublisher.publishEvent(new CommentDeletedEvent(
+                    operator.getId(),                   // 操作者ID
+                    commentDO.getId(),                  // 评论ID
+                    commentDO.getReplyToCommentId(),    // 父评论ID
+                    ContentType.comment,                // 内容类型为 comment
+                    parentComment.getCreatorId()        // 父评论的创建者ID
+                ));
+            }
+        }
     }
 
     // ========== Query 方法（读操作）==========

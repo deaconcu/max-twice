@@ -73,15 +73,8 @@ const { execute: fetchCommentContext } = useFetch({
       comments.value = result.items
       // 初始化每个评论的 hasMoreReplies 标志
       comments.value.forEach((comment) => {
-        if (
-          comment.children &&
-          comment.children.length > 0 &&
-          comment.replyCount > comment.children.length
-        ) {
-          comment.hasMoreReplies = true
-        } else {
-          comment.hasMoreReplies = false
-        }
+        const childrenCount = comment.children?.length || 0
+        comment.hasMoreReplies = comment.replyCount > childrenCount
       })
       hasMore.value = result.hasMoreAfter
       hasMoreBefore.value = result.hasMoreBefore
@@ -181,16 +174,9 @@ const { execute: fetchInitialComments } = useFetch({
       comments.value = result.items
       // 初始化每个评论的 hasMoreReplies 标志
       comments.value.forEach((comment) => {
-        // 如果有子评论且子评论数量小于总回复数，说明还有更多
-        if (
-          comment.children &&
-          comment.children.length > 0 &&
-          comment.replyCount > comment.children.length
-        ) {
-          comment.hasMoreReplies = true
-        } else {
-          comment.hasMoreReplies = false
-        }
+        // 如果回复总数大于已加载的子评论数量，说明还有更多
+        const childrenCount = comment.children?.length || 0
+        comment.hasMoreReplies = comment.replyCount > childrenCount
       })
       if (result.nextCursor) {
         lastScore.value = result.nextCursor.lastScore
@@ -256,6 +242,11 @@ const loadMore = async () => {
   const result = await fetchMoreComments({ lastScore: lastScore.value, lastId: lastId.value })
 
   if (result?.items && result.items.length > 0) {
+    // 初始化每个新加载评论的 hasMoreReplies 标志
+    result.items.forEach((comment: any) => {
+      const childrenCount = comment.children?.length || 0
+      comment.hasMoreReplies = comment.replyCount > childrenCount
+    })
     comments.value = [...comments.value, ...result.items]
     if (result.nextCursor) {
       lastScore.value = result.nextCursor.lastScore
@@ -745,7 +736,7 @@ onBeforeUnmount(() => {
                 class="mt-0"
                 @click="loadSubComments(comment)"
               >
-                查看更多回复
+                查看更多回复 ({{ comment.replyCount - (comment.children?.length || 0) }})
               </v-btn>
             </div>
       </div>

@@ -106,7 +106,7 @@
                     修改
                   </v-btn>
                 </div>
-                <div v-else class="d-flex flex-column flex-sm-row align-start">
+                <div v-else>
                   <v-text-field
                     v-model="localUserInfo.name"
                     density="comfortable"
@@ -114,7 +114,7 @@
                     rounded="lg"
                     :rules="usernameRules"
                     :counter="usernameMaxLength"
-                    class="mb-2 mb-sm-0"
+                    class="mb-2"
                     style="max-width: 300px"
                   />
                   <div class="d-flex ga-2">
@@ -123,7 +123,6 @@
                       color="primary"
                       size="small"
                       rounded="lg"
-                      class="ml-sm-3"
                       @click="onModifyName"
                     >
                       <v-icon icon="mdi-check" size="16" class="mr-1" />
@@ -252,7 +251,7 @@
                     修改
                   </v-btn>
                 </div>
-                <div v-else class="d-flex flex-column flex-sm-row align-start">
+                <div v-else>
                   <v-select
                     v-model="localUserInfo.timezone"
                     :items="timezoneOptions"
@@ -261,7 +260,7 @@
                     density="comfortable"
                     variant="outlined"
                     rounded="lg"
-                    class="mb-2 mb-sm-0"
+                    class="mb-2"
                     style="max-width: 350px"
                   />
                   <div class="d-flex ga-2">
@@ -270,7 +269,6 @@
                       color="primary"
                       size="small"
                       rounded="lg"
-                      class="ml-sm-3"
                       @click="onModifyTimezone"
                     >
                       <v-icon icon="mdi-check" size="16" class="mr-1" />

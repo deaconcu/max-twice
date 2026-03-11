@@ -615,7 +615,7 @@ void homeLoading
             border
             hover
             class="h-100 view-more-card"
-            @click="navigateTo('/my/roles')"
+            @click="navigateTo('/users/me?tab=roles')"
           >
             <v-card-text class="pa-4 d-flex align-center justify-center h-100">
               <div class="text-center">
@@ -722,7 +722,7 @@ void homeLoading
             border
             hover
             class="h-100 view-more-card"
-            @click="navigateTo('/my/courses')"
+            @click="navigateTo('/users/me?tab=courses-learning')"
           >
             <v-card-text class="pa-4 d-flex align-center justify-center h-100">
               <div class="text-center">
