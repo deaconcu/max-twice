@@ -72,7 +72,7 @@ const toggleSubscribe = () => {
           :icon="parentCourseInfo?.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
           :color="parentCourseInfo?.bookmarked ? 'amber-darken-2' : 'grey-lighten-1'"
         ></v-icon>
-        <v-tooltip activator="parent" location="top">{{ parentCourseInfo?.bookmarked ? '取消收藏' : '收藏' }}</v-tooltip>
+        <v-tooltip activator="parent" location="bottom">{{ parentCourseInfo?.bookmarked ? '取消收藏' : '收藏' }}</v-tooltip>
       </v-btn>
       <v-btn
         v-if="!isLearning"
