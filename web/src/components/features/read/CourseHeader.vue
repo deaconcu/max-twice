@@ -112,7 +112,7 @@ const toggleSubscribe = () => {
 <style scoped>
 .course-header {
   padding-right: 42px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .course-row {

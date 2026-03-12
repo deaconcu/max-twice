@@ -36,16 +36,16 @@ const descriptionMaxLength = computed(
   () => validationStore.getRule('deck-description')?.maxLength || 200
 )
 
-// 灰色提示：空或长度不够时显示
-const frontHint = computed(() => {
+// 错误提示：长度不够时显示红色
+const frontError = computed(() => {
   const val = cardForm.value.front.trim()
-  if (!val) return `至少输入${frontMinLength.value}个字符`
+  if (!val) return ''
   if (val.length < frontMinLength.value) return `还需输入${frontMinLength.value - val.length}个字符`
   return ''
 })
-const backHint = computed(() => {
+const backError = computed(() => {
   const val = cardForm.value.back.trim()
-  if (!val) return `至少输入${backMinLength.value}个字符`
+  if (!val) return ''
   if (val.length < backMinLength.value) return `还需输入${backMinLength.value - val.length}个字符`
   return ''
 })
@@ -73,10 +73,13 @@ const cardFormValid = computed(() => {
   if (!front || !back) return false
 
   // 检查长度限制
+  const frontMinLen = validationStore.getRule('card-front')?.minLength || 1
   const frontMaxLen = validationStore.getRule('card-front')?.maxLength || 500
+  const backMinLen = validationStore.getRule('card-back')?.minLength || 1
   const backMaxLen = validationStore.getRule('card-back')?.maxLength || 500
 
-  if (front.length > frontMaxLen || back.length > backMaxLen) return false
+  if (front.length < frontMinLen || front.length > frontMaxLen) return false
+  if (back.length < backMinLen || back.length > backMaxLen) return false
 
   return true
 })
@@ -230,8 +233,7 @@ const closeDialog = () => {
             placeholder="输入问题..."
             :maxlength="frontMaxLength"
             :counter="frontMaxLength"
-            :hint="frontHint"
-            :persistent-hint="!!frontHint"
+            :error-messages="frontError"
             variant="outlined"
             rounded="lg"
             rows="2"
@@ -245,8 +247,7 @@ const closeDialog = () => {
             placeholder="输入答案..."
             :maxlength="backMaxLength"
             :counter="backMaxLength"
-            :hint="backHint"
-            :persistent-hint="!!backHint"
+            :error-messages="backError"
             variant="outlined"
             rounded="lg"
             rows="3"

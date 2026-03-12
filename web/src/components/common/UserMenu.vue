@@ -119,15 +119,6 @@ const handleLogout = () => {
   line-height: 1.3;
 }
 
-.user-role {
-  font-size: 12px;
-  color: rgb(var(--v-theme-on-surface-variant));
-  opacity: 0.7;
-  padding: 2px 10px;
-  background-color: rgb(var(--v-theme-surface-variant));
-  border-radius: 12px;
-}
-
 /* 菜单项列表 */
 .menu-items {
   padding: 0;

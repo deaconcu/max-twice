@@ -1,88 +1,98 @@
 <template>
-  <v-card class="memory-card-sidebar no-border" flat rounded="lg">
+  <div class="memory-card-section">
     <!-- 模块头部 -->
-    <v-card-title class="pa-4">
-      <div class="d-flex align-center justify-space-between w-100">
-        <div class="d-flex align-center">
-          <v-icon icon="mdi-cards-outline" color="primary" size="20" class="mr-2"></v-icon>
-          <span class="text-h6 font-weight-bold">记忆卡片组</span>
-        </div>
-        <div class="d-flex align-center" style="gap: 4px">
-          <v-btn
-            color="success"
-            variant="flat"
-            rounded="lg"
-            size="small"
-            class="me-1"
-            prepend-icon="mdi-plus"
-            @click="emit('createDeck')"
-          >
-            创建
-          </v-btn>
+    <div class="sidebar-header">
+      <v-icon icon="mdi-cards-outline" size="18" class="mr-2"></v-icon>
+      <span class="sidebar-title">本文的记忆卡片</span>
+      <v-tooltip location="bottom" max-width="280">
+        <template #activator="{ props: tooltipProps }">
+          <v-icon
+            v-bind="tooltipProps"
+            icon="mdi-help-circle-outline"
+            size="16"
+            color="grey-lighten-1"
+            class="ml-1"
+            style="cursor: help"
+          ></v-icon>
+        </template>
+        <span>基于本文内容创建的记忆卡片组，帮助你提取和巩固文章中的知识点。你也可以创建自己的卡片组分享给其他学习者。</span>
+      </v-tooltip>
+      <v-spacer></v-spacer>
 
-          <!-- 刷新按钮 -->
-          <v-tooltip text="刷新" location="top">
+      <!-- 刷新按钮 -->
+      <v-tooltip text="刷新" location="top">
+        <template #activator="{ props: tooltipProps }">
+          <v-btn
+            v-bind="tooltipProps"
+            icon
+            size="x-small"
+            variant="text"
+            color="grey-darken-2"
+            :loading="loading"
+            class="me-1"
+            @click="loadDecks(true)"
+          >
+            <v-icon icon="mdi-refresh" size="16"></v-icon>
+          </v-btn>
+        </template>
+      </v-tooltip>
+
+      <v-btn
+        color="success"
+        variant="flat"
+        rounded="lg"
+        size="small"
+        prepend-icon="mdi-plus"
+        @click="emit('createDeck')"
+      >
+        创建
+      </v-btn>
+    </div>
+
+    <!-- 排序和筛选控件 -->
+    <div class="filter-controls pb-2 pt-2">
+      <div class="d-flex align-center justify-space-between">
+        <!-- 左侧：筛选选项 -->
+        <div class="d-flex gap-1">
+          <v-tooltip text="全部" location="top">
             <template #activator="{ props: tooltipProps }">
               <v-btn
                 v-bind="tooltipProps"
-                icon
+                :color="!showAuthorOnly && !showMyOnly ? 'primary' : 'grey-darken-1'"
+                :variant="!showAuthorOnly && !showMyOnly ? 'tonal' : 'text'"
                 size="x-small"
-                variant="text"
-                color="grey-darken-2"
-                :loading="loading"
-                @click="loadDecks(true)"
-              >
-                <v-icon icon="mdi-refresh" size="16"></v-icon>
-              </v-btn>
+                rounded="lg"
+                icon="mdi-all-inclusive"
+                @click="handleShowAll"
+              />
             </template>
           </v-tooltip>
-        </div>
-      </div>
-    </v-card-title>
-
-    <!-- 排序和筛选控件 -->
-    <v-card-text class="filter-controls px-4 pb-2 pt-0">
-      <div class="d-flex align-center justify-space-between">
-        <!-- 左侧：筛选选项 -->
-        <div class="d-flex gap-2">
-          <v-btn
-            :color="!showAuthorOnly && !showMyOnly ? 'primary' : 'grey-darken-1'"
-            :variant="!showAuthorOnly && !showMyOnly ? 'tonal' : 'text'"
-            size="small"
-            rounded="lg"
-            class="px-2"
-            @click="handleShowAll"
-          >
-            <v-icon
-              v-if="!showAuthorOnly && !showMyOnly"
-              icon="mdi-check"
-              size="14"
-              class="mr-1"
-            ></v-icon>
-            全部
-          </v-btn>
-          <v-btn
-            :color="showAuthorOnly ? 'primary' : 'grey-darken-1'"
-            :variant="showAuthorOnly ? 'tonal' : 'text'"
-            size="small"
-            rounded="lg"
-            class="px-2"
-            @click="handleFilterToggle"
-          >
-            <v-icon v-if="showAuthorOnly" icon="mdi-check" size="14" class="mr-1"></v-icon>
-            只看作者
-          </v-btn>
-          <v-btn
-            :color="showMyOnly ? 'primary' : 'grey-darken-1'"
-            :variant="showMyOnly ? 'tonal' : 'text'"
-            size="small"
-            class="px-2"
-            rounded="lg"
-            @click="handleMyFilterToggle"
-          >
-            <v-icon v-if="showMyOnly" icon="mdi-check" size="14" class="mr-1"></v-icon>
-            我提交的
-          </v-btn>
+          <v-tooltip text="只看本文作者" location="top">
+            <template #activator="{ props: tooltipProps }">
+              <v-btn
+                v-bind="tooltipProps"
+                :color="showAuthorOnly ? 'primary' : 'grey-darken-1'"
+                :variant="showAuthorOnly ? 'tonal' : 'text'"
+                size="x-small"
+                rounded="lg"
+                icon="mdi-account-edit"
+                @click="handleFilterToggle"
+              />
+            </template>
+          </v-tooltip>
+          <v-tooltip text="我提交的" location="top">
+            <template #activator="{ props: tooltipProps }">
+              <v-btn
+                v-bind="tooltipProps"
+                :color="showMyOnly ? 'primary' : 'grey-darken-1'"
+                :variant="showMyOnly ? 'tonal' : 'text'"
+                size="x-small"
+                rounded="lg"
+                icon="mdi-account"
+                @click="handleMyFilterToggle"
+              />
+            </template>
+          </v-tooltip>
         </div>
 
         <!-- 右侧：排序选项 -->
@@ -115,11 +125,11 @@
           </v-tooltip>
         </div>
       </div>
-    </v-card-text>
+    </div>
 
     <!-- 卡片组列表 -->
-    <v-card-text
-      class="px-4 pb-4 pt-2 deck-list"
+    <div
+      class="pb-4 pt-2 deck-list"
       :class="{ 'deck-list-hover': isHovering }"
       style="max-height: 500px; overflow-y: auto"
       @mouseenter="isHovering = true"
@@ -128,10 +138,10 @@
       <!-- 空状态 -->
       <div v-if="decks.length === 0 && !loading" class="text-center pa-6">
         <v-icon icon="mdi-cards-outline" size="48" color="grey-lighten-2" class="mb-3"></v-icon>
-        <h4 class="text-h6 font-weight-medium text-grey-darken-2 mb-2">暂无卡片组</h4>
-        <p class="text-body-2 text-grey-darken-1 mb-4">成为第一个贡献者！</p>
-        <v-btn color="primary" variant="tonal" rounded="lg" @click="emit('createDeck')">
-          立即为本文创建卡片组
+        <h4 class="text-body-1 font-weight-medium text-grey-darken-2 mb-2">暂无卡片组</h4>
+        <p class="text-body-2 text-grey-darken-1 mb-4">基于本文创建记忆卡片，帮助巩固知识点</p>
+        <v-btn color="primary" variant="tonal" rounded="lg" size="small" @click="emit('createDeck')">
+          创建卡片组
         </v-btn>
       </div>
 
@@ -165,14 +175,14 @@
             <div class="d-flex align-center justify-space-between">
               <div class="d-flex align-center">
                 <UserAvatar
-                  :name="deck.creatorName || '匿名用户'"
-                  :avatar-url="deck.creatorAvatar"
+                  :name="deck.creator?.name || '匿名用户'"
+                  :avatar-url="deck.creator?.avatar"
                   size="24"
                   rounded="circle"
                   class="mr-2"
                 />
                 <span class="text-body-2 text-grey-darken-2">
-                  {{ deck.creatorName || '匿名用户' }}
+                  {{ deck.creator?.name || '匿名用户' }}
                 </span>
               </div>
               <div class="d-flex align-center">
@@ -213,8 +223,8 @@
       <div v-if="loading" class="text-center pa-4">
         <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
       </div>
-    </v-card-text>
-  </v-card>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -410,9 +420,20 @@ loadDecks(true)
 </script>
 
 <style scoped>
-.memory-card-sidebar {
-  background-color: rgb(var(--v-theme-surface));
-  border: 1px solid rgb(var(--v-theme-border));
+.memory-card-section {
+  /* 无边框和背景 */
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  padding-bottom: 12px;
+}
+
+.sidebar-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
 }
 
 .clickable-title {

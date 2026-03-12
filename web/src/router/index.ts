@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useUserStore, useAuthStore } from '@/stores'
+import { useAuthStore } from '@/stores'
 import { useValidationConfigStore } from '@/stores/validationConfig'
-import { isSuperAdmin, isAdmin, isModerator } from '@/utils/permission'
 import { routes } from './routes'
 
 /**
@@ -10,9 +9,6 @@ import { routes } from './routes'
 declare module 'vue-router' {
   interface RouteMeta {
     requireAuth?: boolean // 是否需要登录
-    requireAdmin?: boolean // 是否需要管理员权限
-    requireModerator?: boolean // 是否需要审核员权限
-    requireSuperAdmin?: boolean // 是否需要超级管理员权限
   }
 }
 
@@ -40,9 +36,7 @@ const router = createRouter({
  * 全局前置守卫 - 权限检查
  */
 router.beforeEach(async (to, from, next) => {
-  const userStore = useUserStore()
   const authStore = useAuthStore()
-  const currentUser = userStore.currentUser
 
   // 定期检查验证配置更新（带节流，避免频繁请求）
   // 仅在跨页面导航时检查（不是首次加载）
@@ -59,24 +53,6 @@ router.beforeEach(async (to, from, next) => {
       path: '/login',
       query: { redirect: to.fullPath },
     })
-    return
-  }
-
-  // 检查是否需要超级管理员权限
-  if (to.meta.requireSuperAdmin && !isSuperAdmin(currentUser)) {
-    next('/error/403')
-    return
-  }
-
-  // 检查是否需要管理员权限
-  if (to.meta.requireAdmin && !isAdmin(currentUser)) {
-    next('/error/403')
-    return
-  }
-
-  // 检查是否需要审核员权限
-  if (to.meta.requireModerator && !isModerator(currentUser)) {
-    next('/error/403')
     return
   }
 

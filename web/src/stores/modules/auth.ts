@@ -45,8 +45,7 @@ export const useAuthStore = defineStore(
           userStore.setUser({
             id: loginData.id,
             name: loginData.name,
-            subscriptions: loginData.subscriptions,
-            role: loginData.role,
+            avatar: loginData.avatar,
           } as User)
 
           return true

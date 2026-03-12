@@ -16,15 +16,6 @@ export const useUserStore = defineStore(
     // 计算属性
     const userId = computed(() => currentUser.value?.id ?? null)
     const userName = computed(() => currentUser.value?.name ?? '')
-    const userRole = computed(() => currentUser.value?.role ?? 0)
-    const isAdmin = computed(() => {
-      const role = currentUser.value?.role ?? 0
-      return role >= 2 // ADMIN or SUPER_ADMIN
-    })
-    const isModerator = computed(() => {
-      const role = currentUser.value?.role ?? 0
-      return role >= 1 // MODERATOR, ADMIN or SUPER_ADMIN
-    })
 
     /**
      * 设置用户信息
@@ -69,9 +60,6 @@ export const useUserStore = defineStore(
       // 计算属性
       userId,
       userName,
-      userRole,
-      isAdmin,
-      isModerator,
       isLoggedIn,
 
       // 方法
