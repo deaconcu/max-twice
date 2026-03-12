@@ -147,16 +147,25 @@
 
       <!-- 卡片组列表 -->
       <div v-else>
-        <v-card v-for="deck in decks" :key="deck.id" class="mb-3" elevation="0" rounded="lg" border>
-          <v-card-text class="pa-4">
-            <div class="d-flex align-start justify-space-between mb-2">
-              <h4
-                class="text-subtitle-1 font-weight-bold text-grey-darken-3 flex-grow-1 clickable-title"
-                @click="viewDeckDetail(deck)"
-              >
-                {{ deck.title }}
-              </h4>
-              <!-- 状态标签 (仅在"我提交的"筛选下显示) -->
+        <div
+          v-for="deck in decks"
+          :key="deck.id"
+          class="deck-item"
+          @click="viewDeckDetail(deck)"
+        >
+          <!-- 第一行：头像 + 用户名 + 状态标签 + 点赞 + 卡片数 -->
+          <div class="d-flex align-center justify-space-between">
+            <div class="d-flex align-center">
+              <UserAvatar
+                :name="deck.creator?.name || '匿名用户'"
+                :avatar-url="deck.creator?.avatar"
+                size="22"
+                rounded="circle"
+                class="mr-2"
+              />
+              <span class="text-body-2 font-weight-medium text-grey-darken-3">
+                {{ deck.creator?.name || '匿名用户' }}
+              </span>
               <v-chip
                 v-if="showMyOnly && deck.creatorId === currentUserId"
                 size="x-small"
@@ -167,51 +176,34 @@
                 {{ getStateText(deck.state) }}
               </v-chip>
             </div>
-
-            <p v-if="deck.description" class="text-body-2 text-grey-darken-1 mb-3">
-              {{ deck.description }}
-            </p>
-
-            <div class="d-flex align-center justify-space-between">
-              <div class="d-flex align-center">
-                <UserAvatar
-                  :name="deck.creator?.name || '匿名用户'"
-                  :avatar-url="deck.creator?.avatar"
-                  size="24"
-                  rounded="circle"
-                  class="mr-2"
-                />
-                <span class="text-body-2 text-grey-darken-2">
-                  {{ deck.creator?.name || '匿名用户' }}
-                </span>
-              </div>
-              <div class="d-flex align-center">
-                <v-btn
-                  :color="deck.hasLiked ? 'grey-darken-2' : 'grey-darken-2'"
-                  variant="text"
-                  size="small"
-                  rounded="lg"
-                  @click="handleUpvote(deck, $event)"
-                >
-                  <v-icon
-                    :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
-                    :color="deck.hasLiked ? 'red' : 'grey-darken-2'"
-                    size="14"
-                    class="mr-2"
-                  ></v-icon>
-                  {{ deck.likeCount }}
-                </v-btn>
+            <div class="d-flex align-center ga-3">
+              <span
+                v-if="deck.creator?.id !== currentUserId"
+                class="d-flex align-center text-body-2 like-btn"
+                :class="{ 'text-error': deck.hasLiked, 'text-grey-darken-1': !deck.hasLiked }"
+                @click.stop="handleUpvote(deck, $event)"
+              >
                 <v-icon
-                  icon="mdi-cards-outline"
-                  size="14"
-                  color="grey-darken-2"
-                  class="ml-3 mr-2"
+                  :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                  size="16"
+                  class="mr-1"
                 ></v-icon>
-                <span class="text-body-2 text-grey-darken-2">{{ deck.cardCount }}</span>
-              </div>
+                {{ deck.likeCount || 0 }}
+              </span>
+              <span
+                v-else
+                class="d-flex align-center text-body-2 text-grey-lighten-1"
+              >
+                <v-icon icon="mdi-thumb-up-outline" size="16" class="mr-1"></v-icon>
+                {{ deck.likeCount || 0 }}
+              </span>
+              <span class="d-flex align-center text-body-2 text-grey-darken-1">
+                <v-icon icon="mdi-cards-outline" size="16" class="mr-1"></v-icon>
+                {{ deck.cardCount }}
+              </span>
             </div>
-          </v-card-text>
-        </v-card>
+          </div>
+        </div>
       </div>
 
       <!-- 加载更多 -->
@@ -259,7 +251,7 @@ const lastId = ref<number>(0)
 const lastScore = ref<number>(0)
 const isHovering = ref(false)
 
-const currentUserId = computed(() => userStore.user?.id)
+const currentUserId = computed(() => userStore.currentUser?.id)
 
 // 加载卡片组列表
 const loadDecks = async (reset = false) => {
@@ -436,14 +428,35 @@ loadDecks(true)
   color: #333;
 }
 
-.clickable-title {
+.deck-item {
+  padding: 12px 8px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: background-color 0.15s ease;
 }
 
-.clickable-title:hover {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: underline;
+.deck-item:hover {
+  background-color: rgba(var(--v-theme-surface-variant), 0.5);
+}
+
+.deck-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+.like-btn {
+  cursor: pointer;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.like-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* 滚动条样式 - hover 时显示 */

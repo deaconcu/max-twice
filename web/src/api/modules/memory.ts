@@ -237,8 +237,8 @@ export function upvoteDeck(deckId: number): Promise<
 > {
   return client.post('/v1/upvotes', {
     objectId: deckId,
-    objectType: 'MEMORY_CARD_DECK',
-    type: 'NORMAL',
+    objectType: 5, // MEMORY_CARD_DECK
+    type: 2, // LIKE
   })
 }
 
