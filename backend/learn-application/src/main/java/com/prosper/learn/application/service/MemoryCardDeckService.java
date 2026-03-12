@@ -3,6 +3,8 @@ package com.prosper.learn.application.service;
 
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
+import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
+import com.prosper.learn.analytics.dto.ContentStatsDTO;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.MemoryCardDeckConverter;
 import com.prosper.learn.application.converter.UserConverter;
@@ -80,6 +82,7 @@ public class MemoryCardDeckService {
     private final PostQueueService postQueueService;
     private final BookmarkService bookmarkService;
     private final ContentStatsDataService contentStatsDataService;
+    private final ContentStatsDomainService contentStatsDomainService;
 
     // 事件发布
     private final ApplicationEventPublisher eventPublisher;
@@ -135,6 +138,12 @@ public class MemoryCardDeckService {
             dto.setBookmarked(bookmarkService.isBookmarked(userId, deckDO.getId(), Enums.ContentType.memory_card));
         } else {
             dto.setBookmarked(false);
+        }
+
+        // 填充统计数据（包含 Redis 实时增量）
+        ContentStatsDTO stats = contentStatsDomainService.getContentStats(Enums.ContentType.memory_card_deck, deckDO.getId());
+        if (stats != null) {
+            dto.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
         }
 
         // 填充课程和节点信息
@@ -197,25 +206,30 @@ public class MemoryCardDeckService {
             .collect(Collectors.toSet());
         Map<Long, UserDO> userMap = userDataService.getMapByIds(creatorIds);
 
+        // 收集 deckIds
+        List<Long> deckIdList = deckDOList.stream()
+            .map(MemoryCardDeckDO::getId)
+            .collect(Collectors.toList());
+
         // 批量获取点赞状态（如果提供了用户ID）
         Map<Long, Boolean> upvoteStatusMap = new HashMap<>();
         Set<Long> bookmarkedSet;
         if (userId != null) {
-            Set<Long> deckIds = deckDOList.stream()
-                .map(MemoryCardDeckDO::getId)
-                .collect(Collectors.toSet());
             // 批量查询点赞状态
-            for (Long deckId : deckIds) {
+            for (Long deckId : deckIdList) {
                 boolean hasUpvoted = upvoteService.getUpvoteStatus(deckId, Enums.ContentType.memory_card_deck, userId).getLiked();
                 upvoteStatusMap.put(deckId, hasUpvoted);
             }
             // 批量查询收藏状态
-            List<Long> deckIdList = new ArrayList<>(deckIds);
             List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, deckIdList, Enums.ContentType.memory_card);
             bookmarkedSet = new HashSet<>(bookmarkedIds);
         } else {
             bookmarkedSet = new HashSet<>();
         }
+
+        // 批量获取统计数据（包含 Redis 实时增量）
+        Map<Long, ContentStatsDTO> statsMap = contentStatsDomainService.batchGetContentStats(
+            Enums.ContentType.memory_card_deck, deckIdList);
 
         // 批量获取课程和节点信息
         Map<Long, CourseBriefDTO> courseMap = new HashMap<>();
@@ -275,6 +289,12 @@ public class MemoryCardDeckService {
                     dto.setBookmarked(bookmarkedSet.contains(deck.getId()));
                 } else {
                     dto.setBookmarked(false);
+                }
+
+                // 设置统计数据（包含 Redis 实时增量）
+                ContentStatsDTO stats = statsMap.get(deck.getId());
+                if (stats != null) {
+                    dto.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
                 }
 
                 // 设置课程和节点信息

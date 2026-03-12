@@ -153,55 +153,58 @@
           class="deck-item"
           @click="viewDeckDetail(deck)"
         >
-          <!-- 第一行：头像 + 用户名 + 状态标签 + 点赞 + 卡片数 -->
-          <div class="d-flex align-center justify-space-between">
-            <div class="d-flex align-center">
-              <UserAvatar
-                :name="deck.creator?.name || '匿名用户'"
-                :avatar-url="deck.creator?.avatar"
-                size="22"
-                rounded="circle"
-                class="mr-2"
-              />
-              <span class="text-body-2 font-weight-medium text-grey-darken-3">
-                {{ deck.creator?.name || '匿名用户' }}
-              </span>
-              <v-chip
-                v-if="showMyOnly && deck.creatorId === currentUserId"
-                size="x-small"
-                :color="getStateColor(deck.state)"
-                variant="flat"
-                class="ml-2"
-              >
-                {{ getStateText(deck.state) }}
-              </v-chip>
-            </div>
-            <div class="d-flex align-center ga-3">
-              <span
-                v-if="deck.creator?.id !== currentUserId"
-                class="d-flex align-center text-body-2 like-btn"
-                :class="{ 'text-error': deck.hasLiked, 'text-grey-darken-1': !deck.hasLiked }"
-                @click.stop="handleUpvote(deck, $event)"
-              >
-                <v-icon
-                  :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
-                  size="16"
-                  class="mr-1"
-                ></v-icon>
-                {{ deck.likeCount || 0 }}
-              </span>
-              <span
-                v-else
-                class="d-flex align-center text-body-2 text-grey-lighten-1"
-              >
-                <v-icon icon="mdi-thumb-up-outline" size="16" class="mr-1"></v-icon>
-                {{ deck.likeCount || 0 }}
-              </span>
-              <span class="d-flex align-center text-body-2 text-grey-darken-1">
-                <v-icon icon="mdi-cards-outline" size="16" class="mr-1"></v-icon>
-                {{ deck.cardCount }}
-              </span>
-            </div>
+          <!-- 第一行：卡片预览 ... 共X张卡片 -->
+          <div class="d-flex align-center mb-2">
+            <v-icon icon="mdi-cards-outline" size="16" color="grey-darken-1" class="mr-2 flex-shrink-0"></v-icon>
+            <span class="card-preview text-body-2 text-grey-darken-3">
+              {{ deck.firstCardFront || '什么是闭包？' }}
+            </span>
+            <span class="text-caption text-grey mx-1">...</span>
+            <span class="text-caption text-grey flex-shrink-0">
+              共{{ deck.cardCount }}张卡片
+            </span>
+          </div>
+          <!-- 第二行：头像 + 用户名 + 点赞 -->
+          <div class="d-flex align-center">
+            <UserAvatar
+              :name="deck.creator?.name || '匿名用户'"
+              :avatar-url="deck.creator?.avatar"
+              size="16"
+              rounded="circle"
+              class="mr-2"
+            />
+            <span class="text-caption text-grey">
+              {{ deck.creator?.name || '匿名用户' }}
+            </span>
+            <v-chip
+              v-if="showMyOnly && deck.creatorId === currentUserId"
+              size="x-small"
+              :color="getStateColor(deck.state)"
+              variant="flat"
+              class="ml-2"
+            >
+              {{ getStateText(deck.state) }}
+            </v-chip>
+            <span
+              v-if="deck.creator?.id !== currentUserId"
+              class="d-flex align-center text-caption like-btn ml-3"
+              :class="{ 'text-error': deck.hasLiked, 'text-grey': !deck.hasLiked }"
+              @click.stop="handleUpvote(deck, $event)"
+            >
+              <v-icon
+                :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                size="14"
+                class="mr-1"
+              ></v-icon>
+              {{ deck.likeCount || 0 }}
+            </span>
+            <span
+              v-else
+              class="d-flex align-center text-caption text-grey-lighten-1 ml-3"
+            >
+              <v-icon icon="mdi-thumb-up-outline" size="14" class="mr-1"></v-icon>
+              {{ deck.likeCount || 0 }}
+            </span>
           </div>
         </div>
       </div>
@@ -437,6 +440,13 @@ loadDecks(true)
 
 .deck-item:hover {
   background-color: rgba(var(--v-theme-surface-variant), 0.5);
+}
+
+.card-preview {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .deck-desc {
