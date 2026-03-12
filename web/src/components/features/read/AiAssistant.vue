@@ -167,27 +167,22 @@ const clearQuote = () => {
         ></v-textarea>
 
         <!-- AI 引擎链接 - 点击复制并跳转 -->
-        <div class="d-flex flex-wrap align-center text-body-2" style="gap: 4px">
+        <div class="d-flex flex-wrap align-center text-caption" style="gap: 8px">
           <a
             href="#"
-            class="ai-link"
             :class="{ 'text-success': copySuccess }"
             @click.prevent="copyOnly"
           >
-            <v-icon :icon="copySuccess ? 'mdi-check' : 'mdi-content-copy'" size="14" class="mr-1" />
             {{ copySuccess ? '已复制' : '复制内容' }}
           </a>
-          <span class="text-grey-darken-1">或者去问</span>
-          <template v-for="(e, index) in aiEngines" :key="e.name">
-            <a
-              href="#"
-              class="ai-link"
-              @click.prevent="copyAndGo(e)"
-            >
-              {{ e.name }}
-            </a>
-            <span v-if="index < aiEngines.length - 1" class="text-grey-lighten-1">/</span>
-          </template>
+          <a
+            v-for="e in aiEngines"
+            :key="e.name"
+            href="#"
+            @click.prevent="copyAndGo(e)"
+          >
+            {{ e.name }}
+          </a>
         </div>
       </div>
     </v-expand-transition>
@@ -241,17 +236,5 @@ const clearQuote = () => {
 
 .question-input :deep(textarea) {
   font-size: 14px;
-}
-
-.ai-link {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-}
-
-.ai-link:hover {
-  text-decoration: underline;
 }
 </style>
