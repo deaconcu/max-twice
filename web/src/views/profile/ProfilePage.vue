@@ -110,6 +110,8 @@ const handleUpdateAvatar = (avatarUrl: string) => {
       avatar: avatarUrl,
     }
   }
+  // 同时更新 userStore，确保 header 头像同步
+  userStore.updateUser({ avatar: avatarUrl })
 }
 
 // 统计数据（暂时用默认值，各个Tab自己加载数据）

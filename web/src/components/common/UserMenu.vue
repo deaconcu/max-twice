@@ -12,32 +12,17 @@ const userStore = useUserStore()
 // 用户信息
 const userInfo = computed(() => ({
   name: userStore.userName || '用户',
-  role: userStore.userRole,
   avatar: userStore.currentUser?.avatar,
 }))
-
-// 用户角色显示文本
-const userRoleText = computed(() => {
-  // TODO: 这里应该根据 userStore.userRole 返回对应的 i18n key
-  // 目前暂时使用硬编码，后续需要在 zh.json 中添加角色相关的翻译
-  return t('userMenu.learner')
-})
 
 // 跳转到设置页面
 const goToSettings = () => {
   router.push({ path: '/users/me', query: { tab: 'info' } })
 }
 
-// TODO: 实现真实的退出登录逻辑
-// 需要：1. 清除本地存储的 token 2. 清除 Pinia store 中的用户状态 3. 调用后端登出 API
 // 退出登录
 const handleLogout = () => {
-  // TODO: 这里添加实际的登出逻辑
-  // 1. 调用 API 通知后端退出
-  // 2. 清除本地 token (localStorage/sessionStorage)
-  // 3. 清除 Pinia store 中的用户信息
   userStore.logout()
-  // 4. 跳转到登录页
   router.push('/login')
 }
 </script>
@@ -72,8 +57,7 @@ const handleLogout = () => {
             rounded="xl"
             class="mb-3 user-avatar"
           />
-          <div class="user-name text-center mb-1">{{ userInfo.name }}</div>
-          <div class="user-role">{{ userRoleText }}</div>
+          <div class="user-name text-center">{{ userInfo.name }}</div>
         </div>
       </v-card-text>
 

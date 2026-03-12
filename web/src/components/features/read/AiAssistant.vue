@@ -95,30 +95,22 @@ const clearQuote = () => {
 </script>
 
 <template>
-  <v-card class="ai-assistant-card no-border" rounded="lg">
-    <v-card-title class="pa-4">
-      <div class="d-flex align-center justify-space-between w-100">
-        <div class="d-flex align-center">
-          <v-icon
-            icon="mdi-chat-question-outline"
-            color="primary"
-            :size="$vuetify.display.mobile ? 20 : 24"
-            class="mr-2"
-          ></v-icon>
-          <span class="text-body-1 text-md-h6">不懂就问</span>
-        </div>
-        <v-btn
-          :icon="isExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-          variant="text"
-          color="grey-darken-1"
-          size="x-small"
-          @click="isExpanded = !isExpanded"
-        ></v-btn>
-      </div>
-    </v-card-title>
+  <div class="ai-assistant-section">
+    <div class="sidebar-header">
+      <v-icon icon="mdi-chat-question-outline" size="18" class="mr-2"></v-icon>
+      <span class="sidebar-title">不懂就问</span>
+      <v-spacer></v-spacer>
+      <v-btn
+        :icon="isExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+        variant="text"
+        color="grey-darken-1"
+        size="x-small"
+        @click="isExpanded = !isExpanded"
+      ></v-btn>
+    </div>
 
     <v-expand-transition>
-      <v-card-text v-show="isExpanded" class="pa-4 pt-0">
+      <div v-show="isExpanded" class="assistant-content">
         <!-- 选中的文本预览 -->
         <div v-if="selectedText" class="selected-text-preview mb-3">
           <div
@@ -170,7 +162,7 @@ const clearQuote = () => {
           density="compact"
           rows="2"
           hide-details
-          class="mb-3"
+          class="mb-3 question-input"
           @focus="($event.target as HTMLTextAreaElement)?.select()"
         ></v-textarea>
 
@@ -179,6 +171,16 @@ const clearQuote = () => {
           去问AI（自动复制已引用内容和问题）
         </div>
         <div class="d-flex flex-wrap" style="gap: 8px">
+          <v-chip
+            color="primary"
+            :variant="copySuccess ? 'flat' : 'outlined'"
+            rounded="lg"
+            :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+            class="text-caption text-md-body-2 cursor-pointer"
+            :prepend-icon="copySuccess ? 'mdi-check' : 'mdi-content-copy'"
+            :text="copySuccess ? '已复制' : '手动复制内容'"
+            @click="copyOnly"
+          />
           <v-chip
             v-for="e in aiEngines"
             :key="e.name"
@@ -191,31 +193,33 @@ const clearQuote = () => {
             :text="e.name"
             @click="copyAndGo(e)"
           />
-          <v-chip
-            color="primary"
-            :variant="copySuccess ? 'flat' : 'outlined'"
-            rounded="lg"
-            :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-            class="text-caption text-md-body-2 cursor-pointer"
-            :prepend-icon="copySuccess ? 'mdi-check' : 'mdi-content-copy'"
-            :text="copySuccess ? '已复制' : '手动复制'"
-            @click="copyOnly"
-          />
         </div>
-      </v-card-text>
+      </div>
     </v-expand-transition>
-  </v-card>
+  </div>
 </template>
 
 <style scoped>
-.ai-assistant-card {
-  background-color: white;
-  border: 1px solid rgb(var(--v-theme-border));
+.ai-assistant-section {
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgb(var(--v-theme-border));
+  margin-bottom: 24px;
 }
 
-.ai-assistant-card .v-card-title {
-  font-size: 0.9375rem;
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  padding-bottom: 12px;
+}
+
+.sidebar-title {
+  font-size: 16px;
   font-weight: 600;
+  color: #333;
+}
+
+.assistant-content {
+  padding-top: 8px;
 }
 
 .selected-text-preview {
@@ -238,5 +242,9 @@ const clearQuote = () => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   max-height: 48px;
+}
+
+.question-input :deep(textarea) {
+  font-size: 14px;
 }
 </style>
