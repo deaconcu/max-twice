@@ -30,14 +30,14 @@
         <div class="d-flex align-center justify-space-between text-white">
           <div class="d-flex align-center">
             <UserAvatar
-              :name="deck.creatorName || '匿名用户'"
-              :avatar-url="deck.creatorAvatar"
+              :name="deck.creator?.name || '匿名用户'"
+              :avatar-url="deck.creator?.avatar"
               size="36"
               rounded="circle"
               class="mr-2"
             />
             <div class="text-subtitle-2 font-weight-medium">
-              {{ deck.creatorName || '匿名用户' }}
+              {{ deck.creator?.name || '匿名用户' }}
             </div>
           </div>
 

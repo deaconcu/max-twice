@@ -289,9 +289,11 @@ const openDeckDetail = (deck: any) => {
     title: `${deck.courseName} - ${deck.nodeName}`, // 组合课程和节点名称作为标题
     description: deck.description || '', // 只显示原始描述，没有则为空
     cardCount: deck.cardCount,
-    creatorName: userStore.currentUser?.name || '当前用户',
-    creatorId: userStore.currentUser?.id || null,
-    creatorAvatar: userStore.currentUser?.avatar || null,
+    creator: {
+      id: userStore.currentUser?.id || 0,
+      name: userStore.currentUser?.name || '当前用户',
+      avatar: userStore.currentUser?.avatar || undefined,
+    },
     upvoteCount: 0,
     hasUpvoted: false,
     nodeId: deck.nodeId, // 设置关联的节点ID
