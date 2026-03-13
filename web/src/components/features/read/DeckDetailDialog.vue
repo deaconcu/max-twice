@@ -8,85 +8,85 @@
       style="max-height: 85vh; display: flex; flex-direction: column"
     >
       <!-- 头部 -->
-      <div class="header-section px-4 py-3">
-        <div class="d-flex align-center justify-space-between">
-          <div class="d-flex align-center flex-grow-1 mr-4">
-            <v-icon icon="mdi-cards-outline" size="22" color="primary" class="mr-2"></v-icon>
-            <h2 class="text-subtitle-1 font-weight-bold text-grey-darken-3 mr-3">
-              {{ deck.course?.name }} - {{ deck.node?.name }}
-            </h2>
-            <span v-if="deck.description" class="text-body-2 text-grey deck-desc">
-              {{ deck.description }}
-            </span>
-          </div>
+      <div class="header-section px-4 py-2">
+        <div class="d-flex align-center">
+          <v-icon icon="mdi-cards-outline" size="22" color="primary" class="mr-2 flex-shrink-0"></v-icon>
+          <h2 class="text-subtitle-1 font-weight-bold text-grey-darken-3 flex-shrink-0">
+            {{ deck.course?.name }} - {{ deck.node?.name }}
+          </h2>
+
+          <v-spacer />
+
+          <!-- Tab 导航 -->
+          <v-tabs v-model="currentTab" color="primary" density="compact" class="header-tabs flex-shrink-0">
+            <v-tab value="all" size="small">
+              当前卡片组 ({{ deckDetail?.cards?.length || 0 }})
+            </v-tab>
+            <v-tab v-if="studyCards.length > 0" value="study" size="small">
+              我的学习 ({{ studyCards.length }})
+            </v-tab>
+            <v-tab v-if="studyCards.length > 0" value="diff" size="small">
+              更新差异
+            </v-tab>
+          </v-tabs>
+
           <v-btn
             icon="mdi-close"
             variant="text"
             color="grey-darken-1"
             size="small"
+            class="ml-2 flex-shrink-0"
             @click="closeDialog"
           ></v-btn>
-        </div>
-
-        <!-- 作者和统计信息 -->
-        <div class="d-flex align-center justify-space-between mt-2">
-          <div class="d-flex align-center">
-            <UserAvatar
-              :name="deck.creator?.name || '匿名用户'"
-              :avatar-url="deck.creator?.avatar"
-              size="22"
-              rounded="circle"
-              class="mr-2"
-            />
-            <span class="text-body-2 text-grey-darken-2">
-              {{ deck.creator?.name || '匿名用户' }}
-            </span>
-          </div>
-
-          <div class="d-flex align-center ga-4">
-            <span class="text-body-2 text-grey-darken-1">
-              <v-icon icon="mdi-cards-outline" size="14" class="mr-1"></v-icon>
-              {{ deckDetail?.cardCount || deck.cardCount || 0 }} 张
-            </span>
-            <span
-              class="text-body-2 like-btn"
-              :class="{ 'text-error': deck.hasLiked, 'text-grey-darken-1': !deck.hasLiked }"
-              @click="handleUpvote"
-            >
-              <v-icon
-                :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
-                size="14"
-                class="mr-1"
-              ></v-icon>
-              {{ deck.likeCount || 0 }}
-            </span>
-          </div>
         </div>
       </div>
 
       <!-- 卡片列表 - 可滚动区域 -->
       <div class="flex-grow-1" style="overflow-y: auto">
         <div class="px-6 pt-4 pb-6">
-          <!-- Tab 导航 -->
-          <v-tabs v-model="currentTab" color="primary" class="mb-4" align-tabs="center">
-            <v-tab value="all">
-              <v-icon icon="mdi-cards-variant" size="18" class="mr-2"></v-icon>
-              所有卡片 ({{ deckDetail?.cards?.length || 0 }})
-            </v-tab>
-            <v-tab v-if="studyCards.length > 0" value="study">
-              <v-icon icon="mdi-school" size="18" class="mr-2"></v-icon>
-              我的学习卡片 ({{ studyCards.length }})
-            </v-tab>
-            <v-tab v-if="studyCards.length > 0" value="diff">
-              <v-icon icon="mdi-compare" size="18" class="mr-2"></v-icon>
-              更新差异
-            </v-tab>
-          </v-tabs>
-
           <!-- Tab 内容 -->
           <v-window v-model="currentTab">
             <!-- 所有卡片 Tab -->
             <v-window-item value="all">
+              <!-- 卡片组信息 -->
+              <div class="deck-info mb-4 pa-3 rounded-lg bg-grey-lighten-5">
+                <p v-if="deck.description" class="text-body-2 text-grey-darken-2 mb-2">
+                  {{ deck.description }}
+                </p>
+                <div class="d-flex align-center justify-space-between">
+                  <div class="d-flex align-center">
+                    <UserAvatar
+                      :name="deck.creator?.name || '匿名用户'"
+                      :avatar-url="deck.creator?.avatar"
+                      size="22"
+                      rounded="circle"
+                      class="mr-2"
+                    />
+                    <span class="text-body-2 text-grey-darken-2">
+                      {{ deck.creator?.name || '匿名用户' }}
+                    </span>
+                  </div>
+                  <div class="d-flex align-center ga-4">
+                    <span class="text-body-2 text-grey-darken-1">
+                      <v-icon icon="mdi-cards-outline" size="14" class="mr-1"></v-icon>
+                      {{ deckDetail?.cardCount || deck.cardCount || 0 }} 张
+                    </span>
+                    <span
+                      class="text-body-2 like-btn"
+                      :class="{ 'text-error': deck.hasLiked, 'text-grey-darken-1': !deck.hasLiked }"
+                      @click="handleUpvote"
+                    >
+                      <v-icon
+                        :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                        size="14"
+                        class="mr-1"
+                      ></v-icon>
+                      {{ deck.likeCount || 0 }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <!-- 加载状态 -->
               <div v-if="loading" class="text-center pa-8">
                 <v-progress-circular indeterminate color="primary" size="40"></v-progress-circular>
@@ -1440,11 +1440,15 @@ const addAllNewCards = async () => {
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.header-section .deck-desc {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 300px;
+.header-tabs {
+  flex-shrink: 0;
+}
+
+.header-tabs :deep(.v-tab) {
+  min-width: auto;
+  padding: 0 12px;
+  font-size: 13px;
+  text-transform: none;
 }
 
 .like-btn {
