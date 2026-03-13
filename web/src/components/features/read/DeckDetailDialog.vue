@@ -47,13 +47,13 @@
 
       <!-- 卡片列表 - 可滚动区域 -->
       <div class="flex-grow-1" style="overflow-y: auto">
-        <div class="px-6 pt-3 pb-6">
+        <div class="px-6 pt-4 pb-6">
           <!-- Tab 内容 -->
           <v-window v-model="currentTab">
             <!-- 所有卡片 Tab -->
             <v-window-item value="all">
               <!-- 卡片组信息 -->
-              <div class="deck-info mb-3 d-flex align-center justify-space-between">
+              <div class="deck-info mb-4 d-flex align-center justify-space-between">
                 <div>
                   <div class="text-caption text-grey">
                     <router-link
@@ -77,6 +77,7 @@
                   size="default"
                   rounded="lg"
                   :prepend-icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                  :disabled="isOwnDeck"
                   @click="handleUpvote"
                 >
                   {{ deck.likeCount || 0 }}
@@ -99,45 +100,24 @@
                   elevation="0"
                   variant="outlined"
                 >
-                  <v-card-text class="pa-5">
-                    <div class="d-flex align-start justify-space-between">
+                  <v-card-text class="pa-4 pl-8 position-relative">
+                    <!-- 卡片序号角标 -->
+                    <span class="card-index">{{ index + 1 }}</span>
+                    <div class="d-flex align-center justify-space-between">
                       <div class="flex-grow-1 mr-4">
-                        <!-- 卡片标题 -->
-                        <div class="d-flex align-center justify-space-between mb-3">
-                          <h4 class="text-h6 font-weight-bold text-grey-darken-3">
-                            第 {{ index + 1 }} 张卡片
-                          </h4>
-                        </div>
-
                         <!-- 问题 -->
-                        <div class="question-section mb-4">
-                          <div class="d-flex align-center mb-2">
-                            <v-icon
-                              icon="mdi-help-circle"
-                              color="primary"
-                              size="20"
-                              class="mr-2"
-                            ></v-icon>
-                            <span class="text-subtitle-2 font-weight-bold text-primary">问题</span>
-                          </div>
-                          <div class="question-content pa-3 bg-blue-lighten-5 rounded-lg">
-                            <p class="text-body-1 mb-0">{{ card.front }}</p>
+                        <div class="question-section mb-3">
+                          <div class="d-flex align-center">
+                            <span class="text-caption text-primary mr-2 flex-shrink-0">问题</span>
+                            <span class="text-body-1">{{ card.front }}</span>
                           </div>
                         </div>
 
                         <!-- 答案 -->
                         <div class="answer-section">
-                          <div class="d-flex align-center mb-2">
-                            <v-icon
-                              icon="mdi-lightbulb"
-                              color="success"
-                              size="20"
-                              class="mr-2"
-                            ></v-icon>
-                            <span class="text-subtitle-2 font-weight-bold text-success">答案</span>
-                          </div>
-                          <div class="answer-content pa-3 bg-green-lighten-5 rounded-lg">
-                            <p class="text-body-1 mb-0">{{ card.back }}</p>
+                          <div class="d-flex align-center">
+                            <span class="text-caption text-success mr-2 flex-shrink-0">答案</span>
+                            <span class="text-body-1">{{ card.back }}</span>
                           </div>
                         </div>
                       </div>
@@ -900,14 +880,13 @@
         </div>
 
         <div class="d-flex" style="gap: 12px">
-          <v-btn variant="text" rounded="lg" size="large" @click="closeDialog">关闭</v-btn>
+          <v-btn variant="text" rounded="lg" @click="closeDialog">关闭</v-btn>
 
           <v-btn
             v-if="deckDetail && currentTab === 'study'"
             color="primary"
             variant="flat"
             rounded="lg"
-            size="large"
             prepend-icon="mdi-compare"
             @click="goToDiffTab"
           >
@@ -919,7 +898,6 @@
             color="primary"
             variant="flat"
             rounded="lg"
-            size="large"
             prepend-icon="mdi-playlist-plus"
             @click="addToStudy"
           >
@@ -931,7 +909,6 @@
             color="primary"
             variant="flat"
             rounded="lg"
-            size="large"
             prepend-icon="mdi-compare"
             @click="goToDiffTab"
           >
@@ -944,13 +921,14 @@
     <!-- 卡片预览对话框 -->
     <v-dialog v-model="showCardPreview" width="600">
       <v-card v-if="selectedCard" rounded="xl" elevation="0">
-        <div class="preview-header pa-6 bg-primary text-white">
+        <div class="preview-header px-4 py-2 border-b">
           <div class="d-flex align-center justify-space-between">
-            <h3 class="text-h5 font-weight-bold">卡片预览</h3>
+            <h3 class="text-subtitle-1 font-weight-bold text-grey-darken-3">卡片预览</h3>
             <v-btn
               icon="mdi-close"
               variant="text"
-              color="white"
+              size="small"
+              color="grey-darken-1"
               @click="showCardPreview = false"
             ></v-btn>
           </div>
@@ -996,13 +974,6 @@
             </div>
           </div>
         </v-card-text>
-
-        <v-card-actions class="pa-6 pt-0">
-          <v-spacer></v-spacer>
-          <v-btn color="primary" variant="flat" rounded="lg" @click="showCardPreview = false">
-            关闭预览
-          </v-btn>
-        </v-card-actions>
       </v-card>
     </v-dialog>
 
@@ -1079,7 +1050,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
+import renderMathInElement from 'katex/contrib/auto-render'
+import 'katex/dist/katex.min.css'
 import { memoryApi } from '@/api'
 import { useFetch, useMutation } from '@/composables'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
@@ -1125,8 +1098,8 @@ const editCardFront = ref('')
 const editCardBack = ref('')
 const editCardFormValid = ref(true)
 
-const currentUserId = computed(() => userStore.userId)
-const isOwnDeck = computed(() => props.deck?.creatorId === currentUserId.value)
+const currentUserId = computed(() => userStore.currentUser?.id)
+const isOwnDeck = computed(() => props.deck?.creator?.id === currentUserId.value)
 
 // 使用 useFetch 加载卡片组详情
 const {
@@ -1464,6 +1437,19 @@ const addAllNewCards = async () => {
 .card-item {
   transition: all 0.3s ease;
   border: 1px solid #e0e0e0;
+  position: relative;
+}
+
+/* 卡片序号角标 */
+.card-index {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 0 0 6px 0;
 }
 
 .card-item:hover {
@@ -1529,6 +1515,7 @@ const addAllNewCards = async () => {
   perspective: 1000px;
   height: 300px;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .card {
@@ -1554,7 +1541,6 @@ const addAllNewCards = async () => {
   align-items: center;
   padding: 2rem;
   border-radius: 16px;
-  border: 2px solid #e0e0e0;
   background: white;
 }
 
