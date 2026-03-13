@@ -7,55 +7,61 @@
       class="no-border"
       style="max-height: 85vh; display: flex; flex-direction: column"
     >
-      <!-- 头部背景 -->
-      <div class="header-bg pa-6 pb-6">
-        <div class="d-flex align-center justify-space-between mb-3">
-          <h2 class="text-h5 font-weight-bold text-white">
-            {{ deck.course?.name }} - {{ deck.node?.name }}
-          </h2>
+      <!-- 头部 -->
+      <div class="header-section pa-4">
+        <div class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center flex-grow-1 mr-4">
+            <v-icon icon="mdi-cards-outline" size="24" color="primary" class="mr-3"></v-icon>
+            <div>
+              <h2 class="text-h6 font-weight-bold text-grey-darken-3">
+                {{ deck.course?.name }} - {{ deck.node?.name }}
+              </h2>
+              <p v-if="deck.description" class="text-body-2 text-grey mb-0 mt-1">
+                {{ deck.description }}
+              </p>
+            </div>
+          </div>
           <v-btn
             icon="mdi-close"
             variant="text"
-            color="white"
+            color="grey-darken-1"
             size="small"
             @click="closeDialog"
           ></v-btn>
         </div>
 
-        <p v-if="deck.description" class="text-body-1 text-white opacity-90 mb-4">
-          {{ deck.description }}
-        </p>
-
         <!-- 作者和统计信息 -->
-        <div class="d-flex align-center justify-space-between text-white">
+        <div class="d-flex align-center justify-space-between mt-3 pt-3" style="border-top: 1px solid rgba(0,0,0,0.06)">
           <div class="d-flex align-center">
             <UserAvatar
               :name="deck.creator?.name || '匿名用户'"
               :avatar-url="deck.creator?.avatar"
-              size="36"
+              size="28"
               rounded="circle"
               class="mr-2"
             />
-            <div class="text-subtitle-2 font-weight-medium">
+            <span class="text-body-2 text-grey-darken-2">
               {{ deck.creator?.name || '匿名用户' }}
-            </div>
+            </span>
           </div>
 
-          <div class="d-flex align-center ga-6">
-            <div class="d-flex align-center">
-              <span class="text-caption opacity-80 mr-2">卡片</span>
-              <span class="text-subtitle-1 font-weight-bold">
-                {{ deckDetail?.cardCount || deck.cardCount || 0 }}
-              </span>
-            </div>
-            <div
-              class="d-flex align-center upvote-area"
-              :class="{ upvoted: deck.hasLiked }"
+          <div class="d-flex align-center ga-4">
+            <span class="text-body-2 text-grey-darken-1">
+              <v-icon icon="mdi-cards-outline" size="16" class="mr-1"></v-icon>
+              {{ deckDetail?.cardCount || deck.cardCount || 0 }} 张卡片
+            </span>
+            <span
+              class="text-body-2 like-btn"
+              :class="{ 'text-error': deck.hasLiked, 'text-grey-darken-1': !deck.hasLiked }"
               @click="handleUpvote"
             >
-              <span class="text-caption opacity-80 mr-2">点赞</span>
-              <span class="text-subtitle-1 font-weight-bold">{{ deck.likeCount || 0 }}</span>
-            </div>
+              <v-icon
+                :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                size="16"
+                class="mr-1"
+              ></v-icon>
+              {{ deck.likeCount || 0 }}
+            </span>
           </div>
         </div>
       </div>
@@ -1431,26 +1437,21 @@ const addAllNewCards = async () => {
   border: none !important;
 }
 
-/* 点赞区域样式 */
-.upvote-area {
+/* 头部样式 */
+.header-section {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.like-btn {
   cursor: pointer;
-  transition: all 0.2s ease;
-  border-radius: 8px;
   padding: 4px 8px;
+  margin: -4px -8px;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
 }
 
-.upvote-area:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: scale(1.05);
-}
-
-.upvote-area.upvoted {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-/* 头部背景 */
-.header-bg {
-  background: rgb(var(--v-theme-primary));
+.like-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* 卡片项样式 */
