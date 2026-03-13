@@ -47,44 +47,40 @@
 
       <!-- 卡片列表 - 可滚动区域 -->
       <div class="flex-grow-1" style="overflow-y: auto">
-        <div class="px-6 pt-4 pb-6">
+        <div class="px-6 pt-3 pb-6">
           <!-- Tab 内容 -->
           <v-window v-model="currentTab">
             <!-- 所有卡片 Tab -->
             <v-window-item value="all">
               <!-- 卡片组信息 -->
-              <div class="deck-info mb-4 d-flex align-center justify-space-between pa-3 rounded-lg bg-grey-lighten-5">
-                <span v-if="deck.description" class="text-body-2 text-grey-darken-2 deck-desc flex-grow-1 mr-4">
-                  {{ deck.description }}
-                </span>
-                <div class="d-flex align-center flex-shrink-0">
-                  <span
-                    class="text-body-2 like-btn"
-                    :class="{ 'text-error': deck.hasLiked, 'text-grey-darken-1': !deck.hasLiked }"
-                    @click="handleUpvote"
-                  >
-                    <v-icon
-                      :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
-                      size="14"
-                      class="mr-1"
-                    ></v-icon>
-                    {{ deck.likeCount || 0 }}
-                  </span>
-                  <router-link
-                    v-if="deck.creator?.id"
-                    :to="`/users/${deck.creator.id}`"
-                    class="text-body-2 text-grey-darken-2 ml-6 user-link"
-                    @click.stop
-                  >
-                    {{ deck.creator?.name || '匿名用户' }}
-                  </router-link>
-                  <span v-else class="text-body-2 text-grey-darken-2 ml-6">
-                    {{ deck.creator?.name || '匿名用户' }}
-                  </span>
-                  <span v-if="deck.updatedAt" class="text-body-2 text-grey ml-3">
-                    {{ formatRelativeTime(deck.updatedAt) }}
-                  </span>
+              <div class="deck-info mb-3 d-flex align-center justify-space-between">
+                <div>
+                  <div class="text-caption text-grey">
+                    <router-link
+                      v-if="deck.creator?.id"
+                      :to="`/users/${deck.creator.id}`"
+                      class="text-grey-darken-1"
+                      @click.stop
+                    >
+                      {{ deck.creator?.name || '匿名用户' }}
+                    </router-link>
+                    <span v-else>{{ deck.creator?.name || '匿名用户' }}</span>
+                    <span v-if="deck.updatedAt" class="ml-2">{{ formatRelativeTime(deck.updatedAt) }}</span>
+                  </div>
+                  <div v-if="deck.description" class="text-body-2 text-grey-darken-2 mt-1">
+                    {{ deck.description }}
+                  </div>
                 </div>
+                <v-btn
+                  variant="text"
+                  :color="deck.hasLiked ? 'error' : 'grey'"
+                  size="default"
+                  rounded="lg"
+                  :prepend-icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                  @click="handleUpvote"
+                >
+                  {{ deck.likeCount || 0 }}
+                </v-btn>
               </div>
 
               <!-- 加载状态 -->
@@ -1450,13 +1446,6 @@ const addAllNewCards = async () => {
   padding: 0 12px;
   font-size: 13px;
   text-transform: none;
-}
-
-/* 卡片组信息 */
-.deck-info .deck-desc {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .like-btn {
