@@ -109,7 +109,7 @@
                         <div class="question-section mb-3">
                           <div class="d-flex align-center">
                             <span class="text-caption text-primary mr-2 flex-shrink-0">问题</span>
-                            <span class="text-body-1">{{ card.front }}</span>
+                            <span class="text-body-1" v-html="renderMathText(card.front)"></span>
                           </div>
                         </div>
 
@@ -117,7 +117,7 @@
                         <div class="answer-section">
                           <div class="d-flex align-center">
                             <span class="text-caption text-success mr-2 flex-shrink-0">答案</span>
-                            <span class="text-body-1">{{ card.back }}</span>
+                            <span class="text-body-1" v-html="renderMathText(card.back)"></span>
                           </div>
                         </div>
                       </div>
@@ -272,7 +272,7 @@
                             <span class="text-subtitle-2 font-weight-bold text-primary">问题</span>
                           </div>
                           <div class="question-content pa-3 bg-blue-lighten-5 rounded-lg">
-                            <p class="text-body-1 mb-0">{{ card.front }}</p>
+                            <p class="text-body-1 mb-0" v-html="renderMathText(card.front)"></p>
                           </div>
                         </div>
 
@@ -288,7 +288,7 @@
                             <span class="text-subtitle-2 font-weight-bold text-success">答案</span>
                           </div>
                           <div class="answer-content pa-3 bg-green-lighten-5 rounded-lg">
-                            <p class="text-body-1 mb-0">{{ card.back }}</p>
+                            <p class="text-body-1 mb-0" v-html="renderMathText(card.back)"></p>
                           </div>
                         </div>
 
@@ -467,7 +467,7 @@
                                       >
                                     </div>
                                     <div class="question-content pa-3 bg-blue-lighten-5 rounded-lg">
-                                      <p class="text-body-1 mb-0">{{ diff.newVersion.front }}</p>
+                                      <p class="text-body-1 mb-0" v-html="renderMathText(diff.newVersion.front)"></p>
                                     </div>
                                   </div>
 
@@ -484,7 +484,7 @@
                                       >
                                     </div>
                                     <div class="answer-content pa-3 bg-green-lighten-5 rounded-lg">
-                                      <p class="text-body-1 mb-0">{{ diff.newVersion.back }}</p>
+                                      <p class="text-body-1 mb-0" v-html="renderMathText(diff.newVersion.back)"></p>
                                     </div>
                                   </div>
                                 </div>
@@ -513,9 +513,7 @@
                                       >
                                     </div>
                                     <div class="question-content pa-3 bg-grey-lighten-4 rounded-lg">
-                                      <p class="text-body-1 mb-0 text-grey-darken-2">
-                                        {{ diff.oldVersion.front }}
-                                      </p>
+                                      <p class="text-body-1 mb-0 text-grey-darken-2" v-html="renderMathText(diff.oldVersion.front)"></p>
                                     </div>
                                   </div>
 
@@ -532,9 +530,7 @@
                                       >
                                     </div>
                                     <div class="answer-content pa-3 bg-grey-lighten-4 rounded-lg">
-                                      <p class="text-body-1 mb-0 text-grey-darken-2">
-                                        {{ diff.oldVersion.back }}
-                                      </p>
+                                      <p class="text-body-1 mb-0 text-grey-darken-2" v-html="renderMathText(diff.oldVersion.back)"></p>
                                     </div>
                                   </div>
                                 </div>
@@ -644,7 +640,7 @@
                                     >
                                   </div>
                                   <div class="question-content pa-3 bg-blue-lighten-5 rounded-lg">
-                                    <p class="text-body-1 mb-0">{{ diff.newVersion.front }}</p>
+                                    <p class="text-body-1 mb-0" v-html="renderMathText(diff.newVersion.front)"></p>
                                   </div>
                                 </div>
 
@@ -662,7 +658,7 @@
                                     >
                                   </div>
                                   <div class="answer-content pa-3 bg-green-lighten-5 rounded-lg">
-                                    <p class="text-body-1 mb-0">{{ diff.newVersion.back }}</p>
+                                    <p class="text-body-1 mb-0" v-html="renderMathText(diff.newVersion.back)"></p>
                                   </div>
                                 </div>
                               </div>
@@ -771,7 +767,7 @@
                                     >
                                   </div>
                                   <div class="question-content pa-3 bg-blue-lighten-5 rounded-lg">
-                                    <p class="text-body-1 mb-0">{{ card.front }}</p>
+                                    <p class="text-body-1 mb-0" v-html="renderMathText(card.front)"></p>
                                   </div>
                                 </div>
 
@@ -789,7 +785,7 @@
                                     >
                                   </div>
                                   <div class="answer-content pa-3 bg-green-lighten-5 rounded-lg">
-                                    <p class="text-body-1 mb-0">{{ card.back }}</p>
+                                    <p class="text-body-1 mb-0" v-html="renderMathText(card.back)"></p>
                                   </div>
                                 </div>
 
@@ -945,7 +941,7 @@
                 </div>
                 <div class="text-center">
                   <h4 class="text-h6 font-weight-bold text-primary mb-4">问题</h4>
-                  <p class="text-h6 text-grey-darken-3">{{ selectedCard.front }}</p>
+                  <p class="text-h6 text-grey-darken-3" v-html="renderMathText(selectedCard.front)"></p>
                 </div>
                 <div class="text-center mt-6">
                   <v-chip size="small" color="primary" variant="outlined">
@@ -962,7 +958,7 @@
                 </div>
                 <div class="text-center">
                   <h4 class="text-h6 font-weight-bold text-success mb-4">答案</h4>
-                  <p class="text-h6 text-grey-darken-3">{{ selectedCard.back }}</p>
+                  <p class="text-h6 text-grey-darken-3" v-html="renderMathText(selectedCard.back)"></p>
                 </div>
                 <div class="text-center mt-6">
                   <v-chip size="small" color="success" variant="outlined">
@@ -1051,7 +1047,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed, nextTick } from 'vue'
-import renderMathInElement from 'katex/contrib/auto-render'
+import katex from 'katex'
 import 'katex/dist/katex.min.css'
 import { memoryApi } from '@/api'
 import { useFetch, useMutation } from '@/composables'
@@ -1100,6 +1096,47 @@ const editCardFormValid = ref(true)
 
 const currentUserId = computed(() => userStore.currentUser?.id)
 const isOwnDeck = computed(() => props.deck?.creator?.id === currentUserId.value)
+
+// 渲染数学公式
+const renderMathText = (text: string): string => {
+  if (!text) return ''
+
+  // 处理块级公式 $$...$$ 和 \[...\]
+  let result = text.replace(/\$\$([\s\S]*?)\$\$/g, (_, formula) => {
+    try {
+      return katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false })
+    } catch {
+      return `$$${formula}$$`
+    }
+  })
+
+  result = result.replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => {
+    try {
+      return katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false })
+    } catch {
+      return `\\[${formula}\\]`
+    }
+  })
+
+  // 处理行内公式 $...$ 和 \(...\)
+  result = result.replace(/\$([^\$\n]+?)\$/g, (_, formula) => {
+    try {
+      return katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false })
+    } catch {
+      return `$${formula}$`
+    }
+  })
+
+  result = result.replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => {
+    try {
+      return katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false })
+    } catch {
+      return `\\(${formula}\\)`
+    }
+  })
+
+  return result
+}
 
 // 使用 useFetch 加载卡片组详情
 const {
