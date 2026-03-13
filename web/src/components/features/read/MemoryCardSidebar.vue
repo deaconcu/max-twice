@@ -207,7 +207,7 @@
             </span>
             <v-spacer />
             <span v-if="deck.updatedAt" class="text-caption text-grey">
-              {{ formatTime(deck.updatedAt) }}
+              {{ formatRelativeTime(deck.updatedAt) }}
             </span>
           </div>
         </div>
@@ -231,6 +231,7 @@ import { ref, watch, computed } from 'vue'
 import { memoryApi } from '@/api'
 import { useMutation } from '@/composables'
 import { useUserStore } from '@/stores'
+import { formatRelativeTime } from '@/utils/format'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck } from '@/types/memory'
 
@@ -406,28 +407,6 @@ const getStateColor = (state: number) => {
     default:
       return 'grey'
   }
-}
-
-// 格式化时间
-const formatTime = (timeStr?: string): string => {
-  if (!timeStr) return ''
-
-  const time = new Date(timeStr)
-  const now = new Date()
-  const diff = now.getTime() - time.getTime()
-
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  const days = Math.floor(diff / 86400000)
-  const months = Math.floor(days / 30)
-  const years = Math.floor(days / 365)
-
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes}分钟前`
-  if (hours < 24) return `${hours}小时前`
-  if (days < 30) return `${days}天前`
-  if (months < 12) return `${months}个月前`
-  return `${years}年前`
 }
 
 // 暴露方法给父组件

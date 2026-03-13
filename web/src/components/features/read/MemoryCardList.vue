@@ -12,75 +12,67 @@
 
     <!-- 卡片组列表 -->
     <div v-else class="deck-list">
-      <v-card
+      <div
         v-for="deck in decks"
         :key="deck.id"
-        class="deck-card"
-        elevation="0"
-        rounded="xl"
-        flat
+        class="deck-item"
         @click="viewDeckDetail(deck)"
       >
-        <v-card-text class="pa-4 pa-sm-5">
-          <div class="d-flex align-start justify-space-between mb-3">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-3">
-              {{ deck.firstCardQuestion || '卡片组' }}
-            </h4>
-          </div>
-
-          <p v-if="deck.description" class="text-body-2 text-grey-darken-1 mb-4 line-clamp-2">
-            {{ deck.description }}
-          </p>
-
-          <div class="d-flex align-center justify-space-between">
-            <div class="d-flex align-center">
-              <UserAvatar
-                :name="deck.creator?.name || '匿名用户'"
-                :avatar-url="deck.creator?.avatar"
-                size="28"
-                rounded="circle"
-                class="mr-2"
-              />
-              <span class="text-body-2 text-grey-darken-2">
-                {{ deck.creator?.name || '匿名用户' }}
-              </span>
-            </div>
-            <div class="d-flex align-center">
-              <v-btn
-                :color="deck.hasLiked ? 'grey-darken-2' : 'grey-darken-2'"
-                variant="text"
-                size="small"
-                rounded="lg"
-                @click.stop="handleUpvote(deck)"
-              >
-                <v-icon
-                  :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
-                  :color="deck.hasLiked ? 'red' : 'grey-darken-2'"
-                  size="14"
-                  class="mr-2"
-                ></v-icon>
-                {{ deck.likeCount }}
-              </v-btn>
-              <v-btn
-                :icon="deck.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
-                :color="deck.bookmarked ? 'primary' : 'grey-darken-2'"
-                variant="text"
-                size="small"
-                rounded="lg"
-                class="ml-1"
-                @click.stop="handleToggleBookmark(deck)"
-              />
-              <v-icon
-                icon="mdi-cards-outline"
-                size="14"
-                color="grey-darken-2"
-                class="ml-3 mr-2"
-              ></v-icon>
-              <span class="text-body-2 text-grey-darken-2">{{ deck.cardCount }}</span>
-            </div>
-          </div>
-        </v-card-text>
-      </v-card>
+        <!-- 第一行：卡片预览 ... 共X张卡片 -->
+        <div class="d-flex align-center mb-2">
+          <v-icon icon="mdi-cards-outline" size="18" color="grey-darken-1" class="mr-2 flex-shrink-0"></v-icon>
+          <span class="card-preview text-body-1 text-grey-darken-3">
+            {{ deck.firstCardQuestion || '卡片组' }}
+          </span>
+          <span class="text-body-2 text-grey mx-2">...</span>
+          <span class="text-body-2 text-grey flex-shrink-0">
+            共{{ deck.cardCount }}张卡片
+          </span>
+        </div>
+        <!-- 第二行：描述 -->
+        <p v-if="deck.description" class="text-body-2 text-grey-darken-1 mb-2 deck-desc">
+          {{ deck.description }}
+        </p>
+        <!-- 第三行：头像 + 用户名 + 点赞 + 收藏 -->
+        <div class="d-flex align-center">
+          <UserAvatar
+            :name="deck.creator?.name || '匿名用户'"
+            :avatar-url="deck.creator?.avatar"
+            size="20"
+            rounded="circle"
+            class="mr-2"
+          />
+          <span class="text-body-2 text-grey">
+            {{ deck.creator?.name || '匿名用户' }}
+          </span>
+          <span
+            class="d-flex align-center text-body-2 like-btn ml-4"
+            :class="{ 'text-error': deck.hasLiked, 'text-grey': !deck.hasLiked }"
+            @click.stop="handleUpvote(deck)"
+          >
+            <v-icon
+              :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+              size="16"
+              class="mr-1"
+            ></v-icon>
+            {{ deck.likeCount || 0 }}
+          </span>
+          <span
+            class="d-flex align-center text-body-2 bookmark-btn ml-3"
+            :class="{ 'text-primary': deck.bookmarked, 'text-grey': !deck.bookmarked }"
+            @click.stop="handleToggleBookmark(deck)"
+          >
+            <v-icon
+              :icon="deck.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+              size="16"
+            ></v-icon>
+          </span>
+          <v-spacer />
+          <span v-if="deck.updatedAt" class="text-caption text-grey">
+            {{ formatRelativeTime(deck.updatedAt) }}
+          </span>
+        </div>
+      </div>
     </div>
 
     <!-- 加载更多 -->
@@ -101,6 +93,7 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { memoryApi, bookmarkApi } from '@/api'
 import { useMutation } from '@/composables'
 import { useUserStore } from '@/stores'
+import { formatRelativeTime } from '@/utils/format'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck } from '@/types/memory'
 
@@ -300,24 +293,44 @@ onBeforeUnmount(() => {
 .deck-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
-.deck-card {
-  transition: all 0.2s ease;
+.deck-item {
+  padding: 16px 12px;
+  border-radius: 12px;
   cursor: pointer;
-  background-color: rgb(var(--v-theme-surface));
-  border: 1.5px solid rgb(var(--v-theme-outline));
+  transition: background-color 0.15s ease;
 }
 
-.deck-card:hover {
-  border-color: rgb(var(--v-theme-primary));
+.deck-item:hover {
+  background-color: rgba(var(--v-theme-surface-variant), 0.5);
 }
 
-.line-clamp-2 {
+.card-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deck-desc {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-height: 1.5;
+}
+
+.like-btn,
+.bookmark-btn {
+  cursor: pointer;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.like-btn:hover,
+.bookmark-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 </style>
