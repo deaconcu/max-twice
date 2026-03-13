@@ -255,7 +255,7 @@ const decks = computed(() => {
     course: deck.course || null,
     node: deck.node || null,
     // 保留原始字段以备需要
-    title: deck.title || '',
+    firstCardQuestion: deck.firstCardQuestion || '',
     description: deck.description || '',
     icon: 'mdi-cards',
     color: '#42b883',

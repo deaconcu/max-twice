@@ -321,10 +321,10 @@ const getMessageContent = (message: Message): string => {
     }
 
     if (type === MessageType.MEMORY_DECK_REJECTED) {
-      return `您为帖子《${data.postTitle || ''}》创建的卡片组《${data.deckTitle || ''}》审核未通过。原因：${data.reason || ''}`
+      return `您为帖子《${data.postTitle || ''}》创建的卡片组审核未通过。原因：${data.reason || ''}`
     }
     if (type === MessageType.MEMORY_DECK_BANNED) {
-      return `您为帖子《${data.postTitle || ''}》创建的卡片组《${data.deckTitle || ''}》已被封禁。原因：${data.reason || ''}`
+      return `您为帖子《${data.postTitle || ''}》创建的卡片组已被封禁。原因：${data.reason || ''}`
     }
 
     if (type === MessageType.NODE_REJECTED) {

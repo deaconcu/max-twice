@@ -438,7 +438,7 @@ public class MemoryCardDeckControllerTest extends BaseControllerTest {
     // ==================== 1.3 DTO 结构测试 ====================
 
     @Test
-    @DisplayName("1.3.1 验证 DeckWithVoteDTO 完整结构")
+    @DisplayName("1.3.1 验证 DeckFullDTO 完整结构")
     void testGetPostPublicDecks_DTOStructure() throws Exception {
         // 准备测试数据
         UserDO user = createTestUser("test_dto@example.com");
@@ -459,7 +459,6 @@ public class MemoryCardDeckControllerTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.data.items[0].postId").exists())
                 .andExpect(jsonPath("$.data.items[0].nodeId").exists())
                 .andExpect(jsonPath("$.data.items[0].courseId").exists())
-                .andExpect(jsonPath("$.data.items[0].title").exists())
                 .andExpect(jsonPath("$.data.items[0].description").exists())
                 .andExpect(jsonPath("$.data.items[0].state").exists())
                 .andExpect(jsonPath("$.data.items[0].cardCount").exists())

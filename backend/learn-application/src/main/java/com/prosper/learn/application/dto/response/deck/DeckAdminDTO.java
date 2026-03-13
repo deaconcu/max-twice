@@ -31,8 +31,6 @@ public class DeckAdminDTO {
 
     private Long courseId;
 
-    private String title;
-
     private String description;
 
     private Integer state;

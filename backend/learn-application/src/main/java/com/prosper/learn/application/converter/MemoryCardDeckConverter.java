@@ -1,11 +1,6 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.application.dto.response.deck.DeckAdminDTO;
-import com.prosper.learn.application.dto.response.deck.DeckDetailDTO;
-import com.prosper.learn.application.dto.response.deck.MemoryCardDeckDTO;
-import com.prosper.learn.application.dto.response.deck.DeckSummaryDTO;
-import com.prosper.learn.application.dto.response.deck.DeckWithCreatorDTO;
-import com.prosper.learn.application.dto.response.deck.DeckWithVoteDTO;
+import com.prosper.learn.application.dto.response.deck.*;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import org.mapstruct.*;
 
@@ -17,28 +12,24 @@ import java.util.List;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = CommonConverter.class)
 public interface MemoryCardDeckConverter {
 
-    // ==================== 旧版方法 ====================
-
-    @Named("toDTO")
+    @Named("toFullDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "postId")
     @Mapping(target = "nodeId")
-    @Mapping(target = "title")
     @Mapping(target = "description")
     @Mapping(target = "state")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
     @Mapping(target = "cardCount")
-    MemoryCardDeckDTO toDTO(MemoryCardDeckDO deckDO);
+    DeckFullDTO toFullDTO(MemoryCardDeckDO deckDO);
 
-    @IterableMapping(qualifiedByName = "toDTO")
-    List<MemoryCardDeckDTO> toDTO(List<MemoryCardDeckDO> deckDOList);
+    @IterableMapping(qualifiedByName = "toFullDTO")
+    List<DeckFullDTO> toFullDTO(List<MemoryCardDeckDO> deckDOList);
 
     @Named("toDeckDetailDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
-    @Mapping(target = "title")
     @Mapping(target = "description")
     @Mapping(target = "postId")
     @Mapping(target = "nodeId")
@@ -51,57 +42,17 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "creator")
     @Mapping(target = "course")
     @Mapping(target = "node")
-    DeckDetailDTO toDeckDetailDTO(DeckWithCreatorDTO deckDTO);
+    DeckAndCardsDTO toDeckDetailDTO(DeckFullDTO deckDTO);
 
-    // ==================== 新版语义化方法 ====================
-
-    @Named("toSummaryDTO")
+    @Named("toBriefDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "postId")
     @Mapping(target = "nodeId")
-    @Mapping(target = "title")
-    @Mapping(target = "description")
-    @Mapping(target = "state")
-    @Mapping(target = "updatedAt")
-    @Mapping(target = "createdAt")
-    @Mapping(target = "cardCount")
-    DeckSummaryDTO toSummaryDTO(MemoryCardDeckDO deckDO);
+    DeckBriefDTO toBriefDTO(MemoryCardDeckDO deckDO);
 
-    @IterableMapping(qualifiedByName = "toSummaryDTO")
-    List<DeckSummaryDTO> toSummaryDTO(List<MemoryCardDeckDO> deckDOList);
-
-    @Named("toWithCreatorDTO")
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "id")
-    @Mapping(target = "postId")
-    @Mapping(target = "nodeId")
-    @Mapping(target = "title")
-    @Mapping(target = "description")
-    @Mapping(target = "state")
-    @Mapping(target = "updatedAt")
-    @Mapping(target = "createdAt")
-    @Mapping(target = "cardCount")
-    DeckWithCreatorDTO toWithCreatorDTO(MemoryCardDeckDO deckDO);
-
-    @IterableMapping(qualifiedByName = "toWithCreatorDTO")
-    List<DeckWithCreatorDTO> toWithCreatorDTO(List<MemoryCardDeckDO> deckDOList);
-
-    @Named("toWithVoteDTO")
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "id")
-    @Mapping(target = "postId")
-    @Mapping(target = "nodeId")
-    @Mapping(target = "title")
-    @Mapping(target = "description")
-    @Mapping(target = "state")
-    @Mapping(target = "updatedAt")
-    @Mapping(target = "createdAt")
-    @Mapping(target = "cardCount")
-    DeckWithVoteDTO toWithVoteDTO(MemoryCardDeckDO deckDO);
-
-    @IterableMapping(qualifiedByName = "toWithVoteDTO")
-    List<DeckWithVoteDTO> toWithVoteDTO(List<MemoryCardDeckDO> deckDOList);
+    @IterableMapping(qualifiedByName = "toBriefDTO")
+    List<DeckBriefDTO> toBriefDTO(List<MemoryCardDeckDO> deckDOList);
 
     /**
      * 转换为管理后台DTO（包含 reason）
@@ -112,7 +63,6 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "id")
     @Mapping(target = "postId")
     @Mapping(target = "nodeId")
-    @Mapping(target = "title")
     @Mapping(target = "description")
     @Mapping(target = "state")
     @Mapping(target = "reason")

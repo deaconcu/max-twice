@@ -7,14 +7,11 @@ import lombok.EqualsAndHashCode;
 import java.util.List;
 
 /**
- * 卡片组详情响应DTO
+ * 卡片组详情响应DTO（含卡片列表）
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class DeckDetailDTO extends DeckWithCreatorDTO {
+public class DeckAndCardsDTO extends DeckFullDTO {
 
     private List<CardWithSrsDTO> cards;
-
-    //private DeckStatsDTO stats;
-
 }

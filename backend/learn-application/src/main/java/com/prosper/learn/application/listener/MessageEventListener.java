@@ -369,7 +369,6 @@ public class MessageEventListener {
                     messageService.sendMemoryDeckModeration(
                         event.getCreatorId(),
                         event.getContentId(),
-                        event.getDeckTitle(),
                         event.getPostId(),
                         event.getPostContentPreview(),
                         ModerationAction.REJECTED,

@@ -104,7 +104,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
         try {
             return memoryCardDeckMapper.insert(deck);
         } catch (Exception e) {
-            log.error("Error inserting deck: {}", deck.getTitle(), e);
+            log.error("Error inserting deck: {}", deck.getId(), e);
             throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }

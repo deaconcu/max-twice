@@ -214,6 +214,16 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
         return memoryCardMapper.getByDeckIds(deckIds, Enums.ContentState.PUBLISHED.value());
     }
 
+    /**
+     * 批量获取每个 deck 的第一张卡片（只获取已发布状态的卡片）
+     */
+    public List<MemoryCardDO> getFirstCardByDeckIds(List<Long> deckIds) {
+        if (deckIds == null || deckIds.isEmpty()) {
+            return List.of();
+        }
+        return memoryCardMapper.getFirstCardByDeckIds(deckIds, Enums.ContentState.PUBLISHED.value());
+    }
+
 // --注释掉检查 START (2025/12/10 11:13):
 //    /**
 //     * 根据卡片组ID获取卡片ID列表（只获取正常状态的卡片）

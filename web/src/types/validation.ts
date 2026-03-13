@@ -51,8 +51,6 @@ export const CARD_VALIDATION = {
 } as const
 
 export const DECK_VALIDATION = {
-  TITLE_MIN_LENGTH: 2,
-  TITLE_MAX_LENGTH: 30,
   DESCRIPTION_MAX_LENGTH: 200,
 } as const
 

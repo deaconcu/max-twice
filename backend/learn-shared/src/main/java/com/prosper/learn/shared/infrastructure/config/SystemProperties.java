@@ -606,10 +606,6 @@ public class SystemProperties {
         private int cardBackMinLength = 1;
         /** 卡片背面最大长度 */
         private int cardBackMaxLength = 500;
-        /** 卡片组标题最小长度 */
-        private int deckTitleMinLength = 2;
-        /** 卡片组标题最大长度 */
-        private int deckTitleMaxLength = 30;
         /** 卡片组描述最大长度 */
         private int deckDescriptionMaxLength = 200;
 

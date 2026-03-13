@@ -15,8 +15,6 @@ public class MemoryCardDeckDO {
 
     private Long creatorId;
 
-    private String title;
-
     private String description;
 
     private Integer version;

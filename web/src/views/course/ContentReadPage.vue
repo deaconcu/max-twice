@@ -762,7 +762,7 @@ const handleAddDeck = async (deck: MemoryCardDeck) => {
     })
 
     if (response.code === 200) {
-      console.log(`已将"${deck.title}"添加到${data.value.course.name}课程的学习计划`)
+      console.log(`已将"${deck.creator?.name || '匿名用户'}的卡片组"添加到${data.value.course.name}课程的学习计划`)
     } else {
       console.error('添加失败，请重试')
     }

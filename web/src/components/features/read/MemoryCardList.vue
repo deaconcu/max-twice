@@ -24,7 +24,7 @@
         <v-card-text class="pa-4 pa-sm-5">
           <div class="d-flex align-start justify-space-between mb-3">
             <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-3">
-              {{ deck.title }}
+              {{ deck.firstCardQuestion || '卡片组' }}
             </h4>
           </div>
 

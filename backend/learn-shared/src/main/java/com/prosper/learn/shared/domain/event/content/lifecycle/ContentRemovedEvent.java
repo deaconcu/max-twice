@@ -55,9 +55,6 @@ public class ContentRemovedEvent {
     /** 职业名称（用于通知）*/
     private String professionName;
 
-    /** 卡片组标题（用于通知）*/
-    private String deckTitle;
-
     // ========== 各类型专用构造函数 ==========
 
     /** Post 类型构造函数 */
@@ -104,14 +101,13 @@ public class ContentRemovedEvent {
 
     /** MemoryCardDeck 类型构造函数 */
     public static ContentRemovedEvent forMemoryCardDeck(Long creatorId, Long deckId, Long postId, Long nodeId,
-                                                        String deckTitle, String postPreview, String reason) {
+                                                        String postPreview, String reason) {
         ContentRemovedEvent event = new ContentRemovedEvent();
         event.creatorId = creatorId;
         event.contentId = deckId;
         event.contentType = ContentType.memory_card_deck;
         event.postId = postId;
         event.nodeId = nodeId;
-        event.deckTitle = deckTitle;
         event.postContentPreview = postPreview;
         event.reason = reason;
         return event;

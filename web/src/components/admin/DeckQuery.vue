@@ -254,7 +254,7 @@ const canSearch = computed(() => {
                 <div class="flex-grow-1">
                   <div class="d-flex align-center justify-space-between mb-2">
                     <h4 class="text-h6 font-weight-bold text-grey-darken-3">
-                      {{ deck.title }}
+                      {{ deck.firstCardQuestion || '卡片组' }}
                     </h4>
                     <div class="d-flex align-center gap-4">
                       <div class="d-flex align-center">

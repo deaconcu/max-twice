@@ -157,7 +157,7 @@
           <div class="d-flex align-center mb-2">
             <v-icon icon="mdi-cards-outline" size="16" color="grey-darken-1" class="mr-2 flex-shrink-0"></v-icon>
             <span class="card-preview text-body-2 text-grey-darken-3">
-              {{ deck.firstCardFront || '什么是闭包？' }}
+              {{ deck.firstCardQuestion || '卡片组' }}
             </span>
             <span class="text-caption text-grey mx-1">...</span>
             <span class="text-caption text-grey flex-shrink-0">

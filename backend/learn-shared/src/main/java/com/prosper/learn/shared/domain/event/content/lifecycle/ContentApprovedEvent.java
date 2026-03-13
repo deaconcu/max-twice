@@ -43,9 +43,6 @@ public class ContentApprovedEvent {
     /** 职业ID（roadmap 类型使用）*/
     private Long professionId;
 
-    /** 卡片组标题（memory_card_deck 类型使用）*/
-    private String deckTitle;
-
     /** 帖子ID（memory_card_deck 类型使用）*/
     private Long postId;
 
@@ -133,13 +130,12 @@ public class ContentApprovedEvent {
     }
 
     /** MemoryCardDeck 类型构造函数 */
-    public static ContentApprovedEvent forMemoryCardDeck(Long creatorId, Long deckId, String deckTitle, Long postId,
+    public static ContentApprovedEvent forMemoryCardDeck(Long creatorId, Long deckId, Long postId,
                                                          String postContentPreview, Long nodeId) {
         ContentApprovedEvent event = new ContentApprovedEvent();
         event.creatorId = creatorId;
         event.contentId = deckId;
         event.contentType = ContentType.memory_card_deck;
-        event.deckTitle = deckTitle;
         event.postId = postId;
         event.postContentPreview = postContentPreview;
         event.nodeId = nodeId;

@@ -52,12 +52,6 @@ public class ValidationConfigService {
                 .label("答案")
                 .build());
 
-        rules.put("deck-title", ValidationRuleDTO.builder()
-                .minLength(validation.getDeckTitleMinLength())
-                .maxLength(validation.getDeckTitleMaxLength())
-                .label("卡片组标题")
-                .build());
-
         rules.put("deck-description", ValidationRuleDTO.builder()
                 .minLength(0)
                 .maxLength(validation.getDeckDescriptionMaxLength())

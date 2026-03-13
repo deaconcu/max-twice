@@ -149,16 +149,6 @@ export const cardBackRules = [
     `卡片背面不能超过 ${CARD_VALIDATION.BACK_MAX_LENGTH} 个字符`,
 ]
 
-export const deckTitleRules = [
-  (v: string) => !!v || '卡片组标题不能为空',
-  (v: string) =>
-    v.length >= DECK_VALIDATION.TITLE_MIN_LENGTH ||
-    `卡片组标题至少需要 ${DECK_VALIDATION.TITLE_MIN_LENGTH} 个字符`,
-  (v: string) =>
-    v.length <= DECK_VALIDATION.TITLE_MAX_LENGTH ||
-    `卡片组标题不能超过 ${DECK_VALIDATION.TITLE_MAX_LENGTH} 个字符`,
-]
-
 export const deckDescriptionRules = [
   (v: string) =>
     !v ||

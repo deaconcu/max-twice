@@ -57,7 +57,6 @@ public class ContentBannedEvent {
     private String nodeName;
     private String courseName;
     private String professionName;
-    private String deckTitle;
 
     // ========== 各类型专用构造函数 ==========
 
@@ -108,7 +107,7 @@ public class ContentBannedEvent {
 
     /** MemoryCardDeck 类型构造函数 */
     public static ContentBannedEvent forMemoryCardDeck(Long creatorId, Long deckId, Byte previousState, Long postId, Long nodeId,
-                                                       String deckTitle, String postPreview, String reason) {
+                                                       String postPreview, String reason) {
         ContentBannedEvent event = new ContentBannedEvent();
         event.creatorId = creatorId;
         event.contentId = deckId;
@@ -116,7 +115,6 @@ public class ContentBannedEvent {
         event.previousState = previousState;
         event.postId = postId;
         event.nodeId = nodeId;
-        event.deckTitle = deckTitle;
         event.postContentPreview = postPreview;
         event.reason = reason;
         return event;

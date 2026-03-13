@@ -303,7 +303,7 @@
                   <div v-if="currentCard.deck" class="mb-4">
                     <v-chip size="small" color="primary" variant="outlined">
                       <v-icon icon="mdi-book-open-page-variant" size="16" class="mr-1"></v-icon>
-                      {{ currentCard.deck.title }}
+                      {{ currentCard.deck.courseName }} - {{ currentCard.deck.nodeName }}
                     </v-chip>
                   </div>
 
@@ -336,7 +336,7 @@
                   <div v-if="currentCard.deck" class="mb-4">
                     <v-chip size="small" color="success" variant="outlined">
                       <v-icon icon="mdi-book-open-page-variant" size="16" class="mr-1"></v-icon>
-                      {{ currentCard.deck.title }}
+                      {{ currentCard.deck.courseName }} - {{ currentCard.deck.nodeName }}
                     </v-chip>
                   </div>
 
@@ -569,7 +569,7 @@
                         v-if="card.deck"
                         class="text-caption text-md-body-2 text-grey ml-2 flex-shrink-0 d-none d-sm-inline"
                       >
-                        - {{ card.deck.title }}
+                        - {{ card.deck.courseName }} / {{ card.deck.nodeName }}
                       </span>
                     </div>
                     <div class="text-caption text-md-body-2 text-grey-darken-2 mb-1 line-clamp-2">

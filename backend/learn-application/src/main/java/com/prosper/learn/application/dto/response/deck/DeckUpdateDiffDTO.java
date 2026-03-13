@@ -13,19 +13,11 @@ public class DeckUpdateDiffDTO {
 
     private Long deckId;
 
-    private TitleChange title;
-
     private DescriptionChange description;
 
     private List<CardDiffDTO> cardDiffs;
 
     private Summary summary;
-
-    @Data
-    public static class TitleChange {
-        private String old;
-        private String newValue;
-    }
 
     @Data
     public static class DescriptionChange {

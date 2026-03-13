@@ -2,18 +2,16 @@ package com.prosper.learn.application.dto.response.deck;
 
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.node.NodeBriefDTO;
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
 
 /**
- * 卡片组摘要 DTO
+ * 卡片组完整 DTO
  *
- * 用途：基础卡片组信息
- *
- * @author Claude
- * @since 2025-01-18
+ * 用途：包含所有字段的卡片组信息
  */
 @Data
-public class DeckSummaryDTO {
+public class DeckFullDTO {
 
     private Long id;
 
@@ -22,8 +20,6 @@ public class DeckSummaryDTO {
     private Long nodeId;
 
     private Long courseId;
-
-    private String title;
 
     private String description;
 
@@ -40,4 +36,15 @@ public class DeckSummaryDTO {
     private CourseBriefDTO course;
 
     private NodeBriefDTO node;
+
+    private UserBriefDTO creator;
+
+    /** 当前用户是否已点赞 */
+    private Boolean hasLiked;
+
+    /** 当前用户是否已收藏 */
+    private Boolean bookmarked;
+
+    /** 第一张卡片的问题（用于列表展示） */
+    private String firstCardQuestion;
 }

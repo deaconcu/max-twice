@@ -33,6 +33,16 @@ public interface MemoryCardMapper {
             "</script>"})
     List<MemoryCardDO> getByDeckIds(@Param("deckIds") List<Long> deckIds, @Param("state") int state);
 
+    /**
+     * 批量获取每个 deck 的第一张卡片
+     */
+    @Select({"<script>SELECT mc.deck_id, mc.current_version_id FROM memory_card mc " +
+            "WHERE mc.id IN (SELECT MIN(id) FROM memory_card " +
+            "WHERE deck_id IN <foreach item='deckId' collection='deckIds' open='(' separator=',' close=')'>#{deckId}</foreach> " +
+            "AND state = #{state} AND deleted_at IS NULL GROUP BY deck_id)" +
+            "</script>"})
+    List<MemoryCardDO> getFirstCardByDeckIds(@Param("deckIds") List<Long> deckIds, @Param("state") int state);
+
 // --注释掉检查 START (2025/12/10 12:01):
 //    @Select("SELECT * FROM memory_card WHERE creator_id = #{creatorId} AND state = #{state} " +
 //            "ORDER BY created_at DESC LIMIT #{limit}")

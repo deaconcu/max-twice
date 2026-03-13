@@ -1,5 +1,6 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.application.assembler.CardAssembler;
 import com.prosper.learn.application.dto.request.ReviewCardRequest;
 import com.prosper.learn.application.dto.response.ReviewStatsDTO;
 import com.prosper.learn.application.dto.response.ReviewSubmitResultDTO;
@@ -47,11 +48,13 @@ public class ReviewService {
     private final ReviewDomainService reviewDomainService;
     private final MemoryCardDataService cardDataService;
     private final UserDataService userDataService;
-    private final MemoryCardService memoryCardService;
     private final UserCourseSrsSettingDataService courseSettingDataService;
     private final UserCardSrsDataService srsDataService;
     private final ApplicationEventPublisher eventPublisher;
     private final SystemProperties systemProperties;
+
+    // DTO 组装器
+    private final CardAssembler cardAssembler;
 
     // ========== 业务方法 ==========
 
@@ -86,7 +89,7 @@ public class ReviewService {
             return ReviewSubmitResultDTO.empty();
         }
 
-        CardWithSrsDTO cardDto = memoryCardService.toCardViewWithSrs(card, userId);
+        CardWithSrsDTO cardDto = cardAssembler.toCardViewWithSrs(card, userId);
         return ReviewSubmitResultDTO.of(cardDto);
     }
 
@@ -135,7 +138,7 @@ public class ReviewService {
             return ReviewSubmitResultDTO.empty();
         }
 
-        CardWithSrsDTO nextCardDto = memoryCardService.toCardViewWithSrs(nextCard, userId);
+        CardWithSrsDTO nextCardDto = cardAssembler.toCardViewWithSrs(nextCard, userId);
         return ReviewSubmitResultDTO.of(nextCardDto);
     }
 
@@ -177,7 +180,7 @@ public class ReviewService {
         // 转换为 DTO
         List<CardWithSrsDTO> result = new ArrayList<>();
         for (MemoryCardDO card : cards) {
-            CardWithSrsDTO dto = memoryCardService.toCardViewWithSrs(card, userId);
+            CardWithSrsDTO dto = cardAssembler.toCardViewWithSrs(card, userId);
             result.add(dto);
         }
 

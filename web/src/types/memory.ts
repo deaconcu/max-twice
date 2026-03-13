@@ -75,7 +75,7 @@ export interface MemoryCardView {
   id: number
   front: string // 问题
   back: string // 答案
-  deck?: MemoryCardDeck // 所属卡片组
+  deck?: DeckBrief // 所属卡片组简要信息
   srsState?: UserCardSRSState // SRS 状态
   hasDeckUpdate?: boolean // 卡片组是否有更新
   hasCardUpdate?: boolean // 卡片内容是否有更新
@@ -83,11 +83,22 @@ export interface MemoryCardView {
 }
 
 /**
+ * 卡片组简要信息（用于卡片关联）
+ */
+export interface DeckBrief {
+  id: number
+  postId?: number
+  nodeId?: number
+  courseId?: number
+  nodeName?: string
+  courseName?: string
+}
+
+/**
  * 记忆卡片组
  */
 export interface MemoryCardDeck {
   id: number
-  title: string // 标题
   description?: string // 描述
   sourcePostId?: number // 来源帖子ID
   nodeId?: number // 所属节点ID
@@ -96,12 +107,22 @@ export interface MemoryCardDeck {
   state: number // 状态：1=审核中, 2=已通过, 3=已拒绝, 4=已屏蔽
   likeCount: number // 点赞数
   hasLiked?: boolean // 当前用户是否已点赞
+  bookmarked?: boolean // 是否已收藏
   creatorId?: number // 创建者ID
   creator?: {
     id: number
     name: string
     avatar?: string
   } // 创建者信息
+  course?: {
+    id: number
+    name: string
+  } // 课程信息
+  node?: {
+    id: number
+    name: string
+  } // 节点信息
+  firstCardQuestion?: string // 第一张卡片的问题
   createdAt: string
   updatedAt: string
 }
@@ -181,7 +202,6 @@ export interface ReviewCardResult {
  */
 export interface DeckUpdateDiff {
   deckId: number
-  deckTitle: string
   hasMetaUpdate: boolean // 是否有元信息更新
   addedCards: MemoryCardView[] // 新增卡片
   removedCards: MemoryCardView[] // 删除的卡片

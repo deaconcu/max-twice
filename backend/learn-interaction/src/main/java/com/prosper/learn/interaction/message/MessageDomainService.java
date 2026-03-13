@@ -336,12 +336,11 @@ public class MessageDomainService {
     /**
      * 发送记忆卡片组审核通知
      */
-    public void sendMemoryDeckModeration(long userId, long deckId, String deckTitle,
+    public void sendMemoryDeckModeration(long userId, long deckId,
                                          long postId, String postTitle,
                                          ModerationAction action, String reason) {
         Map<String, Object> data = new HashMap<>();
         data.put("deckId", deckId);
-        data.put("deckTitle", deckTitle);
         data.put("postId", postId);
         data.put("postTitle", postTitle);
         data.put("reason", reason != null ? reason : "");

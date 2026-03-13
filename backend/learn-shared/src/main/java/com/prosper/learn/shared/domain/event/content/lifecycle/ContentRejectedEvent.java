@@ -42,9 +42,6 @@ public class ContentRejectedEvent {
     /** 职业ID（roadmap 类型使用）*/
     private Long professionId;
 
-    /** 卡片组标题（memory_card_deck 类型使用）*/
-    private String deckTitle;
-
     /** 帖子ID（memory_card_deck 类型使用）*/
     private Long postId;
 
@@ -115,12 +112,11 @@ public class ContentRejectedEvent {
     }
 
     /** MemoryCardDeck 类型构造函数 */
-    public static ContentRejectedEvent forMemoryCardDeck(Long creatorId, Long deckId, String deckTitle, Long postId, String postContentPreview, String reason) {
+    public static ContentRejectedEvent forMemoryCardDeck(Long creatorId, Long deckId, Long postId, String postContentPreview, String reason) {
         ContentRejectedEvent event = new ContentRejectedEvent();
         event.creatorId = creatorId;
         event.contentId = deckId;
         event.contentType = ContentType.memory_card_deck;
-        event.deckTitle = deckTitle;
         event.postId = postId;
         event.postContentPreview = postContentPreview;
         event.reason = reason;

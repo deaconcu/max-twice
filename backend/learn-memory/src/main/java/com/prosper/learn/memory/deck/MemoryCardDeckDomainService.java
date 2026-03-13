@@ -64,7 +64,6 @@ public class MemoryCardDeckDomainService {
         deck.setPostId(postId);
         deck.setNodeId(nodeId);
         deck.setCreatorId(creatorId);
-        deck.setTitle(""); // 创建时设置为空字符串
         deck.setDescription(description);
         deck.setVersion(1);
         deck.setState(ContentState.SUBMITTED.value()); // 默认审核中
@@ -85,12 +84,11 @@ public class MemoryCardDeckDomainService {
      *
      * @param deckId 卡片组ID
      * @param userId 用户ID（权限验证）
-     * @param title 标题（可选）
      * @param description 描述（可选）
      * @return 更新后的卡片组
      */
     @Transactional
-    public MemoryCardDeckDO updateDeck(Long deckId, Long userId, String title, String description) {
+    public MemoryCardDeckDO updateDeck(Long deckId, Long userId, String description) {
         // 获取现有卡片组
         MemoryCardDeckDO existingDeck = deckDataService.validateAndGet(deckId);
 
@@ -101,9 +99,6 @@ public class MemoryCardDeckDomainService {
 
         // 更新字段
         MemoryCardDeckDO deck = deckDataService.getById(deckId);
-        if (title != null) {
-            deck.setTitle(title);
-        }
         if (description != null) {
             deck.setDescription(description);
         }
@@ -475,7 +470,6 @@ public class MemoryCardDeckDomainService {
         Map<String, Object> diffResult = new HashMap<>();
         diffResult.put("deckId", deckId);
         diffResult.put("currentVersion", currentDeck.getVersion());
-        diffResult.put("title", currentDeck.getTitle());
         diffResult.put("description", currentDeck.getDescription());
 
         List<Map<String, Object>> cardDiffs = new ArrayList<>();

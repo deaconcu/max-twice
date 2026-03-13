@@ -94,11 +94,6 @@ public class ConfigurableSizeValidator implements ConstraintValidator<Configurab
                 this.maxLength = validation.getCardBackMaxLength();
                 this.fieldName = "答案";
                 break;
-            case "deck-title":
-                this.minLength = validation.getDeckTitleMinLength();
-                this.maxLength = validation.getDeckTitleMaxLength();
-                this.fieldName = "卡片组标题";
-                break;
             case "deck-description":
                 this.minLength = 0;
                 this.maxLength = validation.getDeckDescriptionMaxLength();

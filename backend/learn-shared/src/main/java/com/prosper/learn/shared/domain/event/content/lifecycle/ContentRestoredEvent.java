@@ -56,7 +56,6 @@ public class ContentRestoredEvent {
     private String nodeName;
     private String courseName;
     private String professionName;
-    private String deckTitle;
 
     // ========== 各类型专用构造函数 ==========
 
@@ -96,8 +95,7 @@ public class ContentRestoredEvent {
 
     /** MemoryCardDeck 类型构造函数 */
     public static ContentRestoredEvent forMemoryCardDeck(Long operatorId, Long creatorId, Long deckId, Byte previousState,
-                                                         Long postId, Long nodeId, String deckTitle, String postPreview,
-                                                         String reason) {
+                                                         Long postId, Long nodeId, String postPreview, String reason) {
         ContentRestoredEvent event = new ContentRestoredEvent();
         event.operatorId = operatorId;
         event.creatorId = creatorId;
@@ -106,7 +104,6 @@ public class ContentRestoredEvent {
         event.previousState = previousState;
         event.postId = postId;
         event.nodeId = nodeId;
-        event.deckTitle = deckTitle;
         event.postContentPreview = postPreview;
         event.reason = reason;
         return event;

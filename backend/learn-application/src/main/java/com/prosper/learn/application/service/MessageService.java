@@ -446,10 +446,10 @@ public class MessageService {
     /**
      * 发送记忆卡片组审核通知
      */
-    public void sendMemoryDeckModeration(long userId, long deckId, String deckTitle,
+    public void sendMemoryDeckModeration(long userId, long deckId,
                                          long postId, String postTitle,
                                          ModerationAction action, String reason) {
-        messageDomainService.sendMemoryDeckModeration(userId, deckId, deckTitle, postId, postTitle, action, reason);
+        messageDomainService.sendMemoryDeckModeration(userId, deckId, postId, postTitle, action, reason);
     }
 
 // --注释掉检查 START (2025/12/10 11:16):

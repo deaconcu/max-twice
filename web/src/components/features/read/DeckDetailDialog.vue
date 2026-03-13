@@ -11,7 +11,7 @@
       <div class="header-bg pa-6 pb-6">
         <div class="d-flex align-center justify-space-between mb-3">
           <h2 class="text-h5 font-weight-bold text-white">
-            {{ deck.title }}
+            {{ deck.course?.name }} - {{ deck.node?.name }}
           </h2>
           <v-btn
             icon="mdi-close"
