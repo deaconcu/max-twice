@@ -20,10 +20,14 @@
           <!-- Tab 导航 -->
           <v-tabs v-model="currentTab" color="primary" density="compact" class="header-tabs flex-shrink-0">
             <v-tab value="all" size="small">
-              当前卡片组 ({{ deckDetail?.cards?.length || 0 }})
+              当前卡片组
+              <v-icon icon="mdi-cards-outline" size="14" class="ml-2 mr-1"></v-icon>
+              {{ deckDetail?.cardCount || deck.cardCount || 0 }}
             </v-tab>
             <v-tab v-if="studyCards.length > 0" value="study" size="small">
-              我的学习 ({{ studyCards.length }})
+              我的学习
+              <v-icon icon="mdi-cards-outline" size="14" class="ml-2 mr-1"></v-icon>
+              {{ studyCards.length }}
             </v-tab>
             <v-tab v-if="studyCards.length > 0" value="diff" size="small">
               更新差异
@@ -49,41 +53,37 @@
             <!-- 所有卡片 Tab -->
             <v-window-item value="all">
               <!-- 卡片组信息 -->
-              <div class="deck-info mb-4 pa-3 rounded-lg bg-grey-lighten-5">
-                <p v-if="deck.description" class="text-body-2 text-grey-darken-2 mb-2">
+              <div class="deck-info mb-4 d-flex align-center justify-space-between pa-3 rounded-lg bg-grey-lighten-5">
+                <span v-if="deck.description" class="text-body-2 text-grey-darken-2 deck-desc flex-grow-1 mr-4">
                   {{ deck.description }}
-                </p>
-                <div class="d-flex align-center justify-space-between">
-                  <div class="d-flex align-center">
-                    <UserAvatar
-                      :name="deck.creator?.name || '匿名用户'"
-                      :avatar-url="deck.creator?.avatar"
-                      size="22"
-                      rounded="circle"
-                      class="mr-2"
-                    />
-                    <span class="text-body-2 text-grey-darken-2">
-                      {{ deck.creator?.name || '匿名用户' }}
-                    </span>
-                  </div>
-                  <div class="d-flex align-center ga-4">
-                    <span class="text-body-2 text-grey-darken-1">
-                      <v-icon icon="mdi-cards-outline" size="14" class="mr-1"></v-icon>
-                      {{ deckDetail?.cardCount || deck.cardCount || 0 }} 张
-                    </span>
-                    <span
-                      class="text-body-2 like-btn"
-                      :class="{ 'text-error': deck.hasLiked, 'text-grey-darken-1': !deck.hasLiked }"
-                      @click="handleUpvote"
-                    >
-                      <v-icon
-                        :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
-                        size="14"
-                        class="mr-1"
-                      ></v-icon>
-                      {{ deck.likeCount || 0 }}
-                    </span>
-                  </div>
+                </span>
+                <div class="d-flex align-center flex-shrink-0">
+                  <span
+                    class="text-body-2 like-btn"
+                    :class="{ 'text-error': deck.hasLiked, 'text-grey-darken-1': !deck.hasLiked }"
+                    @click="handleUpvote"
+                  >
+                    <v-icon
+                      :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                      size="14"
+                      class="mr-1"
+                    ></v-icon>
+                    {{ deck.likeCount || 0 }}
+                  </span>
+                  <router-link
+                    v-if="deck.creator?.id"
+                    :to="`/users/${deck.creator.id}`"
+                    class="text-body-2 text-grey-darken-2 ml-6 user-link"
+                    @click.stop
+                  >
+                    {{ deck.creator?.name || '匿名用户' }}
+                  </router-link>
+                  <span v-else class="text-body-2 text-grey-darken-2 ml-6">
+                    {{ deck.creator?.name || '匿名用户' }}
+                  </span>
+                  <span v-if="deck.updatedAt" class="text-body-2 text-grey ml-3">
+                    {{ formatRelativeTime(deck.updatedAt) }}
+                  </span>
                 </div>
               </div>
 
@@ -1088,6 +1088,7 @@ import { memoryApi } from '@/api'
 import { useFetch, useMutation } from '@/composables'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { useUserStore } from '@/stores'
+import { formatRelativeTime } from '@/utils/format'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck } from '@/types/memory'
 
@@ -1449,6 +1450,13 @@ const addAllNewCards = async () => {
   padding: 0 12px;
   font-size: 13px;
   text-transform: none;
+}
+
+/* 卡片组信息 */
+.deck-info .deck-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .like-btn {
