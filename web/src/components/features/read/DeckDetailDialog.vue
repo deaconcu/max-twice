@@ -8,18 +8,16 @@
       style="max-height: 85vh; display: flex; flex-direction: column"
     >
       <!-- 头部 -->
-      <div class="header-section pa-4">
+      <div class="header-section px-4 py-3">
         <div class="d-flex align-center justify-space-between">
           <div class="d-flex align-center flex-grow-1 mr-4">
-            <v-icon icon="mdi-cards-outline" size="24" color="primary" class="mr-3"></v-icon>
-            <div>
-              <h2 class="text-h6 font-weight-bold text-grey-darken-3">
-                {{ deck.course?.name }} - {{ deck.node?.name }}
-              </h2>
-              <p v-if="deck.description" class="text-body-2 text-grey mb-0 mt-1">
-                {{ deck.description }}
-              </p>
-            </div>
+            <v-icon icon="mdi-cards-outline" size="22" color="primary" class="mr-2"></v-icon>
+            <h2 class="text-subtitle-1 font-weight-bold text-grey-darken-3 mr-3">
+              {{ deck.course?.name }} - {{ deck.node?.name }}
+            </h2>
+            <span v-if="deck.description" class="text-body-2 text-grey deck-desc">
+              {{ deck.description }}
+            </span>
           </div>
           <v-btn
             icon="mdi-close"
@@ -31,12 +29,12 @@
         </div>
 
         <!-- 作者和统计信息 -->
-        <div class="d-flex align-center justify-space-between mt-3 pt-3" style="border-top: 1px solid rgba(0,0,0,0.06)">
+        <div class="d-flex align-center justify-space-between mt-2">
           <div class="d-flex align-center">
             <UserAvatar
               :name="deck.creator?.name || '匿名用户'"
               :avatar-url="deck.creator?.avatar"
-              size="28"
+              size="22"
               rounded="circle"
               class="mr-2"
             />
@@ -47,8 +45,8 @@
 
           <div class="d-flex align-center ga-4">
             <span class="text-body-2 text-grey-darken-1">
-              <v-icon icon="mdi-cards-outline" size="16" class="mr-1"></v-icon>
-              {{ deckDetail?.cardCount || deck.cardCount || 0 }} 张卡片
+              <v-icon icon="mdi-cards-outline" size="14" class="mr-1"></v-icon>
+              {{ deckDetail?.cardCount || deck.cardCount || 0 }} 张
             </span>
             <span
               class="text-body-2 like-btn"
@@ -57,7 +55,7 @@
             >
               <v-icon
                 :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
-                size="16"
+                size="14"
                 class="mr-1"
               ></v-icon>
               {{ deck.likeCount || 0 }}
@@ -1440,6 +1438,13 @@ const addAllNewCards = async () => {
 /* 头部样式 */
 .header-section {
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.header-section .deck-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
 }
 
 .like-btn {
