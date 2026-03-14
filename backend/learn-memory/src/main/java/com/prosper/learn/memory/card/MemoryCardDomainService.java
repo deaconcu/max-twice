@@ -2,6 +2,7 @@ package com.prosper.learn.memory.card;
 
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
+import com.prosper.learn.memory.review.UserCardInCourseDataService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.common.utils.Utils;
@@ -29,6 +30,7 @@ public class MemoryCardDomainService {
     private final MemoryCardVersionDataService cardVersionDataService;
     private final MemoryCardDeckDataService deckDataService;
     private final UserCardSrsDataService userCardSrsDataService;
+    private final UserCardInCourseDataService userCardInCourseDataService;
 
     // ========== Query 方法 ==========
 
@@ -330,6 +332,26 @@ public class MemoryCardDomainService {
         deckDataService.update(deck);
 
         log.info("Batch deleted {} cards from deck: {} by user: {}", cards.size(), deckId, userId);
+    }
+
+    /**
+     * 全局移除卡片学习记录（从所有课程的复习计划中移除）
+     * 同时删除 user_card_srs 和所有相关的 user_card_in_course 记录
+     */
+    @Transactional
+    public void removeCardsFromStudy(Long userId, List<Long> cardIds) {
+        if (cardIds == null || cardIds.isEmpty()) {
+            return;
+        }
+
+        // 删除所有课程关联记录
+        int courseRecordsDeleted = userCardInCourseDataService.batchDeleteByUserAndCards(userId, cardIds);
+
+        // 删除 SRS 学习状态
+        int srsRecordsDeleted = userCardSrsDataService.batchDeleteByUserAndCards(userId, cardIds);
+
+        log.info("Removed {} cards from study for user: {}, deleted {} course records and {} SRS records",
+            cardIds.size(), userId, courseRecordsDeleted, srsRecordsDeleted);
     }
 
     // ========== Private 辅助方法 ==========

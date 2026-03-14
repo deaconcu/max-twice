@@ -146,7 +146,7 @@ public class MemoryBankDomainService {
      * @param cardIds 卡片ID列表（已验证存在）
      */
     @Transactional
-    public void removeDeckFromCourse(Long userId, Long courseId, List<Long> cardIds) {
+    public void removeCardsFromCourse(Long userId, Long courseId, List<Long> cardIds) {
         // 验证业务逻辑 - 课程设置存在
         UserCourseSrsSettingDO courseSetting = courseSrsSettingDataService.getByUserAndCourse(userId, courseId);
         if (courseSetting == null) {

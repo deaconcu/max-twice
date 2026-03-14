@@ -304,7 +304,7 @@ public class MemoryBankService {
                 .collect(Collectors.toList());
 
         // 调用 DomainService 执行领域逻辑
-        domainService.removeDeckFromCourse(userId, courseId, cardIds);
+        domainService.removeCardsFromCourse(userId, courseId, cardIds);
 
         log.info("Removed deck: {} from course: {} for user: {}", deckId, courseId, userId);
     }

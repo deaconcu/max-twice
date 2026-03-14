@@ -106,4 +106,19 @@ public class MemoryCardController {
         return ApiResponse.success("删除成功", null);
     }
 
+    /**
+     * 移除卡片学习记录（从复习计划中全局移除）
+     */
+    @DeleteMapping("/cards/study")
+    @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<Void> removeCardsFromStudy(
+            @RequestBody @NotNull(message = "卡片ID列表不能为空")
+            @Size(min = 1, max = 100, message = "卡片ID列表长度必须在1-100之间")
+            List<@NotNull @Positive Long> cardIds,
+            @CurrentUser UserDO currentUser) {
+        cardService.removeCardsFromStudy(currentUser.getId(), cardIds);
+        return ApiResponse.success("移除成功", null);
+    }
+
 }

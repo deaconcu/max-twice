@@ -191,8 +191,20 @@ public interface UserCardInCourseMapper {
           </foreach>
           </script>
           """)
-    List<Long> getExistingCardIdsByUserAndCards(@Param("userId") long userId, 
+    List<Long> getExistingCardIdsByUserAndCards(@Param("userId") long userId,
                                                @Param("cardIds") List<Long> cardIds);
+
+    @Delete("""
+          <script>
+          DELETE FROM user_card_in_course
+          WHERE user_id = #{userId} AND card_id IN
+          <foreach collection="cardIds" item="cardId" open="(" separator="," close=")">
+              #{cardId}
+          </foreach>
+          </script>
+          """)
+    int batchDeleteByUserAndCards(@Param("userId") long userId,
+                                  @Param("cardIds") List<Long> cardIds);
 
 
 }

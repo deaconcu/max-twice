@@ -161,4 +161,21 @@ public class MemoryCardService {
         // 调用 DomainService
         domainService.deleteCardsByDeck(userId, deckId);
     }
+
+    /**
+     * 全局移除卡片学习记录（从所有课程的复习计划中移除）
+     */
+    @Transactional
+    public void removeCardsFromStudy(Long userId, List<Long> cardIds) {
+        checkNotNull(cardIds);
+        if (cardIds.isEmpty()) {
+            return;
+        }
+
+        // 跨域验证
+        userDataService.validateExists(userId);
+
+        // 调用 DomainService
+        domainService.removeCardsFromStudy(userId, cardIds);
+    }
 }

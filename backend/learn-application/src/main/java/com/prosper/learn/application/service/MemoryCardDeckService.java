@@ -762,9 +762,14 @@ public class MemoryCardDeckService {
 
     /**
      * 接受卡片组更新
+     *
+     * @param deckId 卡片组ID
+     * @param cardIds 要接受的卡片ID列表（空表示接受所有）
+     * @param courseId 当前浏览的课程ID（可选，用于创建 user_card_in_course 记录）
+     * @param userId 用户ID
      */
     @Transactional
-    public void acceptDeckChanges(Long deckId, List<Long> cardIds, Long userId) {
+    public void acceptDeckChanges(Long deckId, List<Long> cardIds, Long courseId, Long userId) {
         // 验证卡片组存在
         MemoryCardDeckDO deck = deckDomainService.validateAndGet(deckId);
 
@@ -779,7 +784,7 @@ public class MemoryCardDeckService {
         checkNotNull(nodeId, "无法获取卡片组关联的节点ID");
 
         // 调用 DomainService 执行接受更新
-        deckDomainService.acceptDeckChanges(deckId, cardIds, userId, nodeId);
+        deckDomainService.acceptDeckChanges(deckId, cardIds, userId, nodeId, courseId);
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.application.dto.request.AcceptDeckChangesRequest;
 import com.prosper.learn.application.dto.request.CreateDeckRequest;
 import com.prosper.learn.application.dto.request.UpdateDeckRequest;
 import com.prosper.learn.application.dto.response.deck.DeckAndCardsDTO;
@@ -231,9 +232,9 @@ public class MemoryCardDeckController {
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
             Long deckId,
-            @RequestBody java.util.List<Long> cardIds,
+            @RequestBody AcceptDeckChangesRequest request,
             @CurrentUser UserDO currentUser) {
-        deckService.acceptDeckChanges(deckId, cardIds, currentUser.getId());
+        deckService.acceptDeckChanges(deckId, request.getCardIds(), request.getCourseId(), currentUser.getId());
         return ApiResponse.success();
     }
 

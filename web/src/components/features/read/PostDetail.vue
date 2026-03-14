@@ -302,6 +302,7 @@ defineExpose({
     <DeckDetailDialog
       v-model="showDeckDetailDialog"
       :deck="selectedDeck"
+      :course-id="data?.course?.id"
       @add-to-study="handleAddDeck"
     />
 

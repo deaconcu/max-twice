@@ -4,6 +4,7 @@ import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.card.MemoryCardVersionDO;
 import com.prosper.learn.memory.card.MemoryCardVersionDataService;
+import com.prosper.learn.memory.review.UserCardInCourseDataService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.domain.Enums.ContentState;
@@ -39,6 +40,7 @@ public class MemoryCardDeckDomainService {
     private final MemoryCardDataService memoryCardDataService;
     private final MemoryCardVersionDataService cardVersionDataService;
     private final UserCardSrsDataService userCardSrsDataService;
+    private final UserCardInCourseDataService userCardInCourseDataService;
 
     // ========== Command 方法（写操作）==========
 
@@ -595,9 +597,10 @@ public class MemoryCardDeckDomainService {
      * @param cardIds 要接受的卡片ID列表（空表示接受所有）
      * @param userId 用户ID
      * @param nodeId 节点ID（用于创建新的SRS记录）
+     * @param courseId 当前浏览的课程ID（可选，用于创建 user_card_in_course 记录）
      */
     @Transactional
-    public void acceptDeckChanges(Long deckId, List<Long> cardIds, Long userId, Long nodeId) {
+    public void acceptDeckChanges(Long deckId, List<Long> cardIds, Long userId, Long nodeId, Long courseId) {
         // 验证卡片组存在
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
         checkNotNull(nodeId, "无法获取卡片组关联的节点ID");
@@ -612,8 +615,9 @@ public class MemoryCardDeckDomainService {
         Map<Long, MemoryCardDO> currentCardMap = currentCards.stream()
             .collect(Collectors.toMap(MemoryCardDO::getId, card -> card));
 
-        // 准备新增卡片的SRS状态列表
+        // 准备新增卡片的SRS状态列表和卡片ID列表
         List<UserCardSrsDO> newSrsStates = new ArrayList<>();
+        List<Long> newCardIds = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
 
         if (cardIds.isEmpty()) {
@@ -642,6 +646,7 @@ public class MemoryCardDeckDomainService {
                     UserCardSrsDO newState = userCardSrsDataService.createNewSrsState(
                         userId, card.getId(), nodeId, deck.getId(), deck.getVersion(), card.getCurrentVersionId());
                     newSrsStates.add(newState);
+                    newCardIds.add(card.getId());
                 }
             }
 
@@ -680,6 +685,7 @@ public class MemoryCardDeckDomainService {
                         UserCardSrsDO newState = userCardSrsDataService.createNewSrsState(
                             userId, card.getId(), nodeId, deck.getId(), deck.getVersion(), card.getCurrentVersionId());
                         newSrsStates.add(newState);
+                        newCardIds.add(card.getId());
                     }
                 }
             }
@@ -689,6 +695,13 @@ public class MemoryCardDeckDomainService {
         if (!newSrsStates.isEmpty()) {
             userCardSrsDataService.batchInsertIgnoreSrsStates(newSrsStates);
             log.info("Created {} new SRS states for added cards for user: {}", newSrsStates.size(), userId);
+
+            // 如果有 courseId，同时创建 user_card_in_course 记录
+            if (courseId != null && !newCardIds.isEmpty()) {
+                int insertedCount = userCardInCourseDataService.batchInsertIgnore(userId, deckId, courseId, newCardIds);
+                log.info("Created {} user_card_in_course records for user: {} in course: {}",
+                        insertedCount, userId, courseId);
+            }
         }
 
         log.info("User {} accepted changes for deck {} with {} target items",

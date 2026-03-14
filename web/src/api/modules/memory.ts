@@ -114,8 +114,12 @@ export function getCardDiff(cardId: number): Promise<ApiResponse<CardContentDiff
 /**
  * 接受卡片组更新
  */
-export function acceptDeckChanges(deckId: number, cardIds: number[]): Promise<ApiResponse<void>> {
-  return client.post(`/v1/memory/decks/${String(deckId)}/accept-changes`, { cardIds })
+export function acceptDeckChanges(
+  deckId: number,
+  cardIds: number[],
+  courseId?: number
+): Promise<ApiResponse<void>> {
+  return client.post(`/v1/memory/decks/${String(deckId)}/accept-changes`, { cardIds, courseId })
 }
 
 /**
@@ -264,6 +268,13 @@ export function addCardToStudy(cardId: number): Promise<ApiResponse<any>> {
 }
 
 /**
+ * 移除卡片学习记录（从复习计划中全局移除）
+ */
+export function removeCardsFromStudy(cardIds: number[]): Promise<ApiResponse<void>> {
+  return client.delete('/v1/memory/cards/study', { data: cardIds })
+}
+
+/**
  * 删除卡片
  */
 export function deleteCard(cardId: number): Promise<ApiResponse<void>> {
@@ -275,7 +286,7 @@ export function deleteCard(cardId: number): Promise<ApiResponse<void>> {
  */
 export function updateCard(
   cardId: number,
-  data: { id: number; front: string; back: string }
+  data: { front: string; back: string }
 ): Promise<ApiResponse<any>> {
   return client.put(`/v1/memory/cards/${cardId}`, data)
 }

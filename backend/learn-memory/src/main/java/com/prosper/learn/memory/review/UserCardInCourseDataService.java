@@ -365,4 +365,23 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
         return userCardInCourseMapper.getExistingCardIdsByUserAndCards(userId, cardIds);
     }
 
+    /**
+     * 批量删除用户指定卡片的所有课程关系（全局移除）
+     */
+    @CacheEvict(value = "user_card_in_courses", allEntries = true)
+    public int batchDeleteByUserAndCards(Long userId, List<Long> cardIds) {
+        if (cardIds == null || cardIds.isEmpty()) {
+            return 0;
+        }
+        try {
+            int result = userCardInCourseMapper.batchDeleteByUserAndCards(userId, cardIds);
+            log.debug("Batch deleted {} card-course relations for user: {}", result, userId);
+            return result;
+        } catch (Exception e) {
+            log.error("Error batch deleting card-course relations: userId={}, cardCount={}",
+                     userId, cardIds.size(), e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
 }
