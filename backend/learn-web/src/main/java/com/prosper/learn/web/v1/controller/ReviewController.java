@@ -3,10 +3,8 @@ package com.prosper.learn.web.v1.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.ReviewCardRequest;
 import com.prosper.learn.application.dto.response.ReviewSubmitResultDTO;
-import com.prosper.learn.application.dto.response.ReviewStatsDTO;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.application.service.ReviewService;
-import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
@@ -73,20 +71,6 @@ public class ReviewController {
             @Valid @RequestBody ReviewCardRequest request,
             @CurrentUser UserDO currentUser) {
         ReviewSubmitResultDTO result = reviewService.submitReview(currentUser.getId(), request);
-        return ApiResponse.success(result);
-    }
-
-    /**
-     * 获取复习统计
-     */
-    @GetMapping("/stats")
-    @SaCheckLogin
-    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<ReviewStatsDTO> getReviewStats(
-            @RequestParam(defaultValue = "WEEK") Enums.Period period,
-            @CurrentUser UserDO currentUser) {
-
-        ReviewStatsDTO result = reviewService.getReviewStats(currentUser.getId(), period);
         return ApiResponse.success(result);
     }
 

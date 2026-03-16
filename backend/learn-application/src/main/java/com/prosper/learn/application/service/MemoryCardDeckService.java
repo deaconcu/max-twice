@@ -766,10 +766,11 @@ public class MemoryCardDeckService {
      * @param deckId 卡片组ID
      * @param cardIds 要接受的卡片ID列表（空表示接受所有）
      * @param courseId 当前浏览的课程ID（可选，用于创建 user_card_in_course 记录）
+     * @param removeOtherDeckCards 是否删除该节点下来自其他卡片组的卡片
      * @param userId 用户ID
      */
     @Transactional
-    public void acceptDeckChanges(Long deckId, List<Long> cardIds, Long courseId, Long userId) {
+    public void acceptDeckChanges(Long deckId, List<Long> cardIds, Long courseId, boolean removeOtherDeckCards, Long userId) {
         // 验证卡片组存在
         MemoryCardDeckDO deck = deckDomainService.validateAndGet(deckId);
 
@@ -784,7 +785,7 @@ public class MemoryCardDeckService {
         checkNotNull(nodeId, "无法获取卡片组关联的节点ID");
 
         // 调用 DomainService 执行接受更新
-        deckDomainService.acceptDeckChanges(deckId, cardIds, userId, nodeId, courseId);
+        deckDomainService.acceptDeckChanges(deckId, cardIds, userId, nodeId, courseId, removeOtherDeckCards);
     }
 
     /**
@@ -844,5 +845,24 @@ public class MemoryCardDeckService {
     public void deleteDeck(Long deckId, Long userId) {
         // 调用 DomainService 执行删除
         deckDomainService.deleteDeck(deckId, userId);
+    }
+
+    /**
+     * 移动节点到课程
+     * 将用户在指定节点下学习的所有卡片移动到指定课程
+     *
+     * @param userId 用户ID
+     * @param nodeId 节点ID
+     * @param courseId 目标课程ID
+     */
+    @Transactional
+    public void moveNodeToCourse(Long userId, Long nodeId, Long courseId) {
+        // 验证节点存在
+        nodeDataService.validateAndGet(nodeId);
+
+        // 调用 DomainService 执行移动
+        deckDomainService.moveNodeToCourse(userId, nodeId, courseId);
+
+        log.info("User {} moved node {} to course {}", userId, nodeId, courseId);
     }
 }

@@ -1,5 +1,6 @@
 package com.prosper.learn.application.dto.response;
 
+import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import lombok.Data;
 
 /**
@@ -9,6 +10,11 @@ import lombok.Data;
 public class UserCardSrsDTO {
 
     private Long id;
+
+    /**
+     * 所属课程
+     */
+    private CourseBriefDTO course;
 
     /**
      * 卡片状态

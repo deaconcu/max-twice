@@ -66,6 +66,12 @@ export interface UserCardSRSState {
   reviewDueAt: string // 下次复习时间
   lastReviewAt?: string // 上次复习时间
   lapseCount?: number // 遗忘次数
+  course?: {
+    // 所属课程
+    id: number
+    name: string
+    icon?: string
+  }
 }
 
 /**

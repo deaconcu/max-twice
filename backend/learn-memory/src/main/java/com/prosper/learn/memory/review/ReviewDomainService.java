@@ -44,23 +44,6 @@ public class ReviewDomainService {
         }
     }
 
-    /**
-     * 获取复习统计
-     *
-     * @param userId 用户ID
-     * @param startTime 开始时间
-     * @param endTime 结束时间
-     * @return 统计数据（totalReviews, streakDays, averageScore, timeSpent）
-     */
-    public ReviewStats getReviewStats(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
-        Long totalReviews = srsDataService.countReviewsInPeriod(userId, startTime, endTime);
-        Integer streakDays = srsDataService.calculateStreakDays(userId);
-        Double averageScore = srsDataService.calculateAverageScore(userId, startTime, endTime);
-        Long timeSpent = srsDataService.calculateTimeSpent(userId, startTime, endTime);
-
-        return new ReviewStats(totalReviews, streakDays, averageScore, timeSpent);
-    }
-
     // ========== Command 方法 ==========
 
     /**
@@ -281,42 +264,5 @@ public class ReviewDomainService {
     private BigDecimal updateEaseFactor(BigDecimal currentEF, double delta, double minEF) {
         double newEF = currentEF.doubleValue() + delta;
         return BigDecimal.valueOf(Math.max(newEF, minEF));
-    }
-
-    // ========== 工具方法 ==========
-
-    /**
-     * 根据周期计算开始时间
-     */
-    public LocalDateTime calculateStartTime(LocalDateTime endTime, String period) {
-        return switch (period.toUpperCase()) {
-            case "DAY" -> endTime.minusDays(1);
-            case "WEEK" -> endTime.minusDays(7);
-            case "MONTH" -> endTime.minusDays(30);
-            case "YEAR" -> endTime.minusDays(365);
-            default -> endTime.minusDays(7);
-        };
-    }
-
-    /**
-     * 复习统计数据
-     */
-    public static class ReviewStats {
-        private final Long totalReviewCount;
-        private final Integer streakDays;
-        private final Double averageScore;
-        private final Long timeSpent;
-
-        public ReviewStats(Long totalReviewCount, Integer streakDays, Double averageScore, Long timeSpent) {
-            this.totalReviewCount = totalReviewCount;
-            this.streakDays = streakDays;
-            this.averageScore = averageScore;
-            this.timeSpent = timeSpent;
-        }
-
-        public Long getTotalReviewCount() { return totalReviewCount; }
-        public Integer getStreakDays() { return streakDays; }
-        public Double getAverageScore() { return averageScore; }
-        public Long getTimeSpent() { return timeSpent; }
     }
 }

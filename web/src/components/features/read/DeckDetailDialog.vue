@@ -10,15 +10,25 @@
       <!-- 头部 -->
       <div class="header-section px-4 py-2">
         <div class="d-flex align-center">
-          <v-icon icon="mdi-cards-outline" size="22" color="primary" class="mr-2 flex-shrink-0"></v-icon>
+          <v-icon
+            icon="mdi-cards-outline"
+            size="22"
+            color="primary"
+            class="mr-2 flex-shrink-0"
+          ></v-icon>
           <h2 class="text-subtitle-1 font-weight-bold text-grey-darken-3 flex-shrink-0">
-            {{ deck.course?.name }} - {{ deck.node?.name }}
+            {{ deck.node?.name || '卡片组详情' }}
           </h2>
 
           <v-spacer />
 
           <!-- Tab 导航 -->
-          <v-tabs v-model="currentTab" color="primary" density="compact" class="header-tabs flex-shrink-0">
+          <v-tabs
+            v-model="currentTab"
+            color="primary"
+            density="compact"
+            class="header-tabs flex-shrink-0"
+          >
             <v-tab value="all" size="small">
               当前卡片组
               <v-icon icon="mdi-cards-outline" size="14" class="ml-1 mr-0"></v-icon>
@@ -29,9 +39,7 @@
               <v-icon icon="mdi-cards-outline" size="14" class="ml-1 mr-0"></v-icon>
               {{ studyCards.length }}
             </v-tab>
-            <v-tab v-if="studyCards.length > 0" value="diff" size="small">
-              差异对比
-            </v-tab>
+            <v-tab v-if="studyCards.length > 0" value="diff" size="small"> 差异对比 </v-tab>
           </v-tabs>
 
           <v-btn
@@ -44,6 +52,21 @@
           ></v-btn>
         </div>
       </div>
+
+      <!-- 课程归属提示 -->
+      <v-alert
+        v-if="hasCardsInOtherCourse && props.courseId"
+        density="compact"
+        class="mx-4 mt-3 mb-0 bg-surface-variant"
+        closable
+      >
+        <span>
+          该节点的卡片已添加到课程「{{ otherCourseName }}」的复习计划中，<a
+            href="javascript:void(0)"
+            @click="moveToCurrentCourse"
+          >移动到当前课程？</a>
+        </span>
+      </v-alert>
 
       <!-- 卡片列表 - 可滚动区域 -->
       <div class="flex-grow-1" style="overflow-y: auto">
@@ -65,7 +88,9 @@
                       {{ deck.creator?.name || '匿名用户' }}
                     </router-link>
                     <span v-else>{{ deck.creator?.name || '匿名用户' }}</span>
-                    <span v-if="deck.updatedAt" class="ml-2">{{ formatRelativeTime(deck.updatedAt) }}</span>
+                    <span v-if="deck.updatedAt" class="ml-2">{{
+                      formatRelativeTime(deck.updatedAt)
+                    }}</span>
                   </div>
                   <div v-if="deck.description" class="text-body-2 text-grey-darken-2 mt-1">
                     {{ deck.description }}
@@ -275,10 +300,19 @@
                         </div>
 
                         <!-- 学习进度信息 -->
-                        <div v-if="card.srsState" class="mt-3 d-flex align-center flex-wrap text-caption text-grey">
-                          <span v-if="card.srsState.repetitions >= 3" class="text-success mr-3">已掌握</span>
+                        <div
+                          v-if="card.srsState"
+                          class="mt-3 d-flex align-center flex-wrap text-caption text-grey"
+                        >
+                          <span v-if="card.srsState.repetitions >= 3" class="text-success mr-3"
+                            >已掌握</span
+                          >
                           <span v-else class="mr-3">学习{{ card.srsState.repetitions }}次</span>
-                          <span>下次复习：{{ new Date(card.srsState.reviewDueAt).toLocaleDateString() }}</span>
+                          <span
+                            >下次复习：{{
+                              new Date(card.srsState.reviewDueAt).toLocaleDateString()
+                            }}</span
+                          >
                         </div>
                       </div>
 
@@ -338,7 +372,9 @@
                         @click="diffTab = 'added'"
                       >
                         <span class="diff-tab-label">未学习的卡片</span>
-                        <v-chip size="x-small" color="grey-darken-2" variant="tonal" class="ml-1">{{ addedDiffs.length }}</v-chip>
+                        <v-chip size="x-small" color="grey-darken-2" variant="tonal" class="ml-1">{{
+                          addedDiffs.length
+                        }}</v-chip>
                       </div>
                       <div
                         class="diff-tab-item-inline"
@@ -346,12 +382,18 @@
                         @click="diffTab = 'learned'"
                       >
                         <span class="diff-tab-label">正在学习的卡片</span>
-                        <v-chip size="x-small" color="grey-darken-2" variant="tonal" class="ml-1">{{ learnedCards.length }}</v-chip>
+                        <v-chip size="x-small" color="grey-darken-2" variant="tonal" class="ml-1">{{
+                          learnedCards.length
+                        }}</v-chip>
                       </div>
                     </div>
                     <div class="text-body-2 text-grey-lighten-1">
-                      <span v-if="diffTab === 'added'">这些是卡片组中您还未学习的卡片，可以选择添加到学习计划</span>
-                      <span v-else>这些是您在该节点下正在学习的所有卡片。标有"有更新"的卡片内容已发生变化。</span>
+                      <span v-if="diffTab === 'added'"
+                        >这些是卡片组中您还未学习的卡片，可以选择添加到学习计划</span
+                      >
+                      <span v-else
+                        >这些是您在该节点下正在学习的所有卡片。标有"有更新"的卡片内容已发生变化。</span
+                      >
                     </div>
                   </div>
                 </div>
@@ -383,16 +425,26 @@
                                 <!-- 问题 -->
                                 <div class="question-section mb-3">
                                   <div class="d-flex align-center">
-                                    <span class="text-caption text-primary mr-2 flex-shrink-0">问题</span>
-                                    <span class="text-body-1" v-html="renderMathText(diff.newVersion.front)"></span>
+                                    <span class="text-caption text-primary mr-2 flex-shrink-0"
+                                      >问题</span
+                                    >
+                                    <span
+                                      class="text-body-1"
+                                      v-html="renderMathText(diff.newVersion.front)"
+                                    ></span>
                                   </div>
                                 </div>
 
                                 <!-- 答案 -->
                                 <div class="answer-section">
                                   <div class="d-flex align-center">
-                                    <span class="text-caption text-success mr-2 flex-shrink-0">答案</span>
-                                    <span class="text-body-1" v-html="renderMathText(diff.newVersion.back)"></span>
+                                    <span class="text-caption text-success mr-2 flex-shrink-0"
+                                      >答案</span
+                                    >
+                                    <span
+                                      class="text-body-1"
+                                      v-html="renderMathText(diff.newVersion.back)"
+                                    ></span>
                                   </div>
                                 </div>
                               </div>
@@ -452,21 +504,34 @@
                                 <!-- 问题 -->
                                 <div class="question-section mb-3">
                                   <div class="d-flex align-center">
-                                    <span class="text-caption text-primary mr-2 flex-shrink-0">问题</span>
-                                    <span class="text-body-1" v-html="renderMathText(card.front)"></span>
+                                    <span class="text-caption text-primary mr-2 flex-shrink-0"
+                                      >问题</span
+                                    >
+                                    <span
+                                      class="text-body-1"
+                                      v-html="renderMathText(card.front)"
+                                    ></span>
                                   </div>
                                 </div>
 
                                 <!-- 答案 -->
                                 <div class="answer-section">
                                   <div class="d-flex align-center">
-                                    <span class="text-caption text-success mr-2 flex-shrink-0">答案</span>
-                                    <span class="text-body-1" v-html="renderMathText(card.back)"></span>
+                                    <span class="text-caption text-success mr-2 flex-shrink-0"
+                                      >答案</span
+                                    >
+                                    <span
+                                      class="text-body-1"
+                                      v-html="renderMathText(card.back)"
+                                    ></span>
                                   </div>
                                 </div>
 
                                 <!-- 状态标签和学习进度 -->
-                                <div class="mt-3 d-flex align-center flex-wrap text-caption text-grey" style="gap: 8px">
+                                <div
+                                  class="mt-3 d-flex align-center flex-wrap text-caption text-grey"
+                                  style="gap: 8px"
+                                >
                                   <v-chip
                                     v-if="card.hasUpdate"
                                     size="x-small"
@@ -476,30 +541,61 @@
                                     @click="toggleCardExpand(card.id)"
                                   >
                                     有更新
-                                    <v-icon size="12" class="ml-1">{{ expandedCardIds.has(card.id) ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                                    <v-icon size="12" class="ml-1">{{
+                                      expandedCardIds.has(card.id)
+                                        ? 'mdi-chevron-up'
+                                        : 'mdi-chevron-down'
+                                    }}</v-icon>
                                   </v-chip>
                                   <span v-if="card.isDeleted" class="text-error">已被删除</span>
-                                  <span v-else-if="card.isFromOtherDeck" class="text-grey">来自其它卡片组</span>
+                                  <span v-else-if="card.isFromOtherDeck" class="text-grey"
+                                    >来自其它卡片组</span
+                                  >
                                   <template v-if="card.srsState">
-                                    <span v-if="card.srsState.repetitions >= 3" class="text-success">已掌握</span>
+                                    <span v-if="card.srsState.repetitions >= 3" class="text-success"
+                                      >已掌握</span
+                                    >
                                     <span v-else>学习{{ card.srsState.repetitions }}次</span>
-                                    <span>下次复习：{{ new Date(card.srsState.reviewDueAt).toLocaleDateString() }}</span>
+                                    <span
+                                      >下次复习：{{
+                                        new Date(card.srsState.reviewDueAt).toLocaleDateString()
+                                      }}</span
+                                    >
                                   </template>
                                 </div>
 
                                 <!-- 新版本内容（展开时显示） -->
-                                <div v-if="card.hasUpdate && card.deckVersion && expandedCardIds.has(card.id)" class="mt-4 pa-3 bg-grey-lighten-5 rounded-lg">
-                                  <div class="text-caption text-warning font-weight-bold mb-2">新版本内容</div>
+                                <div
+                                  v-if="
+                                    card.hasUpdate &&
+                                    card.deckVersion &&
+                                    expandedCardIds.has(card.id)
+                                  "
+                                  class="mt-4 pa-3 bg-grey-lighten-5 rounded-lg"
+                                >
+                                  <div class="text-caption text-warning font-weight-bold mb-2">
+                                    新版本内容
+                                  </div>
                                   <div class="question-section mb-2">
                                     <div class="d-flex align-center">
-                                      <span class="text-caption text-primary mr-2 flex-shrink-0">问题</span>
-                                      <span class="text-body-2" v-html="renderMathText(card.deckVersion.front)"></span>
+                                      <span class="text-caption text-primary mr-2 flex-shrink-0"
+                                        >问题</span
+                                      >
+                                      <span
+                                        class="text-body-2"
+                                        v-html="renderMathText(card.deckVersion.front)"
+                                      ></span>
                                     </div>
                                   </div>
                                   <div class="answer-section">
                                     <div class="d-flex align-center">
-                                      <span class="text-caption text-success mr-2 flex-shrink-0">答案</span>
-                                      <span class="text-body-2" v-html="renderMathText(card.deckVersion.back)"></span>
+                                      <span class="text-caption text-success mr-2 flex-shrink-0"
+                                        >答案</span
+                                      >
+                                      <span
+                                        class="text-body-2"
+                                        v-html="renderMathText(card.deckVersion.back)"
+                                      ></span>
                                     </div>
                                   </div>
                                 </div>
@@ -544,13 +640,12 @@
         style="flex-shrink: 0"
       >
         <!-- Diff标签页的操作按钮 -->
-        <div
-          v-if="currentTab === 'diff'"
-          class="d-flex align-center"
-          style="gap: 12px"
-        >
+        <div v-if="currentTab === 'diff'" class="d-flex align-center" style="gap: 12px">
           <span class="text-body-2 text-grey-darken-1">一键操作</span>
-          <v-tooltip text="将学习列表完全同步为当前卡片组，包括添加新卡片、更新已修改卡片、移除已删除卡片，同时清除来自其他卡片组的卡片" location="top">
+          <v-tooltip
+            text="将学习列表完全同步为当前卡片组，包括添加新卡片、更新已修改卡片、移除已删除卡片，同时清除来自其他卡片组的卡片"
+            location="top"
+          >
             <template #activator="{ props: tooltipProps }">
               <v-btn
                 v-bind="tooltipProps"
@@ -564,10 +659,17 @@
               </v-btn>
             </template>
           </v-tooltip>
-          <v-tooltip text="同步当前卡片组的变更（添加新卡片、更新已修改卡片、移除已删除卡片），保留来自其他卡片组的卡片" location="top">
+          <v-tooltip
+            text="同步当前卡片组的变更（添加新卡片、更新已修改卡片、移除已删除卡片），保留来自其他卡片组的卡片"
+            location="top"
+          >
             <template #activator="{ props: tooltipProps }">
               <v-btn
-                v-if="learnedCardsWithUpdateCount > 0 || learnedCardsDeletedCount > 0 || addedDiffs.length > 0"
+                v-if="
+                  learnedCardsWithUpdateCount > 0 ||
+                  learnedCardsDeletedCount > 0 ||
+                  addedDiffs.length > 0
+                "
                 v-bind="tooltipProps"
                 color="grey-darken-2"
                 variant="tonal"
@@ -575,7 +677,9 @@
                 prepend-icon="mdi-update"
                 @click="syncUpdatesOnly"
               >
-                同步卡片组更新 ({{ learnedCardsWithUpdateCount + learnedCardsDeletedCount + addedDiffs.length }})
+                同步卡片组更新 ({{
+                  learnedCardsWithUpdateCount + learnedCardsDeletedCount + addedDiffs.length
+                }})
               </v-btn>
             </template>
           </v-tooltip>
@@ -669,7 +773,10 @@
                 </div>
                 <div class="text-center">
                   <h4 class="text-h6 font-weight-bold text-primary mb-4">问题</h4>
-                  <p class="text-h6 text-grey-darken-3" v-html="renderMathText(selectedCard.front)"></p>
+                  <p
+                    class="text-h6 text-grey-darken-3"
+                    v-html="renderMathText(selectedCard.front)"
+                  ></p>
                 </div>
                 <div class="text-center mt-6">
                   <v-chip size="small" color="primary" variant="outlined">
@@ -686,7 +793,10 @@
                 </div>
                 <div class="text-center">
                   <h4 class="text-h6 font-weight-bold text-success mb-4">答案</h4>
-                  <p class="text-h6 text-grey-darken-3" v-html="renderMathText(selectedCard.back)"></p>
+                  <p
+                    class="text-h6 text-grey-darken-3"
+                    v-html="renderMathText(selectedCard.back)"
+                  ></p>
                 </div>
                 <div class="text-center mt-6">
                   <v-chip size="small" color="success" variant="outlined">
@@ -722,9 +832,7 @@
         <v-card-text class="pa-6">
           <v-form v-model="editCardFormValid">
             <div class="mb-6">
-              <label class="text-caption text-primary mb-2 d-block">
-                问题 (卡片正面)
-              </label>
+              <label class="text-caption text-primary mb-2 d-block"> 问题 (卡片正面) </label>
               <v-textarea
                 v-model="editCardFront"
                 variant="outlined"
@@ -737,9 +845,7 @@
             </div>
 
             <div class="mb-4">
-              <label class="text-caption text-success mb-2 d-block">
-                答案 (卡片背面)
-              </label>
+              <label class="text-caption text-success mb-2 d-block"> 答案 (卡片背面) </label>
               <v-textarea
                 v-model="editCardBack"
                 variant="outlined"
@@ -787,9 +893,7 @@
         </div>
 
         <v-card-text class="pa-6">
-          <p class="text-body-1 text-grey-darken-2">
-            确定要将此卡片从复习计划中完全移除吗？
-          </p>
+          <p class="text-body-1 text-grey-darken-2">确定要将此卡片从复习计划中完全移除吗？</p>
         </v-card-text>
 
         <v-card-actions class="pa-6 pt-0">
@@ -986,10 +1090,12 @@ const learnedCards = computed(() => {
 
   return studyCards.value.map((studyCard) => {
     const deckCard = deckCardsMap.get(studyCard.id)
-    const isFromCurrentDeck = studyCard.deckId === currentDeckId
+    const studyCardDeckId = studyCard.deck?.id // deckId 在 deck 对象里
+    const isFromCurrentDeck = studyCardDeckId === currentDeckId
     const isDeleted = isFromCurrentDeck && !deckCard // 是当前deck的卡片，但deck中已找不到
     const isFromOtherDeck = !isFromCurrentDeck // 不是当前deck的卡片
-    const hasUpdate = deckCard && (deckCard.front !== studyCard.front || deckCard.back !== studyCard.back)
+    const hasUpdate =
+      deckCard && (deckCard.front !== studyCard.front || deckCard.back !== studyCard.back)
 
     return {
       ...studyCard,
@@ -1002,18 +1108,37 @@ const learnedCards = computed(() => {
 })
 
 // 已学习卡片中有更新的数量
-const learnedCardsWithUpdateCount = computed(() =>
-  learnedCards.value.filter((card) => card.hasUpdate).length
+const learnedCardsWithUpdateCount = computed(
+  () => learnedCards.value.filter((card) => card.hasUpdate).length
 )
 
 // 已学习卡片中已被删除的数量
-const learnedCardsDeletedCount = computed(() =>
-  learnedCards.value.filter((card) => card.isDeleted).length
+const learnedCardsDeletedCount = computed(
+  () => learnedCards.value.filter((card) => card.isDeleted).length
 )
 
+// 检测是否有卡片属于其他课程（通过 srsState.course.id 判断）
+const cardsInOtherCourse = computed(() => {
+  if (!props.courseId || !studyCards.value) return []
+  return studyCards.value.filter(
+    (card) => card.srsState?.course?.id && card.srsState.course.id !== props.courseId
+  )
+})
+
+// 是否有卡片在其他课程学习
+const hasCardsInOtherCourse = computed(() => cardsInOtherCourse.value.length > 0)
+
+// 获取其他课程的名称（用于提示）
+const otherCourseName = computed(() => {
+  if (!hasCardsInOtherCourse.value) return ''
+  // 假设同一节点的卡片都在同一个课程
+  const firstCard = cardsInOtherCourse.value[0]
+  return firstCard?.srsState?.course?.name || '其他课程'
+})
+
 // 需要同步的总数量（有更新 + 已被删除 + 未学习）
-const syncTotalCount = computed(() =>
-  learnedCardsWithUpdateCount.value + learnedCardsDeletedCount.value + addedDiffs.value.length
+const syncTotalCount = computed(
+  () => learnedCardsWithUpdateCount.value + learnedCardsDeletedCount.value + addedDiffs.value.length
 )
 
 // 自动选择第一个有数据的tab
@@ -1113,8 +1238,17 @@ const { execute: createCardMutation, loading: creatingCard } = useMutation(
 
 // 使用 useMutation 处理接受更新
 const { execute: acceptUpdateMutation } = useMutation(
-  ({ deckId, cardIds, courseId }: { deckId: number; cardIds: number[]; courseId?: number }) =>
-    memoryApi.acceptDeckChanges(deckId, cardIds, courseId),
+  ({
+    deckId,
+    cardIds,
+    courseId,
+    removeOtherDeckCards,
+  }: {
+    deckId: number
+    cardIds: number[]
+    courseId?: number
+    removeOtherDeckCards?: boolean
+  }) => memoryApi.acceptDeckChanges(deckId, cardIds, courseId, removeOtherDeckCards),
   {
     successMessage: '更新成功',
     onSuccess: () => {
@@ -1218,15 +1352,12 @@ const acceptAllChanges = async () => {
 // 完全同步为当前卡片组（添加未学习 + 更新已修改 + 删除已删除 + 删除来自其他卡片组）
 const fullSyncToDeck = async () => {
   if (!props.deck) return
-  // 先删除来自其他卡片组的卡片
-  const otherDeckCardIds = learnedCards.value
-    .filter((card) => card.isFromOtherDeck)
-    .map((card) => card.id)
-  if (otherDeckCardIds.length > 0) {
-    await removeCardsFromStudyMutation(otherDeckCardIds)
-  }
-  // 再同步当前卡片组
-  await acceptUpdateMutation({ deckId: props.deck.id, cardIds: [], courseId: props.courseId })
+  await acceptUpdateMutation({
+    deckId: props.deck.id,
+    cardIds: [],
+    courseId: props.courseId,
+    removeOtherDeckCards: true,
+  })
 }
 
 // 同步卡片组更新（添加未学习 + 更新已修改 + 删除已删除，保留其他卡片组的卡片）
@@ -1239,7 +1370,11 @@ const syncUpdatesOnly = async () => {
 const addAllNewCards = async () => {
   if (!props.deck) return
   const addedCardIds = addedDiffs.value.map((diff) => diff.cardId)
-  await acceptUpdateMutation({ deckId: props.deck.id, cardIds: addedCardIds, courseId: props.courseId })
+  await acceptUpdateMutation({
+    deckId: props.deck.id,
+    cardIds: addedCardIds,
+    courseId: props.courseId,
+  })
 }
 
 // 使用 useMutation 处理移除学习
@@ -1265,6 +1400,27 @@ const confirmRemoveFromStudy = (card: any) => {
 const removeFromStudy = async () => {
   if (!cardToRemove.value) return
   await removeCardsFromStudyMutation([cardToRemove.value.id])
+}
+
+// 使用 useMutation 处理移动节点到当前课程
+const { execute: moveNodeToCourseMutation, loading: movingToCourse } = useMutation(
+  ({ nodeId, courseId }: { nodeId: number; courseId: number }) =>
+    memoryApi.moveNodeToCourse(nodeId, courseId),
+  {
+    successMessage: '移动成功',
+    onSuccess: () => {
+      refreshDeckDetail()
+    },
+  }
+)
+
+// 移动节点到当前课程
+const moveToCurrentCourse = async () => {
+  if (!props.courseId || !deckDetail.value?.nodeId) return
+  await moveNodeToCourseMutation({
+    nodeId: deckDetail.value.nodeId,
+    courseId: props.courseId,
+  })
 }
 </script>
 

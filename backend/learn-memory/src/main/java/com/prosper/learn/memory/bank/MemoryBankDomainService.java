@@ -28,7 +28,6 @@ import static com.prosper.learn.shared.domain.Enums.*;
 public class MemoryBankDomainService {
 
     private final UserCourseSrsSettingDataService courseSrsSettingDataService;
-    private final UserCardInCourseDataService userCardInCourseDataService;
     private final UserCardSrsDataService userCardSrsDataService;
     private final MemoryCardDeckDataService deckDataService;
     private final SystemProperties systemProperties;
@@ -85,14 +84,11 @@ public class MemoryBankDomainService {
                     .map(MemoryCardDO::getId)
                     .collect(Collectors.toList());
 
-            // 批量插入用户卡片课程关系（自动跳过已存在的）
-            userCardInCourseDataService.batchInsertIgnore(userId, deckId, courseId, cardIds);
-
-            // 3. 构建SRS状态对象
+            // 3. 构建SRS状态对象（包含courseId）
             List<UserCardSrsDO> srsList = new ArrayList<>();
             for (MemoryCardDO card : cards) {
                 UserCardSrsDO srs = userCardSrsDataService.createNewSrsState(
-                    userId, card.getId(), deckId, nodeId, deckVersion, card.getCurrentVersionId());
+                    userId, card.getId(), deckId, nodeId, courseId, deckVersion, card.getCurrentVersionId());
                 srsList.add(srs);
             }
 
@@ -154,25 +150,11 @@ public class MemoryBankDomainService {
         }
 
         if (cardIds != null && !cardIds.isEmpty()) {
-            // 批量删除用户卡片课程关系
-            userCardInCourseDataService.batchDeleteByUserCourseAndCards(userId, courseId, cardIds);
+            // 直接删除SRS状态（现在一张卡片只属于一个课程）
+            userCardSrsDataService.batchDeleteByUserAndCards(userId, cardIds);
 
-            // 批量查询仍有课程关系的卡片ID（优化1+N查询）
-            List<Long> existingCardIds = userCardInCourseDataService.getExistingCardIdsByUserAndCards(userId, cardIds);
-            Set<Long> existingCardSet = new HashSet<>(existingCardIds);
-
-            // 找出孤立的卡片ID（没有其他课程关系的卡片）
-            List<Long> orphanedCardIds = cardIds.stream()
-                    .filter(cardId -> !existingCardSet.contains(cardId))
-                    .collect(Collectors.toList());
-
-            // 批量删除孤立卡片的SRS状态
-            if (!orphanedCardIds.isEmpty()) {
-                userCardSrsDataService.batchDeleteByUserAndCards(userId, orphanedCardIds);
-            }
-
-            log.info("Removed {} cards from course: {} for user: {}, deleted {} orphaned SRS states",
-                cardIds.size(), courseId, userId, orphanedCardIds.size());
+            log.info("Removed {} cards from course: {} for user: {}",
+                cardIds.size(), courseId, userId);
         }
     }
 
@@ -205,7 +187,7 @@ public class MemoryBankDomainService {
      * @return 课程记忆库统计DO
      */
     public CourseMemoryBankDO getCourseCardStats(Long userId, Long courseId) {
-        return userCardInCourseDataService.getCardStatsForCourses(userId, courseId);
+        return userCardSrsDataService.getCardStatsForCourse(userId, courseId);
     }
 
     /**
@@ -216,6 +198,6 @@ public class MemoryBankDomainService {
      * @return 课程记忆库统计DO列表
      */
     public List<CourseMemoryBankDO> getBatchCourseCardStats(Long userId, Set<Long> courseIds) {
-        return userCardInCourseDataService.getBatchCardStatsForCourses(userId, courseIds);
+        return userCardSrsDataService.getBatchCardStatsForCourses(userId, courseIds);
     }
 }

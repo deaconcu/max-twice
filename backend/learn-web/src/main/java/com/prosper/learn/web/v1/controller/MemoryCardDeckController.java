@@ -234,7 +234,8 @@ public class MemoryCardDeckController {
             Long deckId,
             @RequestBody AcceptDeckChangesRequest request,
             @CurrentUser UserDO currentUser) {
-        deckService.acceptDeckChanges(deckId, request.getCardIds(), request.getCourseId(), currentUser.getId());
+        deckService.acceptDeckChanges(deckId, request.getCardIds(), request.getCourseId(),
+                Boolean.TRUE.equals(request.getRemoveOtherDeckCards()), currentUser.getId());
         return ApiResponse.success();
     }
 
@@ -283,6 +284,26 @@ public class MemoryCardDeckController {
             Long id,
             @CurrentUser UserDO currentUser) {
         deckService.deleteDeck(id, currentUser.getId());
+        return ApiResponse.success();
+    }
+
+    /**
+     * 移动节点到课程
+     * 将用户在指定节点下学习的所有卡片移动到指定课程
+     * POST /api/v1/memory/nodes/{nodeId}/move-to-course
+     */
+    @PostMapping("/nodes/{nodeId}/move-to-course")
+    @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<Void> moveNodeToCourse(
+            @PathVariable @NotNull(message = "节点ID不能为空")
+            @Positive(message = "节点ID必须大于0")
+            Long nodeId,
+            @RequestParam @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0")
+            Long courseId,
+            @CurrentUser UserDO currentUser) {
+        deckService.moveNodeToCourse(currentUser.getId(), nodeId, courseId);
         return ApiResponse.success();
     }
 

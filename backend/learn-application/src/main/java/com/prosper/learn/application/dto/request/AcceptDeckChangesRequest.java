@@ -22,4 +22,9 @@ public class AcceptDeckChangesRequest {
     @Positive(message = "课程ID必须大于0")
     private Long courseId;
 
+    /**
+     * 是否删除该节点下来自其他卡片组的卡片（完全同步模式）
+     */
+    private Boolean removeOtherDeckCards;
+
 }

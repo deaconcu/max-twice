@@ -3,7 +3,9 @@ package com.prosper.learn.application.assembler;
 import com.prosper.learn.application.converter.MemoryCardDeckConverter;
 import com.prosper.learn.application.converter.UserCardSrsConverter;
 import com.prosper.learn.application.converter.UserConverter;
+import com.prosper.learn.application.dto.response.UserCardSrsDTO;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
+import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.deck.DeckBriefDTO;
 import com.prosper.learn.application.service.UserService;
 import com.prosper.learn.content.course.CourseDO;
@@ -145,7 +147,19 @@ public class CardAssembler {
         if (userId != null) {
             srsState = userCardSrsDataService.getByUserAndCard(userId, cardDO.getId());
             if (srsState != null) {
-                dto.setSrsState(srsStateConverter.toDTO(srsState));
+                UserCardSrsDTO srsDTO = srsStateConverter.toDTO(srsState);
+                // 设置课程信息
+                if (srsState.getCourseId() != null) {
+                    CourseDO course = courseDataService.getById(srsState.getCourseId());
+                    if (course != null) {
+                        CourseBriefDTO courseBriefDTO = new CourseBriefDTO();
+                        courseBriefDTO.setId(course.getId());
+                        courseBriefDTO.setName(course.getName());
+                        courseBriefDTO.setIcon(course.getIcon());
+                        srsDTO.setCourse(courseBriefDTO);
+                    }
+                }
+                dto.setSrsState(srsDTO);
 
                 // 检测deck是否有更新：比较用户学习时的deck版本和当前deck版本
                 boolean hasDeckUpdate = srsState.getDeckVersion() != null &&
@@ -234,6 +248,13 @@ public class CardAssembler {
         // 批量转换 DeckBriefDTO
         Map<Long, DeckBriefDTO> deckBriefMap = toDeckBriefDTOMap(deckMap);
 
+        // 批量获取课程信息（用于 SRS 状态中的课程）
+        Set<Long> courseIds = srsStateMap.values().stream()
+                .map(UserCardSrsDO::getCourseId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, CourseDO> courseMap = courseIds.isEmpty() ? Map.of() : courseDataService.getMapByIds(courseIds);
+
         return cardDOList.stream()
                 .map(card -> {
                     CardWithSrsDTO dto = new CardWithSrsDTO();
@@ -248,7 +269,19 @@ public class CardAssembler {
                     // 获取SRS状态并检测更新
                     UserCardSrsDO srsState = srsStateMap.get(card.getId());
                     if (srsState != null) {
-                        dto.setSrsState(srsStateConverter.toDTO(srsState));
+                        UserCardSrsDTO srsDTO = srsStateConverter.toDTO(srsState);
+                        // 设置课程信息
+                        if (srsState.getCourseId() != null) {
+                            CourseDO course = courseMap.get(srsState.getCourseId());
+                            if (course != null) {
+                                CourseBriefDTO courseBriefDTO = new CourseBriefDTO();
+                                courseBriefDTO.setId(course.getId());
+                                courseBriefDTO.setName(course.getName());
+                                courseBriefDTO.setIcon(course.getIcon());
+                                srsDTO.setCourse(courseBriefDTO);
+                            }
+                        }
+                        dto.setSrsState(srsDTO);
 
                         // 检测deck是否有更新
                         MemoryCardDeckDO deck = deckMap.get(card.getDeckId());

@@ -332,73 +332,10 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
     }
 
     /**
-     * 获取复习队列，排除指定卡片
-     *
-     * @param userId 用户ID
-     * @param excludeCardIds 要排除的卡片ID列表
-     * @param limit 数量限制
-     * @return SRS 状态列表
-     */
-    public List<UserCardSrsDO> getReviewQueueExcluding(long userId, List<Long> excludeCardIds, int limit) {
-        return userCardSrsMapper.getDueCardsExcluding(userId, LocalDateTime.now(), excludeCardIds, limit);
-    }
-
-    /**
      * 统计指定时间段内的复习次数
      */
     public long countReviewsInPeriod(long userId, LocalDateTime startTime, LocalDateTime endTime) {
         return userCardSrsMapper.countReviewsInPeriod(userId, startTime, endTime);
-    }
-
-    /**
-     * 计算用户的连续复习天数
-     *
-     * 算法说明：
-     * - 从今天开始往前数，连续有复习记录的天数
-     * - 如果今天没复习，从昨天开始算
-     * - 例如：用户在 12/1, 12/2, 12/3, 12/5 复习过
-     *   - 如果今天是 12/3，连续天数 = 3（12/1, 12/2, 12/3）
-     *   - 如果今天是 12/4，连续天数 = 3（12/1, 12/2, 12/3）
-     *   - 如果今天是 12/5，连续天数 = 1（12/5，12/4 中断了）
-     *   - 如果今天是 12/6，连续天数 = 1（12/5）
-     *
-     * @param userId 用户ID
-     * @return 连续复习天数
-     */
-    public int calculateStreakDays(long userId) {
-        // 1. 获取所有复习日期（已去重且降序）
-        List<LocalDate> reviewDates = userCardSrsMapper.getDistinctReviewDates(userId);
-        if (reviewDates == null || reviewDates.isEmpty()) {
-            return 0;
-        }
-
-        // 2. 从今天或昨天开始计算连续天数
-        LocalDate today = LocalDate.now();
-        LocalDate expectedDate;
-
-        // 如果今天有复习，从今天开始；否则从昨天开始
-        if (reviewDates.get(0).equals(today)) {
-            expectedDate = today;
-        } else {
-            expectedDate = today.minusDays(1);
-        }
-
-        // 3. 向前遍历，统计连续天数
-        int streak = 0;
-        for (LocalDate reviewDate : reviewDates) {
-            if (reviewDate.equals(expectedDate)) {
-                // 符合预期，连续天数 +1
-                streak++;
-                // 下一个预期日期是前一天
-                expectedDate = expectedDate.minusDays(1);
-            } else if (reviewDate.isBefore(expectedDate)) {
-                // 中断了，停止统计
-                break;
-            }
-            // 如果 reviewDate.isAfter(expectedDate)，跳过（可能是今天的记录但我们从昨天开始算）
-        }
-
-        return streak;
     }
 
     /**
@@ -438,13 +375,14 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
      * 创建新的SRS状态对象
      */
     public UserCardSrsDO createNewSrsState(
-            Long userId, Long cardId, Long deckId, Long nodeId, Integer deckVersion, Long cardVersionId) {
+            Long userId, Long cardId, Long deckId, Long nodeId, Long courseId, Integer deckVersion, Long cardVersionId) {
         LocalDateTime now = LocalDateTime.now();
         UserCardSrsDO srs = new UserCardSrsDO();
         srs.setUserId(userId);
         srs.setCardId(cardId);
         srs.setDeckId(deckId);
         srs.setNodeId(nodeId);
+        srs.setCourseId(courseId);
         srs.setDeckVersion(deckVersion);
         srs.setCardVersionId(cardVersionId);
 
@@ -519,6 +457,62 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
         LocalDateTime startOfDay = userToday.atStartOfDay();
         LocalDateTime endOfDay = userToday.plusDays(1).atStartOfDay();
         return userCardSrsMapper.countReviewedInRange(userId, startOfDay, endOfDay);
+    }
+
+    // ========== 按课程分组统计 ==========
+
+    /**
+     * 批量获取多个课程的卡片统计
+     */
+    public List<CourseMemoryBankDO> getBatchCardStatsForCourses(long userId, Collection<Long> courseIds) {
+        if (courseIds == null || courseIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return userCardSrsMapper.getBatchCardStatsForCourses(userId, courseIds, LocalDateTime.now());
+    }
+
+    /**
+     * 获取单个课程的卡片统计
+     */
+    public CourseMemoryBankDO getCardStatsForCourse(long userId, long courseId) {
+        return userCardSrsMapper.getCardStatsForCourse(userId, courseId, LocalDateTime.now());
+    }
+
+    // ========== 移动节点到课程 ==========
+
+    /**
+     * 删除用户在指定节点下来自其他卡片组的卡片
+     *
+     * @param userId 用户ID
+     * @param nodeId 节点ID
+     * @param excludeDeckId 要排除的卡片组ID（保留该卡片组的卡片）
+     * @return 删除的卡片数量
+     */
+    public int deleteByUserAndNodeExcludeDeck(long userId, long nodeId, long excludeDeckId) {
+        try {
+            int result = userCardSrsMapper.deleteByUserAndNodeExcludeDeck(userId, nodeId, excludeDeckId);
+            log.info("Deleted {} cards from other decks for user {} in node {} (excluding deck {})",
+                    result, userId, nodeId, excludeDeckId);
+            return result;
+        } catch (Exception e) {
+            log.error("Error deleting cards from other decks: userId={}, nodeId={}, excludeDeckId={}",
+                    userId, nodeId, excludeDeckId, e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 批量更新节点下所有卡片的课程归属
+     */
+    public int updateCourseIdByUserAndNode(long userId, long nodeId, long courseId) {
+        try {
+            int result = userCardSrsMapper.updateCourseIdByUserAndNode(userId, nodeId, courseId);
+            log.info("Moved {} cards from node {} to course {} for user {}", result, nodeId, courseId, userId);
+            return result;
+        } catch (Exception e) {
+            log.error("Error moving node to course: userId={}, nodeId={}, courseId={}", userId, nodeId, courseId, e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
+        }
     }
 
 }

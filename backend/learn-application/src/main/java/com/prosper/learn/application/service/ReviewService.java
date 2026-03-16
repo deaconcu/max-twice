@@ -2,7 +2,6 @@ package com.prosper.learn.application.service;
 
 import com.prosper.learn.application.assembler.CardAssembler;
 import com.prosper.learn.application.dto.request.ReviewCardRequest;
-import com.prosper.learn.application.dto.response.ReviewStatsDTO;
 import com.prosper.learn.application.dto.response.ReviewSubmitResultDTO;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.memory.card.MemoryCardDataService;
@@ -12,7 +11,6 @@ import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDO;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDataService;
-import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.Enums.CardOrder;
 import com.prosper.learn.shared.domain.event.user.review.CardReviewedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
@@ -26,14 +24,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 复习应用服务
@@ -187,27 +182,6 @@ public class ReviewService {
         return result;
     }
 
-    /**
-     * 获取复习统计
-     */
-    public ReviewStatsDTO getReviewStats(Long userId, Period period) {
-        if (userId == null) {
-            throw StatusCode.INVALID_PARAMETER.exception("用户ID不能为空");
-        }
-        if (period == null) {
-            period = Period.WEEK;
-        }
-
-        // 计算时间范围
-        LocalDateTime endTime = TimeZoneUtil.nowDateTime();
-        LocalDateTime startTime = reviewDomainService.calculateStartTime(endTime, period.name());
-
-        // 委托给 DomainService 获取统计
-        ReviewDomainService.ReviewStats stats = reviewDomainService.getReviewStats(userId, startTime, endTime);
-
-        return toReviewStatsDTO(stats);
-    }
-
     // ========== 私有方法 ==========
 
     /**
@@ -227,15 +201,6 @@ public class ReviewService {
         }
 
         return setting.getCardOrder() == CardOrder.NEW_FIRST.value();
-    }
-
-    private ReviewStatsDTO toReviewStatsDTO(ReviewDomainService.ReviewStats stats) {
-        ReviewStatsDTO dto = new ReviewStatsDTO();
-        dto.setTotalReviewCount(stats.getTotalReviewCount() != null ? stats.getTotalReviewCount().intValue() : 0);
-        dto.setStreakDays(stats.getStreakDays() != null ? stats.getStreakDays() : 0);
-        dto.setAverageScore(stats.getAverageScore() != null ? stats.getAverageScore() : 0.0);
-        dto.setTimeSpent(stats.getTimeSpent() != null ? stats.getTimeSpent().intValue() : 0);
-        return dto;
     }
 
     /**

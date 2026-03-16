@@ -81,16 +81,16 @@ public interface UserCardSrsMapper {
 // --注释掉检查 STOP (2025/12/10 12:04)
 
     @Insert("INSERT INTO user_card_srs " +
-            "(user_id, card_id, node_id, deck_id, deck_version, card_version_id, review_due_at, last_reviewed_at, " +
+            "(user_id, card_id, node_id, deck_id, course_id, deck_version, card_version_id, review_due_at, last_reviewed_at, " +
             "type, current_step, `interval`, reappear_at, lapse_old_interval, ease_factor, repetitions, lapse_count, created_at, updated_at) " +
             "VALUES " +
-            "(#{userId}, #{cardId}, #{nodeId}, #{deckId}, #{deckVersion}, #{cardVersionId}, #{reviewDueAt}, #{lastReviewedAt}, " +
+            "(#{userId}, #{cardId}, #{nodeId}, #{deckId}, #{courseId}, #{deckVersion}, #{cardVersionId}, #{reviewDueAt}, #{lastReviewedAt}, " +
             "#{type}, #{currentStep}, #{interval}, #{reappearAt}, #{lapseOldInterval}, #{easeFactor}, #{repetitions}, #{lapseCount}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCardSrsDO state);
 
     @Update("UPDATE user_card_srs SET " +
-            "node_id = #{nodeId}, deck_id = #{deckId}, deck_version = #{deckVersion}, card_version_id = #{cardVersionId}, " +
+            "node_id = #{nodeId}, deck_id = #{deckId}, course_id = #{courseId}, deck_version = #{deckVersion}, card_version_id = #{cardVersionId}, " +
             "review_due_at = #{reviewDueAt}, last_reviewed_at = #{lastReviewedAt}, " +
             "type = #{type}, current_step = #{currentStep}, `interval` = #{interval}, reappear_at = #{reappearAt}, lapse_old_interval = #{lapseOldInterval}, " +
             "ease_factor = #{easeFactor}, repetitions = #{repetitions}, lapse_count = #{lapseCount}, " +
@@ -163,11 +163,11 @@ public interface UserCardSrsMapper {
     @Insert("""
           <script>
           INSERT IGNORE INTO user_card_srs
-          (user_id, card_id, node_id, deck_id, deck_version, card_version_id, review_due_at,
+          (user_id, card_id, node_id, deck_id, course_id, deck_version, card_version_id, review_due_at,
            type, current_step, `interval`, reappear_at, lapse_old_interval, ease_factor, repetitions, lapse_count, created_at, updated_at)
           VALUES
           <foreach collection="states" item="state" separator=",">
-              (#{state.userId}, #{state.cardId}, #{state.nodeId}, #{state.deckId}, #{state.deckVersion}, #{state.cardVersionId},
+              (#{state.userId}, #{state.cardId}, #{state.nodeId}, #{state.deckId}, #{state.courseId}, #{state.deckVersion}, #{state.cardVersionId},
                #{state.reviewDueAt}, #{state.type}, #{state.currentStep}, #{state.interval}, #{state.reappearAt}, #{state.lapseOldInterval},
                #{state.easeFactor}, #{state.repetitions}, #{state.lapseCount}, NOW(), NOW())
           </foreach>
@@ -178,16 +178,6 @@ public interface UserCardSrsMapper {
     @Select("SELECT COUNT(*) FROM user_card_srs " +
             "WHERE user_id = #{userId} AND last_reviewed_at BETWEEN #{startTime} AND #{endTime}")
     long countReviewsInPeriod(long userId, LocalDateTime startTime, LocalDateTime endTime);
-
-    /**
-     * 获取用户的所有复习日期（去重且降序）
-     * 用于计算连续复习天数
-     */
-    @Select("SELECT DISTINCT DATE(last_reviewed_at) as review_date " +
-            "FROM user_card_srs " +
-            "WHERE user_id = #{userId} AND last_reviewed_at IS NOT NULL " +
-            "ORDER BY review_date DESC")
-    List<LocalDate> getDistinctReviewDates(long userId);
 
     @Select("SELECT AVG(repetitions * 1.0) FROM user_card_srs " +
             "WHERE user_id = #{userId} AND last_reviewed_at BETWEEN #{startTime} AND #{endTime}")
@@ -222,9 +212,8 @@ public interface UserCardSrsMapper {
 
     @Select({"<script>",
             "SELECT srs.* FROM user_card_srs srs",
-            "INNER JOIN user_card_in_course ucc ON srs.card_id = ucc.card_id",
             "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
-            "WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId} AND deck.state = " + ContentState.PUBLISHED_VALUE,
+            "WHERE srs.user_id = #{userId} AND srs.course_id = #{courseId} AND deck.state = " + ContentState.PUBLISHED_VALUE,
             "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
             "ORDER BY srs.id ASC LIMIT #{limit}",
             "</script>"})
@@ -265,9 +254,8 @@ public interface UserCardSrsMapper {
     @Select({"<script>",
             "(",
             "  SELECT srs.* FROM user_card_srs srs",
-            "  INNER JOIN user_card_in_course ucc ON srs.card_id = ucc.card_id",
             "  INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
-            "  WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId}",
+            "  WHERE srs.user_id = #{userId} AND srs.course_id = #{courseId}",
             "  AND srs.review_due_at &lt;= #{dueTime}",
             "  AND srs.type IN (1, 2, 3)",  // LEARNING, REVIEW, RELEARNING
             "  AND deck.state = " + ContentState.PUBLISHED_VALUE,
@@ -281,9 +269,8 @@ public interface UserCardSrsMapper {
             "UNION ALL",
             "(",
             "  SELECT srs.* FROM user_card_srs srs",
-            "  INNER JOIN user_card_in_course ucc ON srs.card_id = ucc.card_id",
             "  INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
-            "  WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId}",
+            "  WHERE srs.user_id = #{userId} AND srs.course_id = #{courseId}",
             "  AND srs.type = 0",  // NEW cards
             "  AND deck.state = " + ContentState.PUBLISHED_VALUE,
             "  <if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
@@ -298,60 +285,11 @@ public interface UserCardSrsMapper {
             "</script>"})
     List<UserCardSrsDO> getDueCardsByCourseForReviewWithPaging(long userId, long courseId, LocalDateTime dueTime, int limit, Long lastId);
 
-    @Select("SELECT srs.* FROM user_card_srs srs " +
-            "INNER JOIN memory_card mc ON srs.card_id = mc.id " +
-            "WHERE srs.user_id = #{userId} AND mc.deck_id = #{deckId}")
+    @Select("SELECT * FROM user_card_srs WHERE user_id = #{userId} AND deck_id = #{deckId}")
     List<UserCardSrsDO> getByUserAndDeckId(long userId, long deckId);
 
-    @Select("SELECT * FROM user_card_srs " +
-            "WHERE user_id = #{userId} AND node_id = #{nodeId}")
+    @Select("SELECT * FROM user_card_srs WHERE user_id = #{userId} AND node_id = #{nodeId}")
     List<UserCardSrsDO> getByUserAndNodeId(long userId, long nodeId);
-
-    @Select({"<script>",
-            "(",
-            "  SELECT srs.* FROM user_card_srs srs",
-            "  INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
-            "  WHERE srs.user_id = #{userId}",
-            "  AND srs.review_due_at &lt;= #{dueTime}",
-            "  AND srs.type IN (1, 2, 3)",
-            "  AND deck.state = " + ContentState.PUBLISHED_VALUE,
-            "  <if test='excludeCardIds != null and excludeCardIds.size() > 0'>",
-            "    AND srs.card_id NOT IN",
-            "    <foreach collection='excludeCardIds' item='id' open='(' separator=',' close=')'>",
-            "      #{id}",
-            "    </foreach>",
-            "  </if>",
-            "  ORDER BY",
-            "    CASE srs.type WHEN 1 THEN 0 WHEN 3 THEN 1 WHEN 2 THEN 2 ELSE 3 END,",
-            "    srs.review_due_at ASC,",
-            "    srs.id ASC",
-            "  LIMIT #{limit}",
-            ")",
-            "UNION ALL",
-            "(",
-            "  SELECT srs.* FROM user_card_srs srs",
-            "  INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
-            "  WHERE srs.user_id = #{userId} AND srs.type = 0",
-            "  AND deck.state = " + ContentState.PUBLISHED_VALUE,
-            "  <if test='excludeCardIds != null and excludeCardIds.size() > 0'>",
-            "    AND srs.card_id NOT IN",
-            "    <foreach collection='excludeCardIds' item='id' open='(' separator=',' close=')'>",
-            "      #{id}",
-            "    </foreach>",
-            "  </if>",
-            "  ORDER BY srs.id ASC",
-            "  LIMIT #{limit}",
-            ")",
-            "ORDER BY",
-            "  CASE type WHEN 1 THEN 0 WHEN 3 THEN 1 WHEN 2 THEN 2 WHEN 0 THEN 3 ELSE 4 END,",
-            "  review_due_at ASC,",
-            "  id ASC",
-            "LIMIT #{limit}",
-            "</script>"})
-    List<UserCardSrsDO> getDueCardsExcluding(@Param("userId") long userId,
-                                              @Param("dueTime") LocalDateTime dueTime,
-                                              @Param("excludeCardIds") List<Long> excludeCardIds,
-                                              @Param("limit") int limit);
 
     // ========== 新的复习逻辑：基于卡片计数的调度 ==========
 
@@ -397,10 +335,9 @@ public interface UserCardSrsMapper {
      */
     @Select({"<script>",
             "SELECT srs.* FROM user_card_srs srs",
-            "INNER JOIN user_card_in_course ucc ON srs.card_id = ucc.card_id AND srs.user_id = ucc.user_id",
             "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
             "WHERE srs.user_id = #{userId}",
-            "AND ucc.course_id = #{courseId}",
+            "AND srs.course_id = #{courseId}",
             "AND deck.state = " + ContentState.PUBLISHED_VALUE,
             "ORDER BY",
             "  CASE",
@@ -437,5 +374,80 @@ public interface UserCardSrsMapper {
     long countReviewedInRange(@Param("userId") long userId,
                               @Param("startTime") LocalDateTime startTime,
                               @Param("endTime") LocalDateTime endTime);
+
+    // ========== 按课程分组统计（替代 user_card_in_course 的统计）==========
+
+    /**
+     * 批量获取多个课程的卡片统计
+     */
+    @Select({"<script>",
+          "SELECT",
+          "    srs.course_id AS courseId,",
+          "    COUNT(srs.card_id) AS cardCount,",
+          "    SUM(CASE WHEN srs.review_due_at &lt;= #{now} THEN 1 ELSE 0 END) AS dueCardCount,",
+          "    SUM(CASE WHEN srs.repetitions = 0 THEN 1 ELSE 0 END) AS newCardCount,",
+          "    SUM(CASE WHEN srs.repetitions &gt; 0 THEN 1 ELSE 0 END) AS learnedCardCount,",
+          "    SUM(CASE WHEN srs.review_due_at &lt;= #{now} AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount",
+          "FROM",
+          "    user_card_srs srs",
+          "INNER JOIN",
+          "    memory_card_deck deck ON srs.deck_id = deck.id",
+          "WHERE",
+          "    srs.user_id = #{userId}",
+          "    AND deck.state = " + Enums.ContentState.PUBLISHED_VALUE,
+          "    AND srs.course_id IN",
+          "    <foreach item=\"courseId\" collection=\"courseIds\" open=\"(\" separator=\",\" close=\")\">",
+          "        #{courseId}",
+          "    </foreach>",
+          "GROUP BY",
+          "    srs.course_id",
+          "</script>"})
+    List<CourseMemoryBankDO> getBatchCardStatsForCourses(@Param("userId") long userId,
+                                                          @Param("courseIds") Collection<Long> courseIds,
+                                                          @Param("now") LocalDateTime now);
+
+    /**
+     * 获取单个课程的卡片统计
+     */
+    @Select({"<script>",
+          "SELECT",
+          "    srs.course_id AS courseId,",
+          "    COUNT(srs.card_id) AS cardCount,",
+          "    SUM(CASE WHEN srs.review_due_at &lt;= #{now} THEN 1 ELSE 0 END) AS dueCardCount,",
+          "    SUM(CASE WHEN srs.repetitions = 0 THEN 1 ELSE 0 END) AS newCardCount,",
+          "    SUM(CASE WHEN srs.repetitions &gt; 0 THEN 1 ELSE 0 END) AS learnedCardCount,",
+          "    SUM(CASE WHEN srs.review_due_at &lt;= #{now} AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount",
+          "FROM",
+          "    user_card_srs srs",
+          "INNER JOIN",
+          "    memory_card_deck deck ON srs.deck_id = deck.id",
+          "WHERE",
+          "    srs.user_id = #{userId}",
+          "    AND srs.course_id = #{courseId}",
+          "    AND deck.state = " + Enums.ContentState.PUBLISHED_VALUE,
+          "</script>"})
+    CourseMemoryBankDO getCardStatsForCourse(@Param("userId") long userId,
+                                              @Param("courseId") long courseId,
+                                              @Param("now") LocalDateTime now);
+
+    // ========== 移动节点到课程 ==========
+
+    /**
+     * 批量更新节点下所有卡片的课程归属
+     */
+    @Update("UPDATE user_card_srs SET course_id = #{courseId}, updated_at = NOW() " +
+            "WHERE user_id = #{userId} AND node_id = #{nodeId}")
+    int updateCourseIdByUserAndNode(@Param("userId") long userId,
+                                     @Param("nodeId") long nodeId,
+                                     @Param("courseId") long courseId);
+
+    /**
+     * 删除用户在指定节点下来自其他卡片组的卡片
+     */
+    @Delete("DELETE FROM user_card_srs " +
+            "WHERE user_id = #{userId} AND node_id = #{nodeId} AND deck_id != #{excludeDeckId}")
+    int deleteByUserAndNodeExcludeDeck(@Param("userId") long userId,
+                                        @Param("nodeId") long nodeId,
+                                        @Param("excludeDeckId") long excludeDeckId);
 
 }

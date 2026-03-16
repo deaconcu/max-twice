@@ -26,6 +26,8 @@ public class UserCardSrsDO {
 
     private Long deckId;  // 冗余字段：记忆卡片组ID，用于快速过滤被屏蔽的卡片组
 
+    private Long courseId;  // 冗余字段：用户在哪个课程下学习这个节点，用于按课程分组复习
+
     private Integer deckVersion;
 
     private Long cardVersionId;

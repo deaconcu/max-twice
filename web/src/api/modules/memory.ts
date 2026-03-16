@@ -9,7 +9,6 @@ import type {
   GetReviewQueueParams,
   GetCardListParams,
   ReviewResult,
-  ReviewStats,
   DeckUpdateDiff,
   CardContentDiff,
   ReviewSubmitResult,
@@ -91,13 +90,6 @@ export function reviewCard(params: {
 }
 
 /**
- * 获取复习统计
- */
-export function getReviewStats(): Promise<ApiResponse<ReviewStats>> {
-  return client.get('/v1/memory/review/stats')
-}
-
-/**
  * 获取卡片组更新差异
  */
 export function getDeckDiff(deckId: number): Promise<ApiResponse<DeckUpdateDiff>> {
@@ -117,9 +109,14 @@ export function getCardDiff(cardId: number): Promise<ApiResponse<CardContentDiff
 export function acceptDeckChanges(
   deckId: number,
   cardIds: number[],
-  courseId?: number
+  courseId?: number,
+  removeOtherDeckCards?: boolean
 ): Promise<ApiResponse<void>> {
-  return client.post(`/v1/memory/decks/${String(deckId)}/accept-changes`, { cardIds, courseId })
+  return client.post(`/v1/memory/decks/${String(deckId)}/accept-changes`, {
+    cardIds,
+    courseId,
+    removeOtherDeckCards,
+  })
 }
 
 /**
@@ -368,4 +365,14 @@ export function addDeckToMemoryBank(request: {
   courseId: number
 }): Promise<ApiResponse<any>> {
   return client.post('/v1/memory/memory-bank/decks', request)
+}
+
+/**
+ * 移动节点到课程
+ * 将用户在指定节点下学习的所有卡片移动到指定课程
+ */
+export function moveNodeToCourse(nodeId: number, courseId: number): Promise<ApiResponse<void>> {
+  return client.post(`/v1/memory/nodes/${nodeId}/move-to-course`, null, {
+    params: { courseId },
+  })
 }
