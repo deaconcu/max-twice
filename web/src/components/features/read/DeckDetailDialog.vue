@@ -30,7 +30,7 @@
               {{ studyCards.length }}
             </v-tab>
             <v-tab v-if="studyCards.length > 0" value="diff" size="small">
-              对比差异
+              差异对比
             </v-tab>
           </v-tabs>
 
@@ -139,7 +139,7 @@
                       </div>
 
                       <!-- 操作按钮 -->
-                      <div class="d-flex align-center" style="gap: 4px">
+                      <div class="d-flex align-center">
                         <v-tooltip text="预览" location="top">
                           <template #activator="{ props: tooltipProps }">
                             <v-btn
@@ -283,7 +283,7 @@
                       </div>
 
                       <!-- 操作按钮 -->
-                      <div class="d-flex align-start mr-1" style="gap: 4px">
+                      <div class="d-flex align-start mr-1">
                         <v-tooltip text="预览" location="top">
                           <template #activator="{ props: tooltipProps }">
                             <v-btn
@@ -316,7 +316,7 @@
               </div>
             </v-window-item>
 
-            <!-- 对比差异 Tab -->
+            <!-- 差异对比 Tab -->
             <v-window-item value="diff">
               <div
                 v-if="addedDiffs.length === 0 && learnedCards.length === 0"
@@ -549,42 +549,58 @@
           class="d-flex align-center"
           style="gap: 12px"
         >
-          <v-btn
-            color="primary"
-            variant="flat"
-            rounded="lg"
-            prepend-icon="mdi-sync"
-            @click="fullSyncToDeck"
-          >
-            完全同步为当前卡片组
-          </v-btn>
-          <v-btn
-            v-if="learnedCardsWithUpdateCount > 0 || learnedCardsDeletedCount > 0 || addedDiffs.length > 0"
-            color="grey-darken-2"
-            variant="tonal"
-            rounded="lg"
-            prepend-icon="mdi-update"
-            @click="syncUpdatesOnly"
-          >
-            同步卡片组更新 ({{ learnedCardsWithUpdateCount + learnedCardsDeletedCount + addedDiffs.length }})
-          </v-btn>
-          <v-btn
-            v-if="addedDiffs.length > 0"
-            color="grey-darken-2"
-            variant="tonal"
-            rounded="lg"
-            prepend-icon="mdi-plus"
-            @click="addAllNewCards"
-          >
-            只添加未学习卡片 ({{ addedDiffs.length }})
-          </v-btn>
+          <span class="text-body-2 text-grey-darken-1">一键操作</span>
+          <v-tooltip text="将学习列表完全同步为当前卡片组，包括添加新卡片、更新已修改卡片、移除已删除卡片，同时清除来自其他卡片组的卡片" location="top">
+            <template #activator="{ props: tooltipProps }">
+              <v-btn
+                v-bind="tooltipProps"
+                color="primary"
+                variant="flat"
+                rounded="lg"
+                prepend-icon="mdi-sync"
+                @click="fullSyncToDeck"
+              >
+                完全同步为当前卡片组
+              </v-btn>
+            </template>
+          </v-tooltip>
+          <v-tooltip text="同步当前卡片组的变更（添加新卡片、更新已修改卡片、移除已删除卡片），保留来自其他卡片组的卡片" location="top">
+            <template #activator="{ props: tooltipProps }">
+              <v-btn
+                v-if="learnedCardsWithUpdateCount > 0 || learnedCardsDeletedCount > 0 || addedDiffs.length > 0"
+                v-bind="tooltipProps"
+                color="grey-darken-2"
+                variant="tonal"
+                rounded="lg"
+                prepend-icon="mdi-update"
+                @click="syncUpdatesOnly"
+              >
+                同步卡片组更新 ({{ learnedCardsWithUpdateCount + learnedCardsDeletedCount + addedDiffs.length }})
+              </v-btn>
+            </template>
+          </v-tooltip>
+          <v-tooltip text="只添加当前卡片组中您还未学习的卡片，不影响其他卡片" location="top">
+            <template #activator="{ props: tooltipProps }">
+              <v-btn
+                v-if="addedDiffs.length > 0"
+                v-bind="tooltipProps"
+                color="grey-darken-2"
+                variant="tonal"
+                rounded="lg"
+                prepend-icon="mdi-plus"
+                @click="addAllNewCards"
+              >
+                只添加未学习卡片 ({{ addedDiffs.length }})
+              </v-btn>
+            </template>
+          </v-tooltip>
         </div>
 
         <!-- 其他标签页的提示信息 -->
         <div v-else class="text-body-2 text-grey-darken-1">
           <v-icon icon="mdi-information" size="16" class="mr-1"></v-icon>
           <span v-if="studyCards.length === 0">点击"学习卡片组"将所有卡片加入您的学习计划</span>
-          <span v-else>点击"对比差异"查看更新并选择要学习的卡片</span>
+          <span v-else>点击"差异对比"查看更新并选择要学习的卡片</span>
         </div>
 
         <div class="d-flex" style="gap: 12px">
@@ -598,7 +614,7 @@
             prepend-icon="mdi-compare"
             @click="goToDiffTab"
           >
-            对比差异
+            差异对比
           </v-btn>
 
           <v-btn
@@ -620,7 +636,7 @@
             prepend-icon="mdi-compare"
             @click="goToDiffTab"
           >
-            对比差异
+            差异对比
           </v-btn>
         </div>
       </div>
@@ -1213,13 +1229,13 @@ const fullSyncToDeck = async () => {
   await acceptUpdateMutation({ deckId: props.deck.id, cardIds: [], courseId: props.courseId })
 }
 
-// 同步卡片组更新（更新已修改 + 删除已删除，不添加未学习，不删除其他卡片组）
+// 同步卡片组更新（添加未学习 + 更新已修改 + 删除已删除，保留其他卡片组的卡片）
 const syncUpdatesOnly = async () => {
   if (!props.deck) return
   await acceptUpdateMutation({ deckId: props.deck.id, cardIds: [], courseId: props.courseId })
 }
 
-// 添加所有新卡片
+// 只添加未学习的卡片（不影响其他卡片）
 const addAllNewCards = async () => {
   if (!props.deck) return
   const addedCardIds = addedDiffs.value.map((diff) => diff.cardId)
@@ -1345,6 +1361,10 @@ const removeFromStudy = async () => {
   align-items: center;
   gap: 6px;
   margin-left: 8px;
+}
+
+.diff-tab-item-inline:first-child {
+  margin-left: 0;
 }
 
 .diff-tab-item-inline:hover {
