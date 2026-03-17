@@ -41,14 +41,16 @@ public interface UserCourseSrsSettingMapper {
 // --注释掉检查 STOP (2025/12/10 12:04)
 
     @Insert("INSERT INTO user_course_srs_setting " +
-            "(user_id, course_id, frequency_setting, state, card_order) " +
+            "(user_id, course_id, frequency_setting, state, card_order, daily_new_limit, daily_review_limit) " +
             "VALUES " +
-            "(#{userId}, #{courseId}, #{frequencySetting}, #{state}, #{cardOrder})")
+            "(#{userId}, #{courseId}, #{frequencySetting}, #{state}, #{cardOrder}, #{dailyNewLimit}, #{dailyReviewLimit})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCourseSrsSettingDO setting);
 
     @Update("UPDATE user_course_srs_setting SET " +
-            "frequency_setting = #{frequencySetting}, state = #{state}, card_order = #{cardOrder} " +
+            "frequency_setting = #{frequencySetting}, state = #{state}, card_order = #{cardOrder}, " +
+            "daily_new_limit = #{dailyNewLimit}, daily_review_limit = #{dailyReviewLimit}, " +
+            "updated_at = NOW() " +
             "WHERE id = #{id}")
     void update(UserCourseSrsSettingDO setting);
 

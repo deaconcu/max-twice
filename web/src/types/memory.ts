@@ -160,7 +160,8 @@ export interface CourseMemoryBank {
     icon?: string
   }
   cardCount: number // 总卡片数
-  dueCardCount: number // 到期卡片数
+  dueCardCount: number // 到期复习卡片数（不含新卡）
+  newCardCount: number // 新卡片数
   setting: CourseMemorySetting
 }
 
@@ -172,6 +173,8 @@ export interface CourseMemorySetting {
   state: CourseStudyStatus // 学习状态
   frequencySetting: FrequencySetting // 复习频率
   cardOrder: CardOrder // 卡片顺序
+  dailyNewLimit?: number // 每日新卡上限
+  dailyReviewLimit?: number // 每日复习上限
 }
 
 /**

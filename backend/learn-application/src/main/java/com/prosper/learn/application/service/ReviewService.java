@@ -57,12 +57,15 @@ public class ReviewService {
      * 获取下一张待复习卡片
      *
      * @param userId 用户ID
-     * @param courseId 课程ID（可选，null 表示全部课程）
+     * @param courseId 课程ID（必须指定）
      * @return 下一张卡片，无卡片时返回空结果
      */
     public ReviewSubmitResultDTO getNextCard(Long userId, Long courseId) {
         if (userId == null) {
             throw StatusCode.INVALID_PARAMETER.exception("用户ID不能为空");
+        }
+        if (courseId == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("必须指定课程");
         }
 
         // 获取用户的复习卡片计数
@@ -103,6 +106,9 @@ public class ReviewService {
         if (request == null || request.getCardId() == null) {
             throw StatusCode.INVALID_PARAMETER.exception("请求参数不能为空");
         }
+        if (request.getCourseId() == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("必须指定课程");
+        }
 
         Long cardId = request.getCardId();
         int rating = request.getResult();
@@ -112,7 +118,7 @@ public class ReviewService {
         long reviewCardCount = userDataService.incrementReviewCardCount(userId);
 
         // 2. 处理 SRS 算法
-        reviewDomainService.submitReview(userId, cardId, rating, reviewCardCount);
+        reviewDomainService.submitReview(userId, cardId, courseId, rating, reviewCardCount);
 
         // 3. 发布复习完成事件（用于更新连续复习天数等统计）
         LocalDate userToday = getUserToday(userId);

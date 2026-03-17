@@ -23,6 +23,16 @@ public class UserCourseSrsSettingDO {
      */
     private Byte cardOrder;
 
+    /**
+     * 每日新卡上限（默认20）
+     */
+    private Integer dailyNewLimit;
+
+    /**
+     * 每日复习上限（默认100）
+     */
+    private Integer dailyReviewLimit;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

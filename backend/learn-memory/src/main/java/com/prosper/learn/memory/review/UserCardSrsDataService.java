@@ -497,6 +497,36 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
         return userCardSrsMapper.getNextPendingLearningCardByCourse(userId, courseId, reviewCardCount);
     }
 
+    // ========== 单独查询方法（供 DomainService 直接调用）==========
+
+    /**
+     * 获取下一张学习中的卡片（指定课程）
+     */
+    public UserCardSrsDO getNextLearningCardByCourse(long userId, long courseId, long reviewCardCount) {
+        return userCardSrsMapper.getNextLearningCardByCourse(userId, courseId, reviewCardCount);
+    }
+
+    /**
+     * 获取下一张新卡片（指定课程）
+     */
+    public UserCardSrsDO getNextNewCardByCourse(long userId, long courseId) {
+        return userCardSrsMapper.getNextNewCardByCourse(userId, courseId);
+    }
+
+    /**
+     * 获取下一张复习卡片（指定课程）
+     */
+    public UserCardSrsDO getNextReviewCardByCourse(long userId, long courseId) {
+        return userCardSrsMapper.getNextReviewCardByCourse(userId, courseId);
+    }
+
+    /**
+     * 获取下一张待到期的学习中卡片（指定课程）
+     */
+    public UserCardSrsDO getNextPendingLearningCardByCourse(long userId, long courseId, long reviewCardCount) {
+        return userCardSrsMapper.getNextPendingLearningCardByCourse(userId, courseId, reviewCardCount);
+    }
+
     // ========== 复习统计 ==========
 
     /**

@@ -639,6 +639,16 @@ public class SystemProperties {
         private int maxCardsPerUser = 10000;
 
         /**
+         * 每日新卡上限默认值
+         */
+        private int defaultDailyNewLimit = 20;
+
+        /**
+         * 每日复习上限默认值
+         */
+        private int defaultDailyReviewLimit = 100;
+
+        /**
          * SRS复习算法配置
          */
         private Algorithm algorithm = new Algorithm();

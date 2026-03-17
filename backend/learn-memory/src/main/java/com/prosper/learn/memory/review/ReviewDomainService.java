@@ -23,25 +23,84 @@ import java.time.LocalDateTime;
 public class ReviewDomainService {
 
     private final UserCardSrsDataService srsDataService;
+    private final UserCourseSrsSettingDataService courseSrsSettingDataService;
+    private final DailyLimitService dailyLimitService;
     private final SystemProperties systemProperties;
 
     // ========== Query 方法 ==========
 
     /**
-     * 获取下一张待复习卡片
+     * 获取下一张待复习卡片（需要指定课程）
      *
      * @param userId 用户ID
-     * @param courseId 课程ID（可选，null 表示全部课程）
+     * @param courseId 课程ID（必须指定）
      * @param reviewCardCount 用户当前的复习卡片计数
      * @param newFirst true=先新卡后复习，false=先复习后新卡
      * @return SRS 状态，无卡片时返回 null
      */
     public UserCardSrsDO getNextCard(Long userId, Long courseId, long reviewCardCount, boolean newFirst) {
-        if (courseId != null) {
-            return srsDataService.getNextCardByCourse(userId, courseId, reviewCardCount, newFirst);
-        } else {
-            return srsDataService.getNextCard(userId, reviewCardCount, newFirst);
+        if (courseId == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("必须指定课程");
         }
+
+        // 获取课程设置
+        UserCourseSrsSettingDO setting = courseSrsSettingDataService.getByUserAndCourse(userId, courseId);
+        if (setting == null) {
+            throw StatusCode.MEMORY_BANK_COURSE_NOT_FOUND.exception();
+        }
+
+        // 获取每日上限
+        int dailyNewLimit = setting.getDailyNewLimit() != null
+            ? setting.getDailyNewLimit()
+            : systemProperties.getSrs().getDefaultDailyNewLimit();
+        int dailyReviewLimit = setting.getDailyReviewLimit() != null
+            ? setting.getDailyReviewLimit()
+            : systemProperties.getSrs().getDefaultDailyReviewLimit();
+
+        // 从 Redis 获取今日计数
+        int todayNewCount = dailyLimitService.getTodayNewCount(userId, courseId);
+        int todayReviewCount = dailyLimitService.getTodayReviewCount(userId, courseId);
+
+        boolean canShowNew = todayNewCount < dailyNewLimit;
+        boolean canShowReview = todayReviewCount < dailyReviewLimit;
+
+        // 1. 学习中到期的优先（不受上限限制，因为已经开始学了）
+        UserCardSrsDO card = srsDataService.getNextLearningCardByCourse(userId, courseId, reviewCardCount);
+        if (card != null) {
+            return card;
+        }
+
+        // 2. 根据 newFirst 和上限决定顺序
+        if (newFirst) {
+            if (canShowNew) {
+                card = srsDataService.getNextNewCardByCourse(userId, courseId);
+                if (card != null) {
+                    return card;
+                }
+            }
+            if (canShowReview) {
+                card = srsDataService.getNextReviewCardByCourse(userId, courseId);
+                if (card != null) {
+                    return card;
+                }
+            }
+        } else {
+            if (canShowReview) {
+                card = srsDataService.getNextReviewCardByCourse(userId, courseId);
+                if (card != null) {
+                    return card;
+                }
+            }
+            if (canShowNew) {
+                card = srsDataService.getNextNewCardByCourse(userId, courseId);
+                if (card != null) {
+                    return card;
+                }
+            }
+        }
+
+        // 3. 兜底：学习中未到期的（不受上限限制）
+        return srsDataService.getNextPendingLearningCardByCourse(userId, courseId, reviewCardCount);
     }
 
     // ========== Command 方法 ==========
@@ -51,17 +110,21 @@ public class ReviewDomainService {
      *
      * @param userId 用户ID
      * @param cardId 卡片ID
+     * @param courseId 课程ID
      * @param rating 评级（1-4）
      * @param reviewCardCount 用户当前的复习卡片计数（已递增后的值）
      * @return 更新后的 SRS 状态
      */
     @Transactional
-    public UserCardSrsDO submitReview(Long userId, Long cardId, int rating, long reviewCardCount) {
+    public UserCardSrsDO submitReview(Long userId, Long cardId, Long courseId, int rating, long reviewCardCount) {
         // 获取SRS状态
         UserCardSrsDO card = srsDataService.getByUserAndCard(userId, cardId);
         if (card == null) {
             throw StatusCode.SRS_STATE_NOT_FOUND.exception();
         }
+
+        // 记录原始类型，用于判断是否需要更新计数
+        byte originalType = card.getType();
 
         int[] cardGaps = systemProperties.getSrs().getAlgorithm().getCardGaps();
 
@@ -87,6 +150,18 @@ public class ReviewDomainService {
 
         // 更新数据库
         srsDataService.update(card);
+
+        // 更新今日计数（Redis）
+        if (courseId != null) {
+            if (originalType == UserCardSrsDO.TYPE_NEW) {
+                // 新卡片首次学习
+                dailyLimitService.incrementNewCount(userId, courseId);
+            } else if (originalType == UserCardSrsDO.TYPE_REVIEW) {
+                // 复习卡片
+                dailyLimitService.incrementReviewCount(userId, courseId);
+            }
+            // LEARNING/RELEARNING 不计入上限，因为它们是同一次学习的延续
+        }
 
         log.info("Submitted review for user: {} card: {} type: {} rating: {} reappearAt: {} reviewDueAt: {}",
             userId, cardId, card.getType(), rating, card.getReappearAt(), card.getReviewDueAt());

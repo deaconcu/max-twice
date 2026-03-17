@@ -215,15 +215,17 @@ public interface UserCardSrsMapper {
 
     /**
      * 批量获取多个课程的卡片统计
+     * dueCardCount: LEARNING/RELEARNING（正在学习中）+ REVIEW且到期的卡片（不含新卡）
+     * newCardCount: NEW 类型（type=0）的卡片
      */
     @Select({"<script>",
           "SELECT",
           "    course_id AS courseId,",
           "    COUNT(card_id) AS cardCount,",
-          "    SUM(CASE WHEN review_due_at &lt;= #{now} THEN 1 ELSE 0 END) AS dueCardCount,",
-          "    SUM(CASE WHEN repetitions = 0 THEN 1 ELSE 0 END) AS newCardCount,",
-          "    SUM(CASE WHEN repetitions &gt; 0 THEN 1 ELSE 0 END) AS learnedCardCount,",
-          "    SUM(CASE WHEN review_due_at &lt;= #{now} AND repetitions &gt; 0 THEN 1 ELSE 0 END) AS reviewCardCount",
+          "    SUM(CASE WHEN type IN (1, 3) OR (type = 2 AND review_due_at &lt;= #{now}) THEN 1 ELSE 0 END) AS dueCardCount,",
+          "    SUM(CASE WHEN type = 0 THEN 1 ELSE 0 END) AS newCardCount,",
+          "    SUM(CASE WHEN type != 0 THEN 1 ELSE 0 END) AS learnedCardCount,",
+          "    SUM(CASE WHEN type = 2 AND review_due_at &lt;= #{now} THEN 1 ELSE 0 END) AS reviewCardCount",
           "FROM user_card_srs",
           "WHERE user_id = #{userId}",
           "    AND course_id IN",
@@ -238,14 +240,16 @@ public interface UserCardSrsMapper {
 
     /**
      * 获取单个课程的卡片统计
+     * dueCardCount: LEARNING/RELEARNING（正在学习中）+ REVIEW且到期的卡片（不含新卡）
+     * newCardCount: NEW 类型（type=0）的卡片
      */
     @Select("SELECT " +
           "    course_id AS courseId, " +
           "    COUNT(card_id) AS cardCount, " +
-          "    SUM(CASE WHEN review_due_at <= #{now} THEN 1 ELSE 0 END) AS dueCardCount, " +
-          "    SUM(CASE WHEN repetitions = 0 THEN 1 ELSE 0 END) AS newCardCount, " +
-          "    SUM(CASE WHEN repetitions > 0 THEN 1 ELSE 0 END) AS learnedCardCount, " +
-          "    SUM(CASE WHEN review_due_at <= #{now} AND repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount " +
+          "    SUM(CASE WHEN type IN (1, 3) OR (type = 2 AND review_due_at <= #{now}) THEN 1 ELSE 0 END) AS dueCardCount, " +
+          "    SUM(CASE WHEN type = 0 THEN 1 ELSE 0 END) AS newCardCount, " +
+          "    SUM(CASE WHEN type != 0 THEN 1 ELSE 0 END) AS learnedCardCount, " +
+          "    SUM(CASE WHEN type = 2 AND review_due_at <= #{now} THEN 1 ELSE 0 END) AS reviewCardCount " +
           "FROM user_card_srs " +
           "WHERE user_id = #{userId} AND course_id = #{courseId}")
     CourseMemoryBankDO getCardStatsForCourse(@Param("userId") long userId,

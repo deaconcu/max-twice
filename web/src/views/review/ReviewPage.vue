@@ -125,18 +125,27 @@
                       }}
                     </div>
                   </div>
-                  <v-chip
-                    size="small"
-                    :color="
-                      (activeTab === 'all' ? totalDueCards : selectedCourse?.dueCardCount || 0) > 0
-                        ? 'error'
-                        : 'success'
-                    "
-                    variant="flat"
-                    class="ml-2"
-                  >
-                    {{ activeTab === 'all' ? totalDueCards : selectedCourse?.dueCardCount || 0 }}
-                  </v-chip>
+                  <div class="d-flex align-center ga-1 ml-2">
+                    <v-chip
+                      v-if="(activeTab === 'all' ? totalNewCards : (selectedCourse?.newCardCount || 0)) > 0"
+                      size="small"
+                      color="success"
+                      variant="flat"
+                    >
+                      +{{ activeTab === 'all' ? totalNewCards : selectedCourse?.newCardCount || 0 }}
+                    </v-chip>
+                    <v-chip
+                      size="small"
+                      :color="
+                        (activeTab === 'all' ? totalDueCards : selectedCourse?.dueCardCount || 0) > 0
+                          ? 'error'
+                          : 'grey-lighten-1'
+                      "
+                      variant="flat"
+                    >
+                      {{ activeTab === 'all' ? totalDueCards : selectedCourse?.dueCardCount || 0 }}
+                    </v-chip>
+                  </div>
                 </div>
               </v-expansion-panel-title>
               <v-expansion-panel-text class="px-2 pt-2 pb-0">
@@ -169,7 +178,10 @@
                         {{ t('review.total') }}{{ totalCardCount }}{{ t('review.cards') }}
                       </div>
                     </div>
-                    <v-chip size="small" color="primary" variant="flat">{{ totalDueCards }}</v-chip>
+                    <div class="d-flex align-center ga-1">
+                      <v-chip v-if="totalNewCards > 0" size="small" color="success" variant="flat">+{{ totalNewCards }}</v-chip>
+                      <v-chip size="small" :color="totalDueCards > 0 ? 'error' : 'grey-lighten-1'" variant="flat">{{ totalDueCards }}</v-chip>
+                    </div>
                   </div>
                 </div>
 
@@ -210,13 +222,23 @@
                         {{ getFrequencyText(bank.setting.frequencySetting) }}
                       </div>
                     </div>
-                    <v-chip
-                      size="small"
-                      :color="bank.dueCardCount > 0 ? 'error' : 'success'"
-                      variant="flat"
-                    >
-                      {{ bank.dueCardCount }}
-                    </v-chip>
+                    <div class="d-flex align-center ga-1">
+                      <v-chip
+                        v-if="(bank.newCardCount || 0) > 0"
+                        size="small"
+                        color="success"
+                        variant="flat"
+                      >
+                        +{{ bank.newCardCount }}
+                      </v-chip>
+                      <v-chip
+                        size="small"
+                        :color="bank.dueCardCount > 0 ? 'error' : 'grey-lighten-1'"
+                        variant="flat"
+                      >
+                        {{ bank.dueCardCount }}
+                      </v-chip>
+                    </div>
                   </div>
                 </div>
               </v-expansion-panel-text>
@@ -229,37 +251,55 @@
           <!-- 加载状态 -->
           <LoadingSpinner v-if="reviewLoading" />
 
+          <!-- 全部课程 - 提示选择具体课程 -->
+          <div v-else-if="!isReviewing && !selectedCourse" class="text-center">
+            <v-card border rounded="lg" style="padding: 200px 32px">
+              <v-icon icon="mdi-book-open-page-variant" size="64" color="primary" class="mb-4"></v-icon>
+              <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
+                {{ t('review.selectCourseToReview') }}
+              </h3>
+              <p class="text-body-1 text-grey-darken-1 mb-4">
+                {{ t('review.selectCourseToReviewHint') }}
+              </p>
+              <div class="d-flex justify-center flex-wrap ga-3 mt-4">
+                <div class="text-body-2 text-grey-darken-1">
+                  {{ t('review.total') }}{{ totalCardCount }}{{ t('review.cards') }} ·
+                  {{ t('review.dueReview') }}{{ totalDueCards }}{{ t('review.cards') }} ·
+                  {{ t('review.newCards') }}{{ totalNewCards }}{{ t('review.cards') }}
+                </div>
+              </div>
+            </v-card>
+          </div>
+
           <!-- 空队列状态 -->
-          <div v-else-if="!isReviewing && totalDueCards === 0" class="text-center">
+          <div v-else-if="!isReviewing && selectedCourse && selectedCourse.dueCardCount === 0 && (selectedCourse.newCardCount || 0) === 0" class="text-center">
             <v-card rounded="lg" class="pa-8" elevation="0">
               <v-icon icon="mdi-check-circle" size="64" color="success" class="mb-4"></v-icon>
               <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
                 {{ t('review.excellent') }}
               </h3>
               <p class="text-body-1 text-grey-darken-1 mb-4">
-                {{
-                  selectedCourse
-                    ? `${selectedCourse.course.name}${t('review.courseNoDue')}`
-                    : t('review.allNoDue')
-                }}
+                {{ `${selectedCourse.course.name}${t('review.courseNoDue')}` }}
               </p>
             </v-card>
           </div>
 
           <!-- 开始复习状态 -->
-          <div v-else-if="!isReviewing" class="text-center">
+          <div v-else-if="!isReviewing && selectedCourse" class="text-center">
             <v-card border rounded="lg" style="padding: 200px 32px">
               <v-icon icon="mdi-cards" size="64" color="primary" class="mb-4"></v-icon>
               <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
                 {{ t('review.readyToReview') }}
               </h3>
               <p class="text-body-1 text-grey-darken-1 mb-4">
-                {{ selectedCourse ? selectedCourse.course.name : t('review.allCourses')
-                }}{{ t('review.has') }}
-                <span class="font-weight-bold text-primary">{{
-                  selectedCourse ? selectedCourse.dueCardCount : totalDueCards
-                }}</span>
+                {{ selectedCourse.course.name }}{{ t('review.has') }}
+                <span class="font-weight-bold text-primary">{{ selectedCourse.dueCardCount }}</span>
                 {{ t('review.cardsWaiting') }}
+                <span v-if="(selectedCourse.newCardCount || 0) > 0">
+                  · {{ t('review.newCards') }}
+                  <span class="font-weight-bold text-success">{{ selectedCourse.newCardCount }}</span>
+                  {{ t('review.cards') }}
+                </span>
               </p>
               <v-btn color="primary" variant="flat" rounded="lg" size="large" @click="startReview">
                 <v-icon icon="mdi-play" class="mr-2"></v-icon>
@@ -798,7 +838,10 @@
                   {{ t('review.total') }}{{ totalCardCount }}{{ t('review.cards') }}
                 </div>
               </div>
-              <v-chip size="small" color="primary" variant="flat">{{ totalDueCards }}</v-chip>
+              <div class="d-flex align-center ga-1">
+                <v-chip v-if="totalNewCards > 0" size="small" color="success" variant="flat">+{{ totalNewCards }}</v-chip>
+                <v-chip size="small" :color="totalDueCards > 0 ? 'error' : 'grey-lighten-1'" variant="flat">{{ totalDueCards }}</v-chip>
+              </div>
             </div>
           </div>
 
@@ -835,13 +878,23 @@
                   {{ getFrequencyText(bank.setting.frequencySetting) }}
                 </div>
               </div>
-              <v-chip
-                size="small"
-                :color="bank.dueCardCount > 0 ? 'error' : 'success'"
-                variant="flat"
-              >
-                {{ bank.dueCardCount }}
-              </v-chip>
+              <div class="d-flex align-center ga-1">
+                <v-chip
+                  v-if="(bank.newCardCount || 0) > 0"
+                  size="small"
+                  color="success"
+                  variant="flat"
+                >
+                  +{{ bank.newCardCount }}
+                </v-chip>
+                <v-chip
+                  size="small"
+                  :color="bank.dueCardCount > 0 ? 'error' : 'grey-lighten-1'"
+                  variant="flat"
+                >
+                  {{ bank.dueCardCount }}
+                </v-chip>
+              </div>
             </div>
           </div>
         </v-card>
@@ -914,6 +967,10 @@ const totalDueCards = computed(() => {
   return courseMemoryBanks.value.reduce((sum, bank) => sum + bank.dueCardCount, 0)
 })
 
+const totalNewCards = computed(() => {
+  return courseMemoryBanks.value.reduce((sum, bank) => sum + (bank.newCardCount || 0), 0)
+})
+
 const totalCardCount = computed(() => {
   return courseMemoryBanks.value.reduce((sum, bank) => sum + bank.cardCount, 0)
 })
@@ -981,10 +1038,14 @@ const switchViewMode = (mode: 'review' | 'list' | 'manage') => {
 }
 
 const startReview = async () => {
-  if (totalDueCards.value === 0) return
+  // 必须选择具体课程才能开始复习
+  if (!selectedCourse.value) return
+  const courseId = selectedCourse.value.course.id
+  const courseDueCards = selectedCourse.value.dueCardCount + (selectedCourse.value.newCardCount || 0)
+  if (courseDueCards === 0) return
+
   reviewLoading.value = true
   try {
-    const courseId = selectedCourse.value?.course.id
     const response = await memoryApi.getNextCard({ courseId })
     if (response.code === 200 && response.data) {
       currentCard.value = response.data.nextCard
