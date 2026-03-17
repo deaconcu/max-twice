@@ -634,6 +634,11 @@ public class SystemProperties {
         private int maxCardsPerNode = 200;
 
         /**
+         * 用户最大学习卡片数量限制
+         */
+        private int maxCardsPerUser = 10000;
+
+        /**
          * SRS复习算法配置
          */
         private Algorithm algorithm = new Algorithm();

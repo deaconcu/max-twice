@@ -21,4 +21,10 @@ public class DeckBriefDTO {
     private String nodeName;
 
     private String courseName;
+
+    /**
+     * 卡片组状态
+     * @see com.prosper.learn.shared.domain.Enums.ContentState
+     */
+    private Byte state;
 }

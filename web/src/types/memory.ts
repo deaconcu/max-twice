@@ -81,23 +81,12 @@ export interface MemoryCardView {
   id: number
   front: string // 问题
   back: string // 答案
-  deck?: DeckBrief // 所属卡片组简要信息
+  state?: DeckState // 卡片状态（与 DeckState 共用枚举）
+  deck?: MemoryCardDeck // 所属卡片组信息
   srsState?: UserCardSRSState // SRS 状态
   hasDeckUpdate?: boolean // 卡片组是否有更新
   hasCardUpdate?: boolean // 卡片内容是否有更新
   bookmarked?: boolean // 是否已收藏
-}
-
-/**
- * 卡片组简要信息（用于卡片关联）
- */
-export interface DeckBrief {
-  id: number
-  postId?: number
-  nodeId?: number
-  courseId?: number
-  nodeName?: string
-  courseName?: string
 }
 
 /**
@@ -106,12 +95,14 @@ export interface DeckBrief {
 export interface MemoryCardDeck {
   id: number
   description?: string // 描述
-  sourcePostId?: number // 来源帖子ID
+  postId?: number // 来源帖子ID
   nodeId?: number // 所属节点ID
   courseId?: number // 所属课程ID
-  cardCount: number // 卡片数量
-  state: number // 状态：1=审核中, 2=已通过, 3=已拒绝, 4=已屏蔽
-  likeCount: number // 点赞数
+  nodeName?: string // 节点名称
+  courseName?: string // 课程名称
+  cardCount?: number // 卡片数量
+  state?: DeckState // 状态：1=审核中, 2=已通过, 3=已拒绝, 4=已屏蔽
+  likeCount?: number // 点赞数
   hasLiked?: boolean // 当前用户是否已点赞
   bookmarked?: boolean // 是否已收藏
   creatorId?: number // 创建者ID
@@ -129,8 +120,8 @@ export interface MemoryCardDeck {
     name: string
   } // 节点信息
   firstCardQuestion?: string // 第一张卡片的问题
-  createdAt: string
-  updatedAt: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 /**
@@ -166,6 +157,7 @@ export interface CourseMemoryBank {
   course: {
     id: number
     name: string
+    icon?: string
   }
   cardCount: number // 总卡片数
   dueCardCount: number // 到期卡片数

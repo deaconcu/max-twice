@@ -197,7 +197,16 @@
     "frequencyLow": "Low",
     "statusStudying": "Studying",
     "statusPaused": "Paused",
-    "statusArchived": "Archived"
+    "statusArchived": "Archived",
+    "nextReview": "Next review",
+    "inProgress": "Review in progress",
+    "submitting": "Submitting...",
+    "noCards": "No cards",
+    "cardBlocked": "This card has been blocked",
+    "cardBlockedHint": "This card or its deck has been blocked. Please delete this card or add a new deck",
+    "deleteCard": "Delete Card",
+    "findNewDeck": "Find New Deck",
+    "blocked": "Blocked"
   },
   "user": {
     "login": {

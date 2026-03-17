@@ -19,6 +19,7 @@ import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
@@ -135,6 +136,7 @@ public class CardAssembler {
 
         CardWithSrsDTO dto = new CardWithSrsDTO();
         dto.setId(cardDO.getId());
+        dto.setState(cardDO.getState());
 
         // 填充创建者信息
         dto.setCreator(userService.toBriefDTO(userDataService.getById(cardDO.getCreatorId())));
@@ -173,25 +175,49 @@ public class CardAssembler {
             }
         }
 
-        // 获取卡片内容版本
-        Long versionIdToUse;
-        if (userId != null && srsState != null && srsState.getCardVersionId() != null) {
-            // 如果传入了userId且用户有学习记录，使用用户学习时的版本（复习/学习卡片场景）
-            versionIdToUse = srsState.getCardVersionId();
-        } else {
-            // 如果没有传入userId或用户没有学习记录，使用最新版本（所有卡片场景）
-            versionIdToUse = cardDO.getCurrentVersionId();
-        }
+        // 检查卡片或卡片组是否被屏蔽
+        boolean isBlocked = isCardOrDeckBlocked(cardDO, deck);
 
-        if (versionIdToUse != null) {
-            MemoryCardVersionDO version = cardVersionDataService.getById(versionIdToUse);
-            if (version != null) {
-                dto.setFront(version.getFront());
-                dto.setBack(version.getBack());
+        // 获取卡片内容版本
+        if (isBlocked) {
+            // 被屏蔽的卡片不返回实际内容
+            dto.setFront("blocked");
+            dto.setBack("blocked");
+        } else {
+            Long versionIdToUse;
+            if (userId != null && srsState != null && srsState.getCardVersionId() != null) {
+                // 如果传入了userId且用户有学习记录，使用用户学习时的版本（复习/学习卡片场景）
+                versionIdToUse = srsState.getCardVersionId();
+            } else {
+                // 如果没有传入userId或用户没有学习记录，使用最新版本（所有卡片场景）
+                versionIdToUse = cardDO.getCurrentVersionId();
+            }
+
+            if (versionIdToUse != null) {
+                MemoryCardVersionDO version = cardVersionDataService.getById(versionIdToUse);
+                if (version != null) {
+                    dto.setFront(version.getFront());
+                    dto.setBack(version.getBack());
+                }
             }
         }
 
         return dto;
+    }
+
+    /**
+     * 检查卡片或卡片组是否被屏蔽
+     */
+    private boolean isCardOrDeckBlocked(MemoryCardDO card, MemoryCardDeckDO deck) {
+        // 卡片状态不是 PUBLISHED
+        if (card.getState() != null && card.getState() != Enums.ContentState.PUBLISHED_VALUE) {
+            return true;
+        }
+        // 卡片组状态不是 PUBLISHED
+        if (deck != null && deck.getState() != null && deck.getState() != Enums.ContentState.PUBLISHED_VALUE) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -259,6 +285,7 @@ public class CardAssembler {
                 .map(card -> {
                     CardWithSrsDTO dto = new CardWithSrsDTO();
                     dto.setId(card.getId());
+                    dto.setState(card.getState());
 
                     // 设置创建者信息
                     UserDO creator = userMap.get(card.getCreatorId());
@@ -284,9 +311,9 @@ public class CardAssembler {
                         dto.setSrsState(srsDTO);
 
                         // 检测deck是否有更新
-                        MemoryCardDeckDO deck = deckMap.get(card.getDeckId());
-                        if (deck != null && srsState.getDeckVersion() != null) {
-                            boolean hasDeckUpdate = !srsState.getDeckVersion().equals(deck.getVersion());
+                        MemoryCardDeckDO deckForUpdate = deckMap.get(card.getDeckId());
+                        if (deckForUpdate != null && srsState.getDeckVersion() != null) {
+                            boolean hasDeckUpdate = !srsState.getDeckVersion().equals(deckForUpdate.getVersion());
                             dto.setHasDeckUpdate(hasDeckUpdate);
                         }
 
@@ -297,21 +324,31 @@ public class CardAssembler {
                         }
                     }
 
-                    // 设置卡片内容 - 根据场景选择版本
-                    Long versionIdToUse;
-                    if (userId != null && srsState != null && srsState.getCardVersionId() != null) {
-                        // 如果传入了userId且用户有学习记录，使用用户学习时的版本（复习/学习卡片场景）
-                        versionIdToUse = srsState.getCardVersionId();
-                    } else {
-                        // 如果没有传入userId或用户没有学习记录，使用最新版本（所有卡片场景）
-                        versionIdToUse = card.getCurrentVersionId();
-                    }
+                    // 检查卡片或卡片组是否被屏蔽
+                    MemoryCardDeckDO deck = deckMap.get(card.getDeckId());
+                    boolean isBlocked = isCardOrDeckBlocked(card, deck);
 
-                    if (versionIdToUse != null) {
-                        MemoryCardVersionDO version = versionMap.get(versionIdToUse);
-                        if (version != null) {
-                            dto.setFront(version.getFront());
-                            dto.setBack(version.getBack());
+                    // 设置卡片内容 - 根据场景选择版本
+                    if (isBlocked) {
+                        // 被屏蔽的卡片不返回实际内容
+                        dto.setFront("blocked");
+                        dto.setBack("blocked");
+                    } else {
+                        Long versionIdToUse;
+                        if (userId != null && srsState != null && srsState.getCardVersionId() != null) {
+                            // 如果传入了userId且用户有学习记录，使用用户学习时的版本（复习/学习卡片场景）
+                            versionIdToUse = srsState.getCardVersionId();
+                        } else {
+                            // 如果没有传入userId或用户没有学习记录，使用最新版本（所有卡片场景）
+                            versionIdToUse = card.getCurrentVersionId();
+                        }
+
+                        if (versionIdToUse != null) {
+                            MemoryCardVersionDO version = versionMap.get(versionIdToUse);
+                            if (version != null) {
+                                dto.setFront(version.getFront());
+                                dto.setBack(version.getBack());
+                            }
                         }
                     }
 

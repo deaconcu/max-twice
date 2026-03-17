@@ -310,25 +310,17 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
 // --注释掉检查 STOP (2025/12/10 11:28)
 
     /**
-     * 获取用户的复习队列（所有课程）
+     * 获取用户的卡片列表（所有课程）
      */
-    public List<UserCardSrsDO> getReviewQueue(long userId, boolean dueOnly, int limit, Long lastId) {
-        if (dueOnly) {
-            return userCardSrsMapper.getDueCardsForReviewWithPaging(userId, LocalDateTime.now(), limit, lastId);
-        } else {
-            return userCardSrsMapper.getByUserWithPaging(userId, limit, lastId);
-        }
+    public List<UserCardSrsDO> getCardList(long userId, int limit, Long lastId) {
+        return userCardSrsMapper.getByUserWithPaging(userId, limit, lastId);
     }
 
     /**
-     * 获取用户指定课程的复习队列
+     * 获取用户指定课程的卡片列表
      */
-    public List<UserCardSrsDO> getReviewQueueByCourse(long userId, long courseId, boolean dueOnly, int limit, Long lastId) {
-        if (dueOnly) {
-            return userCardSrsMapper.getDueCardsByCourseForReviewWithPaging(userId, courseId, LocalDateTime.now(), limit, lastId);
-        } else {
-            return userCardSrsMapper.getByUserAndCourseWithPaging(userId, courseId, limit, lastId);
-        }
+    public List<UserCardSrsDO> getCardListByCourse(long userId, long courseId, int limit, Long lastId) {
+        return userCardSrsMapper.getByUserAndCourseWithPaging(userId, courseId, limit, lastId);
     }
 
     /**
@@ -422,13 +414,46 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
     /**
      * 获取下一张待复习卡片（全部课程）
      *
+     * 优先级：
+     * 1. LEARNING/RELEARNING 且 reappear_at 已到
+     * 2. REVIEW 或 NEW（根据 newFirst 参数决定顺序）
+     * 3. LEARNING/RELEARNING 未到计数（兜底）
+     *
      * @param userId 用户ID
      * @param reviewCardCount 用户当前的复习卡片计数
      * @param newFirst true=先新卡后复习，false=先复习后新卡
      * @return 下一张卡片的SRS状态，无卡片时返回null
      */
     public UserCardSrsDO getNextCard(long userId, long reviewCardCount, boolean newFirst) {
-        return userCardSrsMapper.getNextCard(userId, reviewCardCount, newFirst);
+        // 1. 学习中到期的优先
+        UserCardSrsDO card = userCardSrsMapper.getNextLearningCard(userId, reviewCardCount);
+        if (card != null) {
+            return card;
+        }
+
+        // 2. 根据 newFirst 决定顺序
+        if (newFirst) {
+            card = userCardSrsMapper.getNextNewCard(userId);
+            if (card != null) {
+                return card;
+            }
+            card = userCardSrsMapper.getNextReviewCard(userId);
+            if (card != null) {
+                return card;
+            }
+        } else {
+            card = userCardSrsMapper.getNextReviewCard(userId);
+            if (card != null) {
+                return card;
+            }
+            card = userCardSrsMapper.getNextNewCard(userId);
+            if (card != null) {
+                return card;
+            }
+        }
+
+        // 3. 兜底：学习中未到期的
+        return userCardSrsMapper.getNextPendingLearningCard(userId, reviewCardCount);
     }
 
     /**
@@ -441,10 +466,48 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
      * @return 下一张卡片的SRS状态，无卡片时返回null
      */
     public UserCardSrsDO getNextCardByCourse(long userId, long courseId, long reviewCardCount, boolean newFirst) {
-        return userCardSrsMapper.getNextCardByCourse(userId, courseId, reviewCardCount, newFirst);
+        // 1. 学习中到期的优先
+        UserCardSrsDO card = userCardSrsMapper.getNextLearningCardByCourse(userId, courseId, reviewCardCount);
+        if (card != null) {
+            return card;
+        }
+
+        // 2. 根据 newFirst 决定顺序
+        if (newFirst) {
+            card = userCardSrsMapper.getNextNewCardByCourse(userId, courseId);
+            if (card != null) {
+                return card;
+            }
+            card = userCardSrsMapper.getNextReviewCardByCourse(userId, courseId);
+            if (card != null) {
+                return card;
+            }
+        } else {
+            card = userCardSrsMapper.getNextReviewCardByCourse(userId, courseId);
+            if (card != null) {
+                return card;
+            }
+            card = userCardSrsMapper.getNextNewCardByCourse(userId, courseId);
+            if (card != null) {
+                return card;
+            }
+        }
+
+        // 3. 兜底：学习中未到期的
+        return userCardSrsMapper.getNextPendingLearningCardByCourse(userId, courseId, reviewCardCount);
     }
 
     // ========== 复习统计 ==========
+
+    /**
+     * 统计用户的卡片总数
+     *
+     * @param userId 用户ID
+     * @return 用户的卡片总数
+     */
+    public long countByUser(long userId) {
+        return userCardSrsMapper.countByUser(userId);
+    }
 
     /**
      * 统计今天复习过的卡片数（基于用户时区）

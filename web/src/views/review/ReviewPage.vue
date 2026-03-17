@@ -120,8 +120,8 @@
                     <div class="text-caption text-grey text-truncate">
                       {{
                         activeTab === 'all'
-                          ? `${totalDueCards} ${t('review.dueForReview')}`
-                          : `${selectedCourse?.dueCardCount || 0} ${t('review.dueForReview')}`
+                          ? `${t('review.total')}${totalCardCount}${t('review.cards')}`
+                          : `${t('review.total')}${selectedCourse?.cardCount || 0}${t('review.cards')}`
                       }}
                     </div>
                   </div>
@@ -166,7 +166,7 @@
                         {{ t('review.allCourses') }}
                       </div>
                       <div class="text-caption text-grey text-truncate">
-                        {{ totalDueCards }} {{ t('review.dueForReview') }}
+                        {{ t('review.total') }}{{ totalCardCount }}{{ t('review.cards') }}
                       </div>
                     </div>
                     <v-chip size="small" color="primary" variant="flat">{{ totalDueCards }}</v-chip>
@@ -186,17 +186,14 @@
                   @click="switchTab(bank.course.id.toString())"
                 >
                   <div class="d-flex align-center">
-                    <v-avatar
-                      :color="
-                        activeTab === bank.course.id.toString()
-                          ? 'primary'
-                          : getCourseStatusColor(bank.setting.state)
-                      "
-                      size="32"
-                      class="mr-2 mr-sm-3"
-                    >
-                      <v-icon icon="mdi-book-open-page-variant" color="white" size="16"></v-icon>
-                    </v-avatar>
+                    <div class="course-icon-container mr-2 mr-sm-3">
+                      <DynamicIcon
+                        :icon="bank.course.icon"
+                        default-icon="mdi-book-open-variant"
+                        :size="18"
+                        :color="getColorByString(bank.course.name)"
+                      />
+                    </div>
                     <div class="flex-grow-1 min-w-0">
                       <div
                         class="text-caption text-md-body-2 font-weight-bold text-truncate"
@@ -291,8 +288,42 @@
                 class="card-container pa-8 d-flex align-center justify-center"
                 :style="{ minHeight: `${cardHeight}px` }"
               >
+                <!-- 被屏蔽的卡片 -->
+                <div v-if="isCurrentCardBlocked" class="text-center">
+                  <div class="d-flex align-center justify-center mb-4">
+                    <v-icon icon="mdi-alert-circle" color="error" size="64"></v-icon>
+                  </div>
+                  <h3 class="text-h5 font-weight-bold text-error mb-4">
+                    {{ t('review.cardBlocked') }}
+                  </h3>
+                  <p class="text-body-1 text-grey-darken-1 mb-6">
+                    {{ t('review.cardBlockedHint') }}
+                  </p>
+                  <div class="d-flex justify-center ga-3">
+                    <v-btn
+                      color="error"
+                      variant="outlined"
+                      rounded="lg"
+                      @click="deleteBlockedCard"
+                    >
+                      <v-icon icon="mdi-delete" class="mr-2"></v-icon>
+                      {{ t('review.deleteCard') }}
+                    </v-btn>
+                    <v-btn
+                      v-if="currentCard.deck?.nodeId"
+                      color="primary"
+                      variant="flat"
+                      rounded="lg"
+                      :to="`/read/${currentCard.deck.nodeId}`"
+                    >
+                      <v-icon icon="mdi-plus" class="mr-2"></v-icon>
+                      {{ t('review.findNewDeck') }}
+                    </v-btn>
+                  </div>
+                </div>
+
                 <!-- 问题面 -->
-                <div v-if="!showAnswer" class="text-center">
+                <div v-else-if="!showAnswer" class="text-center">
                   <div class="d-flex align-center justify-center mb-4">
                     <v-icon icon="mdi-help-circle" color="primary" size="48"></v-icon>
                   </div>
@@ -561,29 +592,44 @@
 
                   <!-- 卡片内容 -->
                   <div class="flex-grow-1 min-w-0">
-                    <div class="d-flex align-center mb-1">
-                      <div class="text-body-2 text-md-body-1 font-weight-medium text-truncate">
-                        {{ card.front }}
+                    <!-- 被屏蔽的卡片 -->
+                    <template v-if="isCardBlocked(card)">
+                      <div class="d-flex align-center mb-1">
+                        <v-icon icon="mdi-alert-circle" color="error" size="16" class="mr-1"></v-icon>
+                        <div class="text-body-2 text-md-body-1 font-weight-medium text-error">
+                          {{ t('review.cardBlocked') }}
+                        </div>
                       </div>
-                      <span
-                        v-if="card.deck"
-                        class="text-caption text-md-body-2 text-grey ml-2 flex-shrink-0 d-none d-sm-inline"
-                      >
-                        - {{ card.deck.courseName }} / {{ card.deck.nodeName }}
-                      </span>
-                    </div>
-                    <div class="text-caption text-md-body-2 text-grey-darken-2 mb-1 line-clamp-2">
-                      {{ card.back }}
-                    </div>
-                    <!-- 到期时间 -->
-                    <div v-if="card.srsState" class="text-caption text-grey-darken-1">
-                      <v-icon
-                        icon="mdi-clock-outline"
-                        :size="$vuetify.display.mobile ? 12 : 14"
-                        class="mr-1"
-                      ></v-icon>
-                      {{ t('review.nextReview') }}: {{ formatDueDate(card.srsState.reviewDueAt) }}
-                    </div>
+                      <div class="text-caption text-md-body-2 text-grey-darken-2 mb-1">
+                        {{ t('review.cardBlockedHint') }}
+                      </div>
+                    </template>
+                    <!-- 正常卡片 -->
+                    <template v-else>
+                      <div class="d-flex align-center mb-1">
+                        <div class="text-body-2 text-md-body-1 font-weight-medium text-truncate">
+                          {{ card.front }}
+                        </div>
+                        <span
+                          v-if="card.deck"
+                          class="text-caption text-md-body-2 text-grey ml-2 flex-shrink-0 d-none d-sm-inline"
+                        >
+                          - {{ card.deck.courseName }} / {{ card.deck.nodeName }}
+                        </span>
+                      </div>
+                      <div class="text-caption text-md-body-2 text-grey-darken-2 mb-1 line-clamp-2">
+                        {{ card.back }}
+                      </div>
+                      <!-- 到期时间 -->
+                      <div v-if="card.srsState" class="text-caption text-grey-darken-1">
+                        <v-icon
+                          icon="mdi-clock-outline"
+                          :size="$vuetify.display.mobile ? 12 : 14"
+                          class="mr-1"
+                        ></v-icon>
+                        {{ t('review.nextReview') }}: {{ formatDueDate(card.srsState.reviewDueAt) }}
+                      </div>
+                    </template>
                   </div>
 
                   <!-- 状态标签 -->
@@ -749,7 +795,7 @@
                   {{ t('review.allCourses') }}
                 </div>
                 <div class="text-caption text-grey text-truncate">
-                  {{ totalDueCards }} {{ t('review.dueForReview') }}
+                  {{ t('review.total') }}{{ totalCardCount }}{{ t('review.cards') }}
                 </div>
               </div>
               <v-chip size="small" color="primary" variant="flat">{{ totalDueCards }}</v-chip>
@@ -767,17 +813,14 @@
             @click="switchTab(bank.course.id.toString())"
           >
             <div class="d-flex align-center">
-              <v-avatar
-                :color="
-                  activeTab === bank.course.id.toString()
-                    ? 'primary'
-                    : getCourseStatusColor(bank.setting.state)
-                "
-                size="32"
-                class="mr-2 mr-sm-3"
-              >
-                <v-icon icon="mdi-book-open-page-variant" color="white" size="16"></v-icon>
-              </v-avatar>
+              <div class="course-icon-container mr-2 mr-sm-3">
+                <DynamicIcon
+                  :icon="bank.course.icon"
+                  default-icon="mdi-book-open-variant"
+                  :size="18"
+                  :color="getColorByString(bank.course.name)"
+                />
+              </div>
               <div class="flex-grow-1 min-w-0">
                 <div
                   class="text-caption text-md-body-2 font-weight-bold text-truncate"
@@ -823,9 +866,12 @@ import {
   FrequencySetting,
   CourseStudyStatus as Status,
   CardOrder,
+  DeckState,
 } from '@/types/memory'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import DynamicIcon from '@/components/common/DynamicIcon.vue'
+import { getColorByString } from '@/utils/color'
 
 const { t } = useI18n()
 
@@ -868,6 +914,10 @@ const totalDueCards = computed(() => {
   return courseMemoryBanks.value.reduce((sum, bank) => sum + bank.dueCardCount, 0)
 })
 
+const totalCardCount = computed(() => {
+  return courseMemoryBanks.value.reduce((sum, bank) => sum + bank.cardCount, 0)
+})
+
 const selectedCourse = computed(() => {
   if (activeTab.value === 'all') return null
   const courseId = parseInt(activeTab.value)
@@ -890,6 +940,16 @@ const cardOrderOptions = computed(() => [
   { title: t('review.cardOrderReviewFirst'), value: CardOrder.REVIEW_FIRST },
   { title: t('review.cardOrderNewFirst'), value: CardOrder.NEW_FIRST },
 ])
+
+// 检测当前卡片是否被屏蔽（卡片或卡片组状态不是 PUBLISHED）
+const isCurrentCardBlocked = computed(() => {
+  if (!currentCard.value) return false
+  const cardState = currentCard.value.state
+  const deckState = currentCard.value.deck?.state
+  // 卡片或卡片组不是 PUBLISHED 状态都视为被屏蔽
+  return (cardState && cardState !== DeckState.PUBLISHED) ||
+         (deckState && deckState !== DeckState.PUBLISHED)
+})
 
 // 方法
 const switchTab = (tabValue: string) => {
@@ -1064,6 +1124,39 @@ const deleteSelectedCards = () => {
   void executeDelete(selectedCards.value)
 }
 
+// 获取下一张卡片
+const { refresh: fetchNextCard } = useFetch({
+  fetchFn: () => memoryApi.getNextCard({ courseId: selectedCourse.value?.course.id }),
+  immediate: false,
+  onSuccess: (result) => {
+    if (result) {
+      currentCard.value = result.nextCard
+      if (!currentCard.value) {
+        void completeReview()
+      } else {
+        showAnswer.value = false
+      }
+    }
+  },
+})
+
+// 删除被屏蔽的卡片
+const { execute: executeDeleteBlockedCard } = useMutation(
+  (cardIds: number[]) => memoryApi.deleteCards(cardIds),
+  {
+    successMessage: t('review.deleteSuccess'),
+    onSuccess: () => {
+      void refreshCourses()
+      void fetchNextCard()
+    },
+  }
+)
+
+const deleteBlockedCard = () => {
+  if (!currentCard.value) return
+  void executeDeleteBlockedCard([currentCard.value.id])
+}
+
 const { execute: executeReset } = useMutation(memoryApi.resetCardProgress, {
   successMessage: t('review.resetSuccess'),
   onSuccess: () => {
@@ -1150,8 +1243,22 @@ const getFrequencyText = (frequency: FrequencySetting): string => {
   }
 }
 
+// 检测卡片是否被屏蔽
+const isCardBlocked = (card: MemoryCardView): boolean => {
+  const cardState = card.state
+  const deckState = card.deck?.state
+  return (cardState !== undefined && cardState !== DeckState.PUBLISHED) ||
+         (deckState !== undefined && deckState !== DeckState.PUBLISHED)
+}
+
 const getCardStatusChips = (card: MemoryCardView): { text: string; color: string }[] => {
   const chips: { text: string; color: string }[] = []
+
+  // 如果被屏蔽，优先显示屏蔽状态
+  if (isCardBlocked(card)) {
+    chips.push({ text: t('review.blocked'), color: 'error' })
+    return chips
+  }
 
   if (!card.srsState) {
     chips.push({ text: t('review.newCard'), color: 'grey' })
@@ -1270,6 +1377,17 @@ onBeforeUnmount(() => {
 
 .nav-item-inactive {
   background: rgb(var(--v-theme-surface));
+}
+
+.course-icon-container {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgb(var(--v-theme-outline));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .question-content,

@@ -51,11 +51,22 @@ public class MemoryBankDomainService {
     @DistributedLock(key = "'memory:add_deck:' + #userId + ':' + #nodeId", waitTime = 5, leaseTime = 30)
     public void addDeckToMemoryBank(Long userId, Long courseId, Long deckId,
                                      List<MemoryCardDO> cards, Integer deckVersion, Long nodeId) {
-        // 1. 检查节点下的卡片数量限制
+        int newCardCount = cards != null ? cards.size() : 0;
+
+        // 1. 检查用户卡片总数限制
+        int maxCardsPerUser = systemProperties.getSrs().getMaxCardsPerUser();
+        long userCardCount = userCardSrsDataService.countByUser(userId);
+        if (userCardCount + newCardCount > maxCardsPerUser) {
+            throw StatusCode.USER_CARD_LIMIT_EXCEEDED.exception(
+                String.format("您已有%d张卡片，添加%d张新卡片将超过%d张的限制",
+                    userCardCount, newCardCount, maxCardsPerUser)
+            );
+        }
+
+        // 2. 检查节点下的卡片数量限制
         int maxCardsPerNode = systemProperties.getSrs().getMaxCardsPerNode();
         List<UserCardSrsDO> existingCards = userCardSrsDataService.getByUserAndNodeId(userId, nodeId);
         int currentCardCount = existingCards.size();
-        int newCardCount = cards != null ? cards.size() : 0;
 
         if (currentCardCount + newCardCount > maxCardsPerNode) {
             throw StatusCode.NODE_CARD_LIMIT_EXCEEDED.exception(
@@ -64,7 +75,7 @@ public class MemoryBankDomainService {
             );
         }
 
-        // 2. 创建或更新课程学习设置
+        // 3. 创建或更新课程学习设置
         UserCourseSrsSettingDO existingSetting = courseSrsSettingDataService.getByUserAndCourse(userId, courseId);
         if (existingSetting == null) {
             UserCourseSrsSettingDO setting = new UserCourseSrsSettingDO();
@@ -75,16 +86,12 @@ public class MemoryBankDomainService {
             courseSrsSettingDataService.insert(setting);
         }
 
-        // 3. 批量添加卡片到课程
+        // 4. 批量添加卡片到课程
         if (cards != null && !cards.isEmpty()) {
             log.info("Adding {} cards from deck: {} to memory bank for user: {} in course: {}",
                 cards.size(), deckId, userId, courseId);
 
-            List<Long> cardIds = cards.stream()
-                    .map(MemoryCardDO::getId)
-                    .collect(Collectors.toList());
-
-            // 3. 构建SRS状态对象（包含courseId）
+            // 构建SRS状态对象（包含courseId）
             List<UserCardSrsDO> srsList = new ArrayList<>();
             for (MemoryCardDO card : cards) {
                 UserCardSrsDO srs = userCardSrsDataService.createNewSrsState(

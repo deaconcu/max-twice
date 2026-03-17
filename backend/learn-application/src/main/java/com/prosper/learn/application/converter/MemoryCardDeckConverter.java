@@ -49,6 +49,7 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "id")
     @Mapping(target = "postId")
     @Mapping(target = "nodeId")
+    @Mapping(target = "state")
     DeckBriefDTO toBriefDTO(MemoryCardDeckDO deckDO);
 
     @IterableMapping(qualifiedByName = "toBriefDTO")

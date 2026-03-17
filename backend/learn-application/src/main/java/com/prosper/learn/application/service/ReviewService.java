@@ -155,9 +155,9 @@ public class ReviewService {
         // 获取卡片 SRS 列表
         List<UserCardSrsDO> srsList;
         if (courseId != null) {
-            srsList = srsDataService.getReviewQueueByCourse(userId, courseId, false, limit, lastId);
+            srsList = srsDataService.getCardListByCourse(userId, courseId, limit, lastId);
         } else {
-            srsList = srsDataService.getReviewQueue(userId, false, limit, lastId);
+            srsList = srsDataService.getCardList(userId, limit, lastId);
         }
 
         if (srsList.isEmpty()) {

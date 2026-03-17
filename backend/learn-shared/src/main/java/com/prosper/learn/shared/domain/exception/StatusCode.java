@@ -142,6 +142,7 @@ public enum StatusCode {
     INVALID_FREQUENCY_SETTING(2208, "无效的复习频率设置"),
     INVALID_COURSE_STUDY_STATUS(2209, "无效的课程学习状态"),
     NODE_CARD_LIMIT_EXCEEDED(2210, "节点下的卡片数量已达到上限"),
+    USER_CARD_LIMIT_EXCEEDED(2211, "用户的卡片数量已达到上限"),
     USER_CARD_IN_COURSE_NOT_FOUND(2212, "用户课程卡片关系不存在"),
 
     // 限流相关 23xx

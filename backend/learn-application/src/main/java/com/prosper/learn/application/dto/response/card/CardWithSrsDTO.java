@@ -23,6 +23,12 @@ public class CardWithSrsDTO {
 
     private String back;
 
+    /**
+     * 卡片状态
+     * @see com.prosper.learn.shared.domain.Enums.ContentState
+     */
+    private Byte state;
+
     // 卡片组信息
     private DeckBriefDTO deck;
 

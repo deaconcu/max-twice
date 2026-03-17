@@ -8,6 +8,7 @@ import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.domain.Enums.ContentState;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,7 @@ public class MemoryCardDeckDomainService {
     private final MemoryCardDataService memoryCardDataService;
     private final MemoryCardVersionDataService cardVersionDataService;
     private final UserCardSrsDataService userCardSrsDataService;
+    private final SystemProperties systemProperties;
 
     // ========== Command 方法（写操作）==========
 
@@ -621,6 +623,23 @@ public class MemoryCardDeckDomainService {
         List<MemoryCardDO> currentCards = memoryCardDataService.getByDeckId(deckId);
         Map<Long, MemoryCardDO> currentCardMap = currentCards.stream()
             .collect(Collectors.toMap(MemoryCardDO::getId, card -> card));
+
+        // 计算将要新增的卡片数量
+        long newCardCount = currentCards.stream()
+            .filter(card -> !userStateMap.containsKey(card.getId()))
+            .count();
+
+        // 检查用户卡片总数限制
+        if (newCardCount > 0) {
+            int maxCardsPerUser = systemProperties.getSrs().getMaxCardsPerUser();
+            long userCardCount = userCardSrsDataService.countByUser(userId);
+            if (userCardCount + newCardCount > maxCardsPerUser) {
+                throw StatusCode.USER_CARD_LIMIT_EXCEEDED.exception(
+                    String.format("您已有%d张卡片，添加%d张新卡片将超过%d张的限制",
+                        userCardCount, newCardCount, maxCardsPerUser)
+                );
+            }
+        }
 
         // 准备新增卡片的SRS状态列表和卡片ID列表
         List<UserCardSrsDO> newSrsStates = new ArrayList<>();

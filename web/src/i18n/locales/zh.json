@@ -237,7 +237,15 @@
     "statusStudying": "学习中",
     "statusPaused": "已暂停",
     "statusArchived": "已归档",
-    "nextReview": "下次复习"
+    "nextReview": "下次复习",
+    "inProgress": "复习进行中",
+    "submitting": "提交中...",
+    "noCards": "暂无卡片",
+    "cardBlocked": "该卡片已被屏蔽",
+    "cardBlockedHint": "该卡片或其所在的卡片组已被屏蔽，请删除此卡片或添加新的卡片组",
+    "deleteCard": "删除卡片",
+    "findNewDeck": "寻找新卡片组",
+    "blocked": "已屏蔽"
   },
   "user": {
     "login": {
