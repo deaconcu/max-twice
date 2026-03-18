@@ -20,6 +20,7 @@ public interface CourseMemoryBankConverter {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "dueCardCount")
     @Mapping(target = "newCardCount")
+    @Mapping(target = "learningCount")
     @Mapping(target = "reviewCardCount")
     CourseMemoryBankDTO toCardStatsDTO(CourseMemoryBankDO courseMemoryBankDO);
 
@@ -36,6 +37,7 @@ public interface CourseMemoryBankConverter {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "dueCardCount")
     @Mapping(target = "newCardCount")
+    @Mapping(target = "learningCount")
     @Mapping(target = "reviewCardCount")
     void updateCardStats(@MappingTarget CourseMemoryBankDTO dto, CourseMemoryBankDO courseMemoryBankDO);
 }

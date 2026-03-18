@@ -159,8 +159,9 @@ export interface CourseMemoryBank {
     name: string
     icon?: string
   }
-  dueCardCount: number // 到期复习卡片数（不含新卡）
-  newCardCount: number // 新卡片数
+  dueCardCount: number // 待复习卡片数（type=2 到期，受 dailyReviewLimit 限制）
+  newCardCount: number // 新卡片数（受 dailyNewLimit 限制）
+  learningCount: number // 正在学习中的卡片数（不受限制）
   todayNewCount?: number // 今日已学新卡数
   todayReviewCount?: number // 今日已复习数
   setting: CourseMemorySetting

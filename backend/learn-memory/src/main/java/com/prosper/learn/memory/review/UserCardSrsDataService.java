@@ -2,6 +2,7 @@ package com.prosper.learn.memory.review;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -22,6 +23,9 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
 
     @Autowired
     private UserCardSrsMapper userCardSrsMapper;
+
+    @Autowired
+    private SystemProperties systemProperties;
 
     @Override
     protected UserCardSrsMapper mapper() {
@@ -570,9 +574,6 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
 
     // ========== 优化统计查询（带 LIMIT）==========
 
-    private static final int DEFAULT_DAILY_NEW_LIMIT = 20;
-    private static final int DEFAULT_DAILY_REVIEW_LIMIT = 100;
-
     /**
      * 批量获取多个课程的卡片统计（优化版，每个课程独立 LIMIT）
      *
@@ -580,17 +581,23 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
      * @param settings 课程设置列表（包含每个课程的 limit）
      * @return 课程统计列表
      */
-    public List<CourseMemoryBankDO> getBatchCardStatsOptimized(long userId, List<UserCourseSrsSettingDO> settings) {
+    public List<CourseMemoryBankDO> getBatchCardStatsOptimized(long userId, List<UserCourseSrsSettingDO> settings,
+                                                                Map<Long, Integer> todayReviewCounts) {
         if (settings == null || settings.isEmpty()) {
             return new ArrayList<>();
         }
 
-        // 构建查询参数
-        List<CourseQueryParam> params = settings.stream()
+        int defaultNewLimit = systemProperties.getSrs().getDefaultDailyNewLimit();
+        int defaultReviewLimit = systemProperties.getSrs().getDefaultDailyReviewLimit();
+
+        List<Long> courseIds = settings.stream().map(UserCourseSrsSettingDO::getCourseId).collect(Collectors.toList());
+
+        // 构建新卡查询参数
+        List<CourseQueryParam> newParams = settings.stream()
                 .map(s -> new CourseQueryParam(
                         s.getCourseId(),
-                        (s.getDailyNewLimit() != null ? s.getDailyNewLimit() : DEFAULT_DAILY_NEW_LIMIT) + 1,
-                        (s.getDailyReviewLimit() != null ? s.getDailyReviewLimit() : DEFAULT_DAILY_REVIEW_LIMIT) + 1
+                        s.getDailyNewLimit() != null ? s.getDailyNewLimit() : defaultNewLimit,
+                        0
                 ))
                 .collect(Collectors.toList());
 
@@ -600,13 +607,14 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
             CourseMemoryBankDO d = new CourseMemoryBankDO();
             d.setCourseId(setting.getCourseId());
             d.setNewCardCount(0);
+            d.setLearningCount(0);
             d.setReviewCardCount(0);
             d.setDueCardCount(0);
             resultMap.put(setting.getCourseId(), d);
         }
 
-        // 1. 统计新卡片数（type=0）
-        List<CourseMemoryBankDO> newList = userCardSrsMapper.countNewCardsWithLimit(userId, params);
+        // 1. 统计新卡片数（type=0），LIMIT = dailyNewLimit - todayNewCount（由调用方已处理）
+        List<CourseMemoryBankDO> newList = userCardSrsMapper.countNewCardsWithLimit(userId, newParams);
         for (CourseMemoryBankDO d : newList) {
             CourseMemoryBankDO result = resultMap.get(d.getCourseId());
             if (result != null) {
@@ -614,13 +622,32 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
             }
         }
 
-        // 2. 统计 REVIEW 且到期（type=2 AND due）
-        List<CourseMemoryBankDO> reviewList = userCardSrsMapper.countReviewDueCardsWithLimit(userId, params, LocalDateTime.now());
+        // 2. 统计 LEARNING/RELEARNING 卡片数（type IN (1,3)），不加 LIMIT
+        List<CourseMemoryBankDO> learningList = userCardSrsMapper.countLearningCards(userId, courseIds);
+        for (CourseMemoryBankDO d : learningList) {
+            CourseMemoryBankDO result = resultMap.get(d.getCourseId());
+            if (result != null) {
+                result.setLearningCount(d.getLearningCount());
+            }
+        }
+
+        // 3. 统计 REVIEW 且到期（type=2 AND due），LIMIT = dailyReviewLimit - todayReviewCount
+        LocalDateTime now = LocalDateTime.now();
+        List<CourseQueryParam> reviewParams = settings.stream()
+                .map(s -> {
+                    int reviewLimit = s.getDailyReviewLimit() != null ? s.getDailyReviewLimit() : defaultReviewLimit;
+                    int todayReviewCount = todayReviewCounts != null ? todayReviewCounts.getOrDefault(s.getCourseId(), 0) : 0;
+                    int remaining = Math.max(0, reviewLimit - todayReviewCount);
+                    return new CourseQueryParam(s.getCourseId(), 0, remaining);
+                })
+                .collect(Collectors.toList());
+
+        List<CourseMemoryBankDO> reviewList = userCardSrsMapper.countReviewDueCardsWithLimit(userId, reviewParams, now);
         for (CourseMemoryBankDO d : reviewList) {
             CourseMemoryBankDO result = resultMap.get(d.getCourseId());
             if (result != null) {
                 result.setReviewCardCount(d.getReviewCardCount());
-                result.setDueCardCount(d.getReviewCardCount());
+                result.setDueCardCount(d.getReviewCardCount() != null ? d.getReviewCardCount() : 0);
             }
         }
 

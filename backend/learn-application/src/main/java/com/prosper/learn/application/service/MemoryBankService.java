@@ -199,8 +199,16 @@ public class MemoryBankService {
         boolean needStats = state != null && DeckCourseStudyState.STUDYING.value().equals(state.byteValue());
 
         Map<Long, CourseMemoryBankDO> statsMap = new HashMap<>();
+        Map<Long, Integer> todayNewCounts = new HashMap<>();
+        Map<Long, Integer> todayReviewCounts = new HashMap<>();
         if (needStats) {
-            List<CourseMemoryBankDO> statsList = domainService.getBatchCourseCardStatsOptimized(userId, validSettings);
+            // 预查各课程今日计数，传入 DataService 用于计算剩余额度
+            for (UserCourseSrsSettingDO setting : validSettings) {
+                Long courseId = setting.getCourseId();
+                todayNewCounts.put(courseId, dailyLimitService.getTodayNewCount(userId, courseId));
+                todayReviewCounts.put(courseId, dailyLimitService.getTodayReviewCount(userId, courseId));
+            }
+            List<CourseMemoryBankDO> statsList = domainService.getBatchCourseCardStatsOptimized(userId, validSettings, todayReviewCounts);
             statsMap = statsList.stream()
                     .collect(Collectors.toMap(CourseMemoryBankDO::getCourseId, s -> s));
         }
@@ -218,14 +226,19 @@ public class MemoryBankService {
 
             if (needStats && statsMap.containsKey(courseId)) {
                 CourseMemoryBankDO stats = statsMap.get(courseId);
-                dto.setNewCardCount(stats.getNewCardCount());
-                dto.setDueCardCount(stats.getDueCardCount());
-                dto.setReviewCardCount(stats.getReviewCardCount());
-                dto.setTodayNewCount(dailyLimitService.getTodayNewCount(userId, courseId));
-                dto.setTodayReviewCount(dailyLimitService.getTodayReviewCount(userId, courseId));
+                int todayNewCount = todayNewCounts.getOrDefault(courseId, 0);
+                int todayReviewCount = todayReviewCounts.getOrDefault(courseId, 0);
+                // newCardCount 减去今日已学新卡数，dueCardCount 已由 DataService 按剩余额度限制
+                dto.setNewCardCount(Math.max(0, (stats.getNewCardCount() != null ? stats.getNewCardCount() : 0) - todayNewCount));
+                dto.setDueCardCount(stats.getDueCardCount() != null ? stats.getDueCardCount() : 0);
+                dto.setLearningCount(stats.getLearningCount() != null ? stats.getLearningCount() : 0);
+                dto.setReviewCardCount(stats.getReviewCardCount() != null ? stats.getReviewCardCount() : 0);
+                dto.setTodayNewCount(todayNewCount);
+                dto.setTodayReviewCount(todayReviewCount);
             } else {
                 dto.setNewCardCount(0);
                 dto.setDueCardCount(0);
+                dto.setLearningCount(0);
                 dto.setReviewCardCount(0);
                 dto.setTodayNewCount(0);
                 dto.setTodayReviewCount(0);

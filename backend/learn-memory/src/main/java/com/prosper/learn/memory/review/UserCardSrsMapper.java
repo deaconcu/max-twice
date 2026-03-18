@@ -273,6 +273,33 @@ public interface UserCardSrsMapper {
                                                      @Param("params") List<CourseQueryParam> params);
 
     /**
+     * 批量统计 LEARNING/RELEARNING 卡片数（type IN (1,3)），不加 LIMIT
+     */
+    @Select({"<script>",
+          "<foreach item=\"courseId\" collection=\"courseIds\" separator=\" UNION ALL \">",
+          "    SELECT #{courseId} AS courseId,",
+          "           (SELECT COUNT(*) FROM user_card_srs",
+          "            WHERE user_id = #{userId} AND type IN (1, 3) AND course_id = #{courseId}) AS learningCount",
+          "</foreach>",
+          "</script>"})
+    List<CourseMemoryBankDO> countLearningCards(@Param("userId") long userId,
+                                                @Param("courseIds") List<Long> courseIds);
+
+    /**
+     * 批量统计 LEARNING/RELEARNING 卡片数（type IN (1,3)），每个课程有独立的 LIMIT
+     */
+    @Select({"<script>",
+          "<foreach item=\"param\" collection=\"params\" separator=\" UNION ALL \">",
+          "    SELECT #{param.courseId} AS courseId,",
+          "           (SELECT COUNT(*) FROM (SELECT 1 FROM user_card_srs",
+          "            WHERE user_id = #{userId} AND type IN (1, 3) AND course_id = #{param.courseId}",
+          "            LIMIT #{param.reviewLimit}) t) AS learningCount",
+          "</foreach>",
+          "</script>"})
+    List<CourseMemoryBankDO> countLearningCardsWithLimit(@Param("userId") long userId,
+                                                         @Param("params") List<CourseQueryParam> params);
+
+    /**
      * 批量统计 REVIEW 且到期的卡片数，每个课程有独立的 LIMIT
      */
     @Select({"<script>",

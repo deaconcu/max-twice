@@ -216,11 +216,10 @@
                       </div>
                     </div>
                     <div class="d-flex align-center ga-2 text-body-2">
-                      <span v-if="getRemainingNewCards(bank) > 0" class="text-success font-weight-bold">
-                        +{{ getRemainingNewCards(bank) }}
-                      </span>
-                      <span :class="getRemainingDueCards(bank) > 0 ? 'text-error font-weight-bold' : 'text-grey'">
-                        {{ getRemainingDueCards(bank) }}
+                      <span
+                        :class="((bank.newCardCount || 0) + (bank.learningCount || 0) + (bank.dueCardCount || 0)) > 0 ? 'text-primary font-weight-bold' : 'text-grey'"
+                      >
+                        {{ (bank.newCardCount || 0) + (bank.learningCount || 0) + (bank.dueCardCount || 0) }}
                       </span>
                     </div>
                   </div>
@@ -276,8 +275,14 @@
               </h3>
               <p class="text-body-1 text-grey-darken-1 mb-4">
                 {{ selectedCourse.course.name }}{{ t('review.has') }}
-                <span class="font-weight-bold text-primary">{{ selectedCourseDueCards }}</span>
-                {{ t('review.cardsWaiting') }}
+                <span v-if="selectedCourseLearningCards > 0">
+                  {{ t('review.learningCards') }}
+                  <span class="font-weight-bold text-warning">{{ selectedCourseLearningCards }}</span>
+                  {{ t('review.cards') }} ·
+                </span>
+                {{ t('review.dueReview') }}
+                <span class="font-weight-bold text-error">{{ selectedCourse.dueCardCount || 0 }}</span>
+                {{ t('review.cards') }}
                 <span v-if="selectedCourseNewCards > 0">
                   · {{ t('review.newCards') }}
                   <span class="font-weight-bold text-success">{{ selectedCourseNewCards }}</span>
@@ -447,16 +452,31 @@
             </v-card>
 
             <!-- 操作按钮 -->
-            <div class="d-flex justify-space-between">
+            <div class="d-flex justify-space-between align-center">
               <v-btn variant="tonal" rounded="lg" @click="resetReview">
                 <v-icon icon="mdi-stop" class="mr-2"></v-icon>
                 {{ t('review.stopReview') }}
               </v-btn>
 
-              <v-btn variant="text" rounded="lg" disabled @click="skipCard">
-                {{ t('review.skip') }}
-                <v-icon icon="mdi-skip-next" class="ml-2"></v-icon>
-              </v-btn>
+              <div class="text-caption text-grey-darken-1 d-flex align-center ga-2">
+                <span v-if="selectedCourseLearningCards > 0">
+                  {{ t('review.learningCards') }}
+                  <span class="font-weight-bold text-warning">{{ selectedCourseLearningCards }}</span>
+                  {{ t('review.cards') }}
+                </span>
+                <span v-if="selectedCourseLearningCards > 0 && (selectedCourse?.dueCardCount || 0) > 0">·</span>
+                <span v-if="(selectedCourse?.dueCardCount || 0) > 0">
+                  {{ t('review.dueReview') }}
+                  <span class="font-weight-bold text-error">{{ selectedCourse?.dueCardCount || 0 }}</span>
+                  {{ t('review.cards') }}
+                </span>
+                <span v-if="selectedCourseNewCards > 0">·</span>
+                <span v-if="selectedCourseNewCards > 0">
+                  {{ t('review.newCards') }}
+                  <span class="font-weight-bold text-success">{{ selectedCourseNewCards }}</span>
+                  {{ t('review.cards') }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -884,11 +904,10 @@
                 </div>
                 <!-- 只有学习中状态显示统计数字 -->
                 <div v-if="courseStateTab === 1" class="d-flex align-center ga-2 text-body-2">
-                  <span v-if="getRemainingNewCards(bank) > 0" class="text-success font-weight-bold">
-                    +{{ getRemainingNewCards(bank) }}
-                  </span>
-                  <span :class="getRemainingDueCards(bank) > 0 ? 'text-error font-weight-bold' : 'text-grey'">
-                    {{ getRemainingDueCards(bank) }}
+                  <span
+                    :class="((bank.newCardCount || 0) + (bank.learningCount || 0) + (bank.dueCardCount || 0)) > 0 ? 'text-primary font-weight-bold' : 'text-grey'"
+                  >
+                    {{ (bank.newCardCount || 0) + (bank.learningCount || 0) + (bank.dueCardCount || 0) }}
                   </span>
                 </div>
               </div>
@@ -1005,46 +1024,30 @@ watch(courseStateTab, (newState) => {
 
 // 计算属性
 const totalDueCards = computed(() => {
-  return courseMemoryBanks.value.reduce((sum, bank) => sum + getRemainingDueCards(bank), 0)
+  return courseMemoryBanks.value.reduce((sum, bank) => sum + (bank.dueCardCount || 0) + (bank.learningCount || 0), 0)
 })
 
 const totalNewCards = computed(() => {
-  return courseMemoryBanks.value.reduce((sum, bank) => sum + getRemainingNewCards(bank), 0)
+  return courseMemoryBanks.value.reduce((sum, bank) => sum + (bank.newCardCount || 0), 0)
 })
 
-// 获取选中课程的剩余可学新卡数
+// 获取选中课程的新卡数
 const selectedCourseNewCards = computed(() => {
   if (!selectedCourse.value) return 0
-  return getRemainingNewCards(selectedCourse.value)
+  return selectedCourse.value.newCardCount || 0
 })
 
-// 获取选中课程的剩余可复习数
+// 获取选中课程的学习中卡片数
+const selectedCourseLearningCards = computed(() => {
+  if (!selectedCourse.value) return 0
+  return selectedCourse.value.learningCount || 0
+})
+
+// 获取选中课程的待复习数
 const selectedCourseDueCards = computed(() => {
   if (!selectedCourse.value) return 0
-  return getRemainingDueCards(selectedCourse.value)
+  return (selectedCourse.value.dueCardCount || 0) + (selectedCourse.value.learningCount || 0)
 })
-
-// 默认每日上限
-const DEFAULT_DAILY_NEW_LIMIT = 20
-const DEFAULT_DAILY_REVIEW_LIMIT = 100
-
-// 计算课程今日剩余可学新卡数
-const getRemainingNewCards = (bank: CourseMemoryBank): number => {
-  const newCardCount = bank.newCardCount || 0
-  const dailyNewLimit = bank.setting.dailyNewLimit ?? DEFAULT_DAILY_NEW_LIMIT
-  const todayNewCount = bank.todayNewCount || 0
-  const remainingQuota = dailyNewLimit - todayNewCount
-  return Math.max(0, Math.min(newCardCount, remainingQuota))
-}
-
-// 计算课程今日剩余可复习数
-const getRemainingDueCards = (bank: CourseMemoryBank): number => {
-  const dueCardCount = bank.dueCardCount || 0
-  const dailyReviewLimit = bank.setting.dailyReviewLimit ?? DEFAULT_DAILY_REVIEW_LIMIT
-  const todayReviewCount = bank.todayReviewCount || 0
-  const remainingQuota = dailyReviewLimit - todayReviewCount
-  return Math.max(0, Math.min(dueCardCount, remainingQuota))
-}
 
 const selectedCourse = computed(() => {
   if (activeTab.value === 'all') return null
@@ -1054,7 +1057,7 @@ const selectedCourse = computed(() => {
 
 // 带默认值的设置 computed（用于表单绑定）
 const settingDailyNewLimit = computed({
-  get: () => selectedCourse.value?.setting.dailyNewLimit ?? DEFAULT_DAILY_NEW_LIMIT,
+  get: () => selectedCourse.value?.setting.dailyNewLimit,
   set: (val: number) => {
     if (selectedCourse.value) {
       selectedCourse.value.setting.dailyNewLimit = val
@@ -1063,7 +1066,7 @@ const settingDailyNewLimit = computed({
 })
 
 const settingDailyReviewLimit = computed({
-  get: () => selectedCourse.value?.setting.dailyReviewLimit ?? DEFAULT_DAILY_REVIEW_LIMIT,
+  get: () => selectedCourse.value?.setting.dailyReviewLimit,
   set: (val: number) => {
     if (selectedCourse.value) {
       selectedCourse.value.setting.dailyReviewLimit = val

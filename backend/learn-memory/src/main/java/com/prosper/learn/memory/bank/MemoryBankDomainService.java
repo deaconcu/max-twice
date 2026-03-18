@@ -84,6 +84,9 @@ public class MemoryBankDomainService {
             setting.setCourseId(courseId);
             setting.setFrequencySetting(FrequencySetting.NORMAL.value());
             setting.setState(DeckCourseStudyState.STUDYING.value());
+            setting.setCardOrder(CardOrder.REVIEW_FIRST.value());
+            setting.setDailyNewLimit(systemProperties.getSrs().getDefaultDailyNewLimit());
+            setting.setDailyReviewLimit(systemProperties.getSrs().getDefaultDailyReviewLimit());
             courseSrsSettingDataService.insert(setting);
         }
 
@@ -243,7 +246,8 @@ public class MemoryBankDomainService {
      * @param settings 课程设置列表
      * @return 课程记忆库统计DO列表
      */
-    public List<CourseMemoryBankDO> getBatchCourseCardStatsOptimized(Long userId, List<UserCourseSrsSettingDO> settings) {
-        return userCardSrsDataService.getBatchCardStatsOptimized(userId, settings);
+    public List<CourseMemoryBankDO> getBatchCourseCardStatsOptimized(Long userId, List<UserCourseSrsSettingDO> settings,
+                                                                       Map<Long, Integer> todayReviewCounts) {
+        return userCardSrsDataService.getBatchCardStatsOptimized(userId, settings, todayReviewCounts);
     }
 }
