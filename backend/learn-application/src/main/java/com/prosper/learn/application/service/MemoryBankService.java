@@ -250,6 +250,35 @@ public class MemoryBankService {
         return result;
     }
 
+    /**
+     * 获取单个课程的卡片统计（复习提交后实时刷新用）
+     */
+    public CourseMemoryBankDTO getSingleCourseStat(Long userId, Long courseId) {
+        UserCourseSrsSettingDO setting = domainService.getMemoryBankCourseSettings(userId, null)
+                .stream().filter(s -> s.getCourseId().equals(courseId)).findFirst().orElse(null);
+        if (setting == null) return null;
+
+        int todayNewCount = dailyLimitService.getTodayNewCount(userId, courseId);
+        int todayReviewCount = dailyLimitService.getTodayReviewCount(userId, courseId);
+
+        Map<Long, Integer> todayReviewCounts = new HashMap<>();
+        todayReviewCounts.put(courseId, todayReviewCount);
+
+        List<CourseMemoryBankDO> statsList = domainService.getBatchCourseCardStatsOptimized(
+                userId, List.of(setting), todayReviewCounts);
+        if (statsList.isEmpty()) return null;
+
+        CourseMemoryBankDO stats = statsList.get(0);
+        CourseMemoryBankDTO dto = new CourseMemoryBankDTO();
+        dto.setNewCardCount(Math.max(0, (stats.getNewCardCount() != null ? stats.getNewCardCount() : 0) - todayNewCount));
+        dto.setDueCardCount(stats.getDueCardCount() != null ? stats.getDueCardCount() : 0);
+        dto.setLearningCount(stats.getLearningCount() != null ? stats.getLearningCount() : 0);
+        dto.setReviewCardCount(stats.getReviewCardCount() != null ? stats.getReviewCardCount() : 0);
+        dto.setTodayNewCount(todayNewCount);
+        dto.setTodayReviewCount(todayReviewCount);
+        return dto;
+    }
+
 
     // ========== Command 方法（写操作）==========
 

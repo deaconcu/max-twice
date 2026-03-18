@@ -255,6 +255,7 @@ export interface ReviewStats {
  */
 export interface ReviewSubmitResult {
   nextCard: MemoryCardView | null // 下一张待复习卡片
+  courseStats?: CourseMemoryBank | null // 当前课程卡片统计
 }
 
 /**

@@ -2,6 +2,7 @@ package com.prosper.learn.application.service;
 
 import com.prosper.learn.application.assembler.CardAssembler;
 import com.prosper.learn.application.dto.request.ReviewCardRequest;
+import com.prosper.learn.application.dto.response.CourseMemoryBankDTO;
 import com.prosper.learn.application.dto.response.ReviewSubmitResultDTO;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.memory.card.MemoryCardDataService;
@@ -47,6 +48,7 @@ public class ReviewService {
     private final UserCardSrsDataService srsDataService;
     private final ApplicationEventPublisher eventPublisher;
     private final SystemProperties systemProperties;
+    private final MemoryBankService memoryBankService;
 
     // DTO 组装器
     private final CardAssembler cardAssembler;
@@ -129,18 +131,25 @@ public class ReviewService {
 
         // 5. 获取下一张卡片
         UserCardSrsDO nextSrs = reviewDomainService.getNextCard(userId, courseId, reviewCardCount, newFirst);
+
+        ReviewSubmitResultDTO result;
         if (nextSrs == null) {
-            return ReviewSubmitResultDTO.empty();
+            result = ReviewSubmitResultDTO.empty();
+        } else {
+            MemoryCardDO nextCard = cardDataService.getById(nextSrs.getCardId());
+            if (nextCard == null) {
+                result = ReviewSubmitResultDTO.empty();
+            } else {
+                CardWithSrsDTO nextCardDto = cardAssembler.toCardViewWithSrs(nextCard, userId);
+                result = ReviewSubmitResultDTO.of(nextCardDto);
+            }
         }
 
-        // 加载卡片完整信息
-        MemoryCardDO nextCard = cardDataService.getById(nextSrs.getCardId());
-        if (nextCard == null) {
-            return ReviewSubmitResultDTO.empty();
-        }
+        // 6. 查询当前课程统计并填入返回结果
+        CourseMemoryBankDTO courseStats = memoryBankService.getSingleCourseStat(userId, courseId);
+        result.setCourseStats(courseStats);
 
-        CardWithSrsDTO nextCardDto = cardAssembler.toCardViewWithSrs(nextCard, userId);
-        return ReviewSubmitResultDTO.of(nextCardDto);
+        return result;
     }
 
     /**

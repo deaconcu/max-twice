@@ -1162,10 +1162,6 @@ const revealAnswer = () => {
   showAnswer.value = true
 }
 
-const skipCard = () => {
-  // 后端维护队列，跳过功能暂不支持
-}
-
 // 提交复习
 const { execute: executeReview, loading: submitting } = useMutation(
   (params: { cardId: number; result: ReviewResult; courseId?: number; timeSpent?: number }) => {
@@ -1175,6 +1171,17 @@ const { execute: executeReview, loading: submitting } = useMutation(
     showToast: false,
     onSuccess: (result) => {
       if (!result) return
+
+      // 更新当前课程卡片统计
+      if (result.courseStats && selectedCourse.value) {
+        const courseId = selectedCourse.value.course.id
+        const bank = studyingSummary.value.courses.find((b) => b.course.id === courseId)
+        if (bank) {
+          bank.newCardCount = result.courseStats.newCardCount
+          bank.dueCardCount = result.courseStats.dueCardCount
+          bank.learningCount = result.courseStats.learningCount
+        }
+      }
 
       // 后端返回下一张卡片
       currentCard.value = result.nextCard
