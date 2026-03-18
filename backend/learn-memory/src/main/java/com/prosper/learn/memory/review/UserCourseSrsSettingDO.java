@@ -33,6 +33,16 @@ public class UserCourseSrsSettingDO {
      */
     private Integer dailyReviewLimit;
 
+    /**
+     * 冻结开始时间
+     */
+    private LocalDateTime frozenAt;
+
+    /**
+     * 累计冻结时长（秒）
+     */
+    private Long frozenDuration;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

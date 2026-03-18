@@ -17,9 +17,11 @@ import type {
 
 /**
  * 获取复习概览（包含记忆库课程列表和统计数据）
+ * @param state 课程状态：1=学习中，2=冻结，3=隐藏
  */
-export function getReviewSummary(): Promise<ApiResponse<ReviewSummary>> {
-  return client.get('/v1/memory/memory-bank/courses')
+export function getReviewSummary(state?: number): Promise<ApiResponse<ReviewSummary>> {
+  const params = state ? { state } : {}
+  return client.get('/v1/memory/memory-bank/courses', { params })
 }
 
 /**
@@ -141,6 +143,8 @@ export function updateCourseMemorySetting(params: {
   status?: string
   frequencySetting?: string
   cardOrder?: number
+  dailyNewLimit?: number
+  dailyReviewLimit?: number
 }): Promise<ApiResponse<void>> {
   return client.put(`/v1/memory/memory-bank/courses/${String(params.courseId)}/settings`, params)
 }

@@ -120,31 +120,25 @@
                     <div class="text-caption text-grey text-truncate">
                       {{
                         activeTab === 'all'
-                          ? `${t('review.total')}${totalCardCount}${t('review.cards')}`
-                          : `${t('review.total')}${selectedCourse?.cardCount || 0}${t('review.cards')}`
+                          ? `${t('review.dueReview')}${totalDueCards}${t('review.cards')}`
+                          : `${t('review.dueReview')}${selectedCourseDueCards}${t('review.cards')}`
                       }}
                     </div>
                   </div>
-                  <div class="d-flex align-center ga-1 ml-2">
-                    <v-chip
-                      v-if="(activeTab === 'all' ? totalNewCards : (selectedCourse?.newCardCount || 0)) > 0"
-                      size="small"
-                      color="success"
-                      variant="flat"
+                  <div class="d-flex align-center ga-2 text-body-2 ml-2">
+                    <span
+                      v-if="(activeTab === 'all' ? totalNewCards : selectedCourseNewCards) > 0"
+                      class="text-success font-weight-bold"
                     >
-                      +{{ activeTab === 'all' ? totalNewCards : selectedCourse?.newCardCount || 0 }}
-                    </v-chip>
-                    <v-chip
-                      size="small"
-                      :color="
-                        (activeTab === 'all' ? totalDueCards : selectedCourse?.dueCardCount || 0) > 0
-                          ? 'error'
-                          : 'grey-lighten-1'
-                      "
-                      variant="flat"
+                      +{{ activeTab === 'all' ? totalNewCards : selectedCourseNewCards }}
+                    </span>
+                    <span
+                      :class="(activeTab === 'all' ? totalDueCards : selectedCourseDueCards) > 0
+                        ? 'text-error font-weight-bold'
+                        : 'text-grey'"
                     >
-                      {{ activeTab === 'all' ? totalDueCards : selectedCourse?.dueCardCount || 0 }}
-                    </v-chip>
+                      {{ activeTab === 'all' ? totalDueCards : selectedCourseDueCards }}
+                    </span>
                   </div>
                 </div>
               </v-expansion-panel-title>
@@ -175,12 +169,12 @@
                         {{ t('review.allCourses') }}
                       </div>
                       <div class="text-caption text-grey text-truncate">
-                        {{ t('review.total') }}{{ totalCardCount }}{{ t('review.cards') }}
+                        {{ t('review.dueReview') }}{{ totalDueCards }}{{ t('review.cards') }}
                       </div>
                     </div>
-                    <div class="d-flex align-center ga-1">
-                      <v-chip v-if="totalNewCards > 0" size="small" color="success" variant="flat">+{{ totalNewCards }}</v-chip>
-                      <v-chip size="small" :color="totalDueCards > 0 ? 'error' : 'grey-lighten-1'" variant="flat">{{ totalDueCards }}</v-chip>
+                    <div class="d-flex align-center ga-2 text-body-2">
+                      <span v-if="totalNewCards > 0" class="text-success font-weight-bold">+{{ totalNewCards }}</span>
+                      <span :class="totalDueCards > 0 ? 'text-error font-weight-bold' : 'text-grey'">{{ totalDueCards }}</span>
                     </div>
                   </div>
                 </div>
@@ -218,26 +212,16 @@
                         {{ bank.course.name }}
                       </div>
                       <div class="text-caption text-grey text-truncate">
-                        {{ t('review.total') }}{{ bank.cardCount }}{{ t('review.cards') }} ·
                         {{ getFrequencyText(bank.setting.frequencySetting) }}
                       </div>
                     </div>
-                    <div class="d-flex align-center ga-1">
-                      <v-chip
-                        v-if="(bank.newCardCount || 0) > 0"
-                        size="small"
-                        color="success"
-                        variant="flat"
-                      >
-                        +{{ bank.newCardCount }}
-                      </v-chip>
-                      <v-chip
-                        size="small"
-                        :color="bank.dueCardCount > 0 ? 'error' : 'grey-lighten-1'"
-                        variant="flat"
-                      >
-                        {{ bank.dueCardCount }}
-                      </v-chip>
+                    <div class="d-flex align-center ga-2 text-body-2">
+                      <span v-if="getRemainingNewCards(bank) > 0" class="text-success font-weight-bold">
+                        +{{ getRemainingNewCards(bank) }}
+                      </span>
+                      <span :class="getRemainingDueCards(bank) > 0 ? 'text-error font-weight-bold' : 'text-grey'">
+                        {{ getRemainingDueCards(bank) }}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -263,7 +247,6 @@
               </p>
               <div class="d-flex justify-center flex-wrap ga-3 mt-4">
                 <div class="text-body-2 text-grey-darken-1">
-                  {{ t('review.total') }}{{ totalCardCount }}{{ t('review.cards') }} ·
                   {{ t('review.dueReview') }}{{ totalDueCards }}{{ t('review.cards') }} ·
                   {{ t('review.newCards') }}{{ totalNewCards }}{{ t('review.cards') }}
                 </div>
@@ -272,7 +255,7 @@
           </div>
 
           <!-- 空队列状态 -->
-          <div v-else-if="!isReviewing && selectedCourse && selectedCourse.dueCardCount === 0 && (selectedCourse.newCardCount || 0) === 0" class="text-center">
+          <div v-else-if="!isReviewing && selectedCourse && selectedCourseDueCards === 0 && selectedCourseNewCards === 0" class="text-center">
             <v-card rounded="lg" class="pa-8" elevation="0">
               <v-icon icon="mdi-check-circle" size="64" color="success" class="mb-4"></v-icon>
               <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
@@ -293,11 +276,11 @@
               </h3>
               <p class="text-body-1 text-grey-darken-1 mb-4">
                 {{ selectedCourse.course.name }}{{ t('review.has') }}
-                <span class="font-weight-bold text-primary">{{ selectedCourse.dueCardCount }}</span>
+                <span class="font-weight-bold text-primary">{{ selectedCourseDueCards }}</span>
                 {{ t('review.cardsWaiting') }}
-                <span v-if="(selectedCourse.newCardCount || 0) > 0">
+                <span v-if="selectedCourseNewCards > 0">
                   · {{ t('review.newCards') }}
-                  <span class="font-weight-bold text-success">{{ selectedCourse.newCardCount }}</span>
+                  <span class="font-weight-bold text-success">{{ selectedCourseNewCards }}</span>
                   {{ t('review.cards') }}
                 </span>
               </p>
@@ -733,7 +716,7 @@
             >
               <div class="d-flex justify-space-between align-center mb-3">
                 <div>
-                  <div class="text-body-2 font-weight-medium text-grey-darken-3">
+                  <div class="text-body-1 text-grey-darken-3">
                     {{ t('review.reviewFrequency') }}
                   </div>
                   <div class="text-caption text-grey-darken-1">
@@ -753,7 +736,7 @@
 
               <div class="d-flex justify-space-between align-center mb-3">
                 <div>
-                  <div class="text-body-2 font-weight-medium text-grey-darken-3">
+                  <div class="text-body-1 text-grey-darken-3">
                     {{ t('review.learningStatus') }}
                   </div>
                   <div class="text-caption text-grey-darken-1">
@@ -771,9 +754,9 @@
                 ></v-select>
               </div>
 
-              <div class="d-flex justify-space-between align-center">
+              <div class="d-flex justify-space-between align-center mb-3">
                 <div>
-                  <div class="text-body-2 font-weight-medium text-grey-darken-3">
+                  <div class="text-body-1 text-grey-darken-3">
                     {{ t('review.cardOrder') }}
                   </div>
                   <div class="text-caption text-grey-darken-1">
@@ -789,6 +772,50 @@
                   density="compact"
                   style="max-width: 160px"
                 ></v-select>
+              </div>
+
+              <div class="d-flex justify-space-between align-center mb-3">
+                <div>
+                  <div class="text-body-1 text-grey-darken-3">
+                    {{ t('review.dailyNewLimit') }}
+                  </div>
+                  <div class="text-caption text-grey-darken-1">
+                    {{ t('review.dailyNewLimitHint') }}
+                  </div>
+                </div>
+                <v-text-field
+                  v-model.number="settingDailyNewLimit"
+                  type="number"
+                  variant="outlined"
+                  rounded="lg"
+                  hide-details
+                  density="compact"
+                  :min="0"
+                  :max="999"
+                  style="max-width: 100px"
+                ></v-text-field>
+              </div>
+
+              <div class="d-flex justify-space-between align-center">
+                <div>
+                  <div class="text-body-1 text-grey-darken-3">
+                    {{ t('review.dailyReviewLimit') }}
+                  </div>
+                  <div class="text-caption text-grey-darken-1">
+                    {{ t('review.dailyReviewLimitHint') }}
+                  </div>
+                </div>
+                <v-text-field
+                  v-model.number="settingDailyReviewLimit"
+                  type="number"
+                  variant="outlined"
+                  rounded="lg"
+                  hide-details
+                  density="compact"
+                  :min="0"
+                  :max="9999"
+                  style="max-width: 100px"
+                ></v-text-field>
               </div>
             </div>
 
@@ -809,91 +836,61 @@
             {{ t('review.courseCategory') }}
           </h3>
 
-          <!-- 全部标签 -->
-          <div
-            class="nav-item pa-2 pa-sm-3 rounded-lg mb-2"
-            :class="[activeTab === 'all' ? 'nav-item-active' : 'nav-item-inactive']"
-            @click="switchTab('all')"
-          >
-            <div class="d-flex align-center">
-              <v-avatar
-                :color="activeTab === 'all' ? 'primary' : 'grey-lighten-2'"
-                size="32"
-                class="mr-2 mr-sm-3"
-              >
-                <v-icon
-                  icon="mdi-view-dashboard"
-                  :color="activeTab === 'all' ? 'white' : 'grey'"
-                  size="16"
-                ></v-icon>
-              </v-avatar>
-              <div class="flex-grow-1 min-w-0">
-                <div
-                  class="text-caption text-md-body-2 font-weight-bold text-truncate"
-                  :class="activeTab === 'all' ? 'text-primary' : 'text-grey-darken-3'"
-                >
-                  {{ t('review.allCourses') }}
-                </div>
-                <div class="text-caption text-grey text-truncate">
-                  {{ t('review.total') }}{{ totalCardCount }}{{ t('review.cards') }}
-                </div>
-              </div>
-              <div class="d-flex align-center ga-1">
-                <v-chip v-if="totalNewCards > 0" size="small" color="success" variant="flat">+{{ totalNewCards }}</v-chip>
-                <v-chip size="small" :color="totalDueCards > 0 ? 'error' : 'grey-lighten-1'" variant="flat">{{ totalDueCards }}</v-chip>
-              </div>
-            </div>
-          </div>
+          <!-- 状态切换 Tab -->
+          <v-tabs v-model="courseStateTab" density="compact" class="mb-3">
+            <v-tab :value="1" size="small">{{ t('review.statusStudying') }}</v-tab>
+            <v-tab :value="2" size="small">{{ t('review.statusFrozen') }}</v-tab>
+            <v-tab :value="3" size="small">{{ t('review.statusHidden') }}</v-tab>
+          </v-tabs>
 
-          <!-- 分课程标签 -->
-          <div
-            v-for="bank in courseMemoryBanks"
-            :key="bank.course.id"
-            class="nav-item pa-2 pa-sm-3 rounded-lg mb-2"
-            :class="[
-              activeTab === bank.course.id.toString() ? 'nav-item-active' : 'nav-item-inactive',
-            ]"
-            @click="switchTab(bank.course.id.toString())"
-          >
-            <div class="d-flex align-center">
-              <div class="course-icon-container mr-2 mr-sm-3">
-                <DynamicIcon
-                  :icon="bank.course.icon"
-                  default-icon="mdi-book-open-variant"
-                  :size="18"
-                  :color="getColorByString(bank.course.name)"
-                />
-              </div>
-              <div class="flex-grow-1 min-w-0">
-                <div
-                  class="text-caption text-md-body-2 font-weight-bold text-truncate"
-                  :class="
-                    activeTab === bank.course.id.toString() ? 'text-primary' : 'text-grey-darken-3'
-                  "
-                >
-                  {{ bank.course.name }}
+          <!-- 课程列表 -->
+          <div v-if="courseListLoadingComputed" class="text-center pa-4">
+            <v-progress-circular indeterminate size="24"></v-progress-circular>
+          </div>
+          <div v-else-if="currentCourseList.length === 0" class="text-center pa-4 text-grey">
+            {{ t('review.noCourses') }}
+          </div>
+          <div v-else>
+            <div
+              v-for="bank in currentCourseList"
+              :key="bank.course.id"
+              class="nav-item pa-2 pa-sm-3 rounded-lg mb-2"
+              :class="[
+                activeTab === bank.course.id.toString() ? 'nav-item-active' : 'nav-item-inactive',
+              ]"
+              @click="switchTab(bank.course.id.toString())"
+            >
+              <div class="d-flex align-center">
+                <div class="course-icon-container mr-2 mr-sm-3">
+                  <DynamicIcon
+                    :icon="bank.course.icon"
+                    default-icon="mdi-book-open-variant"
+                    :size="18"
+                    :color="getColorByString(bank.course.name)"
+                  />
                 </div>
-                <div class="text-caption text-grey text-truncate">
-                  {{ t('review.total') }}{{ bank.cardCount }}{{ t('review.cards') }} ·
-                  {{ getFrequencyText(bank.setting.frequencySetting) }}
+                <div class="flex-grow-1 min-w-0">
+                  <div
+                    class="text-caption text-md-body-2 font-weight-bold text-truncate"
+                    :class="
+                      activeTab === bank.course.id.toString() ? 'text-primary' : 'text-grey-darken-3'
+                    "
+                  >
+                    {{ bank.course.name }}
+                  </div>
+                  <div class="text-caption text-grey text-truncate">
+                    {{ getFrequencyText(bank.setting.frequencySetting) }}
+                  </div>
                 </div>
-              </div>
-              <div class="d-flex align-center ga-1">
-                <v-chip
-                  v-if="(bank.newCardCount || 0) > 0"
-                  size="small"
-                  color="success"
-                  variant="flat"
-                >
-                  +{{ bank.newCardCount }}
-                </v-chip>
-                <v-chip
-                  size="small"
-                  :color="bank.dueCardCount > 0 ? 'error' : 'grey-lighten-1'"
-                  variant="flat"
-                >
-                  {{ bank.dueCardCount }}
-                </v-chip>
+                <!-- 只有学习中状态显示统计数字 -->
+                <div v-if="courseStateTab === 1" class="d-flex align-center ga-2 text-body-2">
+                  <span v-if="getRemainingNewCards(bank) > 0" class="text-success font-weight-bold">
+                    +{{ getRemainingNewCards(bank) }}
+                  </span>
+                  <span :class="getRemainingDueCards(bank) > 0 ? 'text-error font-weight-bold' : 'text-grey'">
+                    {{ getRemainingDueCards(bank) }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -905,7 +902,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useFetch, useMutation } from '@/composables'
 import { memoryApi } from '@/api'
@@ -913,6 +910,7 @@ import type {
   MemoryCardView,
   CourseStudyStatus,
   ReviewSummary,
+  CourseMemoryBank,
 } from '@/types/memory'
 import {
   ReviewResult,
@@ -935,6 +933,7 @@ const isReviewing = ref(false)
 const showAnswer = ref(false)
 const selectedCards = ref<number[]>([])
 const expansionPanel = ref<number[]>([]) // 控制展开面板状态
+const courseStateTab = ref<number>(Status.STUDYING) // 课程状态 tab：1=学习中，2=冻结，3=隐藏
 
 // 当前卡片（由后端维护）
 const currentCard = ref<MemoryCardView | null>(null)
@@ -949,36 +948,127 @@ const listLoading = ref(false)
 const listLastId = ref<number | undefined>(undefined)
 const listHasMore = ref(true)
 
-// 使用 useFetch 加载复习概览
-const { data: reviewSummary, refresh: refreshSummary } = useFetch<ReviewSummary>({
-  fetchFn: memoryApi.getReviewSummary,
+// 学习中的课程
+const { data: studyingSummary, refresh: refreshStudying } = useFetch<ReviewSummary>({
+  fetchFn: () => memoryApi.getReviewSummary(Status.STUDYING),
   immediate: true,
   defaultValue: { todayTotal: 0, todayCompleted: 0, streakDays: 0, courses: [] },
 })
 
-// 从复习概览中提取课程列表
-const courseMemoryBanks = computed(() => reviewSummary.value.courses)
+// 冻结的课程
+const { data: frozenSummary, refresh: refreshFrozen, loading: frozenLoading } = useFetch<ReviewSummary>({
+  fetchFn: () => memoryApi.getReviewSummary(Status.FROZEN),
+  immediate: false,
+  defaultValue: { todayTotal: 0, todayCompleted: 0, streakDays: 0, courses: [] },
+})
+
+// 隐藏的课程
+const { data: hiddenSummary, refresh: refreshHidden, loading: hiddenLoading } = useFetch<ReviewSummary>({
+  fetchFn: () => memoryApi.getReviewSummary(Status.HIDDEN),
+  immediate: false,
+  defaultValue: { todayTotal: 0, todayCompleted: 0, streakDays: 0, courses: [] },
+})
+
+// 当前状态 tab 对应的课程列表
+const currentCourseList = computed(() => {
+  switch (courseStateTab.value) {
+    case Status.STUDYING:
+      return studyingSummary.value.courses
+    case Status.FROZEN:
+      return frozenSummary.value.courses
+    case Status.HIDDEN:
+      return hiddenSummary.value.courses
+    default:
+      return []
+  }
+})
+
+// 课程列表加载状态
+const courseListLoadingComputed = computed(() => {
+  return frozenLoading.value || hiddenLoading.value
+})
+
+// 从复习概览中提取课程列表（学习中的课程，兼容现有代码）
+const courseMemoryBanks = computed(() => studyingSummary.value.courses)
 
 // 刷新课程列表的方法（兼容现有代码）
-const refreshCourses = refreshSummary
+const refreshCourses = refreshStudying
+
+// 监听 courseStateTab 变化，懒加载数据
+watch(courseStateTab, (newState) => {
+  if (newState === Status.FROZEN && frozenSummary.value.courses.length === 0) {
+    void refreshFrozen()
+  } else if (newState === Status.HIDDEN && hiddenSummary.value.courses.length === 0) {
+    void refreshHidden()
+  }
+})
 
 // 计算属性
 const totalDueCards = computed(() => {
-  return courseMemoryBanks.value.reduce((sum, bank) => sum + bank.dueCardCount, 0)
+  return courseMemoryBanks.value.reduce((sum, bank) => sum + getRemainingDueCards(bank), 0)
 })
 
 const totalNewCards = computed(() => {
-  return courseMemoryBanks.value.reduce((sum, bank) => sum + (bank.newCardCount || 0), 0)
+  return courseMemoryBanks.value.reduce((sum, bank) => sum + getRemainingNewCards(bank), 0)
 })
 
-const totalCardCount = computed(() => {
-  return courseMemoryBanks.value.reduce((sum, bank) => sum + bank.cardCount, 0)
+// 获取选中课程的剩余可学新卡数
+const selectedCourseNewCards = computed(() => {
+  if (!selectedCourse.value) return 0
+  return getRemainingNewCards(selectedCourse.value)
 })
+
+// 获取选中课程的剩余可复习数
+const selectedCourseDueCards = computed(() => {
+  if (!selectedCourse.value) return 0
+  return getRemainingDueCards(selectedCourse.value)
+})
+
+// 默认每日上限
+const DEFAULT_DAILY_NEW_LIMIT = 20
+const DEFAULT_DAILY_REVIEW_LIMIT = 100
+
+// 计算课程今日剩余可学新卡数
+const getRemainingNewCards = (bank: CourseMemoryBank): number => {
+  const newCardCount = bank.newCardCount || 0
+  const dailyNewLimit = bank.setting.dailyNewLimit ?? DEFAULT_DAILY_NEW_LIMIT
+  const todayNewCount = bank.todayNewCount || 0
+  const remainingQuota = dailyNewLimit - todayNewCount
+  return Math.max(0, Math.min(newCardCount, remainingQuota))
+}
+
+// 计算课程今日剩余可复习数
+const getRemainingDueCards = (bank: CourseMemoryBank): number => {
+  const dueCardCount = bank.dueCardCount || 0
+  const dailyReviewLimit = bank.setting.dailyReviewLimit ?? DEFAULT_DAILY_REVIEW_LIMIT
+  const todayReviewCount = bank.todayReviewCount || 0
+  const remainingQuota = dailyReviewLimit - todayReviewCount
+  return Math.max(0, Math.min(dueCardCount, remainingQuota))
+}
 
 const selectedCourse = computed(() => {
   if (activeTab.value === 'all') return null
   const courseId = parseInt(activeTab.value)
   return courseMemoryBanks.value.find((bank) => bank.course.id === courseId)
+})
+
+// 带默认值的设置 computed（用于表单绑定）
+const settingDailyNewLimit = computed({
+  get: () => selectedCourse.value?.setting.dailyNewLimit ?? DEFAULT_DAILY_NEW_LIMIT,
+  set: (val: number) => {
+    if (selectedCourse.value) {
+      selectedCourse.value.setting.dailyNewLimit = val
+    }
+  }
+})
+
+const settingDailyReviewLimit = computed({
+  get: () => selectedCourse.value?.setting.dailyReviewLimit ?? DEFAULT_DAILY_REVIEW_LIMIT,
+  set: (val: number) => {
+    if (selectedCourse.value) {
+      selectedCourse.value.setting.dailyReviewLimit = val
+    }
+  }
 })
 
 const frequencyOptions = computed(() => [
@@ -989,8 +1079,8 @@ const frequencyOptions = computed(() => [
 
 const statusOptions = computed(() => [
   { title: t('review.statusStudying'), value: Status.STUDYING },
-  { title: t('review.statusPaused'), value: Status.PAUSED },
-  { title: t('review.statusArchived'), value: Status.ARCHIVED },
+  { title: t('review.statusFrozen'), value: Status.FROZEN },
+  { title: t('review.statusHidden'), value: Status.HIDDEN },
 ])
 
 const cardOrderOptions = computed(() => [
@@ -1041,7 +1131,7 @@ const startReview = async () => {
   // 必须选择具体课程才能开始复习
   if (!selectedCourse.value) return
   const courseId = selectedCourse.value.course.id
-  const courseDueCards = selectedCourse.value.dueCardCount + (selectedCourse.value.newCardCount || 0)
+  const courseDueCards = selectedCourseDueCards.value + selectedCourseNewCards.value
   if (courseDueCards === 0) return
 
   reviewLoading.value = true
@@ -1247,6 +1337,8 @@ const { execute: executeUpdateSetting } = useMutation(
       status: selectedCourse.value.setting.state,
       frequencySetting: selectedCourse.value.setting.frequencySetting,
       cardOrder: selectedCourse.value.setting.cardOrder,
+      dailyNewLimit: settingDailyNewLimit.value,
+      dailyReviewLimit: settingDailyReviewLimit.value,
     })
   },
   {

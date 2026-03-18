@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -115,10 +116,13 @@ public class MemoryBankDomainService {
      * @param frequencySetting 频率设置（可选）
      * @param state 状态（可选）
      * @param cardOrder 卡片顺序（可选）
+     * @param dailyNewLimit 每日新卡上限（可选）
+     * @param dailyReviewLimit 每日复习上限（可选）
      */
     @Transactional
     public void updateCourseSetting(Long userId, Long courseId,
-                                     Integer frequencySetting, Byte state, Byte cardOrder) {
+                                     Integer frequencySetting, Byte state, Byte cardOrder,
+                                     Integer dailyNewLimit, Integer dailyReviewLimit) {
         // 获取现有设置
         UserCourseSrsSettingDO existingSetting = courseSrsSettingDataService.getByUserAndCourse(userId, courseId);
         if (existingSetting == null) {
@@ -129,12 +133,36 @@ public class MemoryBankDomainService {
         if (frequencySetting != null) {
             existingSetting.setFrequencySetting(frequencySetting.byteValue());
         }
-        if (state != null) {
-            existingSetting.setState(state);
-        }
         if (cardOrder != null) {
             existingSetting.setCardOrder(cardOrder);
         }
+        if (dailyNewLimit != null) {
+            existingSetting.setDailyNewLimit(dailyNewLimit);
+        }
+        if (dailyReviewLimit != null) {
+            existingSetting.setDailyReviewLimit(dailyReviewLimit);
+        }
+
+        // 处理状态变更（冻结/解冻逻辑）
+        if (state != null && !state.equals(existingSetting.getState())) {
+            Byte oldState = existingSetting.getState();
+
+            // 从冻结恢复：累加冻结时长
+            if (DeckCourseStudyState.FROZEN.value().equals(oldState) && existingSetting.getFrozenAt() != null) {
+                long frozenSeconds = ChronoUnit.SECONDS.between(existingSetting.getFrozenAt(), LocalDateTime.now());
+                long totalFrozen = (existingSetting.getFrozenDuration() != null ? existingSetting.getFrozenDuration() : 0L) + frozenSeconds;
+                existingSetting.setFrozenDuration(totalFrozen);
+                existingSetting.setFrozenAt(null);
+            }
+
+            // 切换到冻结：记录冻结开始时间
+            if (DeckCourseStudyState.FROZEN.value().equals(state)) {
+                existingSetting.setFrozenAt(LocalDateTime.now());
+            }
+
+            existingSetting.setState(state);
+        }
+
         existingSetting.setUpdatedAt(LocalDateTime.now());
         courseSrsSettingDataService.update(existingSetting);
 
@@ -206,5 +234,16 @@ public class MemoryBankDomainService {
      */
     public List<CourseMemoryBankDO> getBatchCourseCardStats(Long userId, Set<Long> courseIds) {
         return userCardSrsDataService.getBatchCardStatsForCourses(userId, courseIds);
+    }
+
+    /**
+     * 批量获取课程的卡片统计信息（优化版，带 LIMIT）
+     *
+     * @param userId 用户ID
+     * @param settings 课程设置列表
+     * @return 课程记忆库统计DO列表
+     */
+    public List<CourseMemoryBankDO> getBatchCourseCardStatsOptimized(Long userId, List<UserCourseSrsSettingDO> settings) {
+        return userCardSrsDataService.getBatchCardStatsOptimized(userId, settings);
     }
 }

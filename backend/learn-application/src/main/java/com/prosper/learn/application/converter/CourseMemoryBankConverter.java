@@ -18,11 +18,9 @@ public interface CourseMemoryBankConverter {
      */
     @Named("toCardStatsDTO")
     @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "cardCount")
     @Mapping(target = "dueCardCount")
     @Mapping(target = "newCardCount")
     @Mapping(target = "reviewCardCount")
-    @Mapping(target = "learnedCardCount")
     CourseMemoryBankDTO toCardStatsDTO(CourseMemoryBankDO courseMemoryBankDO);
 
     /**
@@ -36,10 +34,8 @@ public interface CourseMemoryBankConverter {
      * 这个方法用于在已经有course和setting信息的DTO上补充统计信息
      */
     @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "cardCount")
     @Mapping(target = "dueCardCount")
     @Mapping(target = "newCardCount")
     @Mapping(target = "reviewCardCount")
-    @Mapping(target = "learnedCardCount")
     void updateCardStats(@MappingTarget CourseMemoryBankDTO dto, CourseMemoryBankDO courseMemoryBankDO);
 }

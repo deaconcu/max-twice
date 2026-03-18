@@ -13,9 +13,6 @@ public class CourseMemoryBankDTO {
 
     private UserCourseSrsSettingDTO setting;
 
-    // 当前在学多少张卡片
-    private Integer cardCount;
-
     // 今天需要复习多少张卡片
     private Integer dueCardCount;
 
@@ -25,7 +22,10 @@ public class CourseMemoryBankDTO {
     // 有多少张卡片处于复习中
     private Integer reviewCardCount;
 
-    // 有多少张卡片已经学会了
-    private Integer learnedCardCount;
+    // 今日已学新卡数
+    private Integer todayNewCount;
+
+    // 今日已复习数
+    private Integer todayReviewCount;
 
 }

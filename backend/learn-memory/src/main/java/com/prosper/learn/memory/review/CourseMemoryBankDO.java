@@ -3,26 +3,23 @@ package com.prosper.learn.memory.review;
 import lombok.Data;
 
 /**
- * 课程记忆库信息响应DTO
+ * 课程记忆库统计信息DO
  */
 @Data
 public class CourseMemoryBankDO {
 
     private Long courseId;
 
-    // 当前在学多少张卡片
-    private Integer cardCount;
-
-    // 今天需要复习多少张卡片
+    // 今天需要复习多少张卡片（learningCount + reviewCardCount）
     private Integer dueCardCount;
 
     // 有多少张卡片从来没有学习过
     private Integer newCardCount;
 
-    // 有多少张卡片处于复习中
-    private Integer reviewCardCount;
+    // LEARNING + RELEARNING 卡片数
+    private Integer learningCount;
 
-    // 有多少张卡片已经学会了
-    private Integer learnedCardCount;
+    // REVIEW 且到期的卡片数
+    private Integer reviewCardCount;
 
 }

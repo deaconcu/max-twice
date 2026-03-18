@@ -10,10 +10,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -569,6 +566,65 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
      */
     public CourseMemoryBankDO getCardStatsForCourse(long userId, long courseId) {
         return userCardSrsMapper.getCardStatsForCourse(userId, courseId, LocalDateTime.now());
+    }
+
+    // ========== 优化统计查询（带 LIMIT）==========
+
+    private static final int DEFAULT_DAILY_NEW_LIMIT = 20;
+    private static final int DEFAULT_DAILY_REVIEW_LIMIT = 100;
+
+    /**
+     * 批量获取多个课程的卡片统计（优化版，每个课程独立 LIMIT）
+     *
+     * @param userId 用户ID
+     * @param settings 课程设置列表（包含每个课程的 limit）
+     * @return 课程统计列表
+     */
+    public List<CourseMemoryBankDO> getBatchCardStatsOptimized(long userId, List<UserCourseSrsSettingDO> settings) {
+        if (settings == null || settings.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 构建查询参数
+        List<CourseQueryParam> params = settings.stream()
+                .map(s -> new CourseQueryParam(
+                        s.getCourseId(),
+                        (s.getDailyNewLimit() != null ? s.getDailyNewLimit() : DEFAULT_DAILY_NEW_LIMIT) + 1,
+                        (s.getDailyReviewLimit() != null ? s.getDailyReviewLimit() : DEFAULT_DAILY_REVIEW_LIMIT) + 1
+                ))
+                .collect(Collectors.toList());
+
+        // 初始化结果 Map
+        Map<Long, CourseMemoryBankDO> resultMap = new HashMap<>();
+        for (UserCourseSrsSettingDO setting : settings) {
+            CourseMemoryBankDO d = new CourseMemoryBankDO();
+            d.setCourseId(setting.getCourseId());
+            d.setNewCardCount(0);
+            d.setReviewCardCount(0);
+            d.setDueCardCount(0);
+            resultMap.put(setting.getCourseId(), d);
+        }
+
+        // 1. 统计新卡片数（type=0）
+        List<CourseMemoryBankDO> newList = userCardSrsMapper.countNewCardsWithLimit(userId, params);
+        for (CourseMemoryBankDO d : newList) {
+            CourseMemoryBankDO result = resultMap.get(d.getCourseId());
+            if (result != null) {
+                result.setNewCardCount(d.getNewCardCount());
+            }
+        }
+
+        // 2. 统计 REVIEW 且到期（type=2 AND due）
+        List<CourseMemoryBankDO> reviewList = userCardSrsMapper.countReviewDueCardsWithLimit(userId, params, LocalDateTime.now());
+        for (CourseMemoryBankDO d : reviewList) {
+            CourseMemoryBankDO result = resultMap.get(d.getCourseId());
+            if (result != null) {
+                result.setReviewCardCount(d.getReviewCardCount());
+                result.setDueCardCount(d.getReviewCardCount());
+            }
+        }
+
+        return new ArrayList<>(resultMap.values());
     }
 
     // ========== 移动节点到课程 ==========

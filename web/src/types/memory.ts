@@ -26,8 +26,8 @@ export enum FrequencySetting {
  */
 export enum CourseStudyStatus {
   STUDYING = 1, // 学习中
-  PAUSED = 2, // 已暂停
-  ARCHIVED = 3, // 已归档
+  FROZEN = 2, // 冻结（到期时间暂停累积）
+  HIDDEN = 3, // 隐藏（到期时间继续累积）
 }
 
 /**
@@ -159,9 +159,10 @@ export interface CourseMemoryBank {
     name: string
     icon?: string
   }
-  cardCount: number // 总卡片数
   dueCardCount: number // 到期复习卡片数（不含新卡）
   newCardCount: number // 新卡片数
+  todayNewCount?: number // 今日已学新卡数
+  todayReviewCount?: number // 今日已复习数
   setting: CourseMemorySetting
 }
 
@@ -175,6 +176,8 @@ export interface CourseMemorySetting {
   cardOrder: CardOrder // 卡片顺序
   dailyNewLimit?: number // 每日新卡上限
   dailyReviewLimit?: number // 每日复习上限
+  frozenAt?: string // 冻结开始时间
+  frozenDuration?: number // 累计冻结时长（秒）
 }
 
 /**

@@ -56,6 +56,7 @@ public class MemoryBankService {
     private final CourseMemoryBankConverter courseMemoryBankConverter;
     private final UserStatsDomainService userStatsDomainService;
     private final UserCardSrsDataService userCardSrsDataService;
+    private final DailyLimitService dailyLimitService;
     private final SystemProperties systemProperties;
 
     // ========== DTO 转换方法 ==========
@@ -70,6 +71,10 @@ public class MemoryBankService {
         bankDTO.setCourse(courseConverter.toBriefDTO(courseDO));
         bankDTO.setSetting(courseSrsSettingConverter.toDTO(settingDO));
 
+        // 添加今日计数
+        bankDTO.setTodayNewCount(dailyLimitService.getTodayNewCount(userId, courseDO.getId()));
+        bankDTO.setTodayReviewCount(dailyLimitService.getTodayReviewCount(userId, courseDO.getId()));
+
         return bankDTO;
     }
 
@@ -83,6 +88,11 @@ public class MemoryBankService {
             CourseMemoryBankDTO courseMemoryBankDTO = courseMemoryBankConverter.toCardStatsDTO(bankDO);
             courseMemoryBankDTO.setCourse(courseConverter.toBriefDTO(courseMap.get(bankDO.getCourseId())));
             courseMemoryBankDTO.setSetting(courseSrsSettingConverter.toDTO(settingMap.get(bankDO.getCourseId())));
+
+            // 添加今日计数
+            courseMemoryBankDTO.setTodayNewCount(dailyLimitService.getTodayNewCount(userId, bankDO.getCourseId()));
+            courseMemoryBankDTO.setTodayReviewCount(dailyLimitService.getTodayReviewCount(userId, bankDO.getCourseId()));
+
             bankDTOList.add(courseMemoryBankDTO);
         }
         return bankDTOList;
@@ -154,12 +164,14 @@ public class MemoryBankService {
 
     /**
      * 获取记忆库课程列表
+     * - state=1（学习中）：返回课程列表 + 统计卡片数
+     * - state=2（冻结）/state=3（隐藏）：只返回课程列表，不统计卡片
      */
     public List<CourseMemoryBankDTO> getMemoryBankCourses(Long userId, Integer state) {
         // 跨域验证：验证用户存在性
         userDataService.validateExists(userId);
 
-        // 调用 DomainService 获取课程设置列表
+        // 调用 DomainService 获取指定状态的课程设置列表
         List<UserCourseSrsSettingDO> settings = domainService.getMemoryBankCourseSettings(userId, state);
         if (settings.isEmpty()) {
             return new ArrayList<>();
@@ -171,18 +183,58 @@ public class MemoryBankService {
                 .collect(Collectors.toSet());
         Map<Long, CourseDO> courseMap = courseDataService.getMapByIds(courseIds);
 
-        // 构建设置映射
-        Map<Long, UserCourseSrsSettingDO> settingMap = settings.stream()
-                .collect(Collectors.toMap(UserCourseSrsSettingDO::getCourseId, s -> s));
-
-        // 转换为DTO，过滤掉被屏蔽的课程（state != PUBLISHED）
-        List<CourseDO> courses = settings.stream()
-                .map(setting -> courseMap.get(setting.getCourseId()))
-                .filter(Objects::nonNull)
-                .filter(course -> ContentState.PUBLISHED.value().equals(course.getState()))
+        // 过滤掉被屏蔽的课程（课程本身 state != PUBLISHED）
+        List<UserCourseSrsSettingDO> validSettings = settings.stream()
+                .filter(setting -> {
+                    CourseDO course = courseMap.get(setting.getCourseId());
+                    return course != null && ContentState.PUBLISHED.value().equals(course.getState());
+                })
                 .collect(Collectors.toList());
 
-        return toCourseMemoryBankDTO(courses, settingMap, userId);
+        if (validSettings.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 只有学习中状态才统计卡片数
+        boolean needStats = state != null && DeckCourseStudyState.STUDYING.value().equals(state.byteValue());
+
+        Map<Long, CourseMemoryBankDO> statsMap = new HashMap<>();
+        if (needStats) {
+            List<CourseMemoryBankDO> statsList = domainService.getBatchCourseCardStatsOptimized(userId, validSettings);
+            statsMap = statsList.stream()
+                    .collect(Collectors.toMap(CourseMemoryBankDO::getCourseId, s -> s));
+        }
+
+        // 构建返回结果
+        List<CourseMemoryBankDTO> result = new ArrayList<>();
+        for (UserCourseSrsSettingDO setting : validSettings) {
+            Long courseId = setting.getCourseId();
+            CourseDO course = courseMap.get(courseId);
+            if (course == null) continue;
+
+            CourseMemoryBankDTO dto = new CourseMemoryBankDTO();
+            dto.setCourse(courseConverter.toBriefDTO(course));
+            dto.setSetting(courseSrsSettingConverter.toDTO(setting));
+
+            if (needStats && statsMap.containsKey(courseId)) {
+                CourseMemoryBankDO stats = statsMap.get(courseId);
+                dto.setNewCardCount(stats.getNewCardCount());
+                dto.setDueCardCount(stats.getDueCardCount());
+                dto.setReviewCardCount(stats.getReviewCardCount());
+                dto.setTodayNewCount(dailyLimitService.getTodayNewCount(userId, courseId));
+                dto.setTodayReviewCount(dailyLimitService.getTodayReviewCount(userId, courseId));
+            } else {
+                dto.setNewCardCount(0);
+                dto.setDueCardCount(0);
+                dto.setReviewCardCount(0);
+                dto.setTodayNewCount(0);
+                dto.setTodayReviewCount(0);
+            }
+
+            result.add(dto);
+        }
+
+        return result;
     }
 
 
@@ -262,7 +314,7 @@ public class MemoryBankService {
      *
      * @param userId 用户ID
      * @param courseId 课程ID
-     * @param request 更新请求，包含 frequencySetting、status 和/或 cardOrder
+     * @param request 更新请求，包含 frequencySetting、status、cardOrder、dailyNewLimit、dailyReviewLimit
      */
     @Transactional
     public void updateCourseSetting(Long userId, Long courseId, UpdateCourseSettingRequest request) {
@@ -279,7 +331,9 @@ public class MemoryBankService {
             courseId,
             request.getFrequencySetting(),
             request.getStatus() != null ? request.getStatus().byteValue() : null,
-            request.getCardOrder() != null ? request.getCardOrder().byteValue() : null
+            request.getCardOrder() != null ? request.getCardOrder().byteValue() : null,
+            request.getDailyNewLimit(),
+            request.getDailyReviewLimit()
         );
     }
 

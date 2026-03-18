@@ -256,6 +256,38 @@ public interface UserCardSrsMapper {
                                               @Param("courseId") long courseId,
                                               @Param("now") LocalDateTime now);
 
+    // ========== 优化统计查询（利用索引 user_id, type, course_id, review_due_at）==========
+
+    /**
+     * 批量统计新卡片数（type=0），每个课程有独立的 LIMIT
+     */
+    @Select({"<script>",
+          "<foreach item=\"param\" collection=\"params\" separator=\" UNION ALL \">",
+          "    SELECT #{param.courseId} AS courseId,",
+          "           (SELECT COUNT(*) FROM (SELECT 1 FROM user_card_srs",
+          "            WHERE user_id = #{userId} AND type = 0 AND course_id = #{param.courseId}",
+          "            LIMIT #{param.newLimit}) t) AS newCardCount",
+          "</foreach>",
+          "</script>"})
+    List<CourseMemoryBankDO> countNewCardsWithLimit(@Param("userId") long userId,
+                                                     @Param("params") List<CourseQueryParam> params);
+
+    /**
+     * 批量统计 REVIEW 且到期的卡片数，每个课程有独立的 LIMIT
+     */
+    @Select({"<script>",
+          "<foreach item=\"param\" collection=\"params\" separator=\" UNION ALL \">",
+          "    SELECT #{param.courseId} AS courseId,",
+          "           (SELECT COUNT(*) FROM (SELECT 1 FROM user_card_srs",
+          "            WHERE user_id = #{userId} AND type = 2 AND course_id = #{param.courseId}",
+          "            AND review_due_at &lt;= #{now}",
+          "            LIMIT #{param.reviewLimit}) t) AS reviewCardCount",
+          "</foreach>",
+          "</script>"})
+    List<CourseMemoryBankDO> countReviewDueCardsWithLimit(@Param("userId") long userId,
+                                                          @Param("params") List<CourseQueryParam> params,
+                                                          @Param("now") LocalDateTime now);
+
     // ========== 移动节点到课程 ==========
 
     /**

@@ -18,6 +18,10 @@ public interface UserCourseSrsSettingConverter {
     @Mapping(target = "frequencySetting")
     @Mapping(target = "state")
     @Mapping(target = "cardOrder")
+    @Mapping(target = "dailyNewLimit")
+    @Mapping(target = "dailyReviewLimit")
+    @Mapping(target = "frozenAt")
+    @Mapping(target = "frozenDuration")
     UserCourseSrsSettingDTO toDTO(UserCourseSrsSettingDO settingDO);
 
     @IterableMapping(qualifiedByName = "toDTO")

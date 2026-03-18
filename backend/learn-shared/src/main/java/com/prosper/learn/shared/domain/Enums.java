@@ -730,12 +730,12 @@ public class Enums {
 
     /**
      * 课程学习状态枚举
-     * STUDYING=1, PAUSED=2, ARCHIVED=3
+     * STUDYING=1, FROZEN=2, HIDDEN=3
      */
     public enum DeckCourseStudyState implements ValueEnum<Byte> {
         STUDYING((byte) 1),     // 学习中
-        PAUSED((byte) 2),       // 已暂停
-        ARCHIVED((byte) 3);     // 已归档
+        FROZEN((byte) 2),       // 冻结（到期时间暂停累积）
+        HIDDEN((byte) 3);       // 隐藏（到期时间继续累积）
 
         private final byte value;
 

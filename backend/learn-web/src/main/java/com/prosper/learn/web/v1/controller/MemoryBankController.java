@@ -51,10 +51,10 @@ public class MemoryBankController {
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<ReviewSummaryDTO> getReviewSummary(
-            @RequestParam(required = false) @Min(value = 0, message = "状态不能小于0") Integer status,
+            @RequestParam(required = false) @Min(value = 0, message = "状态不能小于0") Integer state,
             @CurrentUser UserDO currentUser) {
 
-        ReviewSummaryDTO result = memoryBankService.getReviewSummary(currentUser.getId(), status);
+        ReviewSummaryDTO result = memoryBankService.getReviewSummary(currentUser.getId(), state);
         return ApiResponse.success(result);
     }
 
