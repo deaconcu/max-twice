@@ -18,68 +18,69 @@
         class="deck-item"
         @click="viewDeckDetail(deck)"
       >
-        <!-- 第一行：卡片预览 ... 共X张卡片 -->
-        <div class="d-flex align-center mb-2">
-          <v-icon icon="mdi-cards-outline" size="18" color="grey-darken-1" class="mr-2 flex-shrink-0"></v-icon>
-          <span class="card-preview text-body-1 text-grey-darken-3">
-            {{ deck.firstCardQuestion || '卡片组' }}
-          </span>
-          <span class="text-body-2 text-grey mx-2">...</span>
-          <span class="text-body-2 text-grey flex-shrink-0">
-            共{{ deck.cardCount }}张卡片
-          </span>
-          <v-chip
-            v-if="deck.studyingCardCount && deck.studyingCardCount > 0"
-            size="x-small"
-            color="success"
-            variant="flat"
-            class="ml-2"
-          >
-            学习中 {{ deck.studyingCardCount }}
-          </v-chip>
-        </div>
-        <!-- 第二行：描述 -->
-        <p v-if="deck.description" class="text-body-2 text-grey-darken-1 mb-2 deck-desc">
-          {{ deck.description }}
-        </p>
-        <!-- 第三行：头像 + 用户名 + 点赞 + 收藏 -->
-        <div class="d-flex align-center">
-          <UserAvatar
-            :name="deck.creator?.name || '匿名用户'"
-            :avatar-url="deck.creator?.avatar"
-            size="20"
-            rounded="circle"
-            class="mr-2"
-          />
-          <span class="text-body-2 text-grey">
-            {{ deck.creator?.name || '匿名用户' }}
-          </span>
-          <span
-            class="d-flex align-center text-body-2 like-btn ml-4"
-            :class="{ 'text-error': deck.hasLiked, 'text-grey': !deck.hasLiked }"
-            @click.stop="handleUpvote(deck)"
-          >
-            <v-icon
-              :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
-              size="16"
-              class="mr-1"
-            ></v-icon>
-            {{ deck.likeCount || 0 }}
-          </span>
-          <span
-            class="d-flex align-center text-body-2 bookmark-btn ml-3"
-            :class="{ 'text-primary': deck.bookmarked, 'text-grey': !deck.bookmarked }"
-            @click.stop="handleToggleBookmark(deck)"
-          >
-            <v-icon
-              :icon="deck.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
-              size="16"
-            ></v-icon>
-          </span>
-          <v-spacer />
-          <span v-if="deck.updatedAt" class="text-caption text-grey">
-            {{ formatRelativeTime(deck.updatedAt) }}
-          </span>
+        <!-- 左右两栏布局 -->
+        <div class="d-flex align-stretch">
+          <!-- 左侧：用户 / 简介 / 点赞收藏 -->
+          <div class="d-flex flex-column justify-space-between flex-grow-1 min-width-0 mr-4">
+            <!-- 用户 + 时间 -->
+            <div class="d-flex align-center mb-2">
+              <UserAvatar
+                :name="deck.creator?.name || '匿名用户'"
+                :avatar-url="deck.creator?.avatar"
+                size="18"
+                rounded="circle"
+                class="mr-2 flex-shrink-0"
+              />
+              <span class="text-body-2 font-weight-medium text-grey-darken-3">
+                {{ deck.creator?.name || '匿名用户' }}
+              </span>
+              <span v-if="deck.updatedAt" class="text-caption text-grey mx-1">·</span>
+              <span v-if="deck.updatedAt" class="text-caption text-grey">
+                {{ formatRelativeTime(deck.updatedAt) }}
+              </span>
+            </div>
+            <!-- 简介 -->
+            <div class="text-body-2 text-grey-darken-1 deck-desc mb-2">
+              {{ deck.description || '暂无描述' }}
+            </div>
+            <!-- 点赞 + 收藏 -->
+            <div class="d-flex align-center">
+              <span
+                class="d-flex align-center text-caption like-btn"
+                :class="{ 'text-error': deck.hasLiked, 'text-grey': !deck.hasLiked }"
+                @click.stop="handleUpvote(deck)"
+              >
+                <v-icon
+                  :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                  size="14"
+                  class="mr-1"
+                ></v-icon>
+                {{ deck.likeCount || 0 }}
+              </span>
+              <span
+                class="d-flex align-center text-caption bookmark-btn ml-3"
+                :class="{ 'text-primary': deck.bookmarked, 'text-grey': !deck.bookmarked }"
+                @click.stop="handleToggleBookmark(deck)"
+              >
+                <v-icon
+                  :icon="deck.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+                  size="14"
+                ></v-icon>
+              </span>
+            </div>
+          </div>
+
+          <!-- 右侧：两个大图标 + 数字 -->
+          <div class="d-flex flex-row align-center justify-center" style="gap: 12px">
+            <div class="d-flex flex-column align-center stat-item">
+              <v-icon icon="mdi-cards-outline" size="28" color="grey-darken-1"></v-icon>
+              <span class="text-caption text-grey-darken-1 font-weight-medium mt-1">{{ deck.cardCount || 0 }}</span>
+            </div>
+            <div v-if="deck.studyingCardCount && deck.studyingCardCount > 0" class="d-flex flex-column align-center stat-item">
+              <v-icon icon="mdi-check-circle-outline" size="28" color="success"></v-icon>
+              <span class="text-caption font-weight-medium mt-1 text-success">{{ deck.studyingCardCount }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -296,7 +297,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .memory-card-list {
-  padding: 16px 0;
+  padding: 8px 0;
 }
 
 .deck-list {
@@ -305,20 +306,23 @@ onBeforeUnmount(() => {
 }
 
 .deck-item {
-  padding: 16px 12px;
-  border-radius: 12px;
+  padding: 18px 8px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.15s ease;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.deck-item:last-child {
+  border-bottom: none;
 }
 
 .deck-item:hover {
   background-color: rgba(var(--v-theme-surface-variant), 0.5);
 }
 
-.card-preview {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.min-width-0 {
+  min-width: 0;
 }
 
 .deck-desc {
@@ -329,12 +333,16 @@ onBeforeUnmount(() => {
   line-height: 1.5;
 }
 
+.stat-item {
+  min-width: 36px;
+}
+
 .like-btn,
 .bookmark-btn {
   cursor: pointer;
-  padding: 4px 8px;
-  margin: -4px -8px;
-  border-radius: 6px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 4px;
   transition: background-color 0.15s ease;
 }
 
