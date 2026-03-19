@@ -873,8 +873,8 @@
 
       <!-- 右侧课程分类 - 仅大屏幕显示 -->
       <v-col cols="12" lg="3" class="d-none d-lg-block">
-        <v-card rounded="lg" class="sticky-nav px-3 px-sm-4 no-border">
-          <div class="d-flex align-center justify-space-between mb-3 mb-md-4">
+        <v-card rounded="lg" class="sticky-nav pl-3 pl-sm-4 pr-1 no-border">
+          <div class="d-flex align-center justify-space-between mb-3 mb-md-4 px-2 pr-0">
             <h3 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4">
               {{ t('review.courseCategory') }}
             </h3>
@@ -1591,8 +1591,7 @@ onBeforeUnmount(() => {
 }
 
 .nav-item-active {
-  background: rgba(var(--v-theme-primary), 0.08);
-  border-color: rgba(var(--v-theme-primary), 0.2);
+  background: rgb(var(--v-theme-surface-variant));
 }
 
 .nav-item-inactive {
