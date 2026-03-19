@@ -807,12 +807,8 @@
           </div>
 
           <v-card v-else border rounded="lg" class="pa-4 pa-sm-6">
-            <h3 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-3 mb-4">
-              {{ t('review.reviewSettings') }}
-            </h3>
-
             <div
-              class="py-3 py-sm-4 rounded-lg mb-4"
+              class="pb-3 pb-sm-4 rounded-lg mb-4"
               style="background-color: rgb(var(--v-theme-surface))"
             >
               <div class="d-flex justify-space-between align-center mb-3">
