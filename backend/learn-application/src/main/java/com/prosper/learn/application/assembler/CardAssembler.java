@@ -176,7 +176,7 @@ public class CardAssembler {
         }
 
         // 检查卡片或卡片组是否被屏蔽
-        boolean isBlocked = isCardOrDeckBlocked(cardDO, deck);
+        boolean isBlocked = isCardOrDeckBlocked(cardDO, deck, userId);
 
         // 获取卡片内容版本
         if (isBlocked) {
@@ -207,8 +207,18 @@ public class CardAssembler {
 
     /**
      * 检查卡片或卡片组是否被屏蔽
+     * 如果 userId 是卡片或卡片组的创建者，则不屏蔽
      */
-    private boolean isCardOrDeckBlocked(MemoryCardDO card, MemoryCardDeckDO deck) {
+    private boolean isCardOrDeckBlocked(MemoryCardDO card, MemoryCardDeckDO deck, Long userId) {
+        // 创建者始终可以看到自己的内容
+        if (userId != null) {
+            if (userId.equals(card.getCreatorId())) {
+                return false;
+            }
+            if (deck != null && userId.equals(deck.getCreatorId())) {
+                return false;
+            }
+        }
         // 卡片状态不是 PUBLISHED
         if (card.getState() != null && card.getState() != Enums.ContentState.PUBLISHED_VALUE) {
             return true;
@@ -326,7 +336,7 @@ public class CardAssembler {
 
                     // 检查卡片或卡片组是否被屏蔽
                     MemoryCardDeckDO deck = deckMap.get(card.getDeckId());
-                    boolean isBlocked = isCardOrDeckBlocked(card, deck);
+                    boolean isBlocked = isCardOrDeckBlocked(card, deck, userId);
 
                     // 设置卡片内容 - 根据场景选择版本
                     if (isBlocked) {

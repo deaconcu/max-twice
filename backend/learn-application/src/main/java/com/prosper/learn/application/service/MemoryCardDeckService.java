@@ -439,7 +439,7 @@ public class MemoryCardDeckService {
         DeckAndCardsDTO detail = deckConverter.toDeckDetailDTO(baseDTO);
         
         // 获取卡片列表（所有卡片tab - 不包含用户学习状态，显示最新版本）
-        List<CardWithSrsDTO> cards = memoryCardService.getCardsByDeck(deckId, null);
+        List<CardWithSrsDTO> cards = memoryCardService.getCardsByDeck(deckId, userId);
         detail.setCards(cards);
         
         // 获取统计信息
