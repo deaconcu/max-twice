@@ -535,27 +535,28 @@
 
           <div v-else>
             <div
-              class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 ga-3"
+              class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mt-6 ga-3"
             >
-              <h3 class="text-body-2 text-md-body-1 font-weight-bold text-grey-darken-4">
-                {{ t('review.cardList') }} ({{ listCards.length }} {{ t('review.cards') }})
-              </h3>
+              <span class="text-body-2 text-md-body-1 text-grey-darken-2">
+                <v-icon icon="mdi-cards-outline" size="16" class=""></v-icon>
+                {{ t('review.cardList') }}
+              </span>
 
               <!-- 批量操作按钮 -->
-              <div class="d-flex align-center flex-wrap ga-2">
+              <div class="d-flex align-center flex-wrap ga-1">
                 <v-btn
                   v-if="selectedCards.length > 0"
                   color="primary"
                   variant="tonal"
                   rounded="lg"
                   disabled
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  size="small"
                   @click="reviewSelectedCards"
                 >
                   <v-icon
                     icon="mdi-play"
-                    :size="$vuetify.display.mobile ? 14 : 16"
-                    :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+                    size="14"
+                    class="mr-1"
                   ></v-icon>
                   <span class="d-none d-sm-inline"
                     >{{ t('review.reviewSelected') }} ({{ selectedCards.length }})</span
@@ -568,13 +569,13 @@
                   color="warning"
                   variant="tonal"
                   rounded="lg"
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  size="small"
                   @click="resetSelectedCards"
                 >
                   <v-icon
                     icon="mdi-restart"
-                    :size="$vuetify.display.mobile ? 14 : 16"
-                    :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+                    size="14"
+                    class="mr-1"
                   ></v-icon>
                   <span class="d-none d-sm-inline">{{ t('review.resetLearning') }}</span>
                   <span class="d-sm-none">重置</span>
@@ -585,13 +586,13 @@
                   color="error"
                   variant="tonal"
                   rounded="lg"
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  size="small"
                   @click="deleteSelectedCards"
                 >
                   <v-icon
                     icon="mdi-delete"
-                    :size="$vuetify.display.mobile ? 14 : 16"
-                    :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+                    size="14"
+                    class="mr-1"
                   ></v-icon>
                   <span class="d-none d-sm-inline">{{ t('common.delete') }}</span>
                   <span class="d-sm-none">删除</span>
@@ -605,7 +606,7 @@
                   "
                   variant="tonal"
                   rounded="lg"
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  size="small"
                   :disabled="listCards.length === 0"
                   @click="toggleSelectAll"
                 >
@@ -615,8 +616,8 @@
                         ? 'mdi-checkbox-marked'
                         : 'mdi-checkbox-blank-outline'
                     "
-                    :size="$vuetify.display.mobile ? 14 : 16"
-                    :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+                    size="14"
+                    class="mr-1"
                   ></v-icon>
                   <span class="d-none d-sm-inline">
                     {{
@@ -655,11 +656,14 @@
               <div
                 v-for="(card, index) in listCards"
                 :key="card.id"
-                class="card-item pa-3 pa-sm-4 rounded-lg mb-2"
+                class="card-item pa-3 pa-sm-4 rounded-lg mb-2 position-relative"
                 :class="[selectedCards.includes(card.id) ? 'card-selected' : '']"
                 @click="toggleCardSelection(card.id)"
               >
-                <div class="d-flex align-center">
+                <!-- 左上角序号角标 -->
+                <span class="card-index-badge">{{ index + 1 }}</span>
+
+                <div class="d-flex align-start">
                   <!-- 选择框 -->
                   <div :class="$vuetify.display.mobile ? 'mr-2' : 'mr-3'">
                     <v-checkbox
@@ -668,16 +672,6 @@
                       hide-details
                       @click.stop="toggleCardSelection(card.id)"
                     ></v-checkbox>
-                  </div>
-
-                  <!-- 序号 -->
-                  <div
-                    class="rank-number mr-3 mr-sm-4 text-center d-none d-sm-flex"
-                    style="min-width: 40px"
-                  >
-                    <div class="text-body-2 text-md-body-1 font-weight-bold text-grey-darken-2">
-                      {{ index + 1 }}
-                    </div>
                   </div>
 
                   <!-- 卡片内容 -->
@@ -707,7 +701,7 @@
                           - {{ card.deck.courseName }} / {{ card.deck.nodeName }}
                         </span>
                       </div>
-                      <div class="text-caption text-md-body-2 text-grey-darken-2 mb-1 line-clamp-2">
+                      <div class="text-caption text-md-body-2 text-grey-darken-2 my-2 line-clamp-2">
                         {{ card.back }}
                       </div>
                       <!-- 到期时间 -->
@@ -1701,6 +1695,17 @@ onBeforeUnmount(() => {
 .card-selected {
   border-color: rgb(var(--v-theme-primary));
   background: rgba(var(--v-theme-primary), 0.05);
+}
+
+.card-index-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 0 0 6px 0;
 }
 
 .line-clamp-2 {
