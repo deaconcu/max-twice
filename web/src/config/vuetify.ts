@@ -7,7 +7,7 @@ import { createVuetify, type ThemeDefinition } from 'vuetify'
 const lightTheme: ThemeDefinition = {
   dark: false,
   colors: {
-    primary: '#1867C0',
+    primary: '#0891B2', // primary: '#1867C0',
     secondary: '#5CBBF6',
     accent: '#82B1FF',
     error: '#FF5252',
@@ -31,7 +31,7 @@ const lightTheme: ThemeDefinition = {
 const darkTheme: ThemeDefinition = {
   dark: true,
   colors: {
-    primary: '#2196F3',
+    primary: '#0891B2', // primary: '#2196F3',
     secondary: '#424242',
     accent: '#FF4081',
     error: '#FF5252',
