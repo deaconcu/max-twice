@@ -537,8 +537,8 @@
             <div
               class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mt-6 ga-3"
             >
-              <span class="text-body-2 text-md-body-1 text-grey-darken-2">
-                <v-icon icon="mdi-cards-outline" size="16" class=""></v-icon>
+              <span class="text-caption text-grey-darken-2">
+                <v-icon icon="mdi-cards-outline" size="14" class=""></v-icon>
                 {{ t('review.cardList') }}
               </span>
 
@@ -806,11 +806,8 @@
             </v-card>
           </div>
 
-          <v-card v-else border rounded="lg" class="pa-4 pa-sm-6">
-            <div
-              class="pb-3 pb-sm-4 rounded-lg mb-4"
-              style="background-color: rgb(var(--v-theme-surface))"
-            >
+          <div v-else class="mt-10">
+            <div>
               <div class="d-flex justify-space-between align-center mb-3">
                 <div>
                   <div class="text-body-1 text-grey-darken-3">
@@ -916,12 +913,12 @@
               </div>
             </div>
 
-            <div class="d-flex ga-3">
+            <div class="d-flex ga-3 mt-6">
               <v-btn color="primary" variant="flat" rounded="lg" @click="updateCourseSetting">
                 {{ t('common.saveSettings') }}
               </v-btn>
             </div>
-          </v-card>
+          </div>
         </div>
       </v-col>
 
