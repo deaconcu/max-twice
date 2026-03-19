@@ -176,7 +176,7 @@
         />
 
         <!-- 卡片组详情对话框 -->
-        <DeckDetailDialog v-model="showDeckDetail" :deck="selectedDeck" @add-to-study="handleAddToStudy" />
+        <DeckDetailDialog v-model="showDeckDetail" :deck="selectedDeck" />
       </div>
     </v-col>
   </v-row>
@@ -299,12 +299,6 @@ const openDeckDetail = (deck: any) => {
     nodeId: deck.nodeId, // 设置关联的节点ID
   }
   showDeckDetail.value = true
-}
-
-// 处理添加到学习
-const handleAddToStudy = (deck: any) => {
-  console.log('添加到学习:', deck)
-  // 这里可以处理添加到学习的逻辑
 }
 
 // 跳转到帖子详情

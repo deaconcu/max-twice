@@ -153,62 +153,78 @@
           class="deck-item"
           @click="viewDeckDetail(deck)"
         >
-          <!-- 第一行：卡片预览 ... 共X张卡片 -->
-          <div class="d-flex align-center mb-2">
-            <v-icon icon="mdi-cards-outline" size="16" color="grey-darken-1" class="mr-2 flex-shrink-0"></v-icon>
-            <span class="card-preview text-body-2 text-grey-darken-3">
-              {{ deck.firstCardQuestion || '卡片组' }}
-            </span>
-            <span class="text-caption text-grey mx-1">...</span>
-            <span class="text-caption text-grey flex-shrink-0">
-              共{{ deck.cardCount }}张卡片
-            </span>
-          </div>
-          <!-- 第二行：头像 + 用户名 + 点赞 + 修改时间 -->
-          <div class="d-flex align-center">
-            <UserAvatar
-              :name="deck.creator?.name || '匿名用户'"
-              :avatar-url="deck.creator?.avatar"
-              size="16"
-              rounded="circle"
-              class="mr-2"
-            />
-            <span class="text-caption text-grey">
-              {{ deck.creator?.name || '匿名用户' }}
-            </span>
-            <v-chip
-              v-if="showMyOnly && deck.creatorId === currentUserId"
-              size="x-small"
-              :color="getStateColor(deck.state)"
-              variant="flat"
-              class="ml-2"
-            >
-              {{ getStateText(deck.state) }}
-            </v-chip>
-            <span
-              v-if="deck.creator?.id !== currentUserId"
-              class="d-flex align-center text-caption like-btn ml-3"
-              :class="{ 'text-error': deck.hasLiked, 'text-grey': !deck.hasLiked }"
-              @click.stop="handleUpvote(deck, $event)"
-            >
-              <v-icon
-                :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
-                size="14"
-                class="mr-1"
-              ></v-icon>
-              {{ deck.likeCount || 0 }}
-            </span>
-            <span
-              v-else
-              class="d-flex align-center text-caption text-grey-lighten-1 ml-3"
-            >
-              <v-icon icon="mdi-thumb-up-outline" size="14" class="mr-1"></v-icon>
-              {{ deck.likeCount || 0 }}
-            </span>
-            <v-spacer />
-            <span v-if="deck.updatedAt" class="text-caption text-grey">
-              {{ formatRelativeTime(deck.updatedAt) }}
-            </span>
+          <div class="d-flex align-stretch">
+            <!-- 左侧：头像 + 作者 · 时间 / 点赞 -->
+            <div class="d-flex flex-column justify-space-between flex-grow-1 min-width-0 mr-3">
+              <!-- 用户 + 时间 -->
+              <div class="d-flex align-center mb-2">
+                <UserAvatar
+                  :name="deck.creator?.name || '匿名用户'"
+                  :avatar-url="deck.creator?.avatar"
+                  size="16"
+                  rounded="md"
+                  class="mr-2 flex-shrink-0"
+                />
+                <span class="text-body-2 font-weight-medium text-grey-darken-3">
+                  {{ deck.creator?.name || '匿名用户' }}
+                </span>
+                <span v-if="deck.updatedAt" class="text-caption text-grey mx-1">·</span>
+                <span v-if="deck.updatedAt" class="text-caption text-grey">
+                  {{ formatRelativeTime(deck.updatedAt) }}
+                </span>
+                <v-chip
+                  v-if="showMyOnly && deck.creatorId === currentUserId"
+                  size="x-small"
+                  :color="getStateColor(deck.state)"
+                  variant="flat"
+                  class="ml-2"
+                >
+                  {{ getStateText(deck.state) }}
+                </v-chip>
+              </div>
+              <!-- 点赞 + 收藏 -->
+              <div class="d-flex align-center">
+                <span
+                  v-if="deck.creator?.id !== currentUserId"
+                  class="d-flex align-center text-caption like-btn"
+                  :class="{ 'text-error': deck.hasLiked, 'text-grey': !deck.hasLiked }"
+                  @click.stop="handleUpvote(deck, $event)"
+                >
+                  <v-icon
+                    :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                    size="13"
+                    class="mr-1"
+                  ></v-icon>
+                  {{ deck.likeCount || 0 }}
+                </span>
+                <span v-else class="d-flex align-center text-caption text-grey-lighten-1">
+                  <v-icon icon="mdi-thumb-up-outline" size="13" class="mr-1"></v-icon>
+                  {{ deck.likeCount || 0 }}
+                </span>
+                <span
+                  class="d-flex align-center text-caption like-btn ml-3"
+                  :class="{ 'text-primary': deck.bookmarked, 'text-grey': !deck.bookmarked }"
+                  @click.stop="handleToggleBookmark(deck, $event)"
+                >
+                  <v-icon
+                    :icon="deck.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+                    size="13"
+                  ></v-icon>
+                </span>
+              </div>
+            </div>
+
+            <!-- 右侧：统计数字 -->
+            <div class="d-flex flex-row align-center justify-center" style="gap: 12px">
+              <div class="text-center">
+                <div class="text-body-1 font-weight-bold text-grey-darken-2">{{ deck.cardCount || 0 }}</div>
+                <div class="text-caption text-no-wrap text-grey">卡片</div>
+              </div>
+              <div v-if="deck.studyingCardCount && deck.studyingCardCount > 0" class="text-center">
+                <div class="text-body-1 font-weight-bold text-success">{{ deck.studyingCardCount }}</div>
+                <div class="text-caption text-no-wrap text-grey">学习中</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -228,7 +244,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { memoryApi } from '@/api'
+import { memoryApi, bookmarkApi } from '@/api'
 import { useMutation } from '@/composables'
 import { useUserStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/format'
@@ -338,6 +354,24 @@ const { execute: upvoteDeck } = useMutation((deckId: number) => memoryApi.upvote
     }
   },
 })
+
+const { execute: toggleBookmark } = useMutation(
+  (deckId: number) => bookmarkApi.toggle('memory_card', deckId),
+  {
+    showToast: false,
+    onSuccess: (result, deckId) => {
+      const deck = decks.value.find((d) => d.id === deckId)
+      if (deck && result !== null) {
+        deck.bookmarked = result
+      }
+    },
+  }
+)
+
+const handleToggleBookmark = async (deck: MemoryCardDeck, event: Event) => {
+  event.stopPropagation()
+  await toggleBookmark(deck.id)
+}
 
 const handleSort = (newSortBy: typeof sortBy.value) => {
   sortBy.value = newSortBy

@@ -537,9 +537,9 @@ onBeforeUnmount(() => {
           <UserAvatar
             :name="comment.creator?.name || '匿名用户'"
             :avatar-url="comment.creator?.avatar"
-            size="36"
+            size="30"
             rounded="lg"
-            class="mr-3 mt-1"
+            class="mr-3"
           />
           <div class="flex-grow-1">
             <div class="d-flex align-center mb-2">
@@ -641,7 +641,7 @@ onBeforeUnmount(() => {
                   <UserAvatar
                     :name="subComment.creator?.name || '匿名用户'"
                     :avatar-url="subComment.creator?.avatar"
-                    size="32"
+                    size="24"
                     rounded="lg"
                     class="mr-2"
                   />

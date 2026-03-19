@@ -774,9 +774,9 @@ public class MemoryCardDeckService {
         // 验证卡片组存在
         MemoryCardDeckDO deck = deckDomainService.validateAndGet(deckId);
 
-        // 获取nodeId：deck.sourcePostId → post.nodeId（跨域查询）
-        Long nodeId = null;
-        if (deck.getPostId() != null) {
+        // 获取nodeId：优先使用 deck 上的冗余字段，fallback 到 post 查询
+        Long nodeId = deck.getNodeId();
+        if (nodeId == null && deck.getPostId() != null) {
             PostDO post = postDataService.getById(deck.getPostId());
             if (post != null) {
                 nodeId = post.getNodeId();

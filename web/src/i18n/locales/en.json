@@ -215,9 +215,11 @@
     "submitting": "Submitting...",
     "noCards": "No cards",
     "cardBlocked": "This card has been blocked",
-    "cardBlockedHint": "This card or its deck has been blocked. Please delete this card or add a new deck",
+    "cardBlockedHint": "This card has been blocked by admin. Please delete it to continue reviewing",
+    "deckBlocked": "The deck of this card has been blocked",
+    "deckBlockedHint": "Please go to the node page to find a new deck, or delete this card to continue reviewing",
     "deleteCard": "Delete Card",
-    "findNewDeck": "Find New Deck",
+    "goToNode": "Go to Node Page",
     "blocked": "Blocked"
   },
   "user": {

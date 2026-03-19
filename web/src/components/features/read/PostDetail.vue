@@ -148,30 +148,6 @@ const handleViewAllComments = () => {
   }
 }
 
-// 处理添加卡片组到学习计划
-const handleAddDeck = async (deck: MemoryCardDeck) => {
-  try {
-    const courseId = data.value?.course?.id
-    if (!courseId) {
-      console.error('无法确定课程信息')
-      return
-    }
-
-    const response = await memoryApi.addDeckToMemoryBank({
-      deckId: deck.id,
-      courseId: courseId,
-    })
-
-    if (response.code === 200) {
-      console.log(`已将"${deck.creator?.name || '匿名用户'}的卡片组"添加到${data.value.course.name}课程的学习计划`)
-    } else {
-      console.error('添加失败，请重试')
-    }
-  } catch (error) {
-    console.error('Failed to add deck to memory bank:', error)
-  }
-}
-
 // 监听路由变化，重新加载数据
 watch(
   () => [route.query.postId, route.query.commentId],
@@ -303,7 +279,6 @@ defineExpose({
       v-model="showDeckDetailDialog"
       :deck="selectedDeck"
       :course-id="data?.course?.id"
-      @add-to-study="handleAddDeck"
     />
 
     <!-- 移动端AI答疑助手底部面板 -->

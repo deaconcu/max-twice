@@ -254,9 +254,11 @@
     "submitting": "提交中...",
     "noCards": "暂无卡片",
     "cardBlocked": "该卡片已被屏蔽",
-    "cardBlockedHint": "该卡片或其所在的卡片组已被屏蔽，请删除此卡片或添加新的卡片组",
+    "cardBlockedHint": "该卡片已被管理员屏蔽，请删除此卡片继续复习",
+    "deckBlocked": "该卡片所在的卡片组已被屏蔽",
+    "deckBlockedHint": "请前往节点页面更换卡片组，或删除该卡片继续复习",
     "deleteCard": "删除卡片",
-    "findNewDeck": "寻找新卡片组",
+    "goToNode": "前往节点页面",
     "blocked": "已屏蔽"
   },
   "user": {

@@ -28,7 +28,7 @@
                 :name="deck.creator?.name || '匿名用户'"
                 :avatar-url="deck.creator?.avatar"
                 size="18"
-                rounded="circle"
+                rounded="md"
                 class="mr-2 flex-shrink-0"
               />
               <span class="text-body-2 font-weight-medium text-grey-darken-3">

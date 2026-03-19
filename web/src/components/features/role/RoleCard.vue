@@ -30,7 +30,7 @@
             :key="index"
             size="small"
             variant="tonal"
-            color="primary"
+            color="grey"
             class="mr-2"
           >
             {{ skill }}

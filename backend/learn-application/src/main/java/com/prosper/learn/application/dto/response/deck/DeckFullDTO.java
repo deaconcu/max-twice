@@ -45,9 +45,6 @@ public class DeckFullDTO {
     /** 当前用户是否已收藏 */
     private Boolean bookmarked;
 
-    /** 第一张卡片的问题（用于列表展示） */
-    private String firstCardQuestion;
-
     /** 当前用户正在学习的卡片数量 */
     private Integer studyingCardCount;
 }

@@ -15,10 +15,6 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
-import com.prosper.learn.memory.card.MemoryCardDO;
-import com.prosper.learn.memory.card.MemoryCardDataService;
-import com.prosper.learn.memory.card.MemoryCardVersionDO;
-import com.prosper.learn.memory.card.MemoryCardVersionDataService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.domain.Enums;
@@ -47,8 +43,6 @@ public class DeckAssembler {
     private final UserDataService userDataService;
     private final NodeDataService nodeDataService;
     private final CourseDataService courseDataService;
-    private final MemoryCardDataService memoryCardDataService;
-    private final MemoryCardVersionDataService cardVersionDataService;
     private final ContentStatsDomainService contentStatsDomainService;
 
     private final UpvoteService upvoteService;
@@ -129,7 +123,7 @@ public class DeckAssembler {
     }
 
     /**
-     * 批量转换为卡片组（含创建者信息、点赞状态、课程节点信息、第一张卡片问题）
+     * 批量转换为卡片组（含创建者信息、点赞状态、课程节点信息）
      */
     public List<DeckFullDTO> toFullDTO(List<MemoryCardDeckDO> deckDOList, Long userId) {
         if (deckDOList == null || deckDOList.isEmpty()) {
@@ -162,9 +156,6 @@ public class DeckAssembler {
 
         // 批量获取课程和节点信息
         NodeCourseInfo nodeCourseInfo = batchGetNodeAndCourse(deckDOList);
-
-        // 批量获取每个 deck 的第一张卡片问题
-        Map<Long, String> firstCardQuestionMap = batchGetFirstCardQuestion(deckIdList);
 
         // 批量获取用户在每个 deck 中学习的卡片数量
         Map<Long, Integer> studyingCardCountMap = new HashMap<>();
@@ -214,9 +205,6 @@ public class DeckAssembler {
                         }
                     }
                 }
-
-                // 设置第一张卡片问题
-                dto.setFirstCardQuestion(firstCardQuestionMap.get(deck.getId()));
 
                 // 设置用户学习的卡片数量
                 dto.setStudyingCardCount(finalStudyingCardCountMap.getOrDefault(deck.getId(), 0));
@@ -289,30 +277,6 @@ public class DeckAssembler {
         }
 
         return info;
-    }
-
-    private Map<Long, String> batchGetFirstCardQuestion(List<Long> deckIdList) {
-        Map<Long, String> firstCardQuestionMap = new HashMap<>();
-
-        List<MemoryCardDO> firstCards = memoryCardDataService.getFirstCardByDeckIds(deckIdList);
-        if (firstCards.isEmpty()) {
-            return firstCardQuestionMap;
-        }
-
-        Set<Long> versionIds = firstCards.stream()
-            .map(MemoryCardDO::getCurrentVersionId)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
-        Map<Long, MemoryCardVersionDO> versionMap = cardVersionDataService.getMapByIds(versionIds);
-
-        for (MemoryCardDO card : firstCards) {
-            MemoryCardVersionDO version = versionMap.get(card.getCurrentVersionId());
-            if (version != null) {
-                firstCardQuestionMap.put(card.getDeckId(), version.getFront());
-            }
-        }
-
-        return firstCardQuestionMap;
     }
 
     /**

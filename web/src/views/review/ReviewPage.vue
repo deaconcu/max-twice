@@ -322,10 +322,10 @@
                     <v-icon icon="mdi-alert-circle" color="error" size="64"></v-icon>
                   </div>
                   <h3 class="text-h5 font-weight-bold text-error mb-4">
-                    {{ t('review.cardBlocked') }}
+                    {{ isCurrentDeckBlocked ? t('review.deckBlocked') : t('review.cardBlocked') }}
                   </h3>
                   <p class="text-body-1 text-grey-darken-1 mb-6">
-                    {{ t('review.cardBlockedHint') }}
+                    {{ isCurrentDeckBlocked ? t('review.deckBlockedHint') : t('review.cardBlockedHint') }}
                   </p>
                   <div class="d-flex justify-center ga-3">
                     <v-btn
@@ -338,14 +338,15 @@
                       {{ t('review.deleteCard') }}
                     </v-btn>
                     <v-btn
-                      v-if="currentCard.deck?.nodeId"
+                      v-if="isCurrentDeckBlocked && currentCard.deck?.nodeId"
                       color="primary"
                       variant="flat"
                       rounded="lg"
-                      :to="`/read/${currentCard.deck.nodeId}`"
+                      :href="`/read?nodeId=${currentCard.deck.nodeId}`"
+                      target="_blank"
+                      prepend-icon="mdi-book-open-page-variant"
                     >
-                      <v-icon icon="mdi-plus" class="mr-2"></v-icon>
-                      {{ t('review.findNewDeck') }}
+                      {{ t('review.goToNode') }}
                     </v-btn>
                   </div>
                 </div>
@@ -1113,15 +1114,22 @@ const cardOrderOptions = computed(() => [
   { title: t('review.cardOrderNewFirst'), value: CardOrder.NEW_FIRST },
 ])
 
-// 检测当前卡片是否被屏蔽（卡片或卡片组状态不是 PUBLISHED）
-const isCurrentCardBlocked = computed(() => {
+// 检测当前卡片组是否被屏蔽
+const isCurrentDeckBlocked = computed(() => {
+  if (!currentCard.value) return false
+  const deckState = currentCard.value.deck?.state
+  return deckState !== undefined && deckState !== DeckState.PUBLISHED
+})
+
+// 检测当前卡片本身是否被屏蔽（卡片组正常，但卡片被屏蔽）
+const isCurrentCardOnlyBlocked = computed(() => {
   if (!currentCard.value) return false
   const cardState = currentCard.value.state
-  const deckState = currentCard.value.deck?.state
-  // 卡片或卡片组不是 PUBLISHED 状态都视为被屏蔽
-  return (cardState && cardState !== DeckState.PUBLISHED) ||
-         (deckState && deckState !== DeckState.PUBLISHED)
+  return cardState !== undefined && cardState !== DeckState.PUBLISHED && !isCurrentDeckBlocked.value
 })
+
+// 检测当前卡片是否被屏蔽（卡片或卡片组任一被屏蔽）
+const isCurrentCardBlocked = computed(() => isCurrentDeckBlocked.value || isCurrentCardOnlyBlocked.value)
 
 // 方法
 const switchTab = (tabValue: string) => {
