@@ -23,7 +23,7 @@
           <!-- 左侧：用户 / 简介 / 点赞收藏 -->
           <div class="d-flex flex-column justify-space-between flex-grow-1 min-width-0 mr-4">
             <!-- 用户 + 时间 -->
-            <div class="d-flex align-center mb-2">
+            <div class="d-flex align-center mb-3">
               <UserAvatar
                 :name="deck.creator?.name || '匿名用户'"
                 :avatar-url="deck.creator?.avatar"
@@ -40,7 +40,7 @@
               </span>
             </div>
             <!-- 简介 -->
-            <div class="text-body-2 text-grey-darken-1 deck-desc mb-2">
+            <div class="text-body-1 text-grey-darken-1 deck-desc mb-3">
               {{ deck.description || '暂无描述' }}
             </div>
             <!-- 点赞 + 收藏 -->
@@ -70,15 +70,15 @@
             </div>
           </div>
 
-          <!-- 右侧：两个大图标 + 数字 -->
-          <div class="d-flex flex-row align-center justify-center" style="gap: 12px">
-            <div class="d-flex flex-column align-center stat-item">
-              <v-icon icon="mdi-cards-outline" size="28" color="grey-darken-1"></v-icon>
-              <span class="text-caption text-grey-darken-1 font-weight-medium mt-1">{{ deck.cardCount || 0 }}</span>
+          <!-- 右侧：统计数字 -->
+          <div class="d-flex flex-row align-center justify-center" style="gap: 16px">
+            <div class="text-center">
+              <div class="text-h6 font-weight-bold text-grey-darken-2">{{ deck.cardCount || 0 }}</div>
+              <div class="text-caption text-no-wrap text-grey">卡片</div>
             </div>
-            <div v-if="deck.studyingCardCount && deck.studyingCardCount > 0" class="d-flex flex-column align-center stat-item">
-              <v-icon icon="mdi-check-circle-outline" size="28" color="success"></v-icon>
-              <span class="text-caption font-weight-medium mt-1 text-success">{{ deck.studyingCardCount }}</span>
+            <div v-if="deck.studyingCardCount && deck.studyingCardCount > 0" class="text-center">
+              <div class="text-h6 font-weight-bold text-success">{{ deck.studyingCardCount }}</div>
+              <div class="text-caption text-no-wrap text-grey">学习中</div>
             </div>
           </div>
         </div>
@@ -341,7 +341,6 @@ onBeforeUnmount(() => {
 .bookmark-btn {
   cursor: pointer;
   padding: 2px 4px;
-  margin: -2px -4px;
   border-radius: 4px;
   transition: background-color 0.15s ease;
 }
