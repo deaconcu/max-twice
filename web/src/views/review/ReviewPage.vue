@@ -874,17 +874,43 @@
       <!-- 右侧课程分类 - 仅大屏幕显示 -->
       <v-col cols="12" lg="3" class="d-none d-lg-block">
         <v-card rounded="lg" class="sticky-nav px-3 px-sm-4 no-border">
-          <h3 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-3 mb-md-4">
-            <v-icon icon="mdi-chart-line" color="primary" size="18" class="mr-2"></v-icon>
-            {{ t('review.courseCategory') }}
-          </h3>
-
-          <!-- 状态切换 Tab -->
-          <v-tabs v-model="courseStateTab" density="compact" class="mb-3">
-            <v-tab :value="1" size="small">{{ t('review.statusStudying') }}</v-tab>
-            <v-tab :value="2" size="small">{{ t('review.statusFrozen') }}</v-tab>
-            <v-tab :value="3" size="small">{{ t('review.statusHidden') }}</v-tab>
-          </v-tabs>
+          <div class="d-flex align-center justify-space-between mb-3 mb-md-4">
+            <h3 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4">
+              {{ t('review.courseCategory') }}
+            </h3>
+            <div class="d-flex align-center ga-1">
+              <v-btn
+                icon
+                size="x-small"
+                :color="courseStateTab === 1 ? 'primary' : 'grey'"
+                :variant="courseStateTab === 1 ? 'tonal' : 'text'"
+                @click="switchCourseStateTab(1)"
+              >
+                <v-icon size="16">mdi-play-circle</v-icon>
+                <v-tooltip activator="parent" location="bottom">{{ t('review.statusStudying') }}</v-tooltip>
+              </v-btn>
+              <v-btn
+                icon
+                size="x-small"
+                :color="courseStateTab === 2 ? 'primary' : 'grey'"
+                :variant="courseStateTab === 2 ? 'tonal' : 'text'"
+                @click="switchCourseStateTab(2)"
+              >
+                <v-icon size="16">mdi-snowflake</v-icon>
+                <v-tooltip activator="parent" location="bottom">{{ t('review.statusFrozen') }}</v-tooltip>
+              </v-btn>
+              <v-btn
+                icon
+                size="x-small"
+                :color="courseStateTab === 3 ? 'primary' : 'grey'"
+                :variant="courseStateTab === 3 ? 'tonal' : 'text'"
+                @click="switchCourseStateTab(3)"
+              >
+                <v-icon size="16">mdi-eye-off</v-icon>
+                <v-tooltip activator="parent" location="bottom">{{ t('review.statusHidden') }}</v-tooltip>
+              </v-btn>
+            </div>
+          </div>
 
           <!-- 课程列表 -->
           <div v-if="courseListLoadingComputed" class="text-center pa-4">
@@ -944,7 +970,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useFetch, useMutation } from '@/composables'
 import { memoryApi } from '@/api'
@@ -1036,14 +1062,15 @@ const courseMemoryBanks = computed(() => studyingSummary.value.courses)
 // 刷新课程列表的方法（兼容现有代码）
 const refreshCourses = refreshStudying
 
-// 监听 courseStateTab 变化，懒加载数据
-watch(courseStateTab, (newState) => {
-  if (newState === Status.FROZEN && frozenSummary.value.courses.length === 0) {
+// 切换课程状态 Tab，懒加载数据
+const switchCourseStateTab = (state: number) => {
+  courseStateTab.value = state
+  if (state === Status.FROZEN && frozenSummary.value.courses.length === 0) {
     void refreshFrozen()
-  } else if (newState === Status.HIDDEN && hiddenSummary.value.courses.length === 0) {
+  } else if (state === Status.HIDDEN && hiddenSummary.value.courses.length === 0) {
     void refreshHidden()
   }
-})
+}
 
 // 计算属性
 const totalDueCards = computed(() => {
