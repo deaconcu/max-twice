@@ -28,6 +28,15 @@
           <span class="text-body-2 text-grey flex-shrink-0">
             共{{ deck.cardCount }}张卡片
           </span>
+          <v-chip
+            v-if="deck.studyingCardCount && deck.studyingCardCount > 0"
+            size="x-small"
+            color="success"
+            variant="flat"
+            class="ml-2"
+          >
+            学习中 {{ deck.studyingCardCount }}
+          </v-chip>
         </div>
         <!-- 第二行：描述 -->
         <p v-if="deck.description" class="text-body-2 text-grey-darken-1 mb-2 deck-desc">

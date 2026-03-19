@@ -20,6 +20,7 @@ import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.card.MemoryCardVersionDO;
 import com.prosper.learn.memory.card.MemoryCardVersionDataService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
+import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
@@ -53,6 +54,7 @@ public class DeckAssembler {
     private final UpvoteService upvoteService;
     private final BookmarkService bookmarkService;
     private final UserService userService;
+    private final UserCardSrsDataService userCardSrsDataService;
 
     // ========== Full DTO (单个) ==========
 
@@ -164,6 +166,13 @@ public class DeckAssembler {
         // 批量获取每个 deck 的第一张卡片问题
         Map<Long, String> firstCardQuestionMap = batchGetFirstCardQuestion(deckIdList);
 
+        // 批量获取用户在每个 deck 中学习的卡片数量
+        Map<Long, Integer> studyingCardCountMap = new HashMap<>();
+        if (userId != null) {
+            studyingCardCountMap = userCardSrsDataService.countByUserAndDeckIds(userId, deckIdList);
+        }
+        final Map<Long, Integer> finalStudyingCardCountMap = studyingCardCountMap;
+
         return deckDOList.stream()
             .map(deck -> {
                 DeckFullDTO dto = deckConverter.toFullDTO(deck);
@@ -208,6 +217,9 @@ public class DeckAssembler {
 
                 // 设置第一张卡片问题
                 dto.setFirstCardQuestion(firstCardQuestionMap.get(deck.getId()));
+
+                // 设置用户学习的卡片数量
+                dto.setStudyingCardCount(finalStudyingCardCountMap.getOrDefault(deck.getId(), 0));
 
                 return dto;
             })

@@ -112,6 +112,18 @@ public interface UserCardSrsMapper {
     @Select("SELECT * FROM user_card_srs WHERE user_id = #{userId} AND deck_id = #{deckId}")
     List<UserCardSrsDO> getByUserAndDeckId(long userId, long deckId);
 
+    /**
+     * 批量统计用户在多个 deck 中学习的卡片数量
+     */
+    @Select({"<script>",
+            "SELECT deck_id, COUNT(*) AS cnt FROM user_card_srs ",
+            "WHERE user_id = #{userId} AND deck_id IN ",
+            "<foreach item='deckId' collection='deckIds' open='(' separator=',' close=')'>#{deckId}</foreach> ",
+            "GROUP BY deck_id",
+            "</script>"})
+    List<Map<String, Object>> countByUserAndDeckIds(@Param("userId") long userId,
+                                                     @Param("deckIds") Collection<Long> deckIds);
+
     @Select("SELECT * FROM user_card_srs WHERE user_id = #{userId} AND node_id = #{nodeId}")
     List<UserCardSrsDO> getByUserAndNodeId(long userId, long nodeId);
 

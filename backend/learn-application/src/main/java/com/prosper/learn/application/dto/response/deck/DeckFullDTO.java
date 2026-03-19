@@ -47,4 +47,7 @@ public class DeckFullDTO {
 
     /** 第一张卡片的问题（用于列表展示） */
     private String firstCardQuestion;
+
+    /** 当前用户正在学习的卡片数量 */
+    private Integer studyingCardCount;
 }

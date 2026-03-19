@@ -120,6 +120,7 @@ export interface MemoryCardDeck {
     name: string
   } // 节点信息
   firstCardQuestion?: string // 第一张卡片的问题
+  studyingCardCount?: number // 当前用户正在学习的卡片数量
   createdAt?: string
   updatedAt?: string
 }

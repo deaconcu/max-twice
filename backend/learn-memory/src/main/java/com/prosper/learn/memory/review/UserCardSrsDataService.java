@@ -201,6 +201,24 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
     }
 
     /**
+     * 批量统计用户在多个 deck 中学习的卡片数量
+     * @return Map<deckId, count>
+     */
+    public Map<Long, Integer> countByUserAndDeckIds(long userId, Collection<Long> deckIds) {
+        if (deckIds == null || deckIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Map<String, Object>> results = userCardSrsMapper.countByUserAndDeckIds(userId, deckIds);
+        Map<Long, Integer> countMap = new HashMap<>();
+        for (Map<String, Object> row : results) {
+            Long deckId = ((Number) row.get("deck_id")).longValue();
+            Integer count = ((Number) row.get("cnt")).intValue();
+            countMap.put(deckId, count);
+        }
+        return countMap;
+    }
+
+    /**
      * 根据用户ID和节点ID获取SRS状态列表
      */
     public List<UserCardSrsDO> getByUserAndNodeId(long userId, long nodeId) {
