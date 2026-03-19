@@ -475,7 +475,8 @@
                   <!-- 正在学习的卡片Tab -->
                   <v-window-item value="learned">
                     <div class="cards-container">
-                      <div v-if="learnedCards.length === 0" class="text-center pa-8">
+                      <!-- 用户没有学习任何卡片 -->
+                      <div v-if="studyCards.length === 0" class="text-center pa-8">
                         <v-icon
                           icon="mdi-school-outline"
                           size="64"
@@ -484,6 +485,18 @@
                         ></v-icon>
                         <h4 class="text-h6 text-grey-darken-1 mb-2">没有正在学习的卡片</h4>
                         <p class="text-body-2 text-grey-darken-1">您还没有开始学习该节点的卡片</p>
+                      </div>
+
+                      <!-- 用户有学习卡片，但没有需要同步的变化 -->
+                      <div v-else-if="learnedCards.length === 0" class="text-center pa-8">
+                        <v-icon
+                          icon="mdi-check-circle-outline"
+                          size="64"
+                          color="success"
+                          class="mb-4"
+                        ></v-icon>
+                        <h4 class="text-h6 text-grey-darken-1 mb-2">已同步</h4>
+                        <p class="text-body-2 text-grey-darken-1">您学习的卡片与当前卡片组内容一致，无需更新</p>
                       </div>
 
                       <template v-else>
@@ -640,7 +653,7 @@
         style="flex-shrink: 0"
       >
         <!-- Diff标签页的操作按钮 -->
-        <div v-if="currentTab === 'diff'" class="d-flex align-center" style="gap: 12px">
+        <div v-if="currentTab === 'diff' && hasAnyChanges" class="d-flex align-center" style="gap: 12px">
           <span class="text-body-2 text-grey-darken-1">一键操作</span>
           <v-tooltip
             text="将学习列表完全同步为当前卡片组，包括添加新卡片、更新已修改卡片、移除已删除卡片，同时清除来自其他卡片组的卡片"
@@ -701,7 +714,7 @@
         </div>
 
         <!-- 其他标签页的提示信息 -->
-        <div v-else class="text-body-2 text-grey-darken-1">
+        <div v-else-if="currentTab !== 'diff'" class="text-body-2 text-grey-darken-1 d-flex align-center">
           <v-icon icon="mdi-information" size="16" class="mr-1"></v-icon>
           <span v-if="studyCards.length === 0">点击"学习卡片组"将所有卡片加入您的学习计划</span>
           <span v-else>点击"差异对比"查看更新并选择要学习的卡片</span>
@@ -1088,23 +1101,25 @@ const learnedCards = computed(() => {
   const deckCardsMap = new Map(deckDetail.value.cards.map((card) => [card.id, card]))
   const currentDeckId = props.deck.id
 
-  return studyCards.value.map((studyCard) => {
-    const deckCard = deckCardsMap.get(studyCard.id)
-    const studyCardDeckId = studyCard.deck?.id // deckId 在 deck 对象里
-    const isFromCurrentDeck = studyCardDeckId === currentDeckId
-    const isDeleted = isFromCurrentDeck && !deckCard // 是当前deck的卡片，但deck中已找不到
-    const isFromOtherDeck = !isFromCurrentDeck // 不是当前deck的卡片
-    const hasUpdate =
-      deckCard && (deckCard.front !== studyCard.front || deckCard.back !== studyCard.back)
+  return studyCards.value
+    .map((studyCard) => {
+      const deckCard = deckCardsMap.get(studyCard.id)
+      const studyCardDeckId = studyCard.deck?.id // deckId 在 deck 对象里
+      const isFromCurrentDeck = studyCardDeckId === currentDeckId
+      const isDeleted = isFromCurrentDeck && !deckCard // 是当前deck的卡片，但deck中已找不到
+      const isFromOtherDeck = !isFromCurrentDeck // 不是当前deck的卡片
+      const hasUpdate =
+        deckCard && (deckCard.front !== studyCard.front || deckCard.back !== studyCard.back)
 
-    return {
-      ...studyCard,
-      hasUpdate,
-      isDeleted,
-      isFromOtherDeck,
-      deckVersion: deckCard ? { front: deckCard.front, back: deckCard.back } : null,
-    }
-  })
+      return {
+        ...studyCard,
+        hasUpdate,
+        isDeleted,
+        isFromOtherDeck,
+        deckVersion: deckCard ? { front: deckCard.front, back: deckCard.back } : null,
+      }
+    })
+    .filter((card) => card.hasUpdate || card.isDeleted || card.isFromOtherDeck) // 只显示有变化的卡片
 })
 
 // 已学习卡片中有更新的数量
@@ -1115,6 +1130,20 @@ const learnedCardsWithUpdateCount = computed(
 // 已学习卡片中已被删除的数量
 const learnedCardsDeletedCount = computed(
   () => learnedCards.value.filter((card) => card.isDeleted).length
+)
+
+// 已学习卡片中来自其他卡片组的数量
+const learnedCardsFromOtherDeckCount = computed(
+  () => learnedCards.value.filter((card) => card.isFromOtherDeck).length
+)
+
+// 是否有任何需要同步的变化
+const hasAnyChanges = computed(
+  () =>
+    learnedCardsWithUpdateCount.value > 0 ||
+    learnedCardsDeletedCount.value > 0 ||
+    learnedCardsFromOtherDeckCount.value > 0 ||
+    addedDiffs.value.length > 0
 )
 
 // 检测是否有卡片属于其他课程（通过 srsState.course.id 判断）

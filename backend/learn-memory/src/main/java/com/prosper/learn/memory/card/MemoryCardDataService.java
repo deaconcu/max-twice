@@ -9,6 +9,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -301,6 +302,30 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
             return result;
         } catch (Exception e) {
             log.error("Error soft deleting card: {}", card.getId(), e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 批量软删除卡片
+     */
+    public int batchSoftDelete(List<Long> cardIds, LocalDateTime now) {
+        if (cardIds == null || cardIds.isEmpty()) {
+            return 0;
+        }
+
+        try {
+            int result = memoryCardMapper.batchSoftDelete(cardIds, now);
+            log.info("Batch soft deleted {} memory cards", cardIds.size());
+
+            // 清除相关缓存
+            for (Long cardId : cardIds) {
+                evictCache(cardId);
+            }
+
+            return result;
+        } catch (Exception e) {
+            log.error("Error batch soft deleting memory cards: count={}", cardIds.size(), e);
             throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }

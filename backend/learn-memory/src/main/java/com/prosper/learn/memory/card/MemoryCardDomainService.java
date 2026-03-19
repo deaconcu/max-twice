@@ -316,13 +316,12 @@ public class MemoryCardDomainService {
             return;
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        for (MemoryCardDO card : cards) {
-            card.setState(ContentState.BANNED.value());
-            card.setUpdatedAt(now);
-        }
+        List<Long> cardIds = cards.stream()
+                .map(MemoryCardDO::getId)
+                .collect(Collectors.toList());
 
-        cardDataService.batchUpdate(cards);
+        LocalDateTime now = LocalDateTime.now();
+        cardDataService.batchSoftDelete(cardIds, now);
 
         deck.setCardCount(0);
         deck.setVersion(deck.getVersion() + 1);

@@ -360,7 +360,18 @@
                   </h3>
 
                   <div v-if="currentCard.deck" class="mb-4">
-                    <v-chip size="small" color="primary" variant="outlined">
+                    <a
+                      v-if="currentCard.deck.nodeId"
+                      :href="`/read?nodeId=${currentCard.deck.nodeId}`"
+                      target="_blank"
+                      class="text-decoration-none"
+                    >
+                      <v-chip size="small" color="primary" variant="outlined" link>
+                        <v-icon icon="mdi-book-open-page-variant" size="16" class="mr-1"></v-icon>
+                        {{ currentCard.deck.courseName }} - {{ currentCard.deck.nodeName }}
+                      </v-chip>
+                    </a>
+                    <v-chip v-else size="small" color="primary" variant="outlined">
                       <v-icon icon="mdi-book-open-page-variant" size="16" class="mr-1"></v-icon>
                       {{ currentCard.deck.courseName }} - {{ currentCard.deck.nodeName }}
                     </v-chip>
@@ -393,7 +404,18 @@
                   </h3>
 
                   <div v-if="currentCard.deck" class="mb-4">
-                    <v-chip size="small" color="success" variant="outlined">
+                    <a
+                      v-if="currentCard.deck.nodeId"
+                      :href="`/read?nodeId=${currentCard.deck.nodeId}`"
+                      target="_blank"
+                      class="text-decoration-none"
+                    >
+                      <v-chip size="small" color="success" variant="outlined" link>
+                        <v-icon icon="mdi-book-open-page-variant" size="16" class="mr-1"></v-icon>
+                        {{ currentCard.deck.courseName }} - {{ currentCard.deck.nodeName }}
+                      </v-chip>
+                    </a>
+                    <v-chip v-else size="small" color="success" variant="outlined">
                       <v-icon icon="mdi-book-open-page-variant" size="16" class="mr-1"></v-icon>
                       {{ currentCard.deck.courseName }} - {{ currentCard.deck.nodeName }}
                     </v-chip>

@@ -2,6 +2,7 @@ package com.prosper.learn.memory.card;
 
 import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -9,17 +10,17 @@ import java.util.Map;
 @Mapper
 public interface MemoryCardMapper {
 
-    @Select("SELECT * FROM memory_card WHERE id = #{id} AND deleted_at IS NULL")
+    @Select("SELECT * FROM memory_card WHERE id = #{id}")
     MemoryCardDO get(long id);
 
     @Select({"<script>SELECT * FROM memory_card WHERE id IN " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
-            " AND deleted_at IS NULL</script>"})
+            "</script>"})
     List<MemoryCardDO> getByIds(List<Long> ids);
 
     @Select({"<script>SELECT * FROM memory_card WHERE id IN " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
-            " AND deleted_at IS NULL</script>"})
+            "</script>"})
     @MapKey("id")
     Map<Long, MemoryCardDO> getMapByIds(Collection<Long> ids);
 
@@ -128,6 +129,19 @@ public interface MemoryCardMapper {
     @Update("UPDATE memory_card SET deleted_at = #{deletedAt}, updated_at = #{updatedAt} " +
             "WHERE id = #{id} AND deleted_at IS NULL")
     int softDelete(MemoryCardDO card);
+
+    /**
+     * 批量软删除卡片
+     */
+    @Update({"<script>" +
+            "UPDATE memory_card SET deleted_at = #{now}, updated_at = #{now} " +
+            "WHERE id IN " +
+            "<foreach collection='cardIds' item='id' open='(' separator=',' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
+            " AND deleted_at IS NULL" +
+            "</script>"})
+    int batchSoftDelete(@Param("cardIds") List<Long> cardIds, @Param("now") LocalDateTime now);
 
 // --注释掉检查 START (2025/12/10 12:01):
 //    @Select("SELECT id FROM memory_card WHERE deck_id = #{deckId} AND state = " + Enums.ContentState.PUBLISHED_VALUE + " ORDER BY id")

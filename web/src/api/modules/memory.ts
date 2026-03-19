@@ -122,10 +122,10 @@ export function acceptDeckChanges(
 }
 
 /**
- * 删除卡片
+ * 删除卡片（从复习计划中移除）
  */
 export function deleteCards(cardIds: number[]): Promise<ApiResponse<void>> {
-  return client.post('/v1/memory/cards/delete', { cardIds })
+  return client.delete('/v1/memory/cards/study', { data: cardIds })
 }
 
 /**
