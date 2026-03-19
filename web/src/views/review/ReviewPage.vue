@@ -3,82 +3,24 @@
     <div class="review-page">
     <!-- 页面标题 -->
     <div class="mb-4 mb-md-6">
-      <div class="d-flex align-center justify-space-between mb-4">
-        <div class="d-flex align-center">
-          <v-avatar
-            color="surface-variant"
-            :size="$vuetify.display.mobile ? 48 : 64"
-            rounded="lg"
-            class="mr-3 flex-shrink-0"
+      <div class="d-flex align-center mb-4">
+        <v-avatar
+          color="surface-variant"
+          :size="$vuetify.display.mobile ? 48 : 64"
+          rounded="lg"
+          class="mr-3 flex-shrink-0"
+        >
+          <v-icon :size="$vuetify.display.mobile ? 24 : 32" color="grey-darken-1"
+            >mdi-brain</v-icon
           >
-            <v-icon :size="$vuetify.display.mobile ? 24 : 32" color="grey-darken-1"
-              >mdi-brain</v-icon
-            >
-          </v-avatar>
-          <div>
-            <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4">
-              {{ t('review.title') }}
-            </h1>
-            <p class="text-caption text-md-body-2 text-grey-darken-2 mt-1">
-              {{
-                activeTab === 'all'
-                  ? t('review.subtitle')
-                  : `${selectedCourse?.course.name || ''}${t('review.courseSubtitle')}`
-              }}
-            </p>
-          </div>
-        </div>
-
-        <!-- 视图模式选择器 -->
-        <div class="d-flex align-center ga-2">
-          <v-btn
-            :color="viewMode === 'review' ? 'primary' : 'grey'"
-            :variant="viewMode === 'review' ? 'flat' : 'outlined'"
-            rounded="lg"
-            :size="$vuetify.display.mobile ? 'small' : 'default'"
-            @click="switchViewMode('review')"
-          >
-            <v-icon
-              icon="mdi-play"
-              :size="$vuetify.display.mobile ? 14 : 16"
-              class="mr-1 mr-sm-2"
-            ></v-icon>
-            <span class="d-none d-sm-inline">{{ t('review.modeReview') }}</span>
-            <span class="d-sm-none">复习</span>
-          </v-btn>
-
-          <v-btn
-            :color="viewMode === 'list' ? 'primary' : 'grey'"
-            :variant="viewMode === 'list' ? 'flat' : 'outlined'"
-            rounded="lg"
-            :size="$vuetify.display.mobile ? 'small' : 'default'"
-            @click="switchViewMode('list')"
-          >
-            <v-icon
-              icon="mdi-format-list-bulleted"
-              :size="$vuetify.display.mobile ? 14 : 16"
-              class="mr-1 mr-sm-2"
-            ></v-icon>
-            <span class="d-none d-sm-inline">{{ t('review.modeList') }}</span>
-            <span class="d-sm-none">列表</span>
-          </v-btn>
-
-          <v-btn
-            v-if="selectedCourse"
-            :color="viewMode === 'manage' ? 'primary' : 'grey'"
-            :variant="viewMode === 'manage' ? 'flat' : 'outlined'"
-            rounded="lg"
-            :size="$vuetify.display.mobile ? 'small' : 'default'"
-            @click="switchViewMode('manage')"
-          >
-            <v-icon
-              icon="mdi-cog"
-              :size="$vuetify.display.mobile ? 14 : 16"
-              class="mr-1 mr-sm-2"
-            ></v-icon>
-            <span class="d-none d-sm-inline">{{ t('review.modeManage') }}</span>
-            <span class="d-sm-none">管理</span>
-          </v-btn>
+        </v-avatar>
+        <div>
+          <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4">
+            {{ t('review.title') }}
+          </h1>
+          <p class="text-caption text-md-body-2 text-grey-darken-2 mt-1">
+            {{ t('review.subtitle') }}
+          </p>
         </div>
       </div>
     </div>
@@ -231,6 +173,66 @@
 
         <!-- 复习模式 -->
         <div v-if="viewMode === 'review'">
+          <!-- 选中课程时显示课程名 header + 模式切换按钮 -->
+          <div v-if="selectedCourse" class="d-flex align-center justify-space-between mb-4">
+            <div class="d-flex align-baseline ga-4">
+              <span class="text-h6 font-weight-bold text-grey-darken-3">{{ selectedCourse.course.name }}</span>
+              <div class="text-caption text-grey-darken-1 d-flex align-center ga-2">
+                <span v-if="selectedCourseLearningCards > 0">
+                  {{ t('review.learningCards') }}
+                  <span class="font-weight-bold text-warning">{{ selectedCourseLearningCards }}</span>
+                  {{ t('review.cards') }}
+                </span>
+                <span v-if="selectedCourseLearningCards > 0 && (selectedCourse?.dueCardCount || 0) > 0">·</span>
+                <span v-if="(selectedCourse?.dueCardCount || 0) > 0">
+                  {{ t('review.dueReview') }}
+                  <span class="font-weight-bold text-error">{{ selectedCourse?.dueCardCount || 0 }}</span>
+                  {{ t('review.cards') }}
+                </span>
+                <span v-if="selectedCourseNewCards > 0">·</span>
+                <span v-if="selectedCourseNewCards > 0">
+                  {{ t('review.newCards') }}
+                  <span class="font-weight-bold text-success">{{ selectedCourseNewCards }}</span>
+                  {{ t('review.cards') }}
+                </span>
+                <span v-if="submitting">· {{ t('review.submitting') }}</span>
+              </div>
+            </div>
+            <!-- 模式切换按钮 -->
+            <div class="d-flex align-center ga-1">
+              <v-btn
+                :color="viewMode === 'review' ? 'primary' : 'grey'"
+                :variant="viewMode === 'review' ? 'flat' : 'text'"
+                rounded="lg"
+                size="small"
+                @click="switchViewMode('review')"
+              >
+                <v-icon icon="mdi-play" size="16" class="mr-1"></v-icon>
+                复习
+              </v-btn>
+              <v-btn
+                :color="viewMode === 'list' ? 'primary' : 'grey'"
+                :variant="viewMode === 'list' ? 'flat' : 'text'"
+                rounded="lg"
+                size="small"
+                @click="switchViewMode('list')"
+              >
+                <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1"></v-icon>
+                列表
+              </v-btn>
+              <v-btn
+                :color="viewMode === 'manage' ? 'primary' : 'grey'"
+                :variant="viewMode === 'manage' ? 'flat' : 'text'"
+                rounded="lg"
+                size="small"
+                @click="switchViewMode('manage')"
+              >
+                <v-icon icon="mdi-cog" size="16" class="mr-1"></v-icon>
+                管理
+              </v-btn>
+            </div>
+          </div>
+
           <!-- 加载状态 -->
           <LoadingSpinner v-if="reviewLoading" />
 
@@ -298,20 +300,8 @@
 
           <!-- 复习中状态 -->
           <div v-else-if="currentCard">
-            <!-- 进度条 -->
-            <v-card rounded="lg" class="mb-0 py-1 pb-2 no-border">
-              <div class="d-flex align-center justify-space-between">
-                <span class="text-caption text-grey-darken-1">
-                  {{ t('review.inProgress') }}
-                </span>
-                <span v-if="submitting" class="text-caption text-grey-darken-1">
-                  {{ t('review.submitting') }}
-                </span>
-              </div>
-            </v-card>
-
             <!-- 卡片区域 -->
-            <v-card rounded="lg" class="mb-4">
+            <v-card rounded="lg" class="mb-4 position-relative">
               <div
                 class="card-container pa-8 d-flex align-center justify-center"
                 :style="{ minHeight: `${cardHeight}px` }"
@@ -472,40 +462,74 @@
                   </div>
                 </div>
               </div>
-            </v-card>
 
-            <!-- 操作按钮 -->
-            <div class="d-flex justify-space-between align-center">
-              <v-btn variant="tonal" rounded="lg" @click="resetReview">
-                <v-icon icon="mdi-stop" class="mr-2"></v-icon>
+              <!-- 结束复习按钮 - 右下角 -->
+              <v-btn
+                variant="text"
+                color="grey"
+                rounded="lg"
+                size="small"
+                class="stop-review-btn"
+                @click="resetReview"
+              >
+                <v-icon icon="mdi-stop" size="16" class="mr-1"></v-icon>
                 {{ t('review.stopReview') }}
               </v-btn>
-
-              <div class="text-caption text-grey-darken-1 d-flex align-center ga-2">
-                <span v-if="selectedCourseLearningCards > 0">
-                  {{ t('review.learningCards') }}
-                  <span class="font-weight-bold text-warning">{{ selectedCourseLearningCards }}</span>
-                  {{ t('review.cards') }}
-                </span>
-                <span v-if="selectedCourseLearningCards > 0 && (selectedCourse?.dueCardCount || 0) > 0">·</span>
-                <span v-if="(selectedCourse?.dueCardCount || 0) > 0">
-                  {{ t('review.dueReview') }}
-                  <span class="font-weight-bold text-error">{{ selectedCourse?.dueCardCount || 0 }}</span>
-                  {{ t('review.cards') }}
-                </span>
-                <span v-if="selectedCourseNewCards > 0">·</span>
-                <span v-if="selectedCourseNewCards > 0">
-                  {{ t('review.newCards') }}
-                  <span class="font-weight-bold text-success">{{ selectedCourseNewCards }}</span>
-                  {{ t('review.cards') }}
-                </span>
-              </div>
-            </div>
+            </v-card>
           </div>
         </div>
 
         <!-- 列表模式 -->
         <div v-else-if="viewMode === 'list'">
+          <!-- 选中课程时显示课程名 header + 模式切换按钮 -->
+          <div v-if="selectedCourse" class="d-flex align-center justify-space-between mb-4">
+            <div class="d-flex align-center ga-2">
+              <span class="text-h6 font-weight-bold text-grey-darken-3">{{ selectedCourse.course.name }}</span>
+              <span v-if="selectedCourseLearningCards > 0" class="text-body-2 text-warning font-weight-bold">
+                {{ selectedCourseLearningCards }} 学习中
+              </span>
+              <span v-if="selectedCourse.dueCardCount > 0" class="text-body-2 text-error font-weight-bold">
+                {{ selectedCourse.dueCardCount }} 待复习
+              </span>
+              <span v-if="selectedCourseNewCards > 0" class="text-body-2 text-success font-weight-bold">
+                +{{ selectedCourseNewCards }} 新卡
+              </span>
+            </div>
+            <!-- 模式切换按钮 -->
+            <div class="d-flex align-center ga-1">
+              <v-btn
+                :color="viewMode === 'review' ? 'primary' : 'grey'"
+                :variant="viewMode === 'review' ? 'flat' : 'text'"
+                rounded="lg"
+                size="small"
+                @click="switchViewMode('review')"
+              >
+                <v-icon icon="mdi-play" size="16" class="mr-1"></v-icon>
+                复习
+              </v-btn>
+              <v-btn
+                :color="viewMode === 'list' ? 'primary' : 'grey'"
+                :variant="viewMode === 'list' ? 'flat' : 'text'"
+                rounded="lg"
+                size="small"
+                @click="switchViewMode('list')"
+              >
+                <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1"></v-icon>
+                列表
+              </v-btn>
+              <v-btn
+                :color="viewMode === 'manage' ? 'primary' : 'grey'"
+                :variant="viewMode === 'manage' ? 'flat' : 'text'"
+                rounded="lg"
+                size="small"
+                @click="switchViewMode('manage')"
+              >
+                <v-icon icon="mdi-cog" size="16" class="mr-1"></v-icon>
+                管理
+              </v-btn>
+            </div>
+          </div>
+
           <!-- 加载状态 -->
           <LoadingSpinner v-if="listLoading && listCards.length === 0" />
 
@@ -513,7 +537,7 @@
             <div
               class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 ga-3"
             >
-              <h3 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4">
+              <h3 class="text-body-2 text-md-body-1 font-weight-bold text-grey-darken-4">
                 {{ t('review.cardList') }} ({{ listCards.length }} {{ t('review.cards') }})
               </h3>
 
@@ -731,6 +755,46 @@
 
         <!-- 管理模式 -->
         <div v-else-if="viewMode === 'manage'">
+          <!-- 选中课程时显示课程名 header + 模式切换按钮 -->
+          <div v-if="selectedCourse" class="d-flex align-center justify-space-between mb-4">
+            <div class="d-flex align-center ga-2">
+              <span class="text-h6 font-weight-bold text-grey-darken-3">{{ selectedCourse.course.name }}</span>
+            </div>
+            <!-- 模式切换按钮 -->
+            <div class="d-flex align-center ga-1">
+              <v-btn
+                :color="viewMode === 'review' ? 'primary' : 'grey'"
+                :variant="viewMode === 'review' ? 'flat' : 'text'"
+                rounded="lg"
+                size="small"
+                @click="switchViewMode('review')"
+              >
+                <v-icon icon="mdi-play" size="16" class="mr-1"></v-icon>
+                复习
+              </v-btn>
+              <v-btn
+                :color="viewMode === 'list' ? 'primary' : 'grey'"
+                :variant="viewMode === 'list' ? 'flat' : 'text'"
+                rounded="lg"
+                size="small"
+                @click="switchViewMode('list')"
+              >
+                <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1"></v-icon>
+                列表
+              </v-btn>
+              <v-btn
+                :color="viewMode === 'manage' ? 'primary' : 'grey'"
+                :variant="viewMode === 'manage' ? 'flat' : 'text'"
+                rounded="lg"
+                size="small"
+                @click="switchViewMode('manage')"
+              >
+                <v-icon icon="mdi-cog" size="16" class="mr-1"></v-icon>
+                管理
+              </v-btn>
+            </div>
+          </div>
+
           <div v-if="!selectedCourse" class="text-center pa-6 pa-sm-8">
             <v-card border rounded="lg" class="pa-6 pa-sm-8">
               <v-icon
@@ -750,7 +814,7 @@
 
           <v-card v-else border rounded="lg" class="pa-4 pa-sm-6">
             <h3 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-3 mb-4">
-              {{ selectedCourse.course.name }} - {{ t('review.reviewSettings') }}
+              {{ t('review.reviewSettings') }}
             </h3>
 
             <div
@@ -1163,15 +1227,16 @@ const switchTab = (tabValue: string) => {
   activeTab.value = tabValue
   expansionPanel.value = [] // 关闭展开面板
 
-  if (viewMode.value === 'review') {
-    resetReview()
-    // 切换课程时重置复习状态，用户需要点击开始复习按钮
-  } else if (viewMode.value === 'list') {
-    listCards.value = []
-    listLastId.value = undefined
-    listHasMore.value = true
-    void loadListCards(true)
-  }
+  // 切换课程时重置为复习模式
+  viewMode.value = 'review'
+  resetReview()
+
+  if (tabValue === 'all') return
+
+  // 选中具体课程时，加载列表数据备用
+  listCards.value = []
+  listLastId.value = undefined
+  listHasMore.value = true
 }
 
 const switchViewMode = (mode: 'review' | 'list' | 'manage') => {
@@ -1548,6 +1613,12 @@ onBeforeUnmount(() => {
   max-width: 1550px;
   margin: 0 auto;
   padding-top: 24px;
+}
+
+.stop-review-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
 }
 
 @media (max-width: 960px) {
