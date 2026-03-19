@@ -48,6 +48,22 @@
         </div>
       </div>
 
+      <!-- 错误提示 -->
+      <Transition name="slide-down">
+        <v-alert
+          v-if="errorMessage"
+          type="error"
+          variant="tonal"
+          density="compact"
+          closable
+          class="mx-4 mt-3 mb-0"
+          rounded="lg"
+          @click:close="errorMessage = ''"
+        >
+          {{ errorMessage }}
+        </v-alert>
+      </Transition>
+
       <!-- 课程归属提示 -->
       <v-alert
         v-if="hasCardsInOtherCourse && props.courseId"
@@ -805,6 +821,9 @@ const selectedCard = ref<any>(null)
 const showCardPreview = ref(false)
 const isFlipped = ref(false)
 
+// 错误提示
+const errorMessage = ref('')
+
 // 卡片编辑
 const showEditDialog = ref(false)
 const editingCard = ref<any>(null)
@@ -1076,6 +1095,8 @@ watch(
 
 watch(dialog, (newVal) => {
   if (newVal && props.deck) {
+    currentTab.value = 'all'
+    errorMessage.value = ''
     refreshDeckDetail()
   }
 })
@@ -1095,9 +1116,12 @@ const { execute: upvoteDeck } = useMutation((deckId: number) => memoryApi.upvote
 const { execute: addCardToStudyMutation } = useMutation(
   (cardId: number) => memoryApi.addCardToStudy(cardId),
   {
-    successMessage: '添加成功',
+    showToast: false,
     onSuccess: () => {
       refreshDeckDetail()
+    },
+    onError: (err) => {
+      errorMessage.value = err.message
     },
   }
 )
@@ -1106,9 +1130,12 @@ const { execute: addCardToStudyMutation } = useMutation(
 const { execute: deleteCardMutation } = useMutation(
   (cardId: number) => memoryApi.deleteCard(cardId),
   {
-    successMessage: '删除成功',
+    showToast: false,
     onSuccess: () => {
       refreshDeckDetail()
+    },
+    onError: (err) => {
+      errorMessage.value = err.message
     },
   }
 )
@@ -1118,10 +1145,13 @@ const { execute: updateCardMutation, loading: updatingCard } = useMutation(
   ({ cardId, data }: { cardId: number; data: { front: string; back: string } }) =>
     memoryApi.updateCard(cardId, data),
   {
-    successMessage: '更新成功',
+    showToast: false,
     onSuccess: () => {
       showEditDialog.value = false
       refreshDeckDetail()
+    },
+    onError: (err) => {
+      errorMessage.value = err.message
     },
   }
 )
@@ -1130,10 +1160,13 @@ const { execute: updateCardMutation, loading: updatingCard } = useMutation(
 const { execute: createCardMutation, loading: creatingCard } = useMutation(
   (data: { deckId: number; front: string; back: string }) => memoryApi.createCard(data),
   {
-    successMessage: '创建成功',
+    showToast: false,
     onSuccess: () => {
       showEditDialog.value = false
       refreshDeckDetail()
+    },
+    onError: (err) => {
+      errorMessage.value = err.message
     },
   }
 )
@@ -1152,9 +1185,12 @@ const { execute: acceptUpdateMutation } = useMutation(
     removeOtherDeckCards?: boolean
   }) => memoryApi.acceptDeckChanges(deckId, cardIds, courseId, removeOtherDeckCards),
   {
-    successMessage: '更新成功',
+    showToast: false,
     onSuccess: () => {
       refreshDeckDetail()
+    },
+    onError: (err) => {
+      errorMessage.value = err.message
     },
   }
 )
@@ -1279,11 +1315,14 @@ const addAllNewCards = async () => {
 const { execute: removeCardsFromStudyMutation, loading: removingFromStudy } = useMutation(
   (cardIds: number[]) => memoryApi.removeCardsFromStudy(cardIds),
   {
-    successMessage: '移除成功',
+    showToast: false,
     onSuccess: () => {
       showRemoveConfirmDialog.value = false
       cardToRemove.value = null
       refreshDeckDetail()
+    },
+    onError: (err) => {
+      errorMessage.value = err.message
     },
   }
 )
@@ -1305,9 +1344,12 @@ const { execute: moveNodeToCourseMutation, loading: movingToCourse } = useMutati
   ({ nodeId, courseId }: { nodeId: number; courseId: number }) =>
     memoryApi.moveNodeToCourse(nodeId, courseId),
   {
-    successMessage: '移动成功',
+    showToast: false,
     onSuccess: () => {
       refreshDeckDetail()
+    },
+    onError: (err) => {
+      errorMessage.value = err.message
     },
   }
 )
@@ -1542,5 +1584,20 @@ const moveToCurrentCourse = async () => {
 
 .card-back {
   transform: rotateY(180deg);
+}
+/* 错误提示从上往下移入动画 */
+.slide-down-enter-active {
+  transition: all 0.25s ease;
+}
+.slide-down-leave-active {
+  transition: all 0.2s ease;
+}
+.slide-down-enter-from {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+.slide-down-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
 }
 </style>
