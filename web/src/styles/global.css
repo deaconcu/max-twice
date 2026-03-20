@@ -15,25 +15,21 @@ a {
   text-decoration: none;
 }
 
-a:hover:not(.v-btn):not(.v-list-item):not(.v-tab):not([class*="v-"]):not(.custom-link) {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
 /* 通用工具类 */
 .no-border {
   border: none !important;
 }
 
 .link {
-  color: rgb(var(--v-theme-primary));
+  color: inherit;
   text-decoration: none;
   cursor: pointer;
 }
 
 .link:hover {
+  color: rgb(var(--v-theme-primary));
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* 禁用 Vuetify Card 点击时的 overlay 效果（灰色背景） */

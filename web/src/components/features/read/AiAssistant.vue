@@ -170,6 +170,7 @@ const clearQuote = () => {
         <div class="d-flex flex-wrap align-center text-caption" style="gap: 8px">
           <a
             href="#"
+            class="link"
             :class="{ 'text-success': copySuccess }"
             @click.prevent="copyOnly"
           >
@@ -179,6 +180,7 @@ const clearQuote = () => {
             v-for="e in aiEngines"
             :key="e.name"
             href="#"
+            class="link"
             @click.prevent="copyAndGo(e)"
           >
             {{ e.name }}
