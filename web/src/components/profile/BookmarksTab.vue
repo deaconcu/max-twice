@@ -9,6 +9,7 @@ import { ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { bookmarkApi, type ContentType, type Bookmark } from '@/api/modules/bookmark'
 import { getColorByString } from '@/utils/color'
+import { formatRelativeTime } from '@/utils/format'
 import DynamicIcon from '@/components/common/DynamicIcon.vue'
 
 const router = useRouter()
@@ -142,11 +143,11 @@ function goToDetail(item: Bookmark) {
   }
 }
 
-// 获取职业/课程的图标
-function getIcon(item: Bookmark): string {
+// 获取职业/课程的图标（返回实际值，null 由 DynamicIcon 的 default-icon 处理）
+function getIcon(item: Bookmark): string | null {
   const obj = item.object as Record<string, unknown>
-  if (!obj) return 'mdi-bookmark'
-  return (obj.icon as string) || (obj.professionIcon as string) || 'mdi-bookmark'
+  if (!obj) return null
+  return (obj.icon as string) || (obj.professionIcon as string) || null
 }
 
 // 获取名称
@@ -159,6 +160,34 @@ function getName(item: Bookmark): string {
 // 获取图标颜色
 function getIconColor(item: Bookmark): string {
   return getColorByString(getName(item))
+}
+
+// 获取文章的节点名称
+function getPostNodeName(item: Bookmark): string | null {
+  const obj = item.object as Record<string, unknown>
+  if (!obj) return null
+  const node = obj.node as Record<string, unknown> | undefined
+  return (node?.name as string) || null
+}
+
+// 获取文章类型标签（文章/目录）
+function getPostTypeLabel(item: Bookmark): string {
+  const obj = item.object as Record<string, unknown>
+  if (!obj) return '文章'
+  // type: 1 = 目录, 2 = 文章
+  return obj.type === 1 ? '目录' : '文章'
+}
+
+// 获取文章图标（目录/文章显示不同图标）
+function getPostIcon(item: Bookmark): string {
+  const obj = item.object as Record<string, unknown>
+  if (!obj) return 'mdi-file-document-outline'
+  return obj.type === 1 ? 'mdi-format-list-bulleted' : 'mdi-file-document-outline'
+}
+
+// 获取文章图标颜色
+function getPostIconColor(): string {
+  return 'grey'
 }
 </script>
 
@@ -186,11 +215,8 @@ function getIconColor(item: Bookmark): string {
 
     <!-- 收藏列表 -->
     <div v-else>
-      <!-- 职业/路线图/课程 - 网格卡片 -->
-      <div
-        v-if="activeType === 'profession' || activeType === 'roadmap' || activeType === 'course'"
-        class="bookmark-grid"
-      >
+      <!-- 职业 - 网格卡片 -->
+      <div v-if="activeType === 'profession'" class="bookmark-grid">
         <v-card
           v-for="item in currentItems"
           :key="item.id"
@@ -213,13 +239,7 @@ function getIconColor(item: Bookmark): string {
               <div class="icon-container flex-shrink-0">
                 <DynamicIcon
                   :icon="getIcon(item)"
-                  :default-icon="
-                    activeType === 'profession'
-                      ? 'mdi-briefcase'
-                      : activeType === 'roadmap'
-                        ? 'mdi-map-marker-path'
-                        : 'mdi-book-open-variant'
-                  "
+                  default-icon="mdi-briefcase"
                   :size="24"
                   :color="getIconColor(item)"
                 />
@@ -231,11 +251,8 @@ function getIconColor(item: Bookmark): string {
                 >
                   {{ getName(item) }}
                 </div>
-                <div
-                  v-if="(item.object as Record<string, unknown>)?.nodeCount"
-                  class="text-caption text-medium-emphasis"
-                >
-                  {{ (item.object as Record<string, unknown>).nodeCount }} 个知识节点
+                <div class="d-flex align-center justify-end">
+                  <span class="text-caption text-grey">{{ formatRelativeTime(item.createdAt) }}</span>
                 </div>
               </div>
             </div>
@@ -243,15 +260,15 @@ function getIconColor(item: Bookmark): string {
         </v-card>
       </div>
 
-      <!-- 文章 - 列表卡片 -->
-      <div v-else-if="activeType === 'post'" class="post-list">
+      <!-- 路线图 - 网格卡片 -->
+      <div v-else-if="activeType === 'roadmap'" class="bookmark-grid">
         <v-card
           v-for="item in currentItems"
           :key="item.id"
           rounded="lg"
           border
           hover
-          class="mb-4 post-card"
+          class="bookmark-card"
           @click="goToDetail(item)"
         >
           <v-card-text class="pa-4 position-relative">
@@ -263,25 +280,133 @@ function getIconColor(item: Bookmark): string {
               class="bookmark-btn"
               @click.stop="handleUnbookmark(item)"
             />
-            <div
-              class="text-body-1 post-content"
-              :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-            >
-              {{ (item.object as Record<string, unknown>)?.content || '无内容' }}
+            <div class="d-flex align-center ga-3">
+              <div class="icon-container flex-shrink-0">
+                <DynamicIcon
+                  :icon="getIcon(item)"
+                  default-icon="mdi-map-marker-path"
+                  :size="24"
+                  :color="getIconColor(item)"
+                />
+              </div>
+              <div class="flex-grow-1" style="min-width: 0">
+                <div
+                  class="text-body-1 font-weight-bold text-truncate"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                >
+                  {{ getName(item) }}
+                </div>
+                <div class="d-flex align-center justify-space-between">
+                  <span
+                    v-if="(item.object as Record<string, unknown>)?.nodeCount"
+                    class="text-caption text-medium-emphasis text-truncate"
+                    style="flex: 1; min-width: 0"
+                  >
+                    {{ (item.object as Record<string, unknown>).nodeCount }} 个知识节点
+                  </span>
+                  <span v-else style="flex: 1"></span>
+                  <span class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(item.createdAt) }}</span>
+                </div>
+              </div>
             </div>
-            <div class="d-flex align-center ga-4 mt-3 text-caption text-medium-emphasis">
-              <span v-if="(item.object as Record<string, unknown>)?.twiceCount">
-                <v-icon size="14" class="mr-1">mdi-fire</v-icon>
-                {{ (item.object as Record<string, unknown>).twiceCount }}
-              </span>
-              <span v-if="(item.object as Record<string, unknown>)?.likeCount">
-                <v-icon size="14" class="mr-1">mdi-thumb-up</v-icon>
-                {{ (item.object as Record<string, unknown>).likeCount }}
-              </span>
-              <span v-if="(item.object as Record<string, unknown>)?.commentCount">
-                <v-icon size="14" class="mr-1">mdi-comment</v-icon>
-                {{ (item.object as Record<string, unknown>).commentCount }}
-              </span>
+          </v-card-text>
+        </v-card>
+      </div>
+
+      <!-- 课程 - 网格卡片 -->
+      <div v-else-if="activeType === 'course'" class="bookmark-grid">
+        <v-card
+          v-for="item in currentItems"
+          :key="item.id"
+          rounded="lg"
+          border
+          hover
+          class="bookmark-card"
+          @click="goToDetail(item)"
+        >
+          <v-card-text class="pa-4 position-relative">
+            <v-btn
+              color="grey"
+              variant="text"
+              size="x-small"
+              icon="mdi-close"
+              class="bookmark-btn"
+              @click.stop="handleUnbookmark(item)"
+            />
+            <div class="d-flex align-center ga-3">
+              <div class="icon-container flex-shrink-0">
+                <DynamicIcon
+                  :icon="getIcon(item)"
+                  default-icon="mdi-book-open-variant"
+                  :size="24"
+                  :color="getIconColor(item)"
+                />
+              </div>
+              <div class="flex-grow-1" style="min-width: 0">
+                <div
+                  class="text-body-1 font-weight-bold text-truncate"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                >
+                  {{ getName(item) }}
+                </div>
+                <div class="d-flex align-center justify-space-between">
+                  <span
+                    v-if="(item.object as Record<string, unknown>)?.nodeCount"
+                    class="text-caption text-medium-emphasis text-truncate"
+                    style="flex: 1; min-width: 0"
+                  >
+                    {{ (item.object as Record<string, unknown>).nodeCount }} 个知识节点
+                  </span>
+                  <span v-else style="flex: 1"></span>
+                  <span class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(item.createdAt) }}</span>
+                </div>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </div>
+
+      <!-- 文章 - 网格卡片 -->
+      <div v-else-if="activeType === 'post'" class="bookmark-grid">
+        <v-card
+          v-for="item in currentItems"
+          :key="item.id"
+          rounded="lg"
+          border
+          hover
+          class="bookmark-card"
+          @click="goToDetail(item)"
+        >
+          <v-card-text class="pa-4 position-relative">
+            <v-btn
+              color="grey"
+              variant="text"
+              size="x-small"
+              icon="mdi-close"
+              class="bookmark-btn"
+              @click.stop="handleUnbookmark(item)"
+            />
+            <div class="d-flex align-center ga-3">
+              <div class="icon-container flex-shrink-0">
+                <v-icon
+                  size="24"
+                  :color="getPostIconColor()"
+                >
+                  {{ getPostIcon(item) }}
+                </v-icon>
+              </div>
+              <div class="flex-grow-1" style="min-width: 0">
+                <div
+                  class="text-body-1 font-weight-bold text-truncate"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                >
+                  {{ getPostNodeName(item) || '未知节点' }}
+                </div>
+                <div class="d-flex align-center justify-space-between">
+                  <span class="text-caption text-medium-emphasis">{{ getPostTypeLabel(item) }}</span>
+                  <span class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(item.createdAt) }}</span>
+                </div>
+              </div>
             </div>
           </v-card-text>
         </v-card>
@@ -318,11 +443,16 @@ function getIconColor(item: Bookmark): string {
                 >
                   {{ (item.object as Record<string, unknown>)?.name || '未知卡片组' }}
                 </div>
-                <div
-                  v-if="(item.object as Record<string, unknown>)?.cardCount"
-                  class="text-caption text-medium-emphasis"
-                >
-                  {{ (item.object as Record<string, unknown>).cardCount }} 张卡片
+                <div class="d-flex align-center justify-space-between">
+                  <span
+                    v-if="(item.object as Record<string, unknown>)?.cardCount"
+                    class="text-caption text-medium-emphasis text-truncate"
+                    style="flex: 1; min-width: 0"
+                  >
+                    {{ (item.object as Record<string, unknown>).cardCount }} 张卡片
+                  </span>
+                  <span v-else style="flex: 1"></span>
+                  <span class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(item.createdAt) }}</span>
                 </div>
               </div>
             </div>

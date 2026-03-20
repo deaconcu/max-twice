@@ -3,12 +3,11 @@ package com.prosper.learn.application.assembler;
 import com.prosper.learn.application.converter.BookmarkConverter;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.MemoryCardDeckConverter;
-import com.prosper.learn.application.converter.PostConverter;
 import com.prosper.learn.application.converter.ProfessionConverter;
 import com.prosper.learn.application.dto.response.bookmark.BookmarkDTO;
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.deck.DeckFullDTO;
-import com.prosper.learn.application.dto.response.post.PostSummaryDTO;
+import com.prosper.learn.application.dto.response.post.PostDetailDTO;
 import com.prosper.learn.application.dto.response.profession.ProfessionBriefDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapBriefDTO;
 import com.prosper.learn.content.course.CourseDO;
@@ -53,7 +52,7 @@ public class BookmarkAssembler {
     private final CourseDataService courseDataService;
     private final CourseConverter courseConverter;
     private final PostDataService postDataService;
-    private final PostConverter postConverter;
+    private final PostAssembler postAssembler;
     private final MemoryCardDeckDataService deckDataService;
     private final MemoryCardDeckConverter deckConverter;
     private final NodeDataService nodeDataService;
@@ -128,9 +127,9 @@ public class BookmarkAssembler {
     private List<BookmarkDTO<Object>> toPostBookmarks(List<BookmarkDO> bookmarks) {
         List<Long> objectIds = bookmarks.stream().map(BookmarkDO::getObjectId).collect(Collectors.toList());
         List<PostDO> posts = postDataService.getByIds(objectIds);
-        List<PostSummaryDTO> postDTOs = postConverter.toSummaryDTO(posts);
-        Map<Long, PostSummaryDTO> postMap = postDTOs.stream()
-            .collect(Collectors.toMap(PostSummaryDTO::getId, p -> p));
+        List<PostDetailDTO> postDTOs = postAssembler.toDetailDTO(posts);
+        Map<Long, PostDetailDTO> postMap = postDTOs.stream()
+            .collect(Collectors.toMap(PostDetailDTO::getId, p -> p));
 
         List<BookmarkDTO<Object>> result = new ArrayList<>();
         for (BookmarkDO bookmark : bookmarks) {

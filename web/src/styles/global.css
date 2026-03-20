@@ -15,7 +15,7 @@ a {
   text-decoration: none;
 }
 
-a:hover:not(.v-btn):not(.v-list-item):not(.v-tab):not([class*="v-"]) {
+a:hover:not(.v-btn):not(.v-list-item):not(.v-tab):not([class*="v-"]):not(.custom-link) {
   color: rgb(var(--v-theme-primary));
   text-decoration: underline;
   text-underline-offset: 3px;
