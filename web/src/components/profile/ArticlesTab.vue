@@ -1,9 +1,5 @@
 <template>
   <div class="pa-0 pa-sm-2">
-    <div class="d-flex align-center justify-space-between mb-4 mb-md-6">
-      <div></div>
-    </div>
-
         <!-- 加载状态 -->
         <LoadingSpinner v-if="loading && articles.length === 0" />
 
@@ -11,185 +7,106 @@
         <v-infinite-scroll v-if="articles.length > 0" :items="articles" @load="onLoadMore">
           <div v-for="(article, index) in articles" :key="article.id">
             <v-card
-              rounded="xl"
+              rounded="lg"
               hover
               border
-              elevation="0"
-              class="article-card mb-4 mb-md-6 hoverable"
+              class="article-card mb-5"
               @click="goToArticle(article)"
             >
-              <v-card-text class="pa-4 pa-sm-6 pb-1">
-                <!-- 所属课程和节点 + 状态标签 -->
-                <div v-if="article.node || article.course" class="mb-3 mb-md-4">
-                  <div class="d-flex align-center justify-space-between ga-2 flex-wrap">
-                    <!-- 左侧：课程和节点 -->
-                    <div class="d-flex align-center ga-1 flex-wrap">
-                      <template v-if="article.course">
-                        <v-chip
-                          :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                          density="comfortable"
-                          color="grey-darken-1"
-                          variant="tonal"
-                        >
-                          课程
-                        </v-chip>
-                        <v-btn
-                          v-if="article.course"
-                          variant="text"
-                          class="course-link-btn px-2 text-caption text-md-body-1"
-                          @click.stop="goToCourse(article.courseId)"
-                        >
-                          {{ article.course }}
-                        </v-btn>
-                      </template>
-                      <template v-if="article.node">
-                        <v-icon
-                          icon="mdi-chevron-right"
-                          :size="$vuetify.display.mobile ? 16 : 18"
-                          color="grey-darken-1"
-                          class="mx-1"
-                        />
-                        <v-chip
-                          :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                          density="comfortable"
-                          color="grey-darken-1"
-                          variant="tonal"
-                        >
-                          节点
-                        </v-chip>
-                        <v-btn
-                          variant="text"
-                          class="course-link-btn px-2 text-caption text-md-body-1"
-                          @click.stop="goToNode(article.nodeId)"
-                        >
-                          {{ article.node.name }}
-                        </v-btn>
-                      </template>
-                    </div>
-
-                    <!-- 右侧：状态标签 -->
-                    <div class="flex-shrink-0">
-                      <v-chip
-                        v-if="article.state === 0"
-                        size="small"
-                        color="grey"
-                        variant="tonal"
-                      >
-                        草稿
-                      </v-chip>
-                      <v-chip
-                        v-else-if="article.state === 1"
-                        size="small"
-                        color="warning"
-                        variant="tonal"
-                      >
-                        待审核
-                      </v-chip>
-                      <v-chip
-                        v-else-if="article.state === 2"
-                        size="small"
-                        color="success"
-                        variant="tonal"
-                      >
-                        已发布
-                      </v-chip>
-                      <v-chip
-                        v-else-if="article.state === 3"
-                        size="small"
-                        color="error"
-                        variant="tonal"
-                      >
-                        已拒绝
-                      </v-chip>
-                      <v-chip
-                        v-else-if="article.state === 4"
-                        size="small"
-                        color="error"
-                        variant="tonal"
-                      >
-                        已屏蔽
-                      </v-chip>
-                    </div>
+              <v-card-text class="pa-4 pb-2">
+                <!-- 顶部：课程 > 节点 + 状态 -->
+                <div class="d-flex align-center justify-space-between mb-3">
+                  <!-- 左侧：课程和节点路径 -->
+                  <div class="d-flex align-center text-body-2 text-medium-emphasis" style="min-width: 0">
+                    <span v-if="article.course" class="text-truncate" @click.stop="goToCourse(article.courseId)" style="cursor: pointer">
+                      {{ article.course }}
+                    </span>
+                    <v-icon v-if="article.course && article.node" icon="mdi-chevron-right" size="16" class="mx-1 flex-shrink-0" />
+                    <span v-if="article.node" class="text-truncate" @click.stop="goToNode(article.nodeId)" style="cursor: pointer">
+                      {{ article.node.name }}
+                    </span>
                   </div>
+
+                  <!-- 右侧：状态标签 -->
+                  <v-chip
+                    v-if="article.state === 0"
+                    size="x-small"
+                    color="grey"
+                    variant="tonal"
+                    class="flex-shrink-0 ml-2"
+                  >
+                    草稿
+                  </v-chip>
+                  <v-chip
+                    v-else-if="article.state === 1"
+                    size="x-small"
+                    color="warning"
+                    variant="tonal"
+                    class="flex-shrink-0 ml-2"
+                  >
+                    待审核
+                  </v-chip>
+                  <v-chip
+                    v-else-if="article.state === 2"
+                    size="x-small"
+                    color="success"
+                    variant="tonal"
+                    class="flex-shrink-0 ml-2"
+                  >
+                    已发布
+                  </v-chip>
+                  <v-chip
+                    v-else-if="article.state === 3"
+                    size="x-small"
+                    color="error"
+                    variant="tonal"
+                    class="flex-shrink-0 ml-2"
+                  >
+                    已拒绝
+                  </v-chip>
+                  <v-chip
+                    v-else-if="article.state === 4"
+                    size="x-small"
+                    color="error"
+                    variant="tonal"
+                    class="flex-shrink-0 ml-2"
+                  >
+                    已屏蔽
+                  </v-chip>
                 </div>
 
                 <!-- 文章内容缩略 -->
                 <div
                   :ref="(el) => setContentRef(el, index)"
-                  class="article-content-preview mb-3 mb-md-4"
+                  class="article-content-preview mb-3"
                   :class="{ 'has-overflow': article.hasOverflow }"
                 >
                   <div v-html="article.preview"></div>
                 </div>
 
-                <div class="d-flex align-center justify-space-between ga-2">
-                  <!-- 统计信息 -->
-                  <div
-                    class="d-flex align-center flex-wrap text-caption text-md-body-2 text-grey pl-2"
-                    style="gap: 16px"
-                  >
-                    <div class="d-flex align-center">
-                      <v-icon
-                        icon="mdi-eye-outline"
-                        :size="$vuetify.display.mobile ? 14 : 16"
-                        color="grey"
-                        class="mr-1"
-                      />
-                      {{ article.viewCount }}
-                    </div>
-                    <div class="d-flex align-center">
-                      <v-icon
-                        icon="mdi-heart-outline"
-                        :size="$vuetify.display.mobile ? 14 : 16"
-                        color="grey"
-                        class="mr-1"
-                      />
-                      {{ article.likeCount }}
-                    </div>
-                    <div class="d-flex align-center">
-                      <v-icon
-                        icon="mdi-comment-outline"
-                        :size="$vuetify.display.mobile ? 14 : 16"
-                        color="grey"
-                        class="mr-1"
-                      />
-                      {{ article.commentCount }}
-                    </div>
-                    <div class="d-flex align-center d-none d-sm-flex">
-                      <v-icon
-                        icon="mdi-calendar-outline"
-                        :size="$vuetify.display.mobile ? 14 : 16"
-                        color="grey"
-                        class="mr-1"
-                      />
-                      {{ formatDate(article.publishedAt) }}
-                    </div>
+                <!-- 底部：统计信息 + 操作按钮 -->
+                <div class="d-flex align-center justify-space-between">
+                  <div class="d-flex align-center text-caption text-grey" style="gap: 12px">
+                    <span>{{ article.viewCount }} 阅读</span>
+                    <span>{{ article.likeCount }} 点赞</span>
+                    <span>{{ article.commentCount }} 评论</span>
+                    <span class="d-none d-sm-inline">{{ formatDate(article.publishedAt) }}</span>
                   </div>
-
-                  <!-- 操作按钮 -->
-                  <div v-if="isOwnProfile" class="d-flex align-center ga-1">
+                  <div v-if="isOwnProfile" class="d-flex align-center">
                     <v-btn
                       color="primary"
                       variant="text"
-                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                      size="x-small"
                       icon="mdi-pencil"
-                      class="flex-shrink-0"
                       @click.stop="editArticle(article)"
-                    >
-                      <v-icon>mdi-pencil</v-icon>
-                      <v-tooltip activator="parent" location="top">编辑文章</v-tooltip>
-                    </v-btn>
+                    />
                     <v-btn
                       color="grey"
                       variant="text"
-                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                      size="x-small"
                       icon="mdi-delete"
-                      class="flex-shrink-0"
                       @click.stop="deleteArticle(article.id)"
-                    >
-                      <v-icon>mdi-delete</v-icon>
-                      <v-tooltip activator="parent" location="top">删除文章</v-tooltip>
-                    </v-btn>
+                    />
                   </div>
                 </div>
               </v-card-text>

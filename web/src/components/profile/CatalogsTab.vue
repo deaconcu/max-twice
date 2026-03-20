@@ -1,22 +1,18 @@
 <template>
   <div class="pa-0 pa-sm-2">
     <!-- 顶部搜索栏 -->
-        <div
-          class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
-        >
-          <div></div>
-
+        <div class="mb-2">
           <!-- 搜索框 -->
           <v-text-field
             v-model="searchQuery"
-            :placeholder="$vuetify.display.mobile ? '搜索目录...' : '搜索课程目录...'"
+            placeholder="搜索目录..."
             prepend-inner-icon="mdi-magnify"
             variant="outlined"
             density="compact"
             rounded="lg"
             clearable
             hide-details
-            :style="$vuetify.display.mobile ? 'max-width: 100%' : 'max-width: 400px'"
+            style="max-width: 300px"
           />
         </div>
 
@@ -31,193 +27,115 @@
         >
           <div v-for="(catalog, index) in filteredCatalogs" :key="catalog.id">
             <v-card
-              rounded="xl"
+              rounded="lg"
               border
-              class="catalog-card mb-4 mb-md-6 hoverable"
+              hover
+              class="catalog-card mb-5"
               @click="goToCatalog(catalog.id)"
             >
-              <v-card-text class="pa-4 pa-sm-6 pb-1">
-                <!-- 所属课程和节点 + 状态标签 -->
-                <div v-if="catalog.node || catalog.course" class="mb-3 mb-md-4">
-                  <div class="d-flex align-center justify-space-between ga-2 flex-wrap">
-                    <!-- 左侧：课程和节点 -->
-                    <div class="d-flex align-center ga-1 flex-wrap">
-                      <template v-if="catalog.course">
-                        <v-chip
-                          :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                          density="comfortable"
-                          color="grey-darken-1"
-                          variant="tonal"
-                        >
-                          课程
-                        </v-chip>
-                        <v-btn
-                          variant="text"
-                          class="course-link-btn px-2 text-caption text-md-body-1"
-                          @click.stop="goToCourse(catalog.course.id)"
-                        >
-                          {{ catalog.course.name }}
-                        </v-btn>
-                      </template>
-                      <template v-if="catalog.node">
-                        <v-icon
-                          icon="mdi-chevron-right"
-                          :size="$vuetify.display.mobile ? 16 : 18"
-                          color="grey-darken-1"
-                          class="mx-1"
-                        />
-                        <v-chip
-                          :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                          density="comfortable"
-                          color="grey-darken-1"
-                          variant="tonal"
-                        >
-                          节点
-                        </v-chip>
-                        <v-btn
-                          variant="text"
-                          class="course-link-btn px-2 text-caption text-md-body-1"
-                          @click.stop="goToCatalog(catalog.id)"
-                        >
-                          {{ catalog.node }}
-                        </v-btn>
-                      </template>
-                    </div>
-
-                    <!-- 右侧：状态标签 -->
-                    <div class="flex-shrink-0">
-                      <v-chip
-                        v-if="catalog.state === 0"
-                        size="small"
-                        color="grey"
-                        variant="tonal"
-                      >
-                        草稿
-                      </v-chip>
-                      <v-chip
-                        v-else-if="catalog.state === 1"
-                        size="small"
-                        color="warning"
-                        variant="tonal"
-                      >
-                        待审核
-                      </v-chip>
-                      <v-chip
-                        v-else-if="catalog.state === 2"
-                        size="small"
-                        color="success"
-                        variant="tonal"
-                      >
-                        已发布
-                      </v-chip>
-                      <v-chip
-                        v-else-if="catalog.state === 3"
-                        size="small"
-                        color="error"
-                        variant="tonal"
-                      >
-                        已拒绝
-                      </v-chip>
-                      <v-chip
-                        v-else-if="catalog.state === 4"
-                        size="small"
-                        color="error"
-                        variant="tonal"
-                      >
-                        已屏蔽
-                      </v-chip>
-                    </div>
+              <v-card-text class="pa-4 pb-2">
+                <!-- 顶部：课程 > 节点 + 状态 -->
+                <div class="d-flex align-center justify-space-between mb-3">
+                  <!-- 左侧：课程和节点路径 -->
+                  <div class="d-flex align-center text-body-2 text-medium-emphasis" style="min-width: 0">
+                    <span v-if="catalog.course" class="text-truncate" @click.stop="goToCourse(catalog.course.id)" style="cursor: pointer">
+                      {{ catalog.course.name }}
+                    </span>
+                    <v-icon v-if="catalog.course && catalog.node" icon="mdi-chevron-right" size="16" class="mx-1 flex-shrink-0" />
+                    <span v-if="catalog.node" class="text-truncate">{{ catalog.node }}</span>
                   </div>
+
+                  <!-- 右侧：状态标签 -->
+                  <v-chip
+                    v-if="catalog.state === 0"
+                    size="x-small"
+                    color="grey"
+                    variant="tonal"
+                    class="flex-shrink-0 ml-2"
+                  >
+                    草稿
+                  </v-chip>
+                  <v-chip
+                    v-else-if="catalog.state === 1"
+                    size="x-small"
+                    color="warning"
+                    variant="tonal"
+                    class="flex-shrink-0 ml-2"
+                  >
+                    待审核
+                  </v-chip>
+                  <v-chip
+                    v-else-if="catalog.state === 2"
+                    size="x-small"
+                    color="success"
+                    variant="tonal"
+                    class="flex-shrink-0 ml-2"
+                  >
+                    已发布
+                  </v-chip>
+                  <v-chip
+                    v-else-if="catalog.state === 3"
+                    size="x-small"
+                    color="error"
+                    variant="tonal"
+                    class="flex-shrink-0 ml-2"
+                  >
+                    已拒绝
+                  </v-chip>
+                  <v-chip
+                    v-else-if="catalog.state === 4"
+                    size="x-small"
+                    color="error"
+                    variant="tonal"
+                    class="flex-shrink-0 ml-2"
+                  >
+                    已屏蔽
+                  </v-chip>
                 </div>
 
                 <!-- 主要内容：目录章节列表 -->
-                <div v-if="catalog.contentNodes.length > 0" class="catalog-nodes mb-3 mb-md-4">
+                <div v-if="catalog.contentNodes.length > 0" class="catalog-nodes mb-3">
                   <div
                     v-for="(node, idx) in catalog.contentNodes"
                     :key="idx"
-                    class="catalog-node-item py-2 py-md-3 px-3 px-md-4"
+                    class="catalog-node-item py-2 px-3"
                   >
-                    <div class="text-body-2 text-md-body-1 text-grey-darken-3 mb-1">
+                    <div class="text-body-1 text-grey-darken-3">
                       {{ idx + 1 }}. {{ node.name }}
                     </div>
                     <div
                       v-if="node.description"
-                      class="text-body-2 text-md-body-2 text-grey-darken-1"
+                      class="text-body-2 text-medium-emphasis"
                     >
                       {{ node.description }}
                     </div>
                   </div>
                 </div>
 
-                <div class="d-flex align-center justify-space-between ga-2">
-                  <!-- 统计信息 -->
-                  <div
-                    class="d-flex align-center flex-wrap text-body-2 text-md-body-2 text-grey pl-2"
-                    style="gap: 16px"
-                  >
-                    <div class="d-flex align-center">
-                      <v-icon
-                        icon="mdi-comment-text-outline"
-                        :size="$vuetify.display.mobile ? 14 : 16"
-                        color="grey"
-                        class="mr-1"
-                      />
-                      {{ catalog.commentCount }}
-                    </div>
-                    <div class="d-flex align-center">
-                      <v-icon
-                        icon="mdi-cards-outline"
-                        :size="$vuetify.display.mobile ? 14 : 16"
-                        color="grey"
-                        class="mr-1"
-                      />
-                      {{ catalog.deckCount }}
-                    </div>
-                    <div class="d-flex align-center">
-                      <v-icon
-                        icon="mdi-file-document-multiple-outline"
-                        :size="$vuetify.display.mobile ? 14 : 16"
-                        color="grey"
-                        class="mr-1"
-                      />
-                      {{ catalog.contentNodes.length }}
-                    </div>
-                    <div class="d-flex align-center d-none d-sm-flex">
-                      <v-icon
-                        icon="mdi-calendar-outline"
-                        :size="$vuetify.display.mobile ? 14 : 16"
-                        color="grey"
-                        class="mr-1"
-                      />
-                      {{ formatDate(catalog.createdAt) }}
-                    </div>
+                <!-- 底部：统计信息 + 操作按钮 -->
+                <div class="d-flex align-center justify-space-between">
+                  <div class="d-flex align-center text-caption text-grey" style="gap: 12px">
+                    <span>{{ catalog.commentCount }} 评论</span>
+                    <span>{{ catalog.deckCount }} 卡片</span>
+                    <span>{{ catalog.contentNodes.length }} 章节</span>
+                    <span class="d-none d-sm-inline">{{ formatDate(catalog.createdAt) }}</span>
                   </div>
-
-                  <!-- 操作按钮 -->
-                  <div class="d-flex align-center ga-1">
+                  <div class="d-flex align-center">
                     <v-btn
                       v-if="catalog.state === 0"
                       color="primary"
                       variant="text"
-                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                      size="x-small"
                       icon="mdi-pencil"
-                      class="flex-shrink-0"
                       @click.stop="editCatalog(catalog)"
-                    >
-                      <v-icon>mdi-pencil</v-icon>
-                      <v-tooltip activator="parent" location="top">编辑草稿</v-tooltip>
-                    </v-btn>
+                    />
                     <v-btn
                       color="grey"
                       variant="text"
-                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                      size="x-small"
                       icon="mdi-delete"
-                      class="flex-shrink-0"
                       @click.stop="deleteCatalog(catalog.id)"
-                    >
-                      <v-icon>mdi-delete</v-icon>
-                      <v-tooltip activator="parent" location="top">删除目录</v-tooltip>
-                    </v-btn>
+                    />
                   </div>
                 </div>
               </v-card-text>
@@ -440,43 +358,26 @@ onMounted(() => {
 <style scoped>
 .catalog-card {
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
   background-color: rgb(var(--v-theme-surface));
-  border: 1.5px solid rgb(var(--v-theme-outline)) !important;
 }
 
-/* 目录章节列表容器 */
+.catalog-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 .catalog-nodes {
-  border-radius: 12px;
-  overflow: hidden;
-  min-height: 80px;
-}
-
-@media (min-width: 600px) {
-  .catalog-nodes {
-    min-height: 100px;
-  }
-}
-
-/* 章节项 */
-.catalog-node-item {
-  transition: all 0.2s ease;
-}
-
-.catalog-node-item:hover {
-  background-color: rgb(var(--v-theme-surface-variant));
+  border-radius: 8px;
+  background-color: rgba(var(--v-theme-on-surface), 0.02);
 }
 
 .catalog-node-item:not(:last-child) {
   border-bottom: 1px dashed rgb(var(--v-theme-outline));
 }
 
-/* 课程链接按钮样式 */
-.course-link-btn {
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: normal;
-  height: auto;
-  min-height: 0;
+:deep(.v-field__outline) {
+  --v-field-border-opacity: 1;
+  color: rgb(var(--v-theme-outline));
 }
 </style>

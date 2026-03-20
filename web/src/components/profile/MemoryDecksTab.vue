@@ -1,111 +1,107 @@
 <template>
   <div class="pa-0 pa-sm-2">
-    <div class="d-flex align-center justify-space-between mb-4 mb-md-6">
+    <!-- 顶部操作栏 -->
+    <div
+      class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
+    >
       <div></div>
+      <v-btn
+        color="primary"
+        variant="text"
+        rounded="lg"
+        :size="$vuetify.display.mobile ? 'small' : 'default'"
+        to="/memory-review"
+      >
+        <span class="d-none d-sm-inline">前往复习中心</span>
+        <span class="d-sm-none">复习中心</span>
+        <v-icon
+          icon="mdi-chevron-right"
+          :size="$vuetify.display.mobile ? 16 : 18"
+          class="ml-1"
+        />
+      </v-btn>
     </div>
 
-        <!-- 加载状态 -->
-        <LoadingSpinner v-if="loading" />
+    <!-- 加载状态 -->
+    <LoadingSpinner v-if="loading" />
 
-        <!-- 卡片组列表 -->
-        <div v-else-if="decks.length > 0">
-          <v-row>
-            <v-col v-for="deck in decks" :key="deck.id" cols="12" md="6">
-              <v-card
-                rounded="xl"
-                hover
-                elevation="0"
-                class="deck-card hoverable"
-                @click="openDeckDetail(deck)"
+    <!-- 卡片组列表 -->
+    <div v-else-if="decks.length > 0">
+      <div class="deck-grid">
+        <v-card
+          v-for="deck in decks"
+          :key="deck.id"
+          rounded="lg"
+          border
+          hover
+          class="deck-card"
+          @click="openDeckDetail(deck)"
+        >
+          <v-card-text class="pa-4 position-relative">
+            <!-- 删除按钮 -->
+            <v-btn
+              v-if="isOwnProfile"
+              color="grey"
+              variant="text"
+              size="x-small"
+              icon="mdi-close"
+              class="close-btn"
+              @click.stop="deleteDeck(deck.id)"
+            />
+
+            <!-- 图标和标题区域 -->
+            <div class="d-flex align-center ga-3 mb-3">
+              <div class="icon-container flex-shrink-0">
+                <v-icon icon="mdi-cards" :size="24" :color="deck.color" />
+              </div>
+              <div class="flex-grow-1" style="min-width: 0">
+                <div
+                  class="text-body-1 font-weight-bold text-truncate cursor-pointer"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                  @click.stop="deck.courseId && goToCourse(deck.courseId)"
+                >
+                  {{ deck.courseName }}
+                </div>
+                <div
+                  class="text-body-2 text-medium-emphasis text-truncate cursor-pointer"
+                  @click.stop="deck.nodeId && goToNode(deck.nodeId)"
+                >
+                  {{ deck.nodeName }}
+                </div>
+              </div>
+            </div>
+
+            <!-- 卡片数和原文 -->
+            <div class="d-flex align-center justify-space-between mb-3">
+              <span class="text-body-2 text-medium-emphasis">
+                {{ deck.cardCount }} 张卡片
+              </span>
+              <v-btn
+                v-if="deck.postId"
+                variant="text"
+                color="primary"
+                size="small"
+                class="px-1"
+                @click.stop="goToPost(deck.postId)"
               >
-                <v-card-text class="pa-5">
-                  <!-- 顶部：课程标题和删除按钮 -->
-                  <div class="d-flex align-center justify-space-between mb-3">
-                    <v-btn
-                      v-if="deck.courseId"
-                      variant="text"
-                      class="text-h6 font-weight-bold text-primary pa-0 justify-start"
-                      style="text-transform: none; min-height: auto; height: auto;"
-                      @click.stop="goToCourse(deck.courseId)"
-                    >
-                      {{ deck.courseName }}
-                    </v-btn>
-                    <h3 v-else class="text-h6 font-weight-bold text-primary mb-0">
-                      {{ deck.courseName }}
-                    </h3>
+                查看原文
+              </v-btn>
+            </div>
 
-                    <v-btn
-                      v-if="isOwnProfile"
-                      color="grey-lighten-1"
-                      variant="text"
-                      size="small"
-                      icon="mdi-delete"
-                      @click.stop="deleteDeck(deck.id)"
-                    >
-                      <v-icon size="20">mdi-delete</v-icon>
-                      <v-tooltip activator="parent" location="top">删除卡片组</v-tooltip>
-                    </v-btn>
-                  </div>
-
-                  <!-- 中间：节点 + 卡片数 + 原文按钮（同一行） -->
-                  <div class="d-flex align-center justify-space-between mb-4">
-                    <!-- 左侧：节点信息 -->
-                    <v-btn
-                      v-if="deck.nodeId"
-                      variant="text"
-                      class="text-body-1 text-grey-darken-2 pa-0 justify-start"
-                      style="text-transform: none; min-height: auto; height: auto;"
-                      @click.stop="goToNode(deck.nodeId)"
-                    >
-                      {{ deck.nodeName }}
-                    </v-btn>
-                    <div v-else class="text-body-1 text-grey-darken-2">
-                      {{ deck.nodeName }}
-                    </div>
-
-                    <!-- 右侧：卡片数 + 原文按钮 -->
-                    <div class="d-flex align-center ga-3">
-                      <v-btn
-                        variant="text"
-                        color="primary"
-                        size="small"
-                        prepend-icon="mdi-cards"
-                      >
-                        {{ deck.cardCount }} 张
-                      </v-btn>
-
-                      <v-btn
-                        v-if="deck.postId"
-                        variant="text"
-                        color="primary"
-                        size="small"
-                        @click.stop="goToPost(deck.postId)"
-                      >
-                        原文
-                      </v-btn>
-                    </div>
-                  </div>
-
-                  <!-- 底部：分隔线和时间状态 -->
-                  <v-divider class="my-3" />
-                  <div class="d-flex align-center justify-space-between">
-                    <div class="text-caption text-grey d-flex align-center">
-                      <v-icon icon="mdi-clock-outline" size="14" class="mr-1" />
-                      创建于 {{ formatDate(deck.createdAt) }}
-                    </div>
-                    <v-chip
-                      size="x-small"
-                      color="success"
-                      variant="flat"
-                    >
-                      就绪
-                    </v-chip>
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
-        </div>
+            <!-- 底部：时间和状态 -->
+            <div class="d-flex align-center justify-space-between">
+              <div class="text-body-2 text-grey d-flex align-center">
+                <v-icon icon="mdi-clock-outline" size="16" class="mr-1" />
+                {{ formatDate(deck.createdAt) }}
+              </div>
+              <v-chip size="small" color="success" variant="tonal">
+                就绪
+              </v-chip>
+            </div>
+          </v-card-text>
+        </v-card>
+      </div>
+    </div>
 
         <!-- 空状态 -->
         <div v-else class="text-center py-8 py-md-12">
@@ -301,39 +297,61 @@ const confirmDelete = async () => {
 <style scoped>
 .deck-card {
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
   background-color: rgb(var(--v-theme-surface));
-  border: 1px solid rgb(var(--v-theme-outline-variant));
 }
 
-.deck-description {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  min-height: 32px;
+.deck-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-@media (min-width: 600px) {
-  .deck-description {
-    min-height: 40px;
+.close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.icon-container {
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgb(var(--v-theme-outline));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.cursor-pointer:hover {
+  opacity: 0.7;
+}
+
+/* 基于容器宽度的响应式网格 */
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@container (max-width: 1200px) {
+  .deck-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-.min-w-0 {
-  min-width: 0;
+@container (max-width: 750px) {
+  .deck-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* 课程链接按钮样式 */
-.course-link-btn {
-  color: rgb(var(--v-theme-primary)) !important;
-  text-decoration: none;
-  font-weight: 500;
-  min-height: auto !important;
-  padding: 0 !important;
-}
-
-.course-link-btn:hover {
-  text-decoration: underline;
+/* 启用 container query */
+.pa-0 {
+  container-type: inline-size;
 }
 </style>
