@@ -163,9 +163,10 @@ public class AdminContentsController {
             @RequestParam(required = false) @Positive(message = "状态必须大于0") Byte state,
             @RequestParam(required = false) @Positive(message = "帖子ID必须大于0") Long postId,
             @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
-            @RequestParam(required = false) Long lastId) {
+            @RequestParam(required = false) Long lastId,
+            @CurrentUser UserDO currentUser) {
         return ApiResponse.success(memoryCardDeckService.getDecksForReview(
-                postId, creatorId, state != null ? state.intValue() : null, lastId, null));
+                postId, creatorId, state != null ? state.intValue() : null, lastId, currentUser.getId()));
     }
 
     /**

@@ -391,7 +391,7 @@ public class MemoryCardDeckService {
             
             // 转换为DTO
             cardsByDeck.forEach((deckId, cards) -> {
-                List<CardWithSrsDTO> cardViews = cardAssembler.toCardViewWithSrs(cards, null);
+                List<CardWithSrsDTO> cardViews = cardAssembler.toCardViewWithSrs(cards, userId);
                 deckCardsMap.put(deckId, cardViews);
             });
         }
