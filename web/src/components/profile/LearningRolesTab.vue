@@ -6,21 +6,25 @@
         class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
       >
         <!-- Tab 切换 -->
-        <div class="d-flex align-center ga-4">
-          <span
-            class="text-body-2 cursor-pointer"
-            :class="statusTab === 'learning' ? 'text-high-emphasis font-weight-bold' : 'text-medium-emphasis'"
+        <div class="d-flex align-center">
+          <v-btn
+            variant="text"
+            size="small"
+            rounded="lg"
+            :color="statusTab === 'learning' ? 'primary' : 'default'"
             @click="statusTab = 'learning'"
           >
             正在学习
-          </span>
-          <span
-            class="text-body-2 cursor-pointer"
-            :class="statusTab === 'completed' ? 'text-high-emphasis font-weight-bold' : 'text-medium-emphasis'"
+          </v-btn>
+          <v-btn
+            variant="text"
+            size="small"
+            rounded="lg"
+            :color="statusTab === 'completed' ? 'primary' : 'default'"
             @click="statusTab = 'completed'"
           >
             已完成
-          </span>
+          </v-btn>
         </div>
 
         <v-btn
@@ -45,55 +49,61 @@
 
       <!-- 职业列表 -->
       <div v-else-if="filteredRoles.length > 0">
-        <v-row>
-          <v-col v-for="role in filteredRoles" :key="role.id" cols="12" sm="6" md="4">
-            <v-card rounded="lg" border hover class="role-card h-100" @click="goToRole(role.roleId)">
-              <v-card-text class="pa-4">
-                <div class="d-flex align-center ga-3 mb-3">
-                  <div class="icon-container flex-shrink-0">
-                    <DynamicIcon
-                      :icon="role.icon"
-                      default-icon="mdi-briefcase-variant"
-                      :size="24"
-                      :color="role.iconColor"
-                    />
-                  </div>
-                  <div class="flex-grow-1" style="min-width: 0">
-                    <div
-                      class="text-body-1 font-weight-bold text-truncate"
-                      :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                    >
-                      {{ role.title }}
-                    </div>
-                    <div class="text-caption text-medium-emphasis">
-                      {{ role.totalCourses }} 个知识节点
-                    </div>
-                  </div>
-                  <v-btn
-                    color="grey"
-                    variant="text"
-                    size="x-small"
-                    icon="mdi-close"
-                    class="flex-shrink-0"
-                    @click.stop="cancelLearning(role.id)"
+        <div class="role-grid">
+          <v-card
+            v-for="role in filteredRoles"
+            :key="role.id"
+            rounded="lg"
+            border
+            hover
+            class="role-card"
+            @click="goToRole(role.roleId)"
+          >
+            <v-card-text class="pa-4 position-relative">
+              <v-btn
+                color="grey"
+                variant="text"
+                size="x-small"
+                icon="mdi-close"
+                class="close-btn"
+                @click.stop="cancelLearning(role.id)"
+              />
+              <div class="d-flex align-center ga-3 mb-3">
+                <div class="icon-container flex-shrink-0">
+                  <DynamicIcon
+                    :icon="role.icon"
+                    default-icon="mdi-briefcase-variant"
+                    :size="24"
+                    :color="role.iconColor"
                   />
                 </div>
-                <div class="d-flex align-center justify-space-between mb-2">
-                  <span class="text-caption text-medium-emphasis">学习进度</span>
-                  <span class="text-caption font-weight-bold text-grey">
-                    {{ role.progress }}%
-                  </span>
+                <div class="flex-grow-1" style="min-width: 0">
+                  <div
+                    class="text-body-1 font-weight-bold text-truncate"
+                    :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                  >
+                    {{ role.title }}
+                  </div>
+                  <div class="text-caption text-medium-emphasis">
+                    {{ role.totalCourses }} 个知识节点
+                  </div>
                 </div>
-                <v-progress-linear
-                  :model-value="role.progress"
-                  color="grey-lighten-3"
-                  height="6"
-                  rounded
-                />
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
+              </div>
+              <div class="d-flex align-center justify-space-between mb-2">
+                <span class="text-caption text-medium-emphasis">学习进度</span>
+                <span class="text-caption font-weight-bold text-grey">
+                  {{ role.progress }}%
+                </span>
+              </div>
+              <v-progress-linear
+                :model-value="role.progress"
+                color="grey-lighten-3"
+                height="6"
+                rounded
+              />
+            </v-card-text>
+          </v-card>
+        </div>
       </div>
       <div v-else class="text-center py-8 py-md-12">
         <v-icon
@@ -226,6 +236,36 @@ const confirmDelete = async () => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+.close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+/* 基于容器宽度的响应式网格 */
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@container (max-width: 1200px) {
+  .role-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@container (max-width: 750px) {
+  .role-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 启用 container query */
+.pa-0 {
+  container-type: inline-size;
+}
+
 .icon-container {
   width: 48px;
   height: 48px;
@@ -238,5 +278,10 @@ const confirmDelete = async () => {
 
 .cursor-pointer {
   cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.cursor-pointer:hover {
+  opacity: 0.7;
 }
 </style>

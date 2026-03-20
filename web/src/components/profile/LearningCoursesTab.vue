@@ -1,146 +1,125 @@
 <template>
   <div class="pa-0 pa-sm-2">
-        <!-- 顶部操作栏 -->
-        <div
-          class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
+    <!-- 顶部操作栏 -->
+    <div
+      class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
+    >
+      <!-- Tab 切换 -->
+      <div class="d-flex align-center">
+        <v-btn
+          variant="text"
+          size="small"
+          rounded="lg"
+          :color="statusTab === 'learning' ? 'primary' : 'default'"
+          @click="statusTab = 'learning'"
         >
-          <!-- Tab 切换 -->
-          <v-btn-toggle
-            v-model="statusTab"
-            mandatory
-            color="grey-darken-3"
-            variant="text"
-            rounded="lg"
-            density="compact"
-          >
-            <v-btn
-              value="learning"
-              rounded="lg"
-              :size="$vuetify.display.mobile ? 'small' : 'default'"
-            >
-              <v-icon
-                icon="mdi-school"
-                :size="$vuetify.display.mobile ? 16 : 18"
-                :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-              />
-              <span class="d-none d-sm-inline">正在学习</span>
-              <span class="d-sm-none">学习中</span>
-            </v-btn>
-            <v-btn
-              value="completed"
-              rounded="lg"
-              :size="$vuetify.display.mobile ? 'small' : 'default'"
-            >
-              <v-icon
-                icon="mdi-check-circle"
-                :size="$vuetify.display.mobile ? 16 : 18"
-                :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-              />
-              <span class="d-none d-sm-inline">已经完成</span>
-              <span class="d-sm-none">已完成</span>
-            </v-btn>
-          </v-btn-toggle>
+          正在学习
+        </v-btn>
+        <v-btn
+          variant="text"
+          size="small"
+          rounded="lg"
+          :color="statusTab === 'completed' ? 'primary' : 'default'"
+          @click="statusTab = 'completed'"
+        >
+          已完成
+        </v-btn>
+      </div>
 
-          <v-btn
-            color="primary"
-            variant="text"
-            rounded="lg"
-            :size="$vuetify.display.mobile ? 'small' : 'default'"
-            to="/learning"
-          >
-            <span class="d-none d-sm-inline">查看全部课程</span>
-            <span class="d-sm-none">查看全部</span>
-            <v-icon
-              icon="mdi-chevron-right"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              class="ml-1"
+      <v-btn
+        color="primary"
+        variant="text"
+        rounded="lg"
+        :size="$vuetify.display.mobile ? 'small' : 'default'"
+        to="/learning"
+      >
+        <span class="d-none d-sm-inline">查看全部课程</span>
+        <span class="d-sm-none">查看全部</span>
+        <v-icon
+          icon="mdi-chevron-right"
+          :size="$vuetify.display.mobile ? 16 : 18"
+          class="ml-1"
+        />
+      </v-btn>
+    </div>
+
+    <!-- 加载状态 -->
+    <LoadingSpinner v-if="loading" />
+
+    <!-- 课程列表 -->
+    <div v-else-if="filteredCourses.length > 0">
+      <div class="course-grid">
+        <v-card
+          v-for="course in filteredCourses"
+          :key="course.id"
+          rounded="lg"
+          border
+          hover
+          class="course-card"
+          @click="goToCourse(course.courseId)"
+        >
+          <v-card-text class="pa-4 position-relative">
+            <v-btn
+              color="grey"
+              variant="text"
+              size="x-small"
+              icon="mdi-close"
+              class="close-btn"
+              @click.stop="cancelLearning(course.id)"
             />
-          </v-btn>
-        </div>
+            <div class="d-flex align-center ga-3 mb-3">
+              <div class="icon-container flex-shrink-0">
+                <DynamicIcon
+                  :icon="course.icon"
+                  default-icon="mdi-book-open-variant"
+                  :size="24"
+                  :color="course.iconColor"
+                />
+              </div>
+              <div class="flex-grow-1" style="min-width: 0">
+                <div
+                  class="text-body-1 font-weight-bold text-truncate"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                >
+                  {{ course.title }}
+                </div>
+                <div class="text-caption text-medium-emphasis">
+                  {{ course.totalLessons }} 个知识节点
+                </div>
+              </div>
+            </div>
+            <div class="d-flex align-center justify-space-between mb-2">
+              <span class="text-caption text-medium-emphasis">学习进度</span>
+              <span class="text-caption font-weight-bold text-grey">
+                {{ course.progress }}%
+              </span>
+            </div>
+            <v-progress-linear
+              :model-value="course.progress"
+              color="grey-lighten-3"
+              height="6"
+              rounded
+            />
+          </v-card-text>
+        </v-card>
+      </div>
+    </div>
 
-        <!-- 加载状态 -->
-        <LoadingSpinner v-if="loading" />
+    <!-- 空状态 -->
+    <div v-else class="text-center py-8 py-md-12">
+      <v-icon
+        icon="mdi-school"
+        :size="$vuetify.display.mobile ? 48 : 64"
+        color="grey-lighten-2"
+        class="mb-3 mb-md-4"
+      />
+      <p class="text-body-2 text-md-body-1 text-grey-darken-2">
+        {{ statusTab === 'learning' ? '暂无正在学习的课程' : '暂无已完成的课程' }}
+      </p>
+      <p class="text-caption text-md-body-2 text-grey">开始学习新课程，掌握新技能</p>
+    </div>
 
-        <!-- 课程列表 -->
-        <div v-else-if="filteredCourses.length > 0">
-          <v-row>
-            <v-col v-for="course in filteredCourses" :key="course.id" cols="12" md="6">
-              <v-card rounded="xl" hover border elevation="0" class="course-card hoverable">
-                <v-card-text class="pa-4 pa-sm-6" @click="goToCourse(course.courseId)">
-                  <div class="d-flex align-start justify-space-between mb-3 mb-md-4">
-                    <div class="d-flex align-center flex-grow-1">
-                      <v-avatar
-                        :color="course.iconColor"
-                        :size="$vuetify.display.mobile ? 48 : 56"
-                        rounded="lg"
-                        class="mr-3 mr-sm-4 flex-shrink-0"
-                      >
-                        <v-icon
-                          :icon="course.icon"
-                          color="white"
-                          :size="$vuetify.display.mobile ? 24 : 28"
-                        />
-                      </v-avatar>
-                      <div class="min-w-0">
-                        <h4 class="text-body-1 text-md-h6 font-weight-bold mb-1 text-truncate">
-                          {{ course.title }}
-                        </h4>
-                        <p class="text-caption text-grey mb-0">{{ course.lastActivity }}</p>
-                      </div>
-                    </div>
-                    <v-btn
-                      color="grey"
-                      variant="text"
-                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                      icon="mdi-close"
-                      @click.stop="cancelLearning(course.id)"
-                    />
-                  </div>
-
-                  <v-progress-linear
-                    :model-value="course.progress"
-                    color="primary"
-                    bg-color="grey-lighten-3"
-                    :height="$vuetify.display.mobile ? 6 : 8"
-                    rounded
-                    class="mb-2 mb-md-3"
-                  />
-
-                  <div class="d-flex align-center justify-space-between">
-                    <span class="text-caption text-md-body-2 text-grey-darken-2">
-                      <v-icon
-                        icon="mdi-check-circle"
-                        :size="$vuetify.display.mobile ? 14 : 16"
-                        color="success"
-                        class="mr-1"
-                      />
-                      {{ course.completedLessons }} / {{ course.totalLessons }} 节已完成
-                    </span>
-                    <span class="text-body-2 text-md-body-1 font-weight-bold text-primary"
-                      >{{ course.progress }}%</span
-                    >
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
-        </div>
-
-        <!-- 空状态 -->
-        <div v-else class="text-center py-8 py-md-12">
-          <v-icon
-            icon="mdi-school"
-            :size="$vuetify.display.mobile ? 48 : 64"
-            color="grey-lighten-2"
-            class="mb-3 mb-md-4"
-          />
-          <p class="text-body-2 text-md-body-1 text-grey-darken-2">
-            {{ statusTab === 'learning' ? '暂无正在学习的课程' : '暂无已完成的课程' }}
-          </p>
-          <p class="text-caption text-md-body-2 text-grey">开始学习新课程，掌握新技能</p>
-        </div>
-
-        <!-- 删除确认对话框 -->
+    <!-- 删除确认对话框 -->
     <ConfirmDialog
       v-model="showDeleteDialog"
       title="确认取消学习"
@@ -158,8 +137,10 @@ import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
 import { progressApi } from '@/api'
 import { UserProgressState } from '@/enums'
+import { getColorByString } from '@/utils/color'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import DynamicIcon from '@/components/common/DynamicIcon.vue'
 
 const router = useRouter()
 
@@ -200,30 +181,23 @@ const courses = computed(() => {
     const course = userCourse.course
     // 后端返回的是万分位（0-10000），转换为百分比（0-100）
     const progress = userCourse.progressPercent ? userCourse.progressPercent / 100 : 0
-    // 后端返回的 state：1=进行中, 2=已完成（没有0=未开始，因为没记录就是未开始）
+    // 后端返回的 state：1=进行中, 2=已完成
     const state = userCourse.state || UserProgressState.IN_PROGRESS
     const isCompleted = state === UserProgressState.COMPLETED
 
-    // 计算最后活动时间
-    const lastActivity = userCourse.updatedAt
-      ? formatLastActivity(new Date(userCourse.updatedAt))
-      : '暂无活动'
-
-    // 由于后端返回的课程数据中没有节点总数，这里使用固定值作为估算
-    // 实际使用时应该根据后端实际返回的数据结构调整
+    const title = course?.name || '未知课程'
     const totalLessons = 50
     const completedLessons = Math.round((totalLessons * progress) / 100)
 
     return {
       id: userCourse.id,
       courseId: course?.id || 0,
-      title: course?.name || '未知课程',
+      title,
       progress,
       totalLessons,
       completedLessons,
-      lastActivity,
-      icon: 'mdi-school',
-      iconColor: '#42b883',
+      icon: course?.icon || 'mdi-book-open-variant',
+      iconColor: getColorByString(title),
       status: isCompleted ? 'completed' : 'learning',
     }
   })
@@ -233,23 +207,6 @@ const courses = computed(() => {
 const filteredCourses = computed(() => {
   return courses.value.filter((course) => course.status === statusTab.value)
 })
-
-// 格式化最后活动时间
-const formatLastActivity = (date: Date) => {
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const seconds = Math.floor(diff / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-  const weeks = Math.floor(days / 7)
-
-  if (weeks > 0) return `${weeks}周前学习`
-  if (days > 0) return `${days}天前学习`
-  if (hours > 0) return `${hours}小时前学习`
-  if (minutes > 0) return `${minutes}分钟前学习`
-  return '刚刚学习'
-}
 
 // 跳转到课程详情
 const goToCourse = (courseId: number) => {
@@ -274,12 +231,52 @@ const confirmDelete = async () => {
 <style scoped>
 .course-card {
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
   background-color: rgb(var(--v-theme-surface));
-  border: 1.5px solid rgb(var(--v-theme-outline)) !important;
 }
 
-.min-w-0 {
-  min-width: 0;
+.course-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.icon-container {
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgb(var(--v-theme-outline));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 基于容器宽度的响应式网格 */
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@container (max-width: 1200px) {
+  .course-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@container (max-width: 750px) {
+  .course-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 启用 container query */
+.pa-0 {
+  container-type: inline-size;
 }
 </style>
