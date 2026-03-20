@@ -205,7 +205,7 @@ function getIconColor(item: Bookmark): string {
               color="grey"
               variant="text"
               size="x-small"
-              icon="mdi-bookmark"
+              icon="mdi-close"
               class="bookmark-btn"
               @click.stop="handleUnbookmark(item)"
             />
@@ -259,7 +259,7 @@ function getIconColor(item: Bookmark): string {
               color="grey"
               variant="text"
               size="x-small"
-              icon="mdi-bookmark"
+              icon="mdi-close"
               class="bookmark-btn"
               @click.stop="handleUnbookmark(item)"
             />
@@ -303,7 +303,7 @@ function getIconColor(item: Bookmark): string {
               color="grey"
               variant="text"
               size="x-small"
-              icon="mdi-bookmark"
+              icon="mdi-close"
               class="bookmark-btn"
               @click.stop="handleUnbookmark(item)"
             />
