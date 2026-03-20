@@ -1,23 +1,54 @@
 <template>
-  <div class="pa-0 pa-sm-2">
-    <!-- 顶部搜索栏 -->
-        <div class="mb-2">
-          <!-- 搜索框 -->
-          <v-text-field
-            v-model="searchQuery"
-            placeholder="搜索目录..."
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined"
-            density="compact"
-            rounded="lg"
-            clearable
-            hide-details
-            style="max-width: 300px"
-          />
-        </div>
+  <div class="pa-0 pa-sm-1">
+    <!-- 顶部筛选栏 -->
+    <div class="d-flex align-center justify-space-between flex-wrap ga-3">
+      <!-- 左侧：状态筛选 -->
+      <div class="d-flex align-center">
+        <v-btn
+          variant="text"
+          size="small"
+          rounded="lg"
+          :color="statusFilter === 'all' ? 'primary' : 'default'"
+          @click="statusFilter = 'all'"
+        >
+          全部
+        </v-btn>
+        <v-btn
+          variant="text"
+          size="small"
+          rounded="lg"
+          :color="statusFilter === 'draft' ? 'primary' : 'default'"
+          @click="statusFilter = 'draft'"
+        >
+          草稿
+        </v-btn>
+        <v-btn
+          variant="text"
+          size="small"
+          rounded="lg"
+          :color="statusFilter === 'published' ? 'primary' : 'default'"
+          @click="statusFilter = 'published'"
+        >
+          已发布
+        </v-btn>
+      </div>
 
-        <!-- 加载状态 -->
-        <LoadingSpinner v-if="loading && filteredCatalogs.length === 0" />
+      <!-- 右侧：搜索框 -->
+      <v-text-field
+        v-model="searchQuery"
+        placeholder="搜索目录..."
+        prepend-inner-icon="mdi-magnify"
+        variant="outlined"
+        density="compact"
+        rounded="lg"
+        clearable
+        hide-details
+        style="max-width: 200px"
+      />
+    </div>
+
+    <!-- 加载状态 -->
+    <LoadingSpinner v-if="loading && filteredCatalogs.length === 0" />
 
         <!-- 目录列表 -->
         <v-infinite-scroll
@@ -208,6 +239,9 @@ const router = useRouter()
 // 搜索关键词
 const searchQuery = ref('')
 
+// 状态筛选
+const statusFilter = ref('all')
+
 // 删除确认对话框
 const showDeleteDialog = ref(false)
 const postToDelete = ref<number | null>(null)
@@ -270,20 +304,32 @@ const catalogs = computed(() => {
   })
 })
 
-// 根据搜索关键词过滤目录
+// 根据搜索关键词和状态过滤目录
 const filteredCatalogs = computed(() => {
-  if (!searchQuery.value) {
-    return catalogs.value
+  let result = catalogs.value
+
+  // 状态筛选
+  if (statusFilter.value === 'draft') {
+    result = result.filter((catalog) => catalog.state === 0)
+  } else if (statusFilter.value === 'published') {
+    result = result.filter((catalog) => catalog.state === 2)
   }
 
-  const query = searchQuery.value.toLowerCase()
-  return catalogs.value.filter((catalog) => {
-    const matchName = catalog.name.toLowerCase().includes(query)
-    const matchDescription = catalog.description.toLowerCase().includes(query)
-    const matchCourse = catalog.course?.name.toLowerCase().includes(query)
+  // 搜索筛选
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter((catalog) => {
+      const matchNode = catalog.node?.toLowerCase().includes(query)
+      const matchCourse = catalog.course?.name.toLowerCase().includes(query)
+      const matchContent = catalog.contentNodes.some((node: { name: string; description?: string }) =>
+        node.name.toLowerCase().includes(query) ||
+        node.description?.toLowerCase().includes(query)
+      )
+      return matchNode || matchCourse || matchContent
+    })
+  }
 
-    return matchName || matchDescription || matchCourse
-  })
+  return result
 })
 
 // 跳转到目录详情 (跳转到节点页面)

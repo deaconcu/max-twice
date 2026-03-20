@@ -1,5 +1,5 @@
 <template>
-  <div class="pa-0 pa-sm-2">
+  <div class="pa-0 pa-sm-1">
     <!-- 顶部操作栏 -->
     <div
       class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"

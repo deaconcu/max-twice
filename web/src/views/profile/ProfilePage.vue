@@ -113,17 +113,6 @@ const handleUpdateAvatar = (avatarUrl: string) => {
   userStore.updateUser({ avatar: avatarUrl })
 }
 
-// 切换一级模式时，自动选择对应的第一个二级 Tab
-watch(currentMode, (newMode) => {
-  if (newMode === 'learner') {
-    activeTab.value = 'roles'
-  } else if (newMode === 'creator') {
-    activeTab.value = isOwnProfile.value ? 'stats' : 'articles'
-  } else if (newMode === 'settings') {
-    activeTab.value = 'info'
-  }
-})
-
 // 统计数据（暂时用默认值，各个Tab自己加载数据）
 const stats = ref({
   totalCourses: 0,
@@ -174,7 +163,7 @@ watch(activeTab, (newTab) => {
     <!-- 内容区 -->
     <div v-else-if="profileUser" class="profile-container">
       <!-- 用户信息卡片 -->
-      <v-card rounded="xl" class="profile-header-card mb-6 no-border" elevation="0">
+      <v-card rounded="xl" class="profile-header-card mb-2 no-border" elevation="0">
         <v-card-text class="pt-1 pb-6 px-0">
           <!-- 用户信息 -->
           <div class="profile-header-content">
@@ -379,7 +368,7 @@ watch(activeTab, (newTab) => {
               rounded="lg"
               size="small"
               class="primary-mode-btn"
-              @click="currentMode = 'learner'"
+              @click="activeTab = 'roles'; currentMode = 'learner'"
             >
               学习
             </v-btn>
@@ -389,7 +378,7 @@ watch(activeTab, (newTab) => {
               rounded="lg"
               size="small"
               class="primary-mode-btn"
-              @click="currentMode = 'creator'"
+              @click="activeTab = isOwnProfile ? 'stats' : 'articles'; currentMode = 'creator'"
             >
               创作
             </v-btn>
@@ -400,7 +389,7 @@ watch(activeTab, (newTab) => {
               rounded="lg"
               size="small"
               class="primary-mode-btn"
-              @click="currentMode = 'settings'"
+              @click="activeTab = 'info'; currentMode = 'settings'"
             >
               设置
             </v-btn>
@@ -605,11 +594,11 @@ watch(activeTab, (newTab) => {
 @media (max-width: 600px) {
   .profile-user-info {
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
   }
 
   .user-details {
-    text-align: center;
+    text-align: left;
   }
 
   .stats-group {

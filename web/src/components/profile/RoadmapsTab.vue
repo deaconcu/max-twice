@@ -1,5 +1,5 @@
 <template>
-  <div class="pa-0 pa-sm-2">
+  <div class="pa-0 pa-sm-1">
     <!-- 加载状态 -->
     <LoadingSpinner v-if="loading && roadmaps.length === 0" />
 

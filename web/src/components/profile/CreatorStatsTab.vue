@@ -1,5 +1,5 @@
 <template>
-  <div class="pa-0 pa-sm-2">
+  <div class="pa-0 pa-sm-1">
     <!-- 总览卡片 -->
     <v-card rounded="lg" border class="mb-4" elevation="0">
       <v-card-text class="pa-4">
