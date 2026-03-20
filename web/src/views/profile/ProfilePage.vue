@@ -164,7 +164,7 @@ watch(activeTab, (newTab) => {
     <div v-else-if="profileUser" class="profile-container">
       <!-- 用户信息卡片 -->
       <v-card rounded="xl" class="profile-header-card mb-2 no-border" elevation="0">
-        <v-card-text class="pt-1 pb-6 px-0">
+        <v-card-text class="pt-1 pb-6 px-2">
           <!-- 用户信息 -->
           <div class="profile-header-content">
             <!-- 左侧：头像和基本信息 -->
@@ -272,7 +272,7 @@ watch(activeTab, (newTab) => {
       <!-- 主内容区：左侧导航 + 右侧内容 -->
       <v-row>
         <!-- 左侧垂直导航 - 大屏显示 -->
-        <v-col cols="12" md="3" lg="2" class="d-none d-md-block">
+        <v-col cols="12" md="2" lg="2" class="d-none d-md-block pr-10">
           <div class="side-nav">
             <!-- 学习分组 -->
             <div class="nav-group-title">学习</div>
@@ -428,7 +428,7 @@ watch(activeTab, (newTab) => {
         </v-col>
 
         <!-- 右侧内容区 -->
-        <v-col cols="12" md="9" lg="10">
+        <v-col cols="12" md="10" lg="10">
           <!-- 学习模式的内容 -->
           <template v-if="currentMode === 'learner'">
             <LearningRolesTab v-if="activeTab === 'roles'" />

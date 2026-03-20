@@ -1,8 +1,8 @@
 <template>
   <div class="pa-0 pa-sm-1">
     <!-- 信息卡片 -->
-        <v-card rounded="lg" border elevation="0" class="info-card">
-          <v-card-text class="pa-4 pa-sm-6 pa-md-8">
+        <v-card rounded="lg" elevation="0" class="info-card">
+          <v-card-text class="pa-0 pa-sm-1">
             <!-- 头像 -->
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
@@ -10,7 +10,7 @@
                   >头像</span
                 >
               </div>
-              <div class="flex-grow-1 d-flex flex-column align-center align-sm-start">
+              <div class="flex-grow-1 d-flex flex-column align-start">
                 <div class="position-relative">
                   <UserAvatar
                     :name="localUserInfo.name"
@@ -485,7 +485,7 @@ const onModifyTimezone = async () => {
 <style scoped>
 .info-card {
   background-color: rgb(var(--v-theme-surface));
-  border: 1.5px solid rgb(var(--v-theme-outline)) !important;
+  border: none !important;
 }
 
 .label-section {

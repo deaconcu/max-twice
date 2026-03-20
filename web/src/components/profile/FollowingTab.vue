@@ -49,6 +49,9 @@
                 <div class="text-caption text-medium-emphasis text-truncate">
                   {{ user.bio }}
                 </div>
+                <div v-if="user.followedAt" class="text-caption text-grey text-truncate">
+                  {{ formatRelativeTime(user.followedAt) }}关注
+                </div>
               </div>
             </div>
           </v-card-text>
@@ -84,6 +87,7 @@ import { useUserStore } from '@/stores/modules/user'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
 import { followApi } from '@/api'
+import { formatRelativeTime } from '@/utils/format'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
@@ -132,6 +136,7 @@ const formattedUsers = computed(() => {
       name: user.name || '未知用户',
       bio: user.biography || '暂无简介',
       avatar: user.avatar || '',
+      followedAt: user.createdAt || '', // 关注时间
     }
   })
 })
