@@ -419,7 +419,7 @@ onMounted(() => {
 
 /* 只有溢出时才显示渐变和省略号 */
 .article-content-preview.has-overflow {
-  padding-bottom: 40px;
+  padding-bottom: 48px;
 }
 
 .article-content-preview.has-overflow::before {
