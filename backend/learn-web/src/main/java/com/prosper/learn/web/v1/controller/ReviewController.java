@@ -43,7 +43,7 @@ public class ReviewController {
             @RequestParam(required = false) @Positive(message = "lastId必须大于0") Long lastId,
             @CurrentUser UserDO currentUser) {
 
-        List<CardWithSrsDTO> result = reviewService.getCardList(currentUser.getId(), courseId, lastId);
+        List<CardWithSrsDTO> result = reviewService.getCardList(currentUser, courseId, lastId);
         return ApiResponse.success(result);
     }
 
@@ -57,7 +57,7 @@ public class ReviewController {
             @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @CurrentUser UserDO currentUser) {
 
-        ReviewSubmitResultDTO result = reviewService.getNextCard(currentUser.getId(), courseId);
+        ReviewSubmitResultDTO result = reviewService.getNextCard(currentUser, courseId);
         return ApiResponse.success(result);
     }
 
@@ -70,7 +70,7 @@ public class ReviewController {
     public ApiResponse<ReviewSubmitResultDTO> submitReview(
             @Valid @RequestBody ReviewCardRequest request,
             @CurrentUser UserDO currentUser) {
-        ReviewSubmitResultDTO result = reviewService.submitReview(currentUser.getId(), request);
+        ReviewSubmitResultDTO result = reviewService.submitReview(currentUser, request);
         return ApiResponse.success(result);
     }
 

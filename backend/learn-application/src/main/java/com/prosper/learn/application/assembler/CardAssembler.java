@@ -2,11 +2,11 @@ package com.prosper.learn.application.assembler;
 
 import com.prosper.learn.application.converter.MemoryCardDeckConverter;
 import com.prosper.learn.application.converter.UserCardSrsConverter;
-import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.response.UserCardSrsDTO;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.deck.DeckBriefDTO;
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import com.prosper.learn.application.service.UserService;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
@@ -21,7 +21,6 @@ import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
-import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -39,12 +38,10 @@ import java.util.stream.Collectors;
 public class CardAssembler {
 
     private final MemoryCardDeckConverter deckConverter;
-    private final UserConverter userConverter;
     private final UserCardSrsConverter srsStateConverter;
 
     private final MemoryCardVersionDataService cardVersionDataService;
     private final MemoryCardDeckDataService deckDataService;
-    private final UserDataService userDataService;
     private final UserCardSrsDataService userCardSrsDataService;
     private final NodeDataService nodeDataService;
     private final CourseDataService courseDataService;
@@ -131,7 +128,7 @@ public class CardAssembler {
     /**
      * 转换为卡片（含SRS状态）
      */
-    public CardWithSrsDTO toCardWithSrs(MemoryCardDO cardDO, Long userId) {
+    public CardWithSrsDTO toCardWithSrs(MemoryCardDO cardDO, UserDO user) {
         if (cardDO == null) return null;
 
         CardWithSrsDTO dto = new CardWithSrsDTO();
@@ -139,13 +136,14 @@ public class CardAssembler {
         dto.setState(cardDO.getState());
 
         // 填充创建者信息
-        dto.setCreator(userService.toBriefDTO(userDataService.getById(cardDO.getCreatorId())));
+        dto.setCreator(userService.getUserBriefById(cardDO.getCreatorId()));
 
         MemoryCardDeckDO deck = deckDataService.validateAndGet(cardDO.getDeckId());
         dto.setDeck(toDeckBriefDTO(deck));
 
         // 获取SRS状态并检测更新
         UserCardSrsDO srsState = null;
+        Long userId = user != null ? user.getId() : null;
         if (userId != null) {
             srsState = userCardSrsDataService.getByUserAndCard(userId, cardDO.getId());
             if (srsState != null) {
@@ -176,7 +174,7 @@ public class CardAssembler {
         }
 
         // 检查卡片或卡片组是否被屏蔽
-        boolean isBlocked = isCardOrDeckBlocked(cardDO, deck, userId);
+        boolean isBlocked = isCardOrDeckBlocked(cardDO, deck, user);
 
         // 获取卡片内容版本
         if (isBlocked) {
@@ -186,10 +184,10 @@ public class CardAssembler {
         } else {
             Long versionIdToUse;
             if (userId != null && srsState != null && srsState.getCardVersionId() != null) {
-                // 如果传入了userId且用户有学习记录，使用用户学习时的版本（复习/学习卡片场景）
+                // 如果传入了user且用户有学习记录，使用用户学习时的版本（复习/学习卡片场景）
                 versionIdToUse = srsState.getCardVersionId();
             } else {
-                // 如果没有传入userId或用户没有学习记录，使用最新版本（所有卡片场景）
+                // 如果没有传入user或用户没有学习记录，使用最新版本（所有卡片场景）
                 versionIdToUse = cardDO.getCurrentVersionId();
             }
 
@@ -207,11 +205,12 @@ public class CardAssembler {
 
     /**
      * 检查卡片或卡片组是否被屏蔽
-     * 如果 userId 是卡片或卡片组的创建者，则不屏蔽
+     * 如果 user 是卡片或卡片组的创建者，则不屏蔽
      * 如果用户是审核员及以上角色，则不屏蔽
      */
-    private boolean isCardOrDeckBlocked(MemoryCardDO card, MemoryCardDeckDO deck, Long userId) {
-        if (userId != null) {
+    private boolean isCardOrDeckBlocked(MemoryCardDO card, MemoryCardDeckDO deck, UserDO user) {
+        if (user != null) {
+            Long userId = user.getId();
             // 创建者始终可以看到自己的内容
             if (userId.equals(card.getCreatorId())) {
                 return false;
@@ -220,8 +219,7 @@ public class CardAssembler {
                 return false;
             }
             // 审核员及以上角色可以看到被屏蔽的内容
-            UserDO user = userDataService.getById(userId);
-            if (user != null && user.hasRole(Enums.UserRole.MODERATOR)) {
+            if (user.hasRole(Enums.UserRole.MODERATOR)) {
                 return false;
             }
         }
@@ -239,11 +237,11 @@ public class CardAssembler {
     /**
      * 单张卡片转换为包含SRS状态的DTO
      */
-    public CardWithSrsDTO toCardViewWithSrs(MemoryCardDO cardDO, Long userId) {
+    public CardWithSrsDTO toCardViewWithSrs(MemoryCardDO cardDO, UserDO user) {
         if (cardDO == null) {
             return null;
         }
-        List<CardWithSrsDTO> result = toCardViewWithSrs(List.of(cardDO), userId);
+        List<CardWithSrsDTO> result = toCardViewWithSrs(List.of(cardDO), user);
         return result.isEmpty() ? null : result.get(0);
     }
 
@@ -254,16 +252,18 @@ public class CardAssembler {
      */
     public List<CardWithSrsDTO> toCardViewWithSrs(List<MemoryCardDO> cardDOList,
                                                    Map<Long, UserCardSrsDO> srsStateMap,
-                                                   Long userId) {
+                                                   UserDO user) {
         if (cardDOList == null || cardDOList.isEmpty()) {
             return new ArrayList<>();
         }
+
+        Long userId = user != null ? user.getId() : null;
 
         // 批量获取创建者信息
         Set<Long> creatorIds = cardDOList.stream()
                 .map(MemoryCardDO::getCreatorId)
                 .collect(Collectors.toSet());
-        Map<Long, UserDO> userMap = userDataService.getMapByIds(creatorIds);
+        Map<Long, UserBriefDTO> userBriefMap = userService.getUserBriefMapByIds(creatorIds);
 
         // 批量获取卡片版本内容 - 需要同时获取最新版本和用户学习时的版本
         Set<Long> allVersionIds = new HashSet<>();
@@ -304,10 +304,7 @@ public class CardAssembler {
                     dto.setState(card.getState());
 
                     // 设置创建者信息
-                    UserDO creator = userMap.get(card.getCreatorId());
-                    if (creator != null) {
-                        dto.setCreator(userConverter.toBriefDTO(creator));
-                    }
+                    dto.setCreator(userBriefMap.get(card.getCreatorId()));
 
                     // 获取SRS状态并检测更新
                     UserCardSrsDO srsState = srsStateMap.get(card.getId());
@@ -342,7 +339,7 @@ public class CardAssembler {
 
                     // 检查卡片或卡片组是否被屏蔽
                     MemoryCardDeckDO deck = deckMap.get(card.getDeckId());
-                    boolean isBlocked = isCardOrDeckBlocked(card, deck, userId);
+                    boolean isBlocked = isCardOrDeckBlocked(card, deck, user);
 
                     // 设置卡片内容 - 根据场景选择版本
                     if (isBlocked) {
@@ -352,10 +349,10 @@ public class CardAssembler {
                     } else {
                         Long versionIdToUse;
                         if (userId != null && srsState != null && srsState.getCardVersionId() != null) {
-                            // 如果传入了userId且用户有学习记录，使用用户学习时的版本（复习/学习卡片场景）
+                            // 如果传入了user且用户有学习记录，使用用户学习时的版本（复习/学习卡片场景）
                             versionIdToUse = srsState.getCardVersionId();
                         } else {
-                            // 如果没有传入userId或用户没有学习记录，使用最新版本（所有卡片场景）
+                            // 如果没有传入user或用户没有学习记录，使用最新版本（所有卡片场景）
                             versionIdToUse = card.getCurrentVersionId();
                         }
 
@@ -380,10 +377,12 @@ public class CardAssembler {
     /**
      * 批量转换（自动获取SRS状态）
      */
-    public List<CardWithSrsDTO> toCardViewWithSrs(List<MemoryCardDO> cardDOList, Long userId) {
+    public List<CardWithSrsDTO> toCardViewWithSrs(List<MemoryCardDO> cardDOList, UserDO user) {
         if (cardDOList == null || cardDOList.isEmpty()) {
             return new ArrayList<>();
         }
+
+        Long userId = user != null ? user.getId() : null;
 
         // 批量获取SRS状态
         Map<Long, UserCardSrsDO> srsStateMap;
@@ -398,6 +397,6 @@ public class CardAssembler {
             srsStateMap = new HashMap<>();
         }
 
-        return toCardViewWithSrs(cardDOList, srsStateMap, userId);
+        return toCardViewWithSrs(cardDOList, srsStateMap, user);
     }
 }

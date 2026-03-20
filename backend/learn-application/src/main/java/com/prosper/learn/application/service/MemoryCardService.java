@@ -7,7 +7,7 @@ import com.prosper.learn.application.dto.request.UpdateCardRequest;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.card.MemoryCardDomainService;
-import com.prosper.learn.user.profile.UserDataService;
+import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,9 +30,6 @@ public class MemoryCardService {
     // 领域服务
     private final MemoryCardDomainService domainService;
 
-    // 数据服务
-    private final UserDataService userDataService;
-
     // DTO 组装器
     private final CardAssembler cardAssembler;
 
@@ -42,17 +39,18 @@ public class MemoryCardService {
      * 根据卡片组获取卡片列表（包含SRS状态）
      * 在read页面点击卡片组tab时调用，显示该卡片组下的所有卡片
      */
-    public List<CardWithSrsDTO> getCardsByDeck(Long deckId, Long userId) {
+    public List<CardWithSrsDTO> getCardsByDeck(Long deckId, UserDO user) {
         List<MemoryCardDO> cards = domainService.getCardsByDeck(deckId);
-        return cardAssembler.toCardViewWithSrs(cards, userId);
+        return cardAssembler.toCardViewWithSrs(cards, user);
     }
 
     /**
      * 根据节点ID获取用户学习的卡片列表
      */
-    public List<CardWithSrsDTO> getCardsByNode(Long nodeId, Long userId) {
+    public List<CardWithSrsDTO> getCardsByNode(Long nodeId, UserDO user) {
+        Long userId = user != null ? user.getId() : null;
         MemoryCardDomainService.CardQueryResult result = domainService.getCardsByNodeWithSrs(nodeId, userId);
-        return cardAssembler.toCardViewWithSrs(result.getCards(), result.getSrsStateMap(), userId);
+        return cardAssembler.toCardViewWithSrs(result.getCards(), result.getSrsStateMap(), user);
     }
 
     /**
@@ -71,36 +69,32 @@ public class MemoryCardService {
      * 创建卡片
      */
     @Transactional
-    public CardWithSrsDTO createCard(Long userId, CreateCardRequest request) {
+    public CardWithSrsDTO createCard(UserDO user, CreateCardRequest request) {
         checkNotNull(request);
-
-        // 跨域验证
-        userDataService.validateAndGet(userId);
+        checkNotNull(user);
 
         // 调用 DomainService 执行核心业务逻辑
         MemoryCardDO card = domainService.createCard(
-            userId,
+            user.getId(),
             request.getDeckId(),
             request.getFront(),
             request.getBack()
         );
 
         // DTO 转换
-        return cardAssembler.toCardWithSrs(card, userId);
+        return cardAssembler.toCardWithSrs(card, user);
     }
 
     /**
      * 批量创建卡片（用于创建卡片组时同时创建卡片）
      */
     @Transactional
-    public List<CardWithSrsDTO> batchCreateCards(Long userId, Long deckId, List<CreateDeckRequest.CardInfo> cardInfos) {
+    public List<CardWithSrsDTO> batchCreateCards(UserDO user, Long deckId, List<CreateDeckRequest.CardInfo> cardInfos) {
         checkNotNull(cardInfos);
+        checkNotNull(user);
         if (cardInfos.isEmpty()) {
             return new ArrayList<>();
         }
-
-        // 跨域验证
-        userDataService.validateAndGet(userId);
 
         // 转换为 CardContent
         List<MemoryCardDomainService.CardContent> cardContents = cardInfos.stream()
@@ -108,11 +102,11 @@ public class MemoryCardService {
             .collect(Collectors.toList());
 
         // 调用 DomainService
-        List<MemoryCardDO> cards = domainService.batchCreateCards(userId, deckId, cardContents);
+        List<MemoryCardDO> cards = domainService.batchCreateCards(user.getId(), deckId, cardContents);
 
         // DTO 转换
         return cards.stream()
-            .map(card -> cardAssembler.toCardWithSrs(card, userId))
+            .map(card -> cardAssembler.toCardWithSrs(card, user))
             .collect(Collectors.toList());
     }
 
@@ -120,22 +114,20 @@ public class MemoryCardService {
      * 更新卡片
      */
     @Transactional
-    public CardWithSrsDTO updateCard(Long userId, Long cardId, UpdateCardRequest request) {
+    public CardWithSrsDTO updateCard(UserDO user, Long cardId, UpdateCardRequest request) {
         checkNotNull(request);
-
-        // 跨域验证
-        userDataService.validateExists(userId);
+        checkNotNull(user);
 
         // 调用 DomainService
         MemoryCardDO card = domainService.updateCard(
-            userId,
+            user.getId(),
             cardId,
             request.getFront(),
             request.getBack()
         );
 
         // DTO 转换
-        return cardAssembler.toCardWithSrs(card, userId);
+        return cardAssembler.toCardWithSrs(card, user);
     }
 
     /**
@@ -143,9 +135,6 @@ public class MemoryCardService {
      */
     @Transactional
     public void deleteCard(Long userId, Long cardId) {
-        // 跨域验证
-        userDataService.validateExists(userId);
-
         // 调用 DomainService
         domainService.deleteCard(userId, cardId);
     }
@@ -155,9 +144,6 @@ public class MemoryCardService {
      */
     @Transactional
     public void deleteCardsByDeck(Long userId, Long deckId) {
-        // 跨域验证
-        userDataService.validateExists(userId);
-
         // 调用 DomainService
         domainService.deleteCardsByDeck(userId, deckId);
     }
@@ -171,9 +157,6 @@ public class MemoryCardService {
         if (cardIds.isEmpty()) {
             return;
         }
-
-        // 跨域验证
-        userDataService.validateExists(userId);
 
         // 调用 DomainService
         domainService.removeCardsFromStudy(userId, cardIds);

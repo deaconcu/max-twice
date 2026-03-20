@@ -146,7 +146,7 @@ public class MemoryCardDeckController {
             @Positive(message = "卡片组ID必须大于0")
             Long deckId,
             @CurrentUser UserDO currentUser) {
-        DeckAndCardsDTO result = deckService.getDeckDetail(deckId, currentUser.getId());
+        DeckAndCardsDTO result = deckService.getDeckDetail(deckId, currentUser);
         return ApiResponse.success(result);
     }
 
@@ -185,7 +185,7 @@ public class MemoryCardDeckController {
     public ApiResponse<Void> createDeck(
             @Valid @RequestBody CreateDeckRequest request,
             @CurrentUser UserDO currentUser) {
-        deckService.createDeck(currentUser.getId(), request);
+        deckService.createDeck(currentUser, request);
         return ApiResponse.success();
     }
 
@@ -252,7 +252,7 @@ public class MemoryCardDeckController {
             @Valid @RequestBody CreateDeckRequest request,
             @CurrentUser UserDO currentUser) {
 
-        deckService.replaceAllCards(currentUser.getId(), deckId, request);
+        deckService.replaceAllCards(currentUser, deckId, request);
         return ApiResponse.success();
     }
 

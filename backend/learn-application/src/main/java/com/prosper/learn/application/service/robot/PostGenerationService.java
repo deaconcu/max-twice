@@ -339,7 +339,8 @@ public class PostGenerationService {
             deckRequest.setCards(cards);
 
             // 创建卡片组
-            memoryCardDeckService.createDeck(aiUserId, deckRequest);
+            UserDO aiUser = userDataService.getById(aiUserId);
+            memoryCardDeckService.createDeck(aiUser, deckRequest);
 
         } catch (Exception e) {
             log.error("Failed to create memory cards for post: {}", postId, e);
@@ -476,7 +477,8 @@ public class PostGenerationService {
         deckRequest.setCards(cards);
 
         // 创建卡片组
-        memoryCardDeckService.createDeck(aiUserId, deckRequest);
+        UserDO aiUser = userDataService.getById(aiUserId);
+        memoryCardDeckService.createDeck(aiUser, deckRequest);
         log.info("Created AI memory cards for post {}", postId);
     }
 }

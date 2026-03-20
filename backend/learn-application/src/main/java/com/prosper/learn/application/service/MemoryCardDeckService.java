@@ -330,7 +330,7 @@ public class MemoryCardDeckService {
      * 获取卡片组审核列表 - 包含卡片内容
      */
     public KeysetPageResponse<DeckAndCardsDTO> getDecksForReview(
-            Long postId, Long creatorId, Integer state, Long lastId, Long userId) {
+            Long postId, Long creatorId, Integer state, Long lastId, UserDO user) {
 
         // 固定每页数量
         int limit = 20;
@@ -340,6 +340,8 @@ public class MemoryCardDeckService {
                 state != null ? Enums.ContentState.getByValue(state.byteValue()): Enums.ContentState.SUBMITTED;
 
         List<MemoryCardDeckDO> deckList;
+
+        Long userId = user != null ? user.getId() : null;
 
         // 根据查询条件组合获取数据 - 统一使用ID分页
         if (postId != null && creatorId != null) {
@@ -376,36 +378,36 @@ public class MemoryCardDeckService {
 
         // 转换为基础DTO列表(包含创建者信息和点赞状态)
         List<DeckFullDTO> baseDTOList = deckAssembler.toFullDTO(deckList, userId);
-        
+
         // 批量获取所有卡片组的卡片信息
         Set<Long> deckIds = deckList.stream().map(MemoryCardDeckDO::getId).collect(Collectors.toSet());
         Map<Long, List<CardWithSrsDTO>> deckCardsMap = new HashMap<>();
-        
+
         if (!deckIds.isEmpty()) {
             // 直接从数据层批量查询卡片
             List<MemoryCardDO> allCards = memoryCardDataService.getByDeckIds(new ArrayList<>(deckIds));
-            
+
             // 按deckId分组
             Map<Long, List<MemoryCardDO>> cardsByDeck = allCards.stream()
                 .collect(Collectors.groupingBy(MemoryCardDO::getDeckId));
-            
+
             // 转换为DTO
             cardsByDeck.forEach((deckId, cards) -> {
-                List<CardWithSrsDTO> cardViews = cardAssembler.toCardViewWithSrs(cards, userId);
+                List<CardWithSrsDTO> cardViews = cardAssembler.toCardViewWithSrs(cards, user);
                 deckCardsMap.put(deckId, cardViews);
             });
         }
-        
+
         // 转换为DetailDTO并填充卡片信息
         List<DeckAndCardsDTO> dtoList = baseDTOList.stream()
             .map(baseDTO -> {
                 // 转换为详情DTO
                 DeckAndCardsDTO detail = deckConverter.toDeckDetailDTO(baseDTO);
-                
+
                 // 从map中获取卡片列表
                 List<CardWithSrsDTO> cards = deckCardsMap.getOrDefault(baseDTO.getId(), new ArrayList<>());
                 detail.setCards(cards);
-                
+
                 return detail;
             })
             .collect(Collectors.toList());
@@ -428,24 +430,24 @@ public class MemoryCardDeckService {
     /**
      * 获取卡片组详情
      */
-    public DeckAndCardsDTO getDeckDetail(Long deckId, Long userId) {
+    public DeckAndCardsDTO getDeckDetail(Long deckId, UserDO user) {
         // 获取卡片组信息
         MemoryCardDeckDO deck = deckDomainService.validateAndGet(deckId);
 
         // 先转换为基础DTO(包含创建者信息)
         DeckFullDTO baseDTO = deckAssembler.toFullDTO(deck);
-        
+
         // 使用converter转换为详情DTO
         DeckAndCardsDTO detail = deckConverter.toDeckDetailDTO(baseDTO);
-        
+
         // 获取卡片列表（所有卡片tab - 不包含用户学习状态，显示最新版本）
-        List<CardWithSrsDTO> cards = memoryCardService.getCardsByDeck(deckId, userId);
+        List<CardWithSrsDTO> cards = memoryCardService.getCardsByDeck(deckId, user);
         detail.setCards(cards);
-        
+
         // 获取统计信息
         //DeckStatsDTO stats = calculateDeckStats(deckId);
         //detail.setStats(stats);
-        
+
         return detail;
     }
 
@@ -455,12 +457,12 @@ public class MemoryCardDeckService {
      * 创建卡片组
      */
     @Transactional
-    public DeckFullDTO createDeck(Long userId, CreateDeckRequest request) {
+    public DeckFullDTO createDeck(UserDO user, CreateDeckRequest request) {
         // 验证参数
         checkNotNull(request);
+        checkNotNull(user);
 
-        // 验证用户存在性（跨域查询）
-        userDataService.validateExists(userId);
+        Long userId = user.getId();
 
         // 确定 postId 和 nodeId
         Long postId = request.getSourcePostId();
@@ -489,7 +491,7 @@ public class MemoryCardDeckService {
 
         // 如果有卡片数据，批量创建卡片（调用 MemoryCardService）
         if (request.getCards() != null && !request.getCards().isEmpty()) {
-            memoryCardService.batchCreateCards(userId, deck.getId(), request.getCards());
+            memoryCardService.batchCreateCards(user, deck.getId(), request.getCards());
             log.info("Created deck {} with {} cards", deck.getId(), request.getCards().size());
         }
 
@@ -792,7 +794,9 @@ public class MemoryCardDeckService {
      * 整体替换卡片组中的所有卡片
      */
     @Transactional
-    public DeckFullDTO replaceAllCards(Long userId, Long deckId, CreateDeckRequest request) {
+    public DeckFullDTO replaceAllCards(UserDO user, Long deckId, CreateDeckRequest request) {
+        Long userId = user.getId();
+
         // 删除现有所有卡片（调用 MemoryCardService）
         memoryCardService.deleteCardsByDeck(userId, deckId);
 
@@ -801,7 +805,7 @@ public class MemoryCardDeckService {
 
         // 批量创建新卡片（调用 MemoryCardService）
         if (request.getCards() != null && !request.getCards().isEmpty()) {
-            memoryCardService.batchCreateCards(userId, deckId, request.getCards());
+            memoryCardService.batchCreateCards(user, deckId, request.getCards());
             log.info("Replaced with {} new cards for deck {}", request.getCards().size(), deckId);
         }
 

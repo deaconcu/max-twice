@@ -166,7 +166,7 @@ public class AdminContentsController {
             @RequestParam(required = false) Long lastId,
             @CurrentUser UserDO currentUser) {
         return ApiResponse.success(memoryCardDeckService.getDecksForReview(
-                postId, creatorId, state != null ? state.intValue() : null, lastId, currentUser.getId()));
+                postId, creatorId, state != null ? state.intValue() : null, lastId, currentUser));
     }
 
     /**

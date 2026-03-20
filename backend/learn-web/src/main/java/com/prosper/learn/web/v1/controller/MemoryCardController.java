@@ -40,7 +40,7 @@ public class MemoryCardController {
     public ApiResponse<Void> createCard(
             @Valid @RequestBody CreateCardRequest request,
             @CurrentUser UserDO currentUser) {
-        cardService.createCard(currentUser.getId(), request);
+        cardService.createCard(currentUser, request);
         return ApiResponse.success("创建成功", null);
     }
 
@@ -57,7 +57,7 @@ public class MemoryCardController {
             @Valid @RequestBody UpdateCardRequest request,
             @CurrentUser UserDO currentUser) {
 
-        cardService.updateCard(currentUser.getId(), cardId, request);
+        cardService.updateCard(currentUser, cardId, request);
         return ApiResponse.success("更新成功", null);
     }
 
@@ -72,7 +72,7 @@ public class MemoryCardController {
             @Positive(message = "节点ID必须大于0")
             Long nodeId,
             @CurrentUser UserDO currentUser) {
-        List<CardWithSrsDTO> result = cardService.getCardsByNode(nodeId, currentUser.getId());
+        List<CardWithSrsDTO> result = cardService.getCardsByNode(nodeId, currentUser);
         return ApiResponse.success(result);
     }
 
