@@ -1,7 +1,7 @@
 <template>
   <div class="pa-0 pa-sm-2">
     <!-- 信息卡片 -->
-        <v-card rounded="xl" border elevation="0" class="info-card">
+        <v-card rounded="lg" border elevation="0" class="info-card">
           <v-card-text class="pa-4 pa-sm-6 pa-md-8">
             <!-- 头像 -->
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">

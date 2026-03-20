@@ -1,27 +1,5 @@
 <template>
   <div class="pa-0 pa-sm-2">
-    <!-- 顶部操作栏 -->
-    <div
-      class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
-    >
-      <div></div>
-      <v-btn
-        color="primary"
-        variant="text"
-        rounded="lg"
-        :size="$vuetify.display.mobile ? 'small' : 'default'"
-        to="/role"
-      >
-        <span class="d-none d-sm-inline">浏览全部职业</span>
-        <span class="d-sm-none">浏览职业</span>
-        <v-icon
-          icon="mdi-chevron-right"
-          :size="$vuetify.display.mobile ? 16 : 18"
-          class="ml-1"
-        />
-      </v-btn>
-    </div>
-
     <!-- 加载状态 -->
     <LoadingSpinner v-if="loading && roadmaps.length === 0" />
 

@@ -408,6 +408,9 @@ onMounted(() => {
   line-height: 1.8;
   color: rgb(var(--v-theme-on-surface));
   font-size: 0.875rem;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: rgba(var(--v-theme-on-surface), 0.02);
 }
 
 @media (min-width: 600px) {
@@ -428,11 +431,10 @@ onMounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 60px;
+  height: 100px;
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(var(--v-theme-surface-rgb), 0.8) 50%,
     rgb(var(--v-theme-surface)) 100%
   );
   pointer-events: none;
@@ -440,7 +442,7 @@ onMounted(() => {
 
 @media (min-width: 600px) {
   .article-content-preview.has-overflow::before {
-    height: 80px;
+    height: 120px;
   }
 }
 
@@ -460,5 +462,9 @@ onMounted(() => {
   .article-content-preview.has-overflow::after {
     font-size: 20px;
   }
+}
+
+:deep(.v-infinite-scroll__side) {
+  padding: 0;
 }
 </style>

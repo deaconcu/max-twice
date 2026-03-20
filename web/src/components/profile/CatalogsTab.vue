@@ -362,11 +362,6 @@ onMounted(() => {
   background-color: rgb(var(--v-theme-surface));
 }
 
-.catalog-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
 .catalog-nodes {
   border-radius: 8px;
   background-color: rgba(var(--v-theme-on-surface), 0.02);
