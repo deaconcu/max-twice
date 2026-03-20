@@ -1,207 +1,165 @@
 <template>
-  <v-row dense align="start">
-    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
-    <v-col cols="12" md="2" class="d-none d-lg-block">
-      <div class="sticky-sidebar">
-        <div class="pa-3 pa-md-4">
-          <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
-              {{ isOwnProfile ? '创建的路线图' : 'TA的路线图' }}
-            </h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">
-              {{ isOwnProfile ? '规划您的学习路径，系统化掌握技能。' : '查看TA规划的学习路径和技能图谱。' }}
+  <div class="pa-0 pa-sm-2">
+    <!-- 加载状态 -->
+    <LoadingSpinner v-if="loading && roadmaps.length === 0" />
+
+    <!-- 路线图列表 -->
+    <v-infinite-scroll v-else-if="roadmaps.length > 0" :items="roadmaps" @load="onLoadMore">
+      <template v-for="(roadmap, index) in roadmaps" :key="roadmap.id">
+        <v-card
+          rounded="xl"
+          hover
+          border
+          elevation="0"
+          class="roadmap-card mb-4 mb-md-6 hoverable"
+          @click="goToRoadmapDetail(roadmap.id)"
+        >
+          <v-card-text class="pa-4 pa-sm-6">
+            <div class="d-flex align-start justify-space-between mb-3 mb-md-4">
+              <!-- 左侧：图标和标题 -->
+              <div class="d-flex align-center flex-grow-1">
+                <v-avatar
+                  color="purple-lighten-5"
+                  :size="$vuetify.display.mobile ? 48 : 56"
+                  rounded="lg"
+                  class="mr-3 mr-sm-4 flex-shrink-0"
+                >
+                  <v-icon
+                    icon="mdi-map-marker-path"
+                    color="purple"
+                    :size="$vuetify.display.mobile ? 24 : 28"
+                  />
+                </v-avatar>
+                <div class="flex-grow-1 min-w-0">
+                  <div
+                    class="d-flex flex-column flex-sm-row align-start align-sm-center mb-1 ga-2"
+                  >
+                    <h4
+                      class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 text-truncate"
+                    >
+                      {{ roadmap.name }}
+                    </h4>
+                    <v-chip
+                      :color="getStatusColor(roadmap.status)"
+                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                      variant="flat"
+                    >
+                      {{ getStatusText(roadmap.status) }}
+                    </v-chip>
+                  </div>
+                  <p class="text-caption text-grey mb-0 text-truncate">
+                    {{ roadmap.profession }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- 右侧：删除按钮 -->
+              <v-btn
+                v-if="isOwnProfile"
+                color="grey"
+                variant="text"
+                :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                icon="mdi-delete"
+                @click.stop="deleteRoadmap(roadmap.id)"
+              >
+                <v-icon>mdi-delete</v-icon>
+                <v-tooltip activator="parent" location="top">删除路线图</v-tooltip>
+              </v-btn>
+            </div>
+
+            <!-- 路线图描述 -->
+            <p
+              class="text-caption text-md-body-2 text-grey-darken-2 mb-3 mb-md-4 roadmap-description"
+            >
+              {{ roadmap.description }}
             </p>
-          </div>
-          <template v-if="isOwnProfile">
-            <v-divider class="my-3 my-md-4" />
-            <div class="text-caption text-md-body-2 text-grey">
-              <div class="d-flex align-start mb-2 mb-md-3">
-                <v-icon icon="mdi-map" size="16" color="grey" class="mr-2 mt-1" />
-                <span>绘制学习路线</span>
+
+            <!-- 统计信息 -->
+            <div
+              class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3"
+            >
+              <div
+                class="d-flex align-center flex-wrap text-caption text-md-body-2 text-grey"
+                style="gap: 12px"
+              >
+                <div class="d-flex align-center">
+                  <v-icon
+                    icon="mdi-account-multiple"
+                    :size="$vuetify.display.mobile ? 14 : 16"
+                    color="grey"
+                    class="mr-1"
+                  />
+                  {{ roadmap.usageCount }} <span class="d-none d-sm-inline">人使用</span>
+                </div>
+                <div class="d-flex align-center">
+                  <v-icon
+                    icon="mdi-star"
+                    :size="$vuetify.display.mobile ? 14 : 16"
+                    color="grey"
+                    class="mr-1"
+                  />
+                  {{ roadmap.starCount }} <span class="d-none d-sm-inline">收藏</span>
+                </div>
+                <div class="d-flex align-center">
+                  <v-icon
+                    icon="mdi-timeline"
+                    :size="$vuetify.display.mobile ? 14 : 16"
+                    color="grey"
+                    class="mr-1"
+                  />
+                  {{ roadmap.nodeCount }} <span class="d-none d-sm-inline">节点</span>
+                </div>
               </div>
-              <div class="d-flex align-start mb-2 mb-md-3">
-                <v-icon icon="mdi-share-variant" size="16" color="grey" class="mr-2 mt-1" />
-                <span>分享给他人</span>
-              </div>
-              <div class="d-flex align-start">
-                <v-icon icon="mdi-progress-check" size="16" color="grey" class="mr-2 mt-1" />
-                <span>跟踪学习进度</span>
+
+              <!-- 操作按钮 -->
+              <div class="d-flex align-center" style="gap: 8px">
+                <v-btn
+                  color="primary"
+                  variant="flat"
+                  rounded="lg"
+                  :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                  @click.stop="goToRoadmapDetail(roadmap.id)"
+                >
+                  <v-icon
+                    icon="mdi-eye"
+                    :size="$vuetify.display.mobile ? 14 : 18"
+                    :class="$vuetify.display.mobile ? '' : 'mr-1'"
+                  />
+                  <span class="d-none d-sm-inline">查看</span>
+                </v-btn>
+                <v-btn
+                  variant="tonal"
+                  rounded="lg"
+                  :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                  color="grey-darken-2"
+                  @click.stop="editRoadmap(roadmap.id, roadmap.professionId)"
+                >
+                  <v-icon
+                    icon="mdi-pencil"
+                    :size="$vuetify.display.mobile ? 14 : 18"
+                    :class="$vuetify.display.mobile ? '' : 'mr-1'"
+                  />
+                  <span class="d-none d-sm-inline">编辑</span>
+                </v-btn>
               </div>
             </div>
-          </template>
-        </div>
-      </div>
-    </v-col>
+          </v-card-text>
+        </v-card>
+      </template>
+    </v-infinite-scroll>
 
-    <!-- 右侧主内容 -->
-    <v-col cols="12" lg="10">
-      <div class="pa-0 pa-sm-2">
-        <div class="d-flex align-center justify-space-between mb-4 mb-md-6">
-          <div></div>
-        </div>
-
-        <!-- 加载状态 -->
-        <LoadingSpinner v-if="loading && roadmaps.length === 0" />
-
-        <!-- 路线图列表 -->
-        <v-infinite-scroll v-else-if="roadmaps.length > 0" :items="roadmaps" @load="onLoadMore">
-          <template v-for="(roadmap, index) in roadmaps" :key="roadmap.id">
-            <v-card
-              rounded="xl"
-              hover
-              border
-              elevation="0"
-              class="roadmap-card mb-4 mb-md-6 hoverable"
-              @click="goToRoadmapDetail(roadmap.id)"
-            >
-              <v-card-text class="pa-4 pa-sm-6">
-                <div class="d-flex align-start justify-space-between mb-3 mb-md-4">
-                  <!-- 左侧：图标和标题 -->
-                  <div class="d-flex align-center flex-grow-1">
-                    <v-avatar
-                      color="purple-lighten-5"
-                      :size="$vuetify.display.mobile ? 48 : 56"
-                      rounded="lg"
-                      class="mr-3 mr-sm-4 flex-shrink-0"
-                    >
-                      <v-icon
-                        icon="mdi-map-marker-path"
-                        color="purple"
-                        :size="$vuetify.display.mobile ? 24 : 28"
-                      />
-                    </v-avatar>
-                    <div class="flex-grow-1 min-w-0">
-                      <div
-                        class="d-flex flex-column flex-sm-row align-start align-sm-center mb-1 ga-2"
-                      >
-                        <h4
-                          class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 text-truncate"
-                        >
-                          {{ roadmap.name }}
-                        </h4>
-                        <v-chip
-                          :color="getStatusColor(roadmap.status)"
-                          :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                          variant="flat"
-                        >
-                          {{ getStatusText(roadmap.status) }}
-                        </v-chip>
-                      </div>
-                      <p class="text-caption text-grey mb-0 text-truncate">
-                        {{ roadmap.profession }}
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- 右侧：删除按钮 -->
-                  <v-btn
-                    v-if="isOwnProfile"
-                    color="grey"
-                    variant="text"
-                    :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                    icon="mdi-delete"
-                    @click.stop="deleteRoadmap(roadmap.id)"
-                  >
-                    <v-icon>mdi-delete</v-icon>
-                    <v-tooltip activator="parent" location="top">删除路线图</v-tooltip>
-                  </v-btn>
-                </div>
-
-                <!-- 路线图描述 -->
-                <p
-                  class="text-caption text-md-body-2 text-grey-darken-2 mb-3 mb-md-4 roadmap-description"
-                >
-                  {{ roadmap.description }}
-                </p>
-
-                <!-- 统计信息 -->
-                <div
-                  class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3"
-                >
-                  <div
-                    class="d-flex align-center flex-wrap text-caption text-md-body-2 text-grey"
-                    style="gap: 12px"
-                  >
-                    <div class="d-flex align-center">
-                      <v-icon
-                        icon="mdi-account-multiple"
-                        :size="$vuetify.display.mobile ? 14 : 16"
-                        color="grey"
-                        class="mr-1"
-                      />
-                      {{ roadmap.usageCount }} <span class="d-none d-sm-inline">人使用</span>
-                    </div>
-                    <div class="d-flex align-center">
-                      <v-icon
-                        icon="mdi-star"
-                        :size="$vuetify.display.mobile ? 14 : 16"
-                        color="grey"
-                        class="mr-1"
-                      />
-                      {{ roadmap.starCount }} <span class="d-none d-sm-inline">收藏</span>
-                    </div>
-                    <div class="d-flex align-center">
-                      <v-icon
-                        icon="mdi-timeline"
-                        :size="$vuetify.display.mobile ? 14 : 16"
-                        color="grey"
-                        class="mr-1"
-                      />
-                      {{ roadmap.nodeCount }} <span class="d-none d-sm-inline">节点</span>
-                    </div>
-                  </div>
-
-                  <!-- 操作按钮 -->
-                  <div class="d-flex align-center" style="gap: 8px">
-                    <v-btn
-                      color="primary"
-                      variant="flat"
-                      rounded="lg"
-                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                      @click.stop="goToRoadmapDetail(roadmap.id)"
-                    >
-                      <v-icon
-                        icon="mdi-eye"
-                        :size="$vuetify.display.mobile ? 14 : 18"
-                        :class="$vuetify.display.mobile ? '' : 'mr-1'"
-                      />
-                      <span class="d-none d-sm-inline">查看</span>
-                    </v-btn>
-                    <v-btn
-                      variant="tonal"
-                      rounded="lg"
-                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                      color="grey-darken-2"
-                      @click.stop="editRoadmap(roadmap.id, roadmap.professionId)"
-                    >
-                      <v-icon
-                        icon="mdi-pencil"
-                        :size="$vuetify.display.mobile ? 14 : 18"
-                        :class="$vuetify.display.mobile ? '' : 'mr-1'"
-                      />
-                      <span class="d-none d-sm-inline">编辑</span>
-                    </v-btn>
-                  </div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </template>
-        </v-infinite-scroll>
-
-        <!-- 空状态 -->
-        <div v-else class="text-center py-8 py-md-12">
-          <v-icon
-            icon="mdi-map-marker-path"
-            :size="$vuetify.display.mobile ? 48 : 64"
-            color="grey-lighten-2"
-            class="mb-3 mb-md-4"
-          />
-          <p class="text-body-2 text-md-body-1 text-grey-darken-2">暂无创建的路线图</p>
-          <p class="text-caption text-md-body-2 text-grey">创建学习路线图，规划职业发展路径</p>
-        </div>
-      </div>
-    </v-col>
-  </v-row>
+    <!-- 空状态 -->
+    <div v-else class="text-center py-8 py-md-12">
+      <v-icon
+        icon="mdi-map-marker-path"
+        :size="$vuetify.display.mobile ? 48 : 64"
+        color="grey-lighten-2"
+        class="mb-3 mb-md-4"
+      />
+      <p class="text-body-2 text-md-body-1 text-grey-darken-2">暂无创建的路线图</p>
+      <p class="text-caption text-md-body-2 text-grey">创建学习路线图，规划职业发展路径</p>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -359,15 +317,6 @@ const deleteRoadmap = async (roadmapId: number) => {
 </script>
 
 <style scoped>
-/* 左侧边栏固定 */
-.sticky-sidebar {
-  position: sticky;
-  top: 140px;
-  align-self: flex-start;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-
 .roadmap-card {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -391,15 +340,5 @@ const deleteRoadmap = async (roadmapId: number) => {
 
 .min-w-0 {
   min-width: 0;
-}
-
-/* 移动端取消 sticky */
-@media (max-width: 960px) {
-  .sticky-sidebar {
-    position: relative;
-    top: 0;
-    max-height: none;
-    margin-bottom: 16px;
-  }
 }
 </style>

@@ -1,44 +1,8 @@
 <template>
-  <v-row dense align="start">
-    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
-    <v-col cols="12" md="2" class="d-none d-lg-block">
-      <div class="sticky-sidebar">
-        <div class="pa-3 pa-md-4">
-          <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
-              {{ isOwnProfile ? '我的卡片组' : 'TA的卡片组' }}
-            </h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">
-              {{ isOwnProfile ? '使用间隔重复算法高效记忆知识点。' : '查看TA创建的记忆卡片组。' }}
-            </p>
-          </div>
-          <template v-if="isOwnProfile">
-            <v-divider class="my-3 my-md-4" />
-            <div class="text-caption text-md-body-2 text-grey">
-              <div class="d-flex align-start mb-2 mb-md-3">
-                <v-icon icon="mdi-brain" size="16" color="grey" class="mr-2 mt-1" />
-                <span>科学记忆方法</span>
-              </div>
-              <div class="d-flex align-start mb-2 mb-md-3">
-                <v-icon icon="mdi-calendar-clock" size="16" color="grey" class="mr-2 mt-1" />
-                <span>定期复习提醒</span>
-              </div>
-              <div class="d-flex align-start">
-                <v-icon icon="mdi-chart-line" size="16" color="grey" class="mr-2 mt-1" />
-                <span>进度统计分析</span>
-              </div>
-            </div>
-          </template>
-        </div>
-      </div>
-    </v-col>
-
-    <!-- 右侧主内容 -->
-    <v-col cols="12" lg="10">
-      <div class="pa-0 pa-sm-2">
-        <div class="d-flex align-center justify-space-between mb-4 mb-md-6">
-          <div></div>
-        </div>
+  <div class="pa-0 pa-sm-2">
+    <div class="d-flex align-center justify-space-between mb-4 mb-md-6">
+      <div></div>
+    </div>
 
         <!-- 加载状态 -->
         <LoadingSpinner v-if="loading" />
@@ -175,11 +139,8 @@
           @confirm="confirmDelete"
         />
 
-        <!-- 卡片组详情对话框 -->
-        <DeckDetailDialog v-model="showDeckDetail" :deck="selectedDeck" />
-      </div>
-    </v-col>
-  </v-row>
+    <DeckDetailDialog v-model="showDeckDetail" :deck="selectedDeck" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -338,15 +299,6 @@ const confirmDelete = async () => {
 </script>
 
 <style scoped>
-/* 左侧边栏固定 */
-.sticky-sidebar {
-  position: sticky;
-  top: 140px;
-  align-self: flex-start;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-
 .deck-card {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -383,15 +335,5 @@ const confirmDelete = async () => {
 
 .course-link-btn:hover {
   text-decoration: underline;
-}
-
-/* 移动端取消 sticky */
-@media (max-width: 960px) {
-  .sticky-sidebar {
-    position: relative;
-    top: 0;
-    max-height: none;
-    margin-bottom: 16px;
-  }
 }
 </style>

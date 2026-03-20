@@ -1,40 +1,6 @@
 <template>
-  <v-row dense align="start">
-    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
-    <v-col cols="12" md="2" class="d-none d-lg-block">
-      <div class="sticky-sidebar">
-        <div class="pa-3 pa-md-4">
-          <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
-              个人信息
-            </h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">
-              管理您的个人资料，包括头像、姓名和个人简介。
-            </p>
-          </div>
-          <v-divider class="my-3 my-md-4" />
-          <div class="text-caption text-md-body-2 text-grey">
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-pencil" size="16" color="grey" class="mr-2 mt-1" />
-              <span>点击链接修改信息</span>
-            </div>
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-shield-lock" size="16" color="grey" class="mr-2 mt-1" />
-              <span>信息仅自己可见</span>
-            </div>
-            <div class="d-flex align-start">
-              <v-icon icon="mdi-check-circle" size="16" color="grey" class="mr-2 mt-1" />
-              <span>点击确定保存修改</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </v-col>
-
-    <!-- 右侧主内容 -->
-    <v-col cols="12" lg="10">
-      <div class="pa-0 pa-sm-2">
-        <!-- 信息卡片 -->
+  <div class="pa-0 pa-sm-2">
+    <!-- 信息卡片 -->
         <v-card rounded="xl" border elevation="0" class="info-card">
           <v-card-text class="pa-4 pa-sm-6 pa-md-8">
             <!-- 头像 -->
@@ -318,9 +284,7 @@
         >
           个人信息已成功保存！
         </v-alert>
-      </div>
-    </v-col>
-  </v-row>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -519,15 +483,6 @@ const onModifyTimezone = async () => {
 </script>
 
 <style scoped>
-/* 左侧边栏固定 */
-.sticky-sidebar {
-  position: sticky;
-  top: 140px;
-  align-self: flex-start;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-
 .info-card {
   background-color: rgb(var(--v-theme-surface));
   border: 1.5px solid rgb(var(--v-theme-outline)) !important;
