@@ -4,6 +4,7 @@ import type { Node, NodeProgressResponse } from '@/types/node'
 import type { Roadmap } from '@/types/roadmap'
 import type { UserCourse } from '@/types/userCourse'
 import type { UserRoadmap, UserRoadmapBrief } from '@/types/userRoadmap'
+import type { UserLearning } from '@/types/home'
 import type {
   CourseCompletionResponse,
   CourseProgressResponse,
@@ -62,7 +63,7 @@ export const progressApi = {
   /**
    * 获取所有课程进度
    */
-  getAllCourseProgress(lastId?: number): Promise<ApiResponse<UserCourse[]>> {
+  getAllCourseProgress(lastId?: number): Promise<ApiResponse<UserLearning[]>> {
     return apiClient.get('/v1/progress/courses', {
       params: { lastId },
     })
@@ -116,7 +117,7 @@ export const progressApi = {
   /**
    * 获取用户的路线图列表
    */
-  getUserRoadmaps(): Promise<ApiResponse<UserRoadmapBrief[]>> {
+  getUserRoadmaps(): Promise<ApiResponse<UserLearning[]>> {
     return apiClient.get('/v1/progress/roadmaps')
   },
 

@@ -1,5 +1,7 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.application.assembler.BookmarkAssembler;
+import com.prosper.learn.application.dto.response.bookmark.BookmarkDTO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.content.post.PostDO;
@@ -25,6 +27,7 @@ public class BookmarkService {
 
     private final BookmarkDomainService bookmarkDomainService;
     private final BookmarkDataService bookmarkDataService;
+    private final BookmarkAssembler bookmarkAssembler;
     private final CourseDataService courseDataService;
     private final ProfessionDataService professionDataService;
     private final RoadmapDataService roadmapDataService;
@@ -43,10 +46,11 @@ public class BookmarkService {
     }
 
     /**
-     * 获取用户某类型的收藏列表（分页）
+     * 获取用户某类型的收藏列表（分页，带关联对象）
      */
-    public List<BookmarkDO> getUserBookmarks(long userId, Enums.ContentType contentType, Long lastId, int limit) {
-        return bookmarkDataService.listByUserAndLastId(userId, contentType.value(), lastId, limit);
+    public List<BookmarkDTO<Object>> getUserBookmarks(long userId, Enums.ContentType contentType, Long lastId, int limit) {
+        List<BookmarkDO> bookmarks = bookmarkDataService.listByUserAndLastId(userId, contentType.value(), lastId, limit);
+        return bookmarkAssembler.toDTO(bookmarks, contentType, userId);
     }
 
     /**

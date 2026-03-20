@@ -6,37 +6,34 @@ export default {
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { bookmarkApi, type ContentType } from '@/api/modules/bookmark'
-import type { Profession } from '@/types/profession'
-import type { Course } from '@/types/course'
-import type { Roadmap } from '@/types/roadmap'
-import type { Post } from '@/types/post'
-import type { MemoryCardView } from '@/types/memory'
+import { bookmarkApi, type ContentType, type Bookmark } from '@/api/modules/bookmark'
 
 // 当前激活的标签
 const activeType = ref<ContentType>('profession')
 
-// 各类型的收藏数据
-const professions = ref<Profession[]>([])
-const courses = ref<Course[]>([])
-const roadmaps = ref<Roadmap[]>([])
-const posts = ref<Post[]>([])
-const memoryCards = ref<MemoryCardView[]>([])
+// 收藏数据（统一存储 BookmarkDTO）
+const bookmarks = ref<Record<ContentType, Bookmark[]>>({
+  profession: [],
+  course: [],
+  roadmap: [],
+  post: [],
+  memory_card: [],
+})
 
 // 加载状态
 const loading = ref(false)
 const loadingMore = ref(false)
 
 // 分页参数
-const lastIds = ref({
-  profession: 0,
-  course: 0,
-  roadmap: 0,
-  post: 0,
-  memory_card: 0,
+const lastIds = ref<Record<ContentType, number | undefined>>({
+  profession: undefined,
+  course: undefined,
+  roadmap: undefined,
+  post: undefined,
+  memory_card: undefined,
 })
 
-const hasMore = ref({
+const hasMore = ref<Record<ContentType, boolean>>({
   profession: true,
   course: true,
   roadmap: true,
@@ -44,31 +41,9 @@ const hasMore = ref({
   memory_card: true,
 })
 
-// 统计数量
-const counts = ref({
-  profession: 0,
-  course: 0,
-  roadmap: 0,
-  post: 0,
-  memory_card: 0,
-})
-
 // 当前类型的数据
 const currentItems = computed(() => {
-  switch (activeType.value) {
-    case 'profession':
-      return professions.value
-    case 'course':
-      return courses.value
-    case 'roadmap':
-      return roadmaps.value
-    case 'post':
-      return posts.value
-    case 'memory_card':
-      return memoryCards.value
-    default:
-      return []
-  }
+  return bookmarks.value[activeType.value] || []
 })
 
 // 加载收藏列表
@@ -80,7 +55,7 @@ async function loadBookmarks(type: ContentType, append = false) {
   }
 
   try {
-    const lastId = append ? lastIds.value[type] : 0
+    const lastId = append ? lastIds.value[type] : undefined
     const response = await bookmarkApi.getBookmarks(type, lastId, 20)
 
     if (response.data) {
@@ -88,42 +63,9 @@ async function loadBookmarks(type: ContentType, append = false) {
 
       // 更新数据
       if (!append) {
-        switch (type) {
-          case 'profession':
-            professions.value = items as unknown as Profession[]
-            break
-          case 'course':
-            courses.value = items as unknown as Course[]
-            break
-          case 'roadmap':
-            roadmaps.value = items as unknown as Roadmap[]
-            break
-          case 'post':
-            posts.value = items as unknown as Post[]
-            break
-          case 'memory_card':
-            memoryCards.value = items as unknown as MemoryCardView[]
-            break
-        }
+        bookmarks.value[type] = items
       } else {
-        // 追加数据
-        switch (type) {
-          case 'profession':
-            professions.value.push(...(items as unknown as Profession[]))
-            break
-          case 'course':
-            courses.value.push(...(items as unknown as Course[]))
-            break
-          case 'roadmap':
-            roadmaps.value.push(...(items as unknown as Roadmap[]))
-            break
-          case 'post':
-            posts.value.push(...(items as unknown as Post[]))
-            break
-          case 'memory_card':
-            memoryCards.value.push(...(items as unknown as MemoryCardView[]))
-            break
-        }
+        bookmarks.value[type].push(...items)
       }
 
       // 更新分页参数
@@ -132,13 +74,6 @@ async function loadBookmarks(type: ContentType, append = false) {
         hasMore.value[type] = items.length === 20
       } else {
         hasMore.value[type] = false
-      }
-
-      // 更新数量
-      if (!append) {
-        counts.value[type] = items.length
-      } else {
-        counts.value[type] += items.length
       }
     }
   } finally {
@@ -158,7 +93,7 @@ function loadMore() {
 watch(
   activeType,
   (newType) => {
-    if (currentItems.value.length === 0) {
+    if (bookmarks.value[newType].length === 0) {
       loadBookmarks(newType)
     }
   },
@@ -166,31 +101,38 @@ watch(
 )
 
 // 取消收藏
-async function handleUnbookmark(item: any) {
+async function handleUnbookmark(item: Bookmark) {
   try {
-    await bookmarkApi.toggle(activeType.value, item.id)
+    await bookmarkApi.toggle(activeType.value, item.objectId)
     // 从列表中移除
-    switch (activeType.value) {
-      case 'profession':
-        professions.value = professions.value.filter((p) => p.id !== item.id)
-        break
-      case 'course':
-        courses.value = courses.value.filter((c) => c.id !== item.id)
-        break
-      case 'roadmap':
-        roadmaps.value = roadmaps.value.filter((r) => r.id !== item.id)
-        break
-      case 'post':
-        posts.value = posts.value.filter((p) => p.id !== item.id)
-        break
-      case 'memory_card':
-        memoryCards.value = memoryCards.value.filter((m) => m.id !== item.id)
-        break
-    }
-    counts.value[activeType.value]--
+    bookmarks.value[activeType.value] = bookmarks.value[activeType.value].filter(
+      (b) => b.id !== item.id
+    )
   } catch (error) {
     console.error('取消收藏失败:', error)
   }
+}
+
+// 获取显示名称
+function getItemName(item: Bookmark): string {
+  const obj = item.object as Record<string, unknown>
+  if (!obj) return '未知'
+  // profession, course, roadmap 用 name
+  if (obj.name) return obj.name as string
+  // roadmap 用 professionName
+  if (obj.professionName) return obj.professionName as string
+  // post 用 content 截取
+  if (obj.content) return (obj.content as string).substring(0, 50)
+  // card 用 front 截取
+  if (obj.front) return (obj.front as string).substring(0, 50)
+  return '未知'
+}
+
+// 获取描述
+function getItemDescription(item: Bookmark): string | undefined {
+  const obj = item.object as Record<string, unknown>
+  if (!obj) return undefined
+  return obj.description as string | undefined
 }
 </script>
 
@@ -198,21 +140,11 @@ async function handleUnbookmark(item: any) {
   <div class="bookmarks-tab">
     <!-- 二级标签 -->
     <v-tabs v-model="activeType" color="primary" class="mb-6">
-      <v-tab value="profession">
-        职业 <span class="ml-1 text-caption">({{ counts.profession }})</span>
-      </v-tab>
-      <v-tab value="roadmap">
-        路线图 <span class="ml-1 text-caption">({{ counts.roadmap }})</span>
-      </v-tab>
-      <v-tab value="course">
-        课程 <span class="ml-1 text-caption">({{ counts.course }})</span>
-      </v-tab>
-      <v-tab value="post">
-        文章 <span class="ml-1 text-caption">({{ counts.post }})</span>
-      </v-tab>
-      <v-tab value="memory_card">
-        卡片 <span class="ml-1 text-caption">({{ counts.memory_card }})</span>
-      </v-tab>
+      <v-tab value="profession">职业</v-tab>
+      <v-tab value="roadmap">路线图</v-tab>
+      <v-tab value="course">课程</v-tab>
+      <v-tab value="post">文章</v-tab>
+      <v-tab value="memory_card">卡片</v-tab>
     </v-tabs>
 
     <!-- 加载状态 -->
@@ -239,10 +171,10 @@ async function handleUnbookmark(item: any) {
         <v-card-text class="d-flex align-center">
           <div class="flex-grow-1">
             <h3 class="text-h6 mb-1">
-              {{ item.name || item.content?.substring(0, 50) }}
+              {{ getItemName(item) }}
             </h3>
-            <p v-if="item.description" class="text-body-2 text-grey">
-              {{ item.description }}
+            <p v-if="getItemDescription(item)" class="text-body-2 text-grey">
+              {{ getItemDescription(item) }}
             </p>
           </div>
           <v-btn

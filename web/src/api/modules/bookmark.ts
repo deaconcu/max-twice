@@ -2,7 +2,7 @@ import apiClient from '../client'
 import type { ApiResponse } from '@/types/api'
 
 /**
- * 收藏相关类型
+ * 收藏记录 DTO（带关联对象）
  */
 export interface Bookmark {
   id: number
@@ -11,6 +11,8 @@ export interface Bookmark {
   objectType: number
   parentId?: number
   createdAt: string
+  /** 关联对象（根据 objectType 决定具体类型） */
+  object: unknown
 }
 
 /**
@@ -35,12 +37,12 @@ export const bookmarkApi = {
   /**
    * 获取用户收藏列表（分页）
    * @param contentType 内容类型
-   * @param lastId 上一页最后一条记录的ID（首页传0）
+   * @param lastId 上一页最后一条记录的ID（首页不传）
    * @param limit 每页数量
    */
   getBookmarks(
     contentType: ContentType,
-    lastId: number = 0,
+    lastId?: number,
     limit: number = 20
   ): Promise<ApiResponse<Bookmark[]>> {
     return apiClient.get(`/v1/bookmarks/${contentType}/list`, {
