@@ -170,165 +170,102 @@ watch(activeTab, (newTab) => {
     <div v-else-if="profileUser" class="profile-container">
       <!-- 用户信息卡片 -->
       <v-card rounded="xl" class="profile-header-card mb-6 mb-md-8 no-border" elevation="0">
-        <v-card-text class="pa-4 pa-sm-6 pa-md-8">
-          <!-- 用户信息 -->
-          <div>
-            <!-- 头像和用户名一行 -->
-            <div class="d-flex align-center mb-3">
+        <v-card-text class="pa-5 pa-sm-6 pa-md-8">
+          <!-- 用户信息 - 新布局 -->
+          <div class="d-flex flex-column flex-lg-row align-center justify-space-between ga-4 ga-md-6">
+            <!-- 左侧：头像和信息 -->
+            <div class="d-flex flex-column flex-sm-row align-center ga-4 ga-sm-6">
+              <!-- 大头像 -->
               <UserAvatar
                 :name="userInfo.name"
                 :avatar-url="userInfo.avatar"
-                :size="$vuetify.display.mobile ? 40 : 48"
-                rounded="lg"
-                class="mr-4"
+                :size="90"
+                rounded="xl"
+                class="flex-shrink-0"
               />
-              <div class="d-flex align-center flex-wrap ga-3">
-                <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4">
-                  {{ userInfo.name }}
-                </h1>
-                <v-btn
-                  v-if="currentMode === 'learner' && isOwnProfile"
-                  color="grey-darken-2"
-                  variant="outlined"
-                  rounded="lg"
-                  size="small"
-                  @click="activeTab = 'info'"
-                >
-                  <v-icon icon="mdi-pencil" size="16" class="mr-1" />
-                  编辑资料
-                </v-btn>
+
+              <!-- 信息区 -->
+              <div class="text-center text-sm-start">
+                <!-- 用户名和编辑按钮 -->
+                <div class="d-flex align-center justify-center justify-sm-start flex-wrap ga-3 mb-2">
+                  <h1 class="text-h5 font-weight-bold text-grey-darken-4">
+                    {{ userInfo.name }}
+                  </h1>
+                  <v-btn
+                    v-if="isOwnProfile"
+                    color="grey-darken-1"
+                    variant="tonal"
+                    rounded="lg"
+                    size="small"
+                    @click="activeTab = 'info'; currentMode = 'learner'"
+                  >
+                    <v-icon icon="mdi-pencil" size="14" class="mr-1" />
+                    编辑资料
+                  </v-btn>
+                </div>
+
+                <!-- 个人简介 -->
+                <p v-if="userInfo.bio" class="text-body-2 text-md-body-1 text-grey-darken-2 mb-3">
+                  {{ userInfo.bio }}
+                </p>
+                <p v-else-if="isOwnProfile" class="text-body-2 text-grey mb-3">
+                  点击编辑资料添加个人简介
+                </p>
+
+                <!-- 加入时间和邮箱 -->
+                <div class="d-flex align-center justify-center justify-sm-start flex-wrap ga-4 text-caption text-md-body-2 text-grey-darken-1">
+                  <span class="d-flex align-center">
+                    <v-icon icon="mdi-calendar" size="16" class="mr-1" />
+                    加入于 {{ userInfo.joinDate }}
+                  </span>
+                  <span v-if="isOwnProfile" class="d-flex align-center">
+                    <v-icon icon="mdi-email-outline" size="16" class="mr-1" />
+                    {{ userInfo.email }}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <!-- 其他信息靠左 -->
-            <p class="text-body-2 text-md-body-1 text-grey-darken-2 mb-1 mb-md-2">
-              {{ userInfo.email }}
-            </p>
-            <p class="text-caption text-md-body-2 text-grey mb-3 mb-md-4">
-              加入于 {{ userInfo.joinDate }}
-            </p>
-
-            <!-- 统计信息 -->
-            <div class="d-flex align-center flex-wrap ga-4 ga-md-8">
-                <!-- 学习者模式统计 -->
-                <template v-if="currentMode === 'learner'">
-                  <div class="d-flex align-center">
-                    <v-icon
-                      icon="mdi-school"
-                      :size="$vuetify.display.mobile ? 18 : 20"
-                      color="primary"
-                      class="mr-2"
-                    />
-                    <span class="text-caption text-md-body-2 text-grey-darken-2">
-                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                        stats.totalCourses
-                      }}</span>
-                      学习课程
-                    </span>
-                  </div>
-                  <div class="d-flex align-center">
-                    <v-icon
-                      icon="mdi-check-circle"
-                      :size="$vuetify.display.mobile ? 18 : 20"
-                      color="success"
-                      class="mr-2"
-                    />
-                    <span class="text-caption text-md-body-2 text-grey-darken-2">
-                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                        stats.completedCourses
-                      }}</span>
-                      完成课程
-                    </span>
-                  </div>
-                  <div class="d-flex align-center">
-                    <v-icon
-                      icon="mdi-briefcase"
-                      :size="$vuetify.display.mobile ? 18 : 20"
-                      color="info"
-                      class="mr-2"
-                    />
-                    <span class="text-caption text-md-body-2 text-grey-darken-2">
-                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                        stats.totalRoles
-                      }}</span>
-                      关注职业
-                    </span>
-                  </div>
-                  <div class="d-flex align-center">
-                    <v-icon
-                      icon="mdi-calendar-check"
-                      :size="$vuetify.display.mobile ? 18 : 20"
-                      color="warning"
-                      class="mr-2"
-                    />
-                    <span class="text-caption text-md-body-2 text-grey-darken-2">
-                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                        stats.studyDays
-                      }}</span>
-                      学习天数
-                    </span>
-                  </div>
-                </template>
-
-                <!-- 创作者模式统计 -->
-                <template v-else>
-                  <div class="d-flex align-center">
-                    <v-icon
-                      icon="mdi-file-document-multiple"
-                      :size="$vuetify.display.mobile ? 18 : 20"
-                      color="primary"
-                      class="mr-2"
-                    />
-                    <span class="text-caption text-md-body-2 text-grey-darken-2">
-                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                        creatorStats.articles
-                      }}</span>
-                      创建文章
-                    </span>
-                  </div>
-                  <div class="d-flex align-center">
-                    <v-icon
-                      icon="mdi-folder-multiple"
-                      :size="$vuetify.display.mobile ? 18 : 20"
-                      color="success"
-                      class="mr-2"
-                    />
-                    <span class="text-caption text-md-body-2 text-grey-darken-2">
-                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                        creatorStats.catalogs
-                      }}</span>
-                      创建目录
-                    </span>
-                  </div>
-                  <div class="d-flex align-center">
-                    <v-icon
-                      icon="mdi-map-marker-path"
-                      :size="$vuetify.display.mobile ? 18 : 20"
-                      color="info"
-                      class="mr-2"
-                    />
-                    <span class="text-caption text-md-body-2 text-grey-darken-2">
-                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                        creatorStats.roadmaps
-                      }}</span>
-                      创建路线
-                    </span>
-                  </div>
-                  <div class="d-flex align-center">
-                    <v-icon
-                      icon="mdi-cards"
-                      :size="$vuetify.display.mobile ? 18 : 20"
-                      color="warning"
-                      class="mr-2"
-                    />
-                    <span class="text-caption text-md-body-2 text-grey-darken-2">
-                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{ creatorStats.decks }}</span>
-                      卡片组
-                    </span>
-                  </div>
-                </template>
-              </div>
+            <!-- 右侧：统计数据卡片 -->
+            <div class="d-flex flex-nowrap justify-center justify-lg-end ga-3">
+              <template v-if="currentMode === 'learner'">
+                <div class="stat-item text-center px-4">
+                  <div class="text-h6 font-weight-bold text-grey-darken-4 mb-1">{{ stats.totalCourses }}</div>
+                  <div class="text-caption text-grey-darken-1">学习课程</div>
+                </div>
+                <div class="stat-item text-center px-4">
+                  <div class="text-h6 font-weight-bold text-grey-darken-4 mb-1">{{ stats.completedCourses }}</div>
+                  <div class="text-caption text-grey-darken-1">完成课程</div>
+                </div>
+                <div class="stat-item text-center px-4">
+                  <div class="text-h6 font-weight-bold text-grey-darken-4 mb-1">{{ stats.totalRoles }}</div>
+                  <div class="text-caption text-grey-darken-1">关注职业</div>
+                </div>
+                <div class="stat-item text-center px-4">
+                  <div class="text-h6 font-weight-bold text-grey-darken-4 mb-1">{{ stats.studyDays }}</div>
+                  <div class="text-caption text-grey-darken-1">学习天数</div>
+                </div>
+              </template>
+              <template v-else>
+                <div class="stat-item text-center px-4">
+                  <div class="text-h6 font-weight-bold text-grey-darken-4 mb-1">{{ creatorStats.articles }}</div>
+                  <div class="text-caption text-grey-darken-1">创建文章</div>
+                </div>
+                <div class="stat-item text-center px-4">
+                  <div class="text-h6 font-weight-bold text-grey-darken-4 mb-1">{{ creatorStats.catalogs }}</div>
+                  <div class="text-caption text-grey-darken-1">创建目录</div>
+                </div>
+                <div class="stat-item text-center px-4">
+                  <div class="text-h6 font-weight-bold text-grey-darken-4 mb-1">{{ creatorStats.roadmaps }}</div>
+                  <div class="text-caption text-grey-darken-1">创建路线</div>
+                </div>
+                <div class="stat-item text-center px-4">
+                  <div class="text-h6 font-weight-bold text-grey-darken-4 mb-1">{{ creatorStats.decks }}</div>
+                  <div class="text-caption text-grey-darken-1">卡片组</div>
+                </div>
+              </template>
             </div>
+          </div>
         </v-card-text>
       </v-card>
 
@@ -563,6 +500,11 @@ watch(activeTab, (newTab) => {
 .profile-header-card {
   background: rgb(var(--v-theme-surface));
   border: 1.5px solid rgb(var(--v-theme-outline)) !important;
+}
+
+/* 统计项 */
+.stat-item {
+  min-width: 80px;
 }
 
 /* Tab 固定在顶部 */
