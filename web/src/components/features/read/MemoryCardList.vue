@@ -194,7 +194,7 @@ const handleUpvote = async (deck: MemoryCardDeck) => {
 
 // 使用 useMutation 处理收藏
 const { execute: toggleBookmark } = useMutation(
-  (deckId: number) => bookmarkApi.toggle('memory_card', deckId),
+  (deckId: number) => bookmarkApi.toggle('memory_card_deck', deckId),
   {
     showToast: false,
     onSuccess: (result, deckId) => {

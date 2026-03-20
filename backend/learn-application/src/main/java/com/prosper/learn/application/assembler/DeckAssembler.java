@@ -78,7 +78,7 @@ public class DeckAssembler {
         if (userId != null) {
             boolean hasUpvoted = upvoteService.getUpvoteStatus(deckDO.getId(), Enums.ContentType.memory_card_deck, userId).getLiked();
             dto.setHasLiked(hasUpvoted);
-            dto.setBookmarked(bookmarkService.isBookmarked(userId, deckDO.getId(), Enums.ContentType.memory_card));
+            dto.setBookmarked(bookmarkService.isBookmarked(userId, deckDO.getId(), Enums.ContentType.memory_card_deck));
         } else {
             dto.setBookmarked(false);
         }
@@ -146,7 +146,7 @@ public class DeckAssembler {
                 boolean hasUpvoted = upvoteService.getUpvoteStatus(deckId, Enums.ContentType.memory_card_deck, userId).getLiked();
                 upvoteStatusMap.put(deckId, hasUpvoted);
             }
-            List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, deckIdList, Enums.ContentType.memory_card);
+            List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, deckIdList, Enums.ContentType.memory_card_deck);
             bookmarkedSet.addAll(bookmarkedIds);
         }
 

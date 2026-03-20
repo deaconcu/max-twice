@@ -2,16 +2,19 @@ package com.prosper.learn.application.assembler;
 
 import com.prosper.learn.application.converter.BookmarkConverter;
 import com.prosper.learn.application.converter.CourseConverter;
+import com.prosper.learn.application.converter.MemoryCardDeckConverter;
 import com.prosper.learn.application.converter.PostConverter;
 import com.prosper.learn.application.converter.ProfessionConverter;
 import com.prosper.learn.application.dto.response.bookmark.BookmarkDTO;
-import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
+import com.prosper.learn.application.dto.response.deck.DeckFullDTO;
 import com.prosper.learn.application.dto.response.post.PostSummaryDTO;
 import com.prosper.learn.application.dto.response.profession.ProfessionBriefDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapBriefDTO;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.content.node.NodeDO;
+import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.content.profession.ProfessionDO;
@@ -19,11 +22,9 @@ import com.prosper.learn.content.profession.ProfessionDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.interaction.bookmark.BookmarkDO;
-import com.prosper.learn.memory.card.MemoryCardDO;
-import com.prosper.learn.memory.card.MemoryCardDataService;
+import com.prosper.learn.memory.deck.MemoryCardDeckDO;
+import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.user.profile.UserDataService;
-import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -31,6 +32,8 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -51,9 +54,9 @@ public class BookmarkAssembler {
     private final CourseConverter courseConverter;
     private final PostDataService postDataService;
     private final PostConverter postConverter;
-    private final MemoryCardDataService memoryCardDataService;
-    private final CardAssembler cardAssembler;
-    private final UserDataService userDataService;
+    private final MemoryCardDeckDataService deckDataService;
+    private final MemoryCardDeckConverter deckConverter;
+    private final NodeDataService nodeDataService;
 
     /**
      * 转换收藏列表为带关联对象的 DTO
@@ -68,7 +71,7 @@ public class BookmarkAssembler {
             case roadmap -> toRoadmapBookmarks(bookmarks);
             case course -> toCourseBookmarks(bookmarks);
             case post -> toPostBookmarks(bookmarks);
-            case memory_card -> toCardBookmarks(bookmarks, userId);
+            case memory_card_deck -> toDeckBookmarks(bookmarks);
             default -> bookmarkConverter.toDTO(bookmarks);
         };
     }
@@ -138,22 +141,35 @@ public class BookmarkAssembler {
         return result;
     }
 
-    private List<BookmarkDTO<Object>> toCardBookmarks(List<BookmarkDO> bookmarks, Long userId) {
+    private List<BookmarkDTO<Object>> toDeckBookmarks(List<BookmarkDO> bookmarks) {
         List<Long> objectIds = bookmarks.stream().map(BookmarkDO::getObjectId).collect(Collectors.toList());
-        List<MemoryCardDO> cards = memoryCardDataService.getByIds(objectIds);
+        List<MemoryCardDeckDO> decks = deckDataService.getByIds(objectIds);
 
-        // 获取用户对象用于 CardAssembler
-        UserDO user = userId != null ? userDataService.getById(userId) : null;
+        // 批量获取节点名称作为卡片组名称
+        Set<Long> nodeIds = decks.stream()
+            .map(MemoryCardDeckDO::getNodeId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+        Map<Long, NodeDO> nodeMap = nodeIds.isEmpty() ? Map.of() : nodeDataService.getMapByIds(nodeIds);
 
-        // 批量转换卡片
-        List<CardWithSrsDTO> cardDTOs = cardAssembler.toCardViewWithSrs(cards, user);
-        Map<Long, CardWithSrsDTO> cardMap = cardDTOs.stream()
-            .collect(Collectors.toMap(CardWithSrsDTO::getId, c -> c));
+        // 转换为 DTO 并填充名称
+        Map<Long, DeckFullDTO> deckMap = decks.stream()
+            .collect(Collectors.toMap(MemoryCardDeckDO::getId, deck -> {
+                DeckFullDTO dto = deckConverter.toFullDTO(deck);
+                // 使用节点名称作为卡片组名称
+                if (deck.getNodeId() != null) {
+                    NodeDO node = nodeMap.get(deck.getNodeId());
+                    if (node != null) {
+                        dto.setName(node.getName());
+                    }
+                }
+                return dto;
+            }));
 
         List<BookmarkDTO<Object>> result = new ArrayList<>();
         for (BookmarkDO bookmark : bookmarks) {
             BookmarkDTO<Object> dto = bookmarkConverter.toDTO(bookmark);
-            dto.setObject(cardMap.get(bookmark.getObjectId()));
+            dto.setObject(deckMap.get(bookmark.getObjectId()));
             result.add(dto);
         }
         return result;

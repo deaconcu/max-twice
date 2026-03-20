@@ -21,6 +21,9 @@ public class DeckFullDTO {
 
     private Long courseId;
 
+    /** 卡片组名称（使用节点名称） */
+    private String name;
+
     private String description;
 
     private Integer state;

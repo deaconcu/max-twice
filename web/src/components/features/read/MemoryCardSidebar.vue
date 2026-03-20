@@ -356,7 +356,7 @@ const { execute: upvoteDeck } = useMutation((deckId: number) => memoryApi.upvote
 })
 
 const { execute: toggleBookmark } = useMutation(
-  (deckId: number) => bookmarkApi.toggle('memory_card', deckId),
+  (deckId: number) => bookmarkApi.toggle('memory_card_deck', deckId),
   {
     showToast: false,
     onSuccess: (result, deckId) => {

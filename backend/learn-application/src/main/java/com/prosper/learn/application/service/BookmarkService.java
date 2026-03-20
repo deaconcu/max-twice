@@ -13,6 +13,8 @@ import com.prosper.learn.interaction.bookmark.BookmarkDO;
 import com.prosper.learn.interaction.bookmark.BookmarkDomainService;
 import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.card.MemoryCardDO;
+import com.prosper.learn.memory.deck.MemoryCardDeckDO;
+import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.shared.domain.Enums;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +34,7 @@ public class BookmarkService {
     private final ProfessionDataService professionDataService;
     private final RoadmapDataService roadmapDataService;
     private final PostDataService postDataService;
-    private final MemoryCardDataService memoryCardDataService;
+    private final MemoryCardDeckDataService memoryCardDeckDataService;
 
     /**
      * 切换收藏状态
@@ -88,9 +90,9 @@ public class BookmarkService {
                 PostDO post = postDataService.validateAndGet(objectId);
                 yield post.getNodeId();
             }
-            case memory_card -> {
-                MemoryCardDO card = memoryCardDataService.validateAndGet(objectId);
-                yield card.getDeckId();
+            case memory_card_deck -> {
+                MemoryCardDeckDO deck = memoryCardDeckDataService.validateAndGet(objectId);
+                yield deck.getNodeId();
             }
             default -> throw new IllegalArgumentException("不支持的内容类型");
         };

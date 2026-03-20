@@ -18,7 +18,7 @@ export interface Bookmark {
 /**
  * 内容类型
  */
-export type ContentType = 'profession' | 'roadmap' | 'course' | 'post' | 'memory_card'
+export type ContentType = 'profession' | 'roadmap' | 'course' | 'post' | 'memory_card_deck'
 
 /**
  * 收藏相关 API
