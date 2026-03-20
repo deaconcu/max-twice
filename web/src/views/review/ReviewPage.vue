@@ -218,7 +218,7 @@
                 @click="switchViewMode('list')"
               >
                 <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1"></v-icon>
-                列表
+                卡片管理
               </v-btn>
               <v-btn
                 :color="viewMode === 'manage' ? 'primary' : 'grey'"
@@ -228,7 +228,7 @@
                 @click="switchViewMode('manage')"
               >
                 <v-icon icon="mdi-cog" size="16" class="mr-1"></v-icon>
-                管理
+                复习设置
               </v-btn>
             </div>
           </div>
@@ -485,15 +485,6 @@
           <div v-if="selectedCourse" class="d-flex align-center justify-space-between mb-4">
             <div class="d-flex align-center ga-2">
               <span class="text-h6 font-weight-bold text-grey-darken-3">{{ selectedCourse.course.name }}</span>
-              <span v-if="selectedCourseLearningCards > 0" class="text-body-2 text-warning font-weight-bold">
-                {{ selectedCourseLearningCards }} 学习中
-              </span>
-              <span v-if="selectedCourse.dueCardCount > 0" class="text-body-2 text-error font-weight-bold">
-                {{ selectedCourse.dueCardCount }} 待复习
-              </span>
-              <span v-if="selectedCourseNewCards > 0" class="text-body-2 text-success font-weight-bold">
-                +{{ selectedCourseNewCards }} 新卡
-              </span>
             </div>
             <!-- 模式切换按钮 -->
             <div class="d-flex align-center ga-1">
@@ -515,7 +506,7 @@
                 @click="switchViewMode('list')"
               >
                 <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1"></v-icon>
-                列表
+                卡片管理
               </v-btn>
               <v-btn
                 :color="viewMode === 'manage' ? 'primary' : 'grey'"
@@ -525,7 +516,7 @@
                 @click="switchViewMode('manage')"
               >
                 <v-icon icon="mdi-cog" size="16" class="mr-1"></v-icon>
-                管理
+                复习设置
               </v-btn>
             </div>
           </div>
@@ -774,7 +765,7 @@
                 @click="switchViewMode('list')"
               >
                 <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1"></v-icon>
-                列表
+                卡片管理
               </v-btn>
               <v-btn
                 :color="viewMode === 'manage' ? 'primary' : 'grey'"
@@ -784,7 +775,7 @@
                 @click="switchViewMode('manage')"
               >
                 <v-icon icon="mdi-cog" size="16" class="mr-1"></v-icon>
-                管理
+                复习设置
               </v-btn>
             </div>
           </div>
@@ -808,7 +799,7 @@
 
           <div v-else class="mt-10">
             <div>
-              <div class="d-flex justify-space-between align-center mb-3">
+              <div class="d-flex justify-space-between align-center mb-6">
                 <div>
                   <div class="text-body-1 text-grey-darken-3">
                     {{ t('review.reviewFrequency') }}
@@ -828,7 +819,7 @@
                 ></v-select>
               </div>
 
-              <div class="d-flex justify-space-between align-center mb-3">
+              <div class="d-flex justify-space-between align-center mb-6">
                 <div>
                   <div class="text-body-1 text-grey-darken-3">
                     {{ t('review.learningStatus') }}
@@ -848,7 +839,7 @@
                 ></v-select>
               </div>
 
-              <div class="d-flex justify-space-between align-center mb-3">
+              <div class="d-flex justify-space-between align-center mb-6">
                 <div>
                   <div class="text-body-1 text-grey-darken-3">
                     {{ t('review.cardOrder') }}
@@ -868,7 +859,7 @@
                 ></v-select>
               </div>
 
-              <div class="d-flex justify-space-between align-center mb-3">
+              <div class="d-flex justify-space-between align-center mb-6">
                 <div>
                   <div class="text-body-1 text-grey-darken-3">
                     {{ t('review.dailyNewLimit') }}
