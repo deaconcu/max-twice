@@ -177,9 +177,9 @@ watch(activeTab, (newTab) => {
       <v-card rounded="xl" class="profile-header-card mb-6 no-border" elevation="0">
         <v-card-text class="pt-1 pb-6 px-0">
           <!-- 用户信息 -->
-          <div class="d-flex flex-column flex-md-row align-center justify-space-between ga-4 ga-md-6">
+          <div class="profile-header-content">
             <!-- 左侧：头像和基本信息 -->
-            <div class="d-flex flex-column flex-sm-row align-center align-sm-start ga-4 ga-sm-6">
+            <div class="profile-user-info">
               <!-- 头像 -->
               <UserAvatar
                 :name="userInfo.name"
@@ -190,7 +190,7 @@ watch(activeTab, (newTab) => {
               />
 
               <!-- 信息区 -->
-              <div class="text-center text-sm-start">
+              <div class="user-details">
                 <!-- 用户名和编辑按钮 -->
                 <div class="d-flex align-center justify-center justify-sm-start flex-wrap ga-3 mb-2">
                   <h1 class="text-h5 font-weight-bold text-grey-darken-4">
@@ -226,46 +226,54 @@ watch(activeTab, (newTab) => {
             </div>
 
             <!-- 右侧：统计信息 -->
-            <div class="d-flex align-center flex-wrap ga-6 ga-md-8 pr-md-6 stats-section">
+            <div class="profile-stats">
               <!-- 学习统计 -->
-              <div class="text-caption text-grey-darken-1 font-weight-medium">学习</div>
-              <div class="text-center">
-                <div class="text-h6 font-weight-bold text-primary">{{ stats.totalCourses }}</div>
-                <div class="text-caption text-grey">学习课程</div>
-              </div>
-              <div class="text-center">
-                <div class="text-h6 font-weight-bold text-success">{{ stats.completedCourses }}</div>
-                <div class="text-caption text-grey">完成课程</div>
-              </div>
-              <div class="text-center">
-                <div class="text-h6 font-weight-bold text-info">{{ stats.totalRoles }}</div>
-                <div class="text-caption text-grey">关注职业</div>
-              </div>
-              <div class="text-center">
-                <div class="text-h6 font-weight-bold text-warning">{{ stats.studyDays }}</div>
-                <div class="text-caption text-grey">学习天数</div>
+              <div class="stats-group">
+                <div class="stats-label">学习</div>
+                <div class="stats-items">
+                  <div class="text-center">
+                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.totalCourses }}</div>
+                    <div class="text-caption text-grey">学习课程</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.completedCourses }}</div>
+                    <div class="text-caption text-grey">完成课程</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.totalRoles }}</div>
+                    <div class="text-caption text-grey">关注职业</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.studyDays }}</div>
+                    <div class="text-caption text-grey">学习天数</div>
+                  </div>
+                </div>
               </div>
 
-              <!-- 分隔符 -->
-              <v-divider vertical class="mx-2 d-none d-lg-block align-self-center" style="height: 40px" />
+              <!-- 分隔符 - 学习和创作之间 -->
+              <v-divider vertical class="stats-divider" />
 
               <!-- 创作统计 -->
-              <div class="text-caption text-grey-darken-1 font-weight-medium">创作</div>
-              <div class="text-center">
-                <div class="text-h6 font-weight-bold text-primary">{{ creatorStats.articles }}</div>
-                <div class="text-caption text-grey">文章</div>
-              </div>
-              <div class="text-center">
-                <div class="text-h6 font-weight-bold text-success">{{ creatorStats.catalogs }}</div>
-                <div class="text-caption text-grey">目录</div>
-              </div>
-              <div class="text-center">
-                <div class="text-h6 font-weight-bold text-info">{{ creatorStats.roadmaps }}</div>
-                <div class="text-caption text-grey">路线图</div>
-              </div>
-              <div class="text-center">
-                <div class="text-h6 font-weight-bold text-warning">{{ creatorStats.decks }}</div>
-                <div class="text-caption text-grey">卡片组</div>
+              <div class="stats-group">
+                <div class="stats-label">创作</div>
+                <div class="stats-items">
+                  <div class="text-center">
+                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ creatorStats.articles }}</div>
+                    <div class="text-caption text-grey">文章</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ creatorStats.catalogs }}</div>
+                    <div class="text-caption text-grey">目录</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ creatorStats.roadmaps }}</div>
+                    <div class="text-caption text-grey">路线图</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ creatorStats.decks }}</div>
+                    <div class="text-caption text-grey">卡片组</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -477,6 +485,142 @@ watch(activeTab, (newTab) => {
   background: rgb(var(--v-theme-surface));
 }
 
+/* Header 布局 */
+.profile-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.profile-user-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.user-details {
+  text-align: left;
+}
+
+/* 统计区域 */
+.profile-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.stats-group {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.stats-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgb(var(--v-theme-on-surface-variant));
+}
+
+.stats-items {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.stats-divider {
+  height: 40px;
+  align-self: center;
+}
+
+/* 中屏：上下布局，但统计区域保持一行 */
+@media (max-width: 1264px) {
+  .profile-header-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .profile-stats {
+    justify-content: center;
+  }
+
+  .stats-group {
+    gap: 16px;
+  }
+
+  .stats-items {
+    gap: 16px;
+  }
+}
+
+/* 更小屏：统计区域改为纯文字紧凑布局 */
+@media (max-width: 900px) {
+  .profile-stats {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .stats-divider {
+    display: none;
+  }
+
+  .stats-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .stats-label {
+    font-size: 0.75rem;
+  }
+
+  .stats-items {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .stats-items .text-center {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stats-items .text-h6 {
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+  }
+
+  .stats-items .text-caption {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* 小屏：头像和信息上下排列 */
+@media (max-width: 600px) {
+  .profile-user-info {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .user-details {
+    text-align: center;
+  }
+
+  .stats-group {
+    gap: 12px;
+  }
+
+  .stats-items {
+    gap: 12px;
+  }
+}
+
 /* 一级按钮样式 */
 .primary-mode-btn {
   font-weight: 500 !important;
@@ -545,18 +689,5 @@ watch(activeTab, (newTab) => {
 
 .profile-tabs :deep(.v-tab:hover) {
   color: rgb(var(--v-theme-on-surface)) !important;
-}
-
-/* 统计区域 - 整体换行 */
-.stats-section {
-  flex-shrink: 0;
-}
-
-@media (max-width: 1280px) {
-  .stats-section {
-    width: 100%;
-    justify-content: center;
-    margin-top: 16px;
-  }
 }
 </style>
