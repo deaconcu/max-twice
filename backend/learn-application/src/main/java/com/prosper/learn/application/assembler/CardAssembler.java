@@ -179,8 +179,8 @@ public class CardAssembler {
         // 获取卡片内容版本
         if (isBlocked) {
             // 被屏蔽的卡片不返回实际内容
-            dto.setFront("blocked");
-            dto.setBack("blocked");
+            dto.setFront(null);
+            dto.setBack(null);
         } else {
             Long versionIdToUse;
             if (userId != null && srsState != null && srsState.getCardVersionId() != null) {
@@ -344,8 +344,8 @@ public class CardAssembler {
                     // 设置卡片内容 - 根据场景选择版本
                     if (isBlocked) {
                         // 被屏蔽的卡片不返回实际内容
-                        dto.setFront("blocked");
-                        dto.setBack("blocked");
+                        dto.setFront(null);
+                        dto.setBack(null);
                     } else {
                         Long versionIdToUse;
                         if (userId != null && srsState != null && srsState.getCardVersionId() != null) {
