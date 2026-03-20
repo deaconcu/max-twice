@@ -170,7 +170,7 @@ watch(activeTab, (newTab) => {
     <div v-else-if="profileUser" class="profile-container">
       <!-- 用户信息卡片 -->
       <v-card rounded="xl" class="profile-header-card mb-6 mb-md-8 no-border" elevation="0">
-        <v-card-text class="pa-5 pa-sm-6 pa-md-8">
+        <v-card-text class="pt-1 pb-5 pb-sm-6 pb-md-8 px-0">
           <!-- 用户信息 - 新布局 -->
           <div class="d-flex flex-column flex-lg-row align-center justify-space-between ga-4 ga-md-6">
             <!-- 左侧：头像和信息 -->
@@ -499,7 +499,6 @@ watch(activeTab, (newTab) => {
 /* 用户信息卡片 */
 .profile-header-card {
   background: rgb(var(--v-theme-surface));
-  border: 1.5px solid rgb(var(--v-theme-outline)) !important;
 }
 
 /* 统计项 */
