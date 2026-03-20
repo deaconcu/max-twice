@@ -797,112 +797,153 @@
             </v-card>
           </div>
 
-          <div v-else class="mt-10">
-            <div>
-              <div class="d-flex justify-space-between align-center mb-6">
-                <div>
-                  <div class="text-body-1 text-grey-darken-3">
-                    {{ t('review.reviewFrequency') }}
+          <div v-else class="mt-6">
+            <v-card rounded="lg" border class="pa-5 pa-md-6">
+              <!-- 设置项列表 -->
+              <div class="settings-list">
+                <!-- 复习频率 -->
+                <div class="setting-item d-flex justify-space-between align-center pb-5">
+                  <div class="d-flex align-center">
+                    <v-avatar color="grey" variant="tonal" size="40" class="mr-4">
+                      <v-icon icon="mdi-clock-outline" size="20" color="grey-darken-1"></v-icon>
+                    </v-avatar>
+                    <div>
+                      <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                        {{ t('review.reviewFrequency') }}
+                      </div>
+                      <div class="text-caption text-grey-darken-1">
+                        {{ t('review.reviewFrequencyHint') }}
+                      </div>
+                    </div>
                   </div>
-                  <div class="text-caption text-grey-darken-1">
-                    {{ t('review.reviewFrequencyHint') }}
-                  </div>
+                  <v-select
+                    v-model="selectedCourse.setting.frequencySetting"
+                    :items="frequencyOptions"
+                    variant="outlined"
+                    rounded="lg"
+                    hide-details
+                    density="compact"
+                    style="max-width: 160px"
+                  ></v-select>
                 </div>
-                <v-select
-                  v-model="selectedCourse.setting.frequencySetting"
-                  :items="frequencyOptions"
-                  variant="outlined"
-                  rounded="lg"
-                  hide-details
-                  density="compact"
-                  style="max-width: 160px"
-                ></v-select>
-              </div>
 
-              <div class="d-flex justify-space-between align-center mb-6">
-                <div>
-                  <div class="text-body-1 text-grey-darken-3">
-                    {{ t('review.learningStatus') }}
-                  </div>
-                  <div class="text-caption text-grey-darken-1">
-                    {{ t('review.learningStatusHint') }}
-                  </div>
-                </div>
-                <v-select
-                  v-model="selectedCourse.setting.state"
-                  :items="statusOptions"
-                  variant="outlined"
-                  rounded="lg"
-                  hide-details
-                  density="compact"
-                  style="max-width: 160px"
-                ></v-select>
-              </div>
+                <v-divider></v-divider>
 
-              <div class="d-flex justify-space-between align-center mb-6">
-                <div>
-                  <div class="text-body-1 text-grey-darken-3">
-                    {{ t('review.cardOrder') }}
+                <!-- 学习状态 -->
+                <div class="setting-item d-flex justify-space-between align-center py-5">
+                  <div class="d-flex align-center">
+                    <v-avatar color="grey" variant="tonal"  size="40" class="mr-4">
+                      <v-icon icon="mdi-bookmark-outline" size="20" color="grey-darken-1"></v-icon>
+                    </v-avatar>
+                    <div>
+                      <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                        {{ t('review.learningStatus') }}
+                      </div>
+                      <div class="text-caption text-grey-darken-1">
+                        {{ t('review.learningStatusHint') }}
+                      </div>
+                    </div>
                   </div>
-                  <div class="text-caption text-grey-darken-1">
-                    {{ t('review.cardOrderHint') }}
-                  </div>
+                  <v-select
+                    v-model="selectedCourse.setting.state"
+                    :items="statusOptions"
+                    variant="outlined"
+                    rounded="lg"
+                    hide-details
+                    density="compact"
+                    style="max-width: 160px"
+                  ></v-select>
                 </div>
-                <v-select
-                  v-model="selectedCourse.setting.cardOrder"
-                  :items="cardOrderOptions"
-                  variant="outlined"
-                  rounded="lg"
-                  hide-details
-                  density="compact"
-                  style="max-width: 160px"
-                ></v-select>
-              </div>
 
-              <div class="d-flex justify-space-between align-center mb-6">
-                <div>
-                  <div class="text-body-1 text-grey-darken-3">
-                    {{ t('review.dailyNewLimit') }}
-                  </div>
-                  <div class="text-caption text-grey-darken-1">
-                    {{ t('review.dailyNewLimitHint') }}
-                  </div>
-                </div>
-                <v-text-field
-                  v-model.number="settingDailyNewLimit"
-                  type="number"
-                  variant="outlined"
-                  rounded="lg"
-                  hide-details
-                  density="compact"
-                  :min="0"
-                  :max="999"
-                  style="max-width: 100px"
-                ></v-text-field>
-              </div>
+                <v-divider></v-divider>
 
-              <div class="d-flex justify-space-between align-center">
-                <div>
-                  <div class="text-body-1 text-grey-darken-3">
-                    {{ t('review.dailyReviewLimit') }}
+                <!-- 卡片顺序 -->
+                <div class="setting-item d-flex justify-space-between align-center py-5">
+                  <div class="d-flex align-center">
+                    <v-avatar color="grey" variant="tonal" size="40" class="mr-4">
+                      <v-icon icon="mdi-sort" size="20"></v-icon>
+                    </v-avatar>
+                    <div>
+                      <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                        {{ t('review.cardOrder') }}
+                      </div>
+                      <div class="text-caption text-grey-darken-1">
+                        {{ t('review.cardOrderHint') }}
+                      </div>
+                    </div>
                   </div>
-                  <div class="text-caption text-grey-darken-1">
-                    {{ t('review.dailyReviewLimitHint') }}
-                  </div>
+                  <v-select
+                    v-model="selectedCourse.setting.cardOrder"
+                    :items="cardOrderOptions"
+                    variant="outlined"
+                    rounded="lg"
+                    hide-details
+                    density="compact"
+                    style="max-width: 160px"
+                  ></v-select>
                 </div>
-                <v-text-field
-                  v-model.number="settingDailyReviewLimit"
-                  type="number"
-                  variant="outlined"
-                  rounded="lg"
-                  hide-details
-                  density="compact"
-                  :min="0"
-                  :max="9999"
-                  style="max-width: 100px"
-                ></v-text-field>
+
+                <v-divider></v-divider>
+
+                <!-- 每日新卡上限 -->
+                <div class="setting-item d-flex justify-space-between align-center py-5">
+                  <div class="d-flex align-center">
+                    <v-avatar color="grey" variant="tonal" size="40" class="mr-4">
+                      <v-icon icon="mdi-card-plus-outline" size="20"></v-icon>
+                    </v-avatar>
+                    <div>
+                      <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                        {{ t('review.dailyNewLimit') }}
+                      </div>
+                      <div class="text-caption text-grey-darken-1">
+                        {{ t('review.dailyNewLimitHint') }}
+                      </div>
+                    </div>
+                  </div>
+                  <v-text-field
+                    v-model.number="settingDailyNewLimit"
+                    type="number"
+                    variant="outlined"
+                    rounded="lg"
+                    hide-details
+                    density="compact"
+                    :min="0"
+                    :max="999"
+                    style="max-width: 100px"
+                  ></v-text-field>
+                </div>
+
+                <v-divider></v-divider>
+
+                <!-- 每日复习上限 -->
+                <div class="setting-item d-flex justify-space-between align-center pt-5">
+                  <div class="d-flex align-center">
+                    <v-avatar color="grey" variant="tonal" size="40" class="mr-4">
+                      <v-icon icon="mdi-repeat" size="20"></v-icon>
+                    </v-avatar>
+                    <div>
+                      <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                        {{ t('review.dailyReviewLimit') }}
+                      </div>
+                      <div class="text-caption text-grey-darken-1">
+                        {{ t('review.dailyReviewLimitHint') }}
+                      </div>
+                    </div>
+                  </div>
+                  <v-text-field
+                    v-model.number="settingDailyReviewLimit"
+                    type="number"
+                    variant="outlined"
+                    rounded="lg"
+                    hide-details
+                    density="compact"
+                    :min="0"
+                    :max="9999"
+                    style="max-width: 100px"
+                  ></v-text-field>
+                </div>
               </div>
-            </div>
+            </v-card>
 
             <div class="d-flex ga-3 mt-6">
               <v-btn color="primary" variant="flat" rounded="lg" @click="updateCourseSetting">
