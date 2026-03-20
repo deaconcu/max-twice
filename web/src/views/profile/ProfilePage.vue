@@ -18,7 +18,6 @@ import UserInfoTab from '@/components/profile/UserInfoTab.vue'
 import LearningRolesTab from '@/components/profile/LearningRolesTab.vue'
 import LearningCoursesTab from '@/components/profile/LearningCoursesTab.vue'
 import CreatorStatsTab from '@/components/profile/CreatorStatsTab.vue'
-import SubscriptionTab from '@/components/profile/SubscriptionTab.vue'
 import FollowingTab from '@/components/profile/FollowingTab.vue'
 import CatalogsTab from '@/components/profile/CatalogsTab.vue'
 import ArticlesTab from '@/components/profile/ArticlesTab.vue'
@@ -135,17 +134,23 @@ const creatorStats = ref({
   decks: 0,
 })
 
-// 模式切换函数
-const switchMode = (mode: 'learner' | 'creator') => {
-  currentMode.value = mode
-}
+// 切换一级模式时，自动选择对应的第一个二级 Tab
+watch(currentMode, (newMode) => {
+  if (newMode === 'learner') {
+    activeTab.value = 'roles'
+  } else if (newMode === 'creator') {
+    activeTab.value = isOwnProfile.value ? 'stats' : 'articles'
+  } else if (newMode === 'settings') {
+    activeTab.value = 'info'
+  }
+})
 
 // 监听路由变化
 watch(
   () => [route.query.tab, route.query.mode],
   ([newTab, newMode]) => {
     if (newMode && typeof newMode === 'string') {
-      currentMode.value = newMode as 'learner' | 'creator'
+      currentMode.value = newMode as 'learner' | 'creator' | 'settings'
     }
     if (newTab && typeof newTab === 'string') {
       activeTab.value = newTab
@@ -269,213 +274,120 @@ watch(activeTab, (newTab) => {
         </v-card-text>
       </v-card>
 
-      <!-- 模式切换栏 -->
-      <div class="mode-switcher-bar d-flex align-center mb-4 mb-md-6">
-        <h2 class="text-h6 text-md-h5 font-weight-bold text-grey-darken-3 d-flex align-center">
-          <v-icon
-            :icon="currentMode === 'learner' ? 'mdi-school' : 'mdi-pen'"
-            class="mr-2"
-            color="primary"
-          />
-          {{ currentMode === 'learner' ? '学习者' : '创作者' }}
-        </h2>
-        <v-btn
-          variant="text"
-          size="default"
-          class="text-body-2 font-weight-medium ml-3"
-          @click="switchMode(currentMode === 'learner' ? 'creator' : 'learner')"
-        >
-          切换到{{ currentMode === 'learner' ? '创作者' : '学习者' }}
-          <v-icon icon="mdi-chevron-right" size="16" class="ml-1" />
-        </v-btn>
-      </div>
-
-      <!-- Tab 导航 -->
+      <!-- 一级分类：按钮组样式 -->
       <div class="tabs-sticky">
-        <!-- 学习者模式的 tabs -->
+        <div class="d-flex align-center mb-5 ga-2">
+          <v-btn
+            :color="currentMode === 'learner' ? 'primary' : undefined"
+            :variant="currentMode === 'learner' ? 'flat' : 'text'"
+            rounded="lg"
+            size="default"
+            class="primary-mode-btn"
+            @click="currentMode = 'learner'"
+          >
+            <v-icon icon="mdi-school" size="18" class="mr-1" />
+            学习
+          </v-btn>
+          <v-btn
+            :color="currentMode === 'creator' ? 'primary' : undefined"
+            :variant="currentMode === 'creator' ? 'flat' : 'text'"
+            rounded="lg"
+            size="default"
+            class="primary-mode-btn"
+            @click="currentMode = 'creator'"
+          >
+            <v-icon icon="mdi-pen" size="18" class="mr-1" />
+            创作
+          </v-btn>
+          <v-btn
+            v-if="isOwnProfile"
+            :color="currentMode === 'settings' ? 'primary' : undefined"
+            :variant="currentMode === 'settings' ? 'flat' : 'text'"
+            rounded="lg"
+            size="default"
+            class="primary-mode-btn"
+            @click="currentMode = 'settings'"
+          >
+            <v-icon icon="mdi-cog" size="18" class="mr-1" />
+            设置
+          </v-btn>
+        </div>
+
+        <!-- 二级 Tab：学习模式 -->
         <v-tabs
           v-if="currentMode === 'learner'"
           v-model="activeTab"
           color="primary"
           class="profile-tabs"
-          :height="$vuetify.display.mobile ? 48 : 56"
-          density="comfortable"
+          height="36"
+          density="compact"
           show-arrows
         >
-          <v-tab value="roles" rounded="lg">
-            <v-icon
-              icon="mdi-briefcase"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">学习的职业</span>
-            <span class="d-sm-none">职业</span>
-          </v-tab>
-          <v-tab value="courses-learning" rounded="lg">
-            <v-icon
-              icon="mdi-school"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">学习的课程</span>
-            <span class="d-sm-none">课程</span>
-          </v-tab>
-          <v-tab value="courses" rounded="lg">
-            <v-icon
-              icon="mdi-book-multiple"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">关注的课程</span>
-            <span class="d-sm-none">关注</span>
-          </v-tab>
-          <v-tab v-if="isOwnProfile" value="bookmarks" rounded="lg">
-            <v-icon
-              icon="mdi-bookmark"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">我的收藏</span>
-            <span class="d-sm-none">收藏</span>
-          </v-tab>
-          <v-tab value="people" rounded="lg">
-            <v-icon
-              icon="mdi-account-multiple"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">关注的人</span>
-            <span class="d-sm-none">好友</span>
-          </v-tab>
-          <v-tab v-if="isOwnProfile" value="info" rounded="lg">
-            <v-icon
-              icon="mdi-account-circle"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">个人信息</span>
-            <span class="d-sm-none">资料</span>
-          </v-tab>
+          <v-tab value="roles">职业</v-tab>
+          <v-tab value="courses-learning">课程</v-tab>
+          <v-tab v-if="isOwnProfile" value="bookmarks">收藏</v-tab>
+          <v-tab value="people">好友</v-tab>
         </v-tabs>
 
-        <!-- 创作者模式的 tabs -->
+        <!-- 二级 Tab：创作模式 -->
         <v-tabs
-          v-else
+          v-else-if="currentMode === 'creator'"
           v-model="activeTab"
           color="primary"
           class="profile-tabs"
-          :height="$vuetify.display.mobile ? 48 : 56"
-          density="comfortable"
+          height="36"
+          density="compact"
           show-arrows
         >
-          <v-tab v-if="isOwnProfile" value="stats" rounded="lg">
-            <v-icon
-              icon="mdi-chart-line"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">创作统计</span>
-            <span class="d-sm-none">统计</span>
-          </v-tab>
-          <v-tab value="articles" rounded="lg">
-            <v-icon
-              icon="mdi-file-document-multiple"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">创建的文章</span>
-            <span class="d-sm-none">文章</span>
-          </v-tab>
-          <v-tab value="catalogs" rounded="lg">
-            <v-icon
-              icon="mdi-folder-multiple"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">创建的目录</span>
-            <span class="d-sm-none">目录</span>
-          </v-tab>
-          <v-tab value="roadmaps" rounded="lg">
-            <v-icon
-              icon="mdi-map-marker-path"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">创建的路线图</span>
-            <span class="d-sm-none">路线</span>
-          </v-tab>
-          <v-tab value="decks" rounded="lg">
-            <v-icon
-              icon="mdi-cards"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">我的卡片组</span>
-            <span class="d-sm-none">卡片</span>
-          </v-tab>
+          <v-tab v-if="isOwnProfile" value="stats">统计</v-tab>
+          <v-tab value="articles">文章</v-tab>
+          <v-tab value="catalogs">目录</v-tab>
+          <v-tab value="roadmaps">路线图</v-tab>
+          <v-tab value="decks">卡片组</v-tab>
         </v-tabs>
       </div>
 
       <!-- Tab 内容 -->
       <v-window v-model="activeTab">
-        <!-- 学习者模式的内容 -->
+        <!-- 学习模式的内容 -->
         <template v-if="currentMode === 'learner'">
-          <!-- 学习的职业 -->
           <v-window-item value="roles">
             <LearningRolesTab />
           </v-window-item>
-
-          <!-- 学习的课程 -->
           <v-window-item value="courses-learning">
             <LearningCoursesTab />
           </v-window-item>
-
-          <!-- 关注的课程 -->
-          <v-window-item value="courses">
-            <SubscriptionTab />
-          </v-window-item>
-
-          <!-- 关注的人 -->
           <v-window-item value="people">
             <FollowingTab />
           </v-window-item>
-
-          <!-- 我的收藏 -->
           <v-window-item v-if="isOwnProfile" value="bookmarks">
             <BookmarksTab />
           </v-window-item>
-
-          <!-- 个人信息 -->
-          <v-window-item v-if="isOwnProfile" value="info">
-            <UserInfoTab :user-info="userInfo" @update-avatar="handleUpdateAvatar" />
-          </v-window-item>
         </template>
 
-        <!-- 创作者模式的内容 -->
-        <template v-else>
-          <!-- 创作统计 -->
+        <!-- 创作模式的内容 -->
+        <template v-else-if="currentMode === 'creator'">
           <v-window-item v-if="isOwnProfile" value="stats">
             <CreatorStatsTab />
           </v-window-item>
-
-          <!-- 创建的文章 -->
           <v-window-item value="articles">
             <ArticlesTab :user-id="profileUser?.id" :is-own-profile="isOwnProfile" />
           </v-window-item>
-
-          <!-- 创建的目录 -->
           <v-window-item value="catalogs">
             <CatalogsTab />
           </v-window-item>
-
-          <!-- 创建的路线图 -->
           <v-window-item value="roadmaps">
             <RoadmapsTab :user-id="profileUser?.id" :is-own-profile="isOwnProfile" />
           </v-window-item>
-
-          <!-- 我的卡片组 -->
           <v-window-item value="decks">
             <MemoryDecksTab :user-id="profileUser?.id" :is-own-profile="isOwnProfile" />
+          </v-window-item>
+        </template>
+
+        <!-- 设置模式的内容 -->
+        <template v-else-if="currentMode === 'settings'">
+          <v-window-item value="info">
+            <UserInfoTab :user-info="userInfo" @update-avatar="handleUpdateAvatar" />
           </v-window-item>
         </template>
       </v-window>
@@ -515,39 +427,38 @@ watch(activeTab, (newTab) => {
   padding-bottom: 16px;
 }
 
-@media (min-width: 600px) {
-  .tabs-sticky {
-    padding-bottom: 24px;
-  }
+/* 一级按钮样式 */
+.primary-mode-btn {
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
 }
 
-/* Tab 样式 */
+.primary-mode-btn:not(.v-btn--variant-flat) {
+  color: rgb(var(--v-theme-on-surface-variant)) !important;
+}
+
+/* 二级 Tab 样式 */
 .profile-tabs {
   background-color: transparent;
 }
 
-:deep(.v-tab) {
+.profile-tabs :deep(.v-tab) {
   color: rgb(var(--v-theme-on-surface-variant)) !important;
-  font-size: 0.875rem !important;
+  font-size: 0.85rem !important;
   font-weight: 500 !important;
   text-transform: none !important;
   min-width: auto !important;
+  padding: 0 12px !important;
+  letter-spacing: 0 !important;
 }
 
-@media (min-width: 600px) {
-  :deep(.v-tab) {
-    font-size: 0.9rem !important;
-  }
-}
-
-:deep(.v-tab--selected) {
+.profile-tabs :deep(.v-tab--selected) {
   color: rgb(var(--v-theme-primary)) !important;
   font-weight: 600 !important;
 }
 
-:deep(.v-tab:hover) {
+.profile-tabs :deep(.v-tab:hover) {
   color: rgb(var(--v-theme-on-surface)) !important;
-  background-color: rgba(var(--v-theme-primary), 0.05);
 }
 
 /* 移动端 */
