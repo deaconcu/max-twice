@@ -289,30 +289,30 @@ watch(activeTab, (newTab) => {
             <div class="nav-group-title">学习</div>
             <div
               class="nav-item"
-              :class="{ 'nav-item-active': currentMode === 'learner' && activeTab === 'roles' }"
-              @click="currentMode = 'learner'; activeTab = 'roles'"
+              :class="{ 'nav-item-active': activeTab === 'roles' }"
+              @click="activeTab = 'roles'; currentMode = 'learner'"
             >
               学习的职业
             </div>
             <div
               class="nav-item"
-              :class="{ 'nav-item-active': currentMode === 'learner' && activeTab === 'courses-learning' }"
-              @click="currentMode = 'learner'; activeTab = 'courses-learning'"
+              :class="{ 'nav-item-active': activeTab === 'courses-learning' }"
+              @click="activeTab = 'courses-learning'; currentMode = 'learner'"
             >
               学习的课程
             </div>
             <div
               v-if="isOwnProfile"
               class="nav-item"
-              :class="{ 'nav-item-active': currentMode === 'learner' && activeTab === 'bookmarks' }"
-              @click="currentMode = 'learner'; activeTab = 'bookmarks'"
+              :class="{ 'nav-item-active': activeTab === 'bookmarks' }"
+              @click="activeTab = 'bookmarks'; currentMode = 'learner'"
             >
               我的收藏
             </div>
             <div
               class="nav-item"
-              :class="{ 'nav-item-active': currentMode === 'learner' && activeTab === 'people' }"
-              @click="currentMode = 'learner'; activeTab = 'people'"
+              :class="{ 'nav-item-active': activeTab === 'people' }"
+              @click="activeTab = 'people'; currentMode = 'learner'"
             >
               关注的人
             </div>
@@ -322,36 +322,36 @@ watch(activeTab, (newTab) => {
             <div
               v-if="isOwnProfile"
               class="nav-item"
-              :class="{ 'nav-item-active': currentMode === 'creator' && activeTab === 'stats' }"
-              @click="currentMode = 'creator'; activeTab = 'stats'"
+              :class="{ 'nav-item-active': activeTab === 'stats' }"
+              @click="activeTab = 'stats'; currentMode = 'creator'"
             >
               创作统计
             </div>
             <div
               class="nav-item"
-              :class="{ 'nav-item-active': currentMode === 'creator' && activeTab === 'articles' }"
-              @click="currentMode = 'creator'; activeTab = 'articles'"
+              :class="{ 'nav-item-active': activeTab === 'articles' }"
+              @click="activeTab = 'articles'; currentMode = 'creator'"
             >
               创建的文章
             </div>
             <div
               class="nav-item"
-              :class="{ 'nav-item-active': currentMode === 'creator' && activeTab === 'catalogs' }"
-              @click="currentMode = 'creator'; activeTab = 'catalogs'"
+              :class="{ 'nav-item-active': activeTab === 'catalogs' }"
+              @click="activeTab = 'catalogs'; currentMode = 'creator'"
             >
               创建的目录
             </div>
             <div
               class="nav-item"
-              :class="{ 'nav-item-active': currentMode === 'creator' && activeTab === 'roadmaps' }"
-              @click="currentMode = 'creator'; activeTab = 'roadmaps'"
+              :class="{ 'nav-item-active': activeTab === 'roadmaps' }"
+              @click="activeTab = 'roadmaps'; currentMode = 'creator'"
             >
               创建的路线图
             </div>
             <div
               class="nav-item"
-              :class="{ 'nav-item-active': currentMode === 'creator' && activeTab === 'decks' }"
-              @click="currentMode = 'creator'; activeTab = 'decks'"
+              :class="{ 'nav-item-active': activeTab === 'decks' }"
+              @click="activeTab = 'decks'; currentMode = 'creator'"
             >
               我的卡片组
             </div>
@@ -361,8 +361,8 @@ watch(activeTab, (newTab) => {
             <div
               v-if="isOwnProfile"
               class="nav-item"
-              :class="{ 'nav-item-active': currentMode === 'settings' }"
-              @click="currentMode = 'settings'"
+              :class="{ 'nav-item-active': activeTab === 'info' }"
+              @click="activeTab = 'info'; currentMode = 'settings'"
             >
               个人信息
             </div>

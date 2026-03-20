@@ -25,22 +25,6 @@
           已完成
         </v-btn>
       </div>
-
-      <v-btn
-        color="primary"
-        variant="text"
-        rounded="lg"
-        :size="$vuetify.display.mobile ? 'small' : 'default'"
-        to="/learning"
-      >
-        <span class="d-none d-sm-inline">查看全部课程</span>
-        <span class="d-sm-none">查看全部</span>
-        <v-icon
-          icon="mdi-chevron-right"
-          :size="$vuetify.display.mobile ? 16 : 18"
-          class="ml-1"
-        />
-      </v-btn>
     </div>
 
     <!-- 加载状态 -->

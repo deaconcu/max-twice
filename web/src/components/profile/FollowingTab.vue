@@ -177,7 +177,7 @@ const confirmUnfollow = async () => {
 .user-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  gap: 16px;
 }
 
 @container (max-width: 1200px) {
