@@ -1,39 +1,5 @@
 <template>
-  <v-row dense align="start">
-    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
-    <v-col cols="12" md="2" class="d-none d-lg-block">
-      <div class="sticky-sidebar">
-        <div class="pa-3 pa-md-4">
-          <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
-              学习的课程
-            </h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">
-              跟踪您当前学习的所有课程进度和完成情况。
-            </p>
-          </div>
-          <v-divider class="my-3 my-md-4" />
-          <div class="text-caption text-md-body-2 text-grey">
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-chart-line" size="16" color="grey" class="mr-2 mt-1" />
-              <span>实时同步学习进度</span>
-            </div>
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-clock-outline" size="16" color="grey" class="mr-2 mt-1" />
-              <span>记录最近学习时间</span>
-            </div>
-            <div class="d-flex align-start">
-              <v-icon icon="mdi-target" size="16" color="grey" class="mr-2 mt-1" />
-              <span>设定学习目标</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </v-col>
-
-    <!-- 右侧主内容 -->
-    <v-col cols="12" lg="10">
-      <div class="pa-0 pa-sm-2">
+  <div class="pa-0 pa-sm-2">
         <!-- 顶部操作栏 -->
         <div
           class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
@@ -175,16 +141,14 @@
         </div>
 
         <!-- 删除确认对话框 -->
-        <ConfirmDialog
-          v-model="showDeleteDialog"
-          title="确认取消学习"
-          message="确定要取消学习该课程吗？此操作无法撤销。"
-          confirm-text="确认取消"
-          @confirm="confirmDelete"
-        />
-      </div>
-    </v-col>
-  </v-row>
+    <ConfirmDialog
+      v-model="showDeleteDialog"
+      title="确认取消学习"
+      message="确定要取消学习该课程吗？此操作无法撤销。"
+      confirm-text="确认取消"
+      @confirm="confirmDelete"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -308,15 +272,6 @@ const confirmDelete = async () => {
 </script>
 
 <style scoped>
-/* 左侧边栏固定 */
-.sticky-sidebar {
-  position: sticky;
-  top: 140px;
-  align-self: flex-start;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-
 .course-card {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

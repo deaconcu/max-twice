@@ -1,41 +1,5 @@
 <template>
-  <v-row dense align="start">
-    <!-- 左侧简介栏 -->
-    <v-col cols="12" lg="2" class="d-none d-lg-block">
-      <div class="sticky-sidebar">
-        <div class="sidebar-content">
-          <div class="mb-4">
-            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">创作统计</h4>
-            <p class="text-body-2 text-grey-darken-1 mb-0">
-              查看您的内容创作数据表现
-            </p>
-          </div>
-          <v-divider class="my-4" />
-          <div class="sidebar-metrics">
-            <div class="d-flex align-center mb-3">
-              <div class="metric-dot bg-blue-lighten-4"></div>
-              <span class="text-body-2 text-grey-darken-2">阅读量统计</span>
-            </div>
-            <div class="d-flex align-center mb-3">
-              <div class="metric-dot bg-amber-lighten-4"></div>
-              <span class="text-body-2 text-grey-darken-2">两遍秒懂</span>
-            </div>
-            <div class="d-flex align-center mb-3">
-              <div class="metric-dot bg-green-lighten-4"></div>
-              <span class="text-body-2 text-grey-darken-2">有用统计</span>
-            </div>
-            <div class="d-flex align-center">
-              <div class="metric-dot bg-purple-lighten-4"></div>
-              <span class="text-body-2 text-grey-darken-2">评论统计</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </v-col>
-
-    <!-- 右侧主内容 -->
-    <v-col cols="12" lg="10">
-      <div class="creator-stats-container">
+  <div class="creator-stats-container">
         <!-- 总览卡片 -->
         <v-card rounded="xl" class="overview-card mb-6" elevation="0">
           <v-card-text class="pa-6">
@@ -302,8 +266,6 @@
           </v-card-text>
         </v-card>
       </div>
-    </v-col>
-  </v-row>
 </template>
 
 <script setup lang="ts">
@@ -682,32 +644,6 @@ watch(
 </script>
 
 <style scoped>
-/* 左侧边栏 */
-.sticky-sidebar {
-  position: sticky;
-  top: 140px;
-  align-self: flex-start;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-
-.sidebar-content {
-  padding: 20px 16px;
-}
-
-.sidebar-metrics {
-  display: flex;
-  flex-direction: column;
-}
-
-.metric-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  margin-right: 12px;
-  flex-shrink: 0;
-}
-
 /* 主内容区 */
 .creator-stats-container {
   max-width: 100%;

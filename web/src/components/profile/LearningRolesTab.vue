@@ -1,38 +1,5 @@
 <template>
-  <v-row dense align="start">
-    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
-    <v-col cols="12" md="2" class="d-none d-lg-block">
-      <div class="sticky-sidebar">
-        <div class="pa-3 pa-md-4">
-          <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
-              学习的职业
-            </h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">
-              查看您正在学习的职业路径和完成进度。
-            </p>
-          </div>
-          <v-divider class="my-3 my-md-4" />
-          <div class="text-caption text-md-body-2 text-grey">
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-target" size="16" color="grey" class="mr-2 mt-1" />
-              <span>职业目标规划</span>
-            </div>
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-chart-line" size="16" color="grey" class="mr-2 mt-1" />
-              <span>学习进度跟踪</span>
-            </div>
-            <div class="d-flex align-start">
-              <v-icon icon="mdi-certificate" size="16" color="grey" class="mr-2 mt-1" />
-              <span>能力认证</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </v-col>
-
-    <!-- 右侧主内容 -->
-    <v-col cols="12" lg="10">
+  <div>
       <div class="pa-0 pa-sm-2">
         <!-- 顶部操作栏 -->
         <div
@@ -172,10 +139,6 @@
           <p class="text-caption text-md-body-2 text-grey">开始学习职业路径，系统化提升技能</p>
         </div>
       </div>
-    </v-col>
-
-    <!-- 空状态 -->
-
     <!-- 删除确认对话框 -->
     <ConfirmDialog
       v-model="showDeleteDialog"
@@ -184,7 +147,7 @@
       confirm-text="确认取消"
       @confirm="confirmDelete"
     />
-  </v-row>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -303,14 +266,6 @@ const confirmDelete = async () => {
 </script>
 
 <style scoped>
-.sticky-sidebar {
-  position: sticky;
-  top: 140px;
-  align-self: flex-start;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-
 .role-card {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

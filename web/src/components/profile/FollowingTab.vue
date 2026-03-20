@@ -1,39 +1,5 @@
 <template>
-  <v-row dense align="start">
-    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
-    <v-col cols="12" md="2" class="d-none d-lg-block">
-      <div class="sticky-sidebar">
-        <div class="pa-3 pa-md-4">
-          <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
-              关注的人
-            </h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">
-              管理您关注的用户，查看他们的最新动态。
-            </p>
-          </div>
-          <v-divider class="my-3 my-md-4" />
-          <div class="text-caption text-md-body-2 text-grey">
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-rss" size="16" color="grey" class="mr-2 mt-1" />
-              <span>订阅用户更新</span>
-            </div>
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-account-check" size="16" color="grey" class="mr-2 mt-1" />
-              <span>互相关注提醒</span>
-            </div>
-            <div class="d-flex align-start">
-              <v-icon icon="mdi-message" size="16" color="grey" class="mr-2 mt-1" />
-              <span>私信交流</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </v-col>
-
-    <!-- 右侧主内容 -->
-    <v-col cols="12" lg="10">
-      <div class="pa-0 pa-sm-2">
+  <div class="pa-0 pa-sm-2">
         <!-- 顶部信息栏 -->
         <div
           class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
@@ -101,17 +67,14 @@
           <p class="text-caption text-md-body-2 text-grey">关注优秀的创作者，获取精彩内容</p>
         </div>
 
-        <!-- 取消关注确认对话框 -->
-        <ConfirmDialog
-          v-model="showUnfollowDialog"
-          title="确认取消关注"
-          message="确定要取消关注该用户吗？"
-          confirm-text="确认取消"
-          @confirm="confirmUnfollow"
-        />
-      </div>
-    </v-col>
-  </v-row>
+    <ConfirmDialog
+      v-model="showUnfollowDialog"
+      title="确认取消关注"
+      message="确定要取消关注该用户吗？"
+      confirm-text="确认取消"
+      @confirm="confirmUnfollow"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -194,15 +157,6 @@ const confirmUnfollow = async () => {
 </script>
 
 <style scoped>
-/* 左侧边栏固定 */
-.sticky-sidebar {
-  position: sticky;
-  top: 140px;
-  align-self: flex-start;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-
 .user-card {
   background-color: rgb(var(--v-theme-surface));
   border: 1.5px solid rgb(var(--v-theme-outline)) !important;

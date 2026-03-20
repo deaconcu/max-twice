@@ -1,44 +1,8 @@
 <template>
-  <v-row dense align="start">
-    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
-    <v-col cols="12" md="2" class="d-none d-lg-block">
-      <div class="sticky-sidebar">
-        <div class="pa-3 pa-md-4">
-          <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
-              {{ isOwnProfile ? '创建的文章' : 'TA的文章' }}
-            </h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">
-              {{ isOwnProfile ? '管理您创作的文章，分享知识和经验。' : '查看TA创作的文章和知识分享。' }}
-            </p>
-          </div>
-          <template v-if="isOwnProfile">
-            <v-divider class="my-3 my-md-4" />
-            <div class="text-caption text-md-body-2 text-grey">
-              <div class="d-flex align-start mb-2 mb-md-3">
-                <v-icon icon="mdi-pencil" size="16" color="grey" class="mr-2 mt-1" />
-                <span>编辑发布文章</span>
-              </div>
-              <div class="d-flex align-start mb-2 mb-md-3">
-                <v-icon icon="mdi-eye" size="16" color="grey" class="mr-2 mt-1" />
-                <span>查看阅读统计</span>
-              </div>
-              <div class="d-flex align-start">
-                <v-icon icon="mdi-tag" size="16" color="grey" class="mr-2 mt-1" />
-                <span>添加标签分类</span>
-              </div>
-            </div>
-          </template>
-        </div>
-      </div>
-    </v-col>
-
-    <!-- 右侧主内容 -->
-    <v-col cols="12" lg="10">
-      <div class="pa-0 pa-sm-2">
-        <div class="d-flex align-center justify-space-between mb-4 mb-md-6">
-          <div></div>
-        </div>
+  <div class="pa-0 pa-sm-2">
+    <div class="d-flex align-center justify-space-between mb-4 mb-md-6">
+      <div></div>
+    </div>
 
         <!-- 加载状态 -->
         <LoadingSpinner v-if="loading && articles.length === 0" />
@@ -265,17 +229,14 @@
           @cancel="handleCancelEdit"
         />
 
-        <!-- 删除确认对话框 -->
-        <ConfirmDialog
-          v-model="showDeleteDialog"
-          title="确认删除"
-          message="确定要删除该文章吗？此操作不可恢复。"
-          confirm-text="确认删除"
-          @confirm="confirmDelete"
-        />
-      </div>
-    </v-col>
-  </v-row>
+    <ConfirmDialog
+      v-model="showDeleteDialog"
+      title="确认删除"
+      message="确定要删除该文章吗？此操作不可恢复。"
+      confirm-text="确认删除"
+      @confirm="confirmDelete"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -514,15 +475,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 左侧边栏固定 */
-.sticky-sidebar {
-  position: sticky;
-  top: 140px;
-  align-self: flex-start;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-
 .article-card {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -591,24 +543,5 @@ onMounted(() => {
   .article-content-preview.has-overflow::after {
     font-size: 20px;
   }
-}
-
-/* 移动端取消 sticky */
-@media (max-width: 960px) {
-  .sticky-sidebar {
-    position: relative;
-    top: 0;
-    max-height: none;
-    margin-bottom: 16px;
-  }
-}
-
-/* 课程链接按钮样式 */
-.course-link-btn {
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: normal;
-  height: auto;
-  min-height: 0;
 }
 </style>

@@ -1,38 +1,6 @@
 <template>
-  <v-row dense align="start">
-    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
-    <v-col cols="12" md="2" class="d-none d-lg-block">
-      <div class="sticky-sidebar">
-        <div class="pa-3 pa-md-4">
-          <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
-              创建的目录
-            </h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">组织和管理您的学习内容集合。</p>
-          </div>
-          <v-divider class="my-3 my-md-4" />
-          <div class="text-caption text-md-body-2 text-grey">
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-folder-plus" size="16" color="grey" class="mr-2 mt-1" />
-              <span>创建内容目录</span>
-            </div>
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-lock" size="16" color="grey" class="mr-2 mt-1" />
-              <span>公开/私密设置</span>
-            </div>
-            <div class="d-flex align-start">
-              <v-icon icon="mdi-tag-multiple" size="16" color="grey" class="mr-2 mt-1" />
-              <span>内容分类管理</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </v-col>
-
-    <!-- 右侧主内容 -->
-    <v-col cols="12" lg="10">
-      <div class="pa-0 pa-sm-2">
-        <!-- 顶部搜索栏 -->
+  <div class="pa-0 pa-sm-2">
+    <!-- 顶部搜索栏 -->
         <div
           class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
         >
@@ -294,18 +262,15 @@
           @confirm="confirmDelete"
         />
 
-        <!-- 编辑目录对话框 -->
-        <NodeSelectorDialog
-          v-if="editingCatalog"
-          ref="nodeSelectorDialog"
-          :course-id="editingCatalog.node?.course?.id"
-          :node-id="editingCatalog.nodeId"
-          :draft-post="editingCatalog"
-          @load-data="handleCatalogUpdated"
-        />
-      </div>
-    </v-col>
-  </v-row>
+    <NodeSelectorDialog
+      v-if="editingCatalog"
+      ref="nodeSelectorDialog"
+      :course-id="editingCatalog.node?.course?.id"
+      :node-id="editingCatalog.nodeId"
+      :draft-post="editingCatalog"
+      @load-data="handleCatalogUpdated"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -473,15 +438,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 左侧边栏固定 */
-.sticky-sidebar {
-  position: sticky;
-  top: 140px;
-  align-self: flex-start;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-}
-
 .catalog-card {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

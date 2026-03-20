@@ -226,7 +226,7 @@ watch(activeTab, (newTab) => {
             </div>
 
             <!-- 右侧：统计信息 -->
-            <div class="d-flex align-center flex-wrap ga-6 ga-md-8 pr-md-6">
+            <div class="d-flex align-center flex-wrap ga-6 ga-md-8 pr-md-6 stats-section">
               <!-- 学习统计 -->
               <div class="text-caption text-grey-darken-1 font-weight-medium">学习</div>
               <div class="text-center">
@@ -247,7 +247,7 @@ watch(activeTab, (newTab) => {
               </div>
 
               <!-- 分隔符 -->
-              <v-divider vertical class="mx-2 d-none d-md-block align-self-center" style="height: 40px" />
+              <v-divider vertical class="mx-2 d-none d-lg-block align-self-center" style="height: 40px" />
 
               <!-- 创作统计 -->
               <div class="text-caption text-grey-darken-1 font-weight-medium">创作</div>
@@ -545,5 +545,18 @@ watch(activeTab, (newTab) => {
 
 .profile-tabs :deep(.v-tab:hover) {
   color: rgb(var(--v-theme-on-surface)) !important;
+}
+
+/* 统计区域 - 整体换行 */
+.stats-section {
+  flex-shrink: 0;
+}
+
+@media (max-width: 1280px) {
+  .stats-section {
+    width: 100%;
+    justify-content: center;
+    margin-top: 16px;
+  }
 }
 </style>
