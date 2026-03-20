@@ -45,7 +45,7 @@ public class BookmarkService {
     /**
      * 获取用户某类型的收藏列表（分页）
      */
-    public List<BookmarkDO> getUserBookmarks(long userId, Enums.ContentType contentType, long lastId, int limit) {
+    public List<BookmarkDO> getUserBookmarks(long userId, Enums.ContentType contentType, Long lastId, int limit) {
         return bookmarkDataService.listByUserAndLastId(userId, contentType.value(), lastId, limit);
     }
 

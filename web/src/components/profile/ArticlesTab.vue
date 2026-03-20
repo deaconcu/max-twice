@@ -476,7 +476,6 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: rgb(var(--v-theme-surface));
-  border: 1.5px solid rgb(var(--v-theme-outline)) !important;
 }
 
 /* 文章内容缩略显示 */

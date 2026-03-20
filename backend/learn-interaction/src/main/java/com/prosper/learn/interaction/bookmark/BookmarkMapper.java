@@ -26,10 +26,15 @@ public interface BookmarkMapper {
     @Delete("DELETE FROM bookmark WHERE id = #{id}")
     void delete(long id);
 
-    @Select("SELECT * FROM bookmark WHERE user_id = #{userId} AND object_type = #{objectType} " +
-            "AND id < #{lastId} ORDER BY id DESC LIMIT #{limit}")
+    @Select({
+            "<script>",
+            "SELECT * FROM bookmark WHERE user_id = #{userId} AND object_type = #{objectType}",
+            "<if test='lastId != null and lastId > 0'> AND id &lt; #{lastId}</if>",
+            " ORDER BY id DESC LIMIT #{limit}",
+            "</script>"
+    })
     List<BookmarkDO> listByUserAndLastId(@Param("userId") long userId, @Param("objectType") int objectType,
-                                         @Param("lastId") long lastId, @Param("limit") int limit);
+                                         @Param("lastId") Long lastId, @Param("limit") int limit);
 
     @Select("SELECT COUNT(*) FROM bookmark WHERE user_id = #{userId} AND object_type = #{objectType}")
     int countByUser(@Param("userId") long userId, @Param("objectType") int objectType);

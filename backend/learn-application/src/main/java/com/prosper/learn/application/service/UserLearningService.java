@@ -87,8 +87,7 @@ public class UserLearningService {
             return null;
         }
 
-        UserLearningDTO<Object> dto = new UserLearningDTO<>();
-        copyProperties(learning, dto);
+        UserLearningDTO<Object> dto = userLearningConverter.toDTO(learning);
 
         // 3. 填充课程对象
         CourseBriefDTO courseDTO = courseAssembler.toBriefDTO(courseDO);
@@ -106,8 +105,7 @@ public class UserLearningService {
             return null;
         }
 
-        UserLearningDTO<Object> dto = new UserLearningDTO<>();
-        copyProperties(learning, dto);
+        UserLearningDTO<Object> dto = userLearningConverter.toDTO(learning);
 
         // 填充路径对象
         RoadmapDO roadmapDO = roadmapDataService.getById(roadmapId);
@@ -166,8 +164,7 @@ public class UserLearningService {
         // 组装 DTO
         List<UserLearningDTO<Object>> result = new ArrayList<>();
         for (UserLearningDO learning : learnings) {
-            UserLearningDTO<Object> dto = new UserLearningDTO<>();
-            copyProperties(learning, dto);
+            UserLearningDTO<Object> dto = userLearningConverter.toDTO(learning);
             dto.setObject(rootNodeToCourseMap.get(learning.getObjectId()));
             result.add(dto);
         }
@@ -370,27 +367,10 @@ public class UserLearningService {
         // 组装 DTO
         List<UserLearningDTO<Object>> result = new ArrayList<>();
         for (UserLearningDO learning : learnings) {
-            UserLearningDTO<Object> dto = new UserLearningDTO<>();
-            copyProperties(learning, dto);
+            UserLearningDTO<Object> dto = userLearningConverter.toDTO(learning);
             dto.setObject(roadmapMap.get(learning.getObjectId()));
             result.add(dto);
         }
         return result;
-    }
-
-    /**
-     * 复制属性
-     */
-    private <T> void copyProperties(UserLearningDO source, UserLearningDTO<T> target) {
-        target.setId(source.getId());
-        target.setUserId(source.getUserId());
-        target.setObjectType(source.getObjectType());
-        target.setObjectId(source.getObjectId());
-        target.setProgressPercent(source.getProgressPercent());
-        target.setState(source.getState());  // 调用 DO 的 getState() 方法
-        target.setStartedAt(source.getStartedAt());
-        target.setCompletedAt(source.getCompletedAt());
-        target.setCreatedAt(source.getCreatedAt());
-        target.setUpdatedAt(source.getUpdatedAt());
     }
 }

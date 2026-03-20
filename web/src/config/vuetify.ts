@@ -22,8 +22,8 @@ const lightTheme: ThemeDefinition = {
     'on-surface-variant': '#666666',
     'on-background': '#1A1A1B',
     'on-primary': '#FFFFFF',
-    border: '#EDEFF1',
-    outline: '#E5E5E5', // 添加 outline 颜色
+    border: '#EcEcEc', // 卡片边框颜色，默认 #EDEFF1
+    outline: '#EcEcEc', // 边框颜色，默认 #E5E5E5
   },
 }
 

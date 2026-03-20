@@ -161,20 +161,21 @@ const { execute: deleteProgress } = useMutation(
 const courses = computed(() => {
   if (!userCourses.value) return []
 
-  return userCourses.value.map((userCourse) => {
-    const course = userCourse.course
+  return userCourses.value.map((userLearning: any) => {
+    // 后端返回的是 UserLearningDTO，关联对象在 object 字段
+    const course = userLearning.object
     // 后端返回的是万分位（0-10000），转换为百分比（0-100）
-    const progress = userCourse.progressPercent ? userCourse.progressPercent / 100 : 0
+    const progress = userLearning.progressPercent ? userLearning.progressPercent / 100 : 0
     // 后端返回的 state：1=进行中, 2=已完成
-    const state = userCourse.state || UserProgressState.IN_PROGRESS
+    const state = userLearning.state || UserProgressState.IN_PROGRESS
     const isCompleted = state === UserProgressState.COMPLETED
 
     const title = course?.name || '未知课程'
-    const totalLessons = 50
+    const totalLessons = course?.nodeCount || 0
     const completedLessons = Math.round((totalLessons * progress) / 100)
 
     return {
-      id: userCourse.id,
+      id: userLearning.id,
       courseId: course?.id || 0,
       title,
       progress,

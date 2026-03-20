@@ -52,10 +52,7 @@ public class BookmarkDataService {
     /**
      * 分页查询用户收藏（使用 lastId）
      */
-    public List<BookmarkDO> listByUserAndLastId(long userId, int objectType, long lastId, int limit) {
-        if (lastId == 0) {
-            lastId = Long.MAX_VALUE;
-        }
+    public List<BookmarkDO> listByUserAndLastId(long userId, int objectType, Long lastId, int limit) {
         return bookmarkMapper.listByUserAndLastId(userId, objectType, lastId, limit);
     }
 

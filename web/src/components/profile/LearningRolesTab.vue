@@ -160,23 +160,24 @@ const { execute: deleteProgress } = useMutation(
 const roles = computed(() => {
   if (!roadmaps.value) return []
 
-  return roadmaps.value.map((userRoadmap) => {
-    const roadmap = userRoadmap.roadmap
+  return roadmaps.value.map((userLearning: any) => {
+    // 后端返回的是 UserLearningDTO，关联对象在 object 字段
+    const roadmap = userLearning.object
     // 后端返回的是万分位（0-10000），转换为百分比（0-100）
-    const progress = userRoadmap.progressPercent ? userRoadmap.progressPercent / 100 : 0
+    const progress = userLearning.progressPercent ? userLearning.progressPercent / 100 : 0
     // 后端返回的 state：1=进行中, 2=已完成
-    const state = userRoadmap.state || UserProgressState.IN_PROGRESS
+    const state = userLearning.state || UserProgressState.IN_PROGRESS
     const isCompleted = state === UserProgressState.COMPLETED
 
-    const title = roadmap?.profession?.name || '未知职业'
+    const title = roadmap?.professionName || '未知职业'
 
     return {
-      id: userRoadmap.id,
+      id: userLearning.id,
       roleId: roadmap?.id || 0,
       title,
       progress,
       totalCourses: roadmap?.nodeCount || 0,
-      icon: roadmap?.profession?.icon || 'mdi-briefcase-variant',
+      icon: roadmap?.professionIcon || 'mdi-briefcase-variant',
       iconColor: getColorByString(title),
       status: isCompleted ? 'completed' : 'learning',
     }

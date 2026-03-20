@@ -22,7 +22,6 @@
           :key="user.id"
           rounded="lg"
           border
-          hover
           class="user-card"
         >
           <v-card-text class="pa-3 position-relative">
@@ -34,23 +33,21 @@
               class="close-btn"
               @click.stop="unfollow(user.id)"
             />
-            <div class="d-flex align-center ga-2">
+            <div class="d-flex align-start ga-3">
               <UserAvatar
                 :name="user.name"
                 :avatar-url="user.avatar"
-                :size="36"
+                :size="41"
                 rounded="lg"
                 class="flex-shrink-0"
               />
               <div class="flex-grow-1" style="min-width: 0">
-                <div class="text-body-2 font-weight-bold text-truncate">
+                <div class="text-body-2 font-weight-medium text-truncate mb-1">
                   {{ user.name }}
                 </div>
-                <div class="text-caption text-medium-emphasis text-truncate">
-                  {{ user.bio }}
-                </div>
-                <div v-if="user.followedAt" class="text-caption text-grey text-truncate">
-                  {{ formatRelativeTime(user.followedAt) }}关注
+                <div class="d-flex align-center justify-space-between">
+                  <span class="text-caption text-medium-emphasis text-truncate" style="flex: 1; min-width: 0">{{ user.bio }}</span>
+                  <span v-if="user.followedAt" class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(user.followedAt) }}</span>
                 </div>
               </div>
             </div>
@@ -167,11 +164,6 @@ const confirmUnfollow = async () => {
   background-color: rgb(var(--v-theme-surface));
 }
 
-.user-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
 .close-btn {
   position: absolute;
   top: 4px;
@@ -181,25 +173,19 @@ const confirmUnfollow = async () => {
 /* 基于容器宽度的响应式网格 */
 .user-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
 @container (max-width: 1200px) {
   .user-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-@container (max-width: 900px) {
-  .user-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @container (max-width: 600px) {
   .user-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 

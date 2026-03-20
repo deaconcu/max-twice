@@ -37,7 +37,7 @@ public class BookmarksController {
     @SaCheckLogin
     public ApiResponse<List<BookmarkDO>> getUserBookmarks(
             @PathVariable String contentType,
-            @RequestParam(defaultValue = "0") long lastId,
+            @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "20") int limit,
             @CurrentUser UserDO currentUser) {
 

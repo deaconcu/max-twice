@@ -272,7 +272,7 @@ watch(activeTab, (newTab) => {
       <!-- 主内容区：左侧导航 + 右侧内容 -->
       <v-row>
         <!-- 左侧垂直导航 - 大屏显示 -->
-        <v-col cols="12" md="2" lg="2" class="d-none d-md-block pr-10">
+        <v-col cols="12" md="2" lg="2" class="d-none d-md-block pr-16">
           <div class="side-nav">
             <!-- 学习分组 -->
             <div class="nav-group-title">学习</div>

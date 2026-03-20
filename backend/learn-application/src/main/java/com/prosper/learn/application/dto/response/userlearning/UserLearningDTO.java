@@ -1,7 +1,6 @@
 package com.prosper.learn.application.dto.response.userlearning;
 
 import lombok.Data;
-import java.time.LocalDateTime;
 
 /**
  * 用户学习记录响应 DTO（带关联对象）
@@ -43,22 +42,22 @@ public class UserLearningDTO<T> {
     /**
      * 开始学习时间
      */
-    private LocalDateTime startedAt;
+    private String startedAt;
 
     /**
      * 完成时间
      */
-    private LocalDateTime completedAt;
+    private String completedAt;
 
     /**
      * 记录创建时间
      */
-    private LocalDateTime createdAt;
+    private String createdAt;
 
     /**
      * 记录更新时间
      */
-    private LocalDateTime updatedAt;
+    private String updatedAt;
 
     /**
      * 关联对象（根据 objectType 决定具体类型）
