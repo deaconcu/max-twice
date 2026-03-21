@@ -129,10 +129,10 @@ function goToDetail(item: Bookmark) {
       router.push(`/profession/${item.objectId}`)
       break
     case 'roadmap':
-      router.push(`/role/${item.objectId}`)
+      router.push(`/roadmap/${item.objectId}`)
       break
     case 'course':
-      router.push(`/course/${item.objectId}`)
+      router.push(`/read?courseId=${item.objectId}`)
       break
     case 'post':
       router.push(`/post/${item.objectId}`)

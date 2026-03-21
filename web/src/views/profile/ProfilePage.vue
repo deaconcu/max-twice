@@ -14,6 +14,7 @@ import { userApi, statsApi } from '@/api'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import ActivityHeatmap from '@/components/profile/ActivityHeatmap.vue'
 import UserInfoTab from '@/components/profile/UserInfoTab.vue'
 import OverviewTab from '@/components/profile/OverviewTab.vue'
 import LearningRolesTab from '@/components/profile/LearningRolesTab.vue'
@@ -252,56 +253,9 @@ const handleNavigate = (tab: string, mode: string) => {
               </div>
             </div>
 
-            <!-- 右侧：统计信息 -->
-            <div class="profile-stats">
-              <!-- 学习统计 -->
-              <div class="stats-group">
-                <div class="stats-label">学习</div>
-                <div class="stats-items">
-                  <div class="text-center">
-                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.totalRoles }}</div>
-                    <div class="text-caption text-grey">学习职业</div>
-                  </div>
-                  <div class="text-center">
-                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.totalCourses }}</div>
-                    <div class="text-caption text-grey">学习课程</div>
-                  </div>
-                  <div class="text-center">
-                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.studyDays }}</div>
-                    <div class="text-caption text-grey">连续学习</div>
-                  </div>
-                  <div class="text-center">
-                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.reviewDays }}</div>
-                    <div class="text-caption text-grey">连续复习</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 分隔符 - 学习和创作之间 -->
-              <v-divider vertical class="stats-divider" />
-
-              <!-- 创作统计 -->
-              <div class="stats-group">
-                <div class="stats-label">创作</div>
-                <div class="stats-items">
-                  <div class="text-center">
-                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ creatorStats.articles }}</div>
-                    <div class="text-caption text-grey">文章</div>
-                  </div>
-                  <div class="text-center">
-                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ creatorStats.catalogs }}</div>
-                    <div class="text-caption text-grey">目录</div>
-                  </div>
-                  <div class="text-center">
-                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ creatorStats.roadmaps }}</div>
-                    <div class="text-caption text-grey">路线图</div>
-                  </div>
-                  <div class="text-center">
-                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ creatorStats.decks }}</div>
-                    <div class="text-caption text-grey">卡片组</div>
-                  </div>
-                </div>
-              </div>
+            <!-- 右侧：热力图 -->
+            <div class="profile-heatmap d-none d-lg-block">
+              <ActivityHeatmap :months="12" />
             </div>
           </div>
         </v-card-text>
@@ -560,100 +514,8 @@ const handleNavigate = (tab: string, mode: string) => {
 }
 
 /* 统计区域 */
-.profile-stats {
-  display: flex;
-  align-items: center;
-  gap: 24px;
+.profile-heatmap {
   flex-shrink: 0;
-}
-
-.stats-group {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-}
-
-.stats-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: rgb(var(--v-theme-on-surface-variant));
-}
-
-.stats-items {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-}
-
-.stats-divider {
-  height: 40px;
-  align-self: center;
-}
-
-/* 中屏：上下布局，但统计区域保持一行 */
-@media (max-width: 1264px) {
-  .profile-header-content {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .profile-stats {
-    justify-content: center;
-  }
-
-  .stats-group {
-    gap: 16px;
-  }
-
-  .stats-items {
-    gap: 16px;
-  }
-}
-
-/* 更小屏：统计区域改为纯文字紧凑布局 */
-@media (max-width: 900px) {
-  .profile-stats {
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-  }
-
-  .stats-divider {
-    display: none;
-  }
-
-  .stats-group {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .stats-label {
-    font-size: 0.75rem;
-  }
-
-  .stats-items {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .stats-items .text-center {
-    display: flex;
-    flex-direction: row-reverse;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .stats-items .text-h6 {
-    font-size: 0.875rem !important;
-    font-weight: 600 !important;
-  }
-
-  .stats-items .text-caption {
-    font-size: 0.75rem !important;
-  }
 }
 
 /* 小屏：头像和信息上下排列 */
@@ -665,14 +527,6 @@ const handleNavigate = (tab: string, mode: string) => {
 
   .user-details {
     text-align: left;
-  }
-
-  .stats-group {
-    gap: 12px;
-  }
-
-  .stats-items {
-    gap: 12px;
   }
 }
 
