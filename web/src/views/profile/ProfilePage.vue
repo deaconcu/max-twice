@@ -15,6 +15,7 @@ import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import UserInfoTab from '@/components/profile/UserInfoTab.vue'
+import OverviewTab from '@/components/profile/OverviewTab.vue'
 import LearningRolesTab from '@/components/profile/LearningRolesTab.vue'
 import LearningCoursesTab from '@/components/profile/LearningCoursesTab.vue'
 import CreatorStatsTab from '@/components/profile/CreatorStatsTab.vue'
@@ -38,8 +39,8 @@ const userStore = useUserStore()
 // 模式选择：learner 或 creator
 const currentMode = ref((route.query.mode as string) || 'learner')
 
-// Tab 选择 - 支持路由参数，没有则让 v-tabs 使用默认值（第一个）
-const activeTab = ref((route.query.tab as string) || '')
+// Tab 选择 - 默认为 overview
+const activeTab = ref((route.query.tab as string) || 'overview')
 
 // Tab 数据刷新时间记录（用于智能刷新）
 const tabRefreshKey = ref(0)
@@ -184,6 +185,12 @@ watch(activeTab, (newTab) => {
     router.push({ query: { mode: currentMode.value, tab: newTab } })
   }
 })
+
+// 处理从 OverviewTab 导航
+const handleNavigate = (tab: string, mode: string) => {
+  activeTab.value = tab
+  currentMode.value = mode
+}
 </script>
 
 <template>
@@ -305,8 +312,18 @@ watch(activeTab, (newTab) => {
         <!-- 左侧垂直导航 - 大屏显示 -->
         <v-col cols="12" md="2" lg="2" class="d-none d-md-block pr-16">
           <div class="side-nav">
+            <!-- 概览 -->
+            <div
+              class="nav-item"
+              :class="{ 'nav-item-active': activeTab === 'overview' }"
+              @click="activeTab = 'overview'; currentMode = 'learner'"
+            >
+              <v-icon icon="mdi-view-dashboard-outline" size="18" class="mr-2" />
+              概览
+            </div>
+
             <!-- 学习分组 -->
-            <div class="nav-group-title">学习</div>
+            <div class="nav-group-title mt-4">学习</div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'roles' }"
@@ -394,8 +411,18 @@ watch(activeTab, (newTab) => {
           <!-- 一级分类按钮 -->
           <div class="d-flex align-center mb-3 ga-2">
             <v-btn
-              :color="currentMode === 'learner' ? 'primary' : undefined"
-              :variant="currentMode === 'learner' ? 'flat' : 'text'"
+              :color="activeTab === 'overview' ? 'primary' : undefined"
+              :variant="activeTab === 'overview' ? 'flat' : 'text'"
+              rounded="lg"
+              size="small"
+              class="primary-mode-btn"
+              @click="activeTab = 'overview'; currentMode = 'learner'"
+            >
+              概览
+            </v-btn>
+            <v-btn
+              :color="currentMode === 'learner' && activeTab !== 'overview' ? 'primary' : undefined"
+              :variant="currentMode === 'learner' && activeTab !== 'overview' ? 'flat' : 'text'"
               rounded="lg"
               size="small"
               class="primary-mode-btn"
@@ -460,8 +487,16 @@ watch(activeTab, (newTab) => {
 
         <!-- 右侧内容区 -->
         <v-col cols="12" md="10" lg="10">
+          <!-- 概览页 -->
+          <OverviewTab
+            v-if="activeTab === 'overview'"
+            :user-stats="userStats"
+            :is-own-profile="isOwnProfile"
+            @navigate="handleNavigate"
+          />
+
           <!-- 学习模式的内容 -->
-          <template v-if="currentMode === 'learner'">
+          <template v-else-if="currentMode === 'learner'">
             <LearningRolesTab v-if="activeTab === 'roles'" />
             <LearningCoursesTab v-else-if="activeTab === 'courses-learning'" />
             <BookmarksTab v-else-if="activeTab === 'bookmarks' && isOwnProfile" />
