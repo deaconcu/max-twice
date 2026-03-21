@@ -102,10 +102,10 @@ export interface UserDailyStatsDTO {
  */
 export interface UserStatsWithDailyDTO {
   userId: number
-  views: number // 总浏览量（累计）
-  twices: number // 总"两次能懂"点赞数（累计）
-  likes: number // 总"有用"点赞数（累计）
-  comments: number // 总评论数（累计）
+  viewCount: number // 总浏览量（累计）
+  twiceCount: number // 总"两次能懂"点赞数（累计）
+  likeCount: number // 总"有用"点赞数（累计）
+  commentCount: number // 总评论数（累计）
   dailyStats: DailyStatsDTO[] // 每日明细列表
 }
 
@@ -115,8 +115,31 @@ export interface UserStatsWithDailyDTO {
  */
 export interface UserStatsDTO {
   userId: number
-  views: number // 总浏览量
-  twices: number // 总"两次能懂"点赞数
-  likes: number // 总"有用"点赞数
-  comments: number // 总评论数
+  viewCount: number // 总浏览量
+  twiceCount: number // 总"两次能懂"点赞数
+  likeCount: number // 总"有用"点赞数
+  commentCount: number // 总评论数
+
+  // 学习进度统计
+  learningCourseCount: number // 正在学习的课程数
+  completedCourseCount: number // 已完成的课程数
+  inProgressProfessionCount: number // 正在学习的职业数
+  completedProfessionCount: number // 已完成的职业数
+
+  // 社交关系统计
+  followingUserCount: number // 关注的用户数
+  followingCourseCount: number // 关注的课程数
+  followingProfessionCount: number // 关注的职业数
+
+  // 创作内容统计
+  createdArticleCount: number // 创建的文章数
+  createdIndexCount: number // 创建的目录数
+  createdRoadmapCount: number // 创建的路线图数
+  createdCardDeckCount: number // 创建的卡片组数
+
+  // 连续天数统计
+  learningStreakDays: number // 连续学习天数
+  reviewStreakDays: number // 连续复习天数
+
+  updatedAt: string
 }

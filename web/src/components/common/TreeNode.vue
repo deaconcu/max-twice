@@ -253,7 +253,7 @@ const scrollToTop = (): void => {
 }
 
 .tree-node-text {
-  font-size: 15px;
+  font-size: 14px;
   color: #1a1a1b;
   flex: 1;
   margin-left: 4px;

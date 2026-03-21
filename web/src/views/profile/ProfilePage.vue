@@ -10,7 +10,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/modules/auth'
 import { useUserStore } from '@/stores/modules/user'
 import { useFetch } from '@/composables/useFetch'
-import { userApi } from '@/api'
+import { userApi, statsApi } from '@/api'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
@@ -49,7 +49,7 @@ const isOwnProfile = computed(() => {
   return props.id === 'me' || (userStore.currentUser && props.id === userStore.currentUser.name)
 })
 
-// 根据ID获取用户信息
+// 根据ID获取用户信息（如果是自己且 store 有值，则不调用接口）
 const {
   data: profileUser,
   loading: userLoading,
@@ -59,12 +59,17 @@ const {
     if (props.id === 'me') {
       return userApi.getCurrentUser()
     } else {
-      // 假设props.id是用户名，使用现有的getUser方法
       return userApi.getUser(props.id)
     }
   },
-  immediate: true,
+  immediate: false,
+  defaultValue: isOwnProfile.value && userStore.currentUser ? userStore.currentUser : null,
 })
+
+// 只有在需要时才调用接口
+if (!isOwnProfile.value || !userStore.currentUser) {
+  fetchUser()
+}
 
 // KeepAlive: 从其他页面返回时触发
 onActivated(() => {
@@ -113,26 +118,52 @@ const handleUpdateAvatar = (avatarUrl: string) => {
   userStore.updateUser({ avatar: avatarUrl })
 }
 
-// 统计数据（暂时用默认值，各个Tab自己加载数据）
-const stats = ref({
-  totalCourses: 0,
-  completedCourses: 0,
-  totalRoles: 0,
-  studyDays: 0,
-  studyHours: 0,
-  followers: 0,
-  following: 0,
-  articles: 0,
-  roadmaps: 0,
+// 获取当前页面对应的用户ID（优先从 userStore 取，避免等待接口）
+const currentUserId = computed(() => {
+  if (isOwnProfile.value && userStore.currentUser?.id) {
+    return userStore.currentUser.id
+  }
+  return profileUser.value?.id ?? null
 })
 
-// 创作者统计数据
-const creatorStats = ref({
-  articles: 0,
-  catalogs: 0,
-  roadmaps: 0,
-  decks: 0,
+// 获取用户统计数据
+const { data: userStats, execute: fetchUserStats } = useFetch({
+  fetchFn: () => {
+    const userId = currentUserId.value
+    if (!userId) return Promise.resolve(null)
+    return statsApi.getUserAllTimeStats(userId)
+  },
+  immediate: false,
+  defaultValue: null,
 })
+
+// 监听用户ID变化，加载统计数据
+watch(
+  currentUserId,
+  (userId) => {
+    if (userId) {
+      fetchUserStats()
+    }
+  },
+  { immediate: true }
+)
+
+// 学习统计数据（从 userStats 计算）
+const stats = computed(() => ({
+  totalCourses: (userStats.value?.learningCourseCount || 0) + (userStats.value?.completedCourseCount || 0),
+  totalRoles: (userStats.value?.inProgressProfessionCount || 0) + (userStats.value?.completedProfessionCount || 0),
+  studyDays: userStats.value?.learningStreakDays || 0,
+  reviewDays: userStats.value?.reviewStreakDays || 0,
+  following: userStats.value?.followingUserCount || 0,
+}))
+
+// 创作者统计数据（从 userStats 计算）
+const creatorStats = computed(() => ({
+  articles: userStats.value?.createdArticleCount || 0,
+  catalogs: userStats.value?.createdIndexCount || 0,
+  roadmaps: userStats.value?.createdRoadmapCount || 0,
+  decks: userStats.value?.createdCardDeckCount || 0,
+}))
 
 // 监听路由变化
 watch(
@@ -221,20 +252,20 @@ watch(activeTab, (newTab) => {
                 <div class="stats-label">学习</div>
                 <div class="stats-items">
                   <div class="text-center">
+                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.totalRoles }}</div>
+                    <div class="text-caption text-grey">学习职业</div>
+                  </div>
+                  <div class="text-center">
                     <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.totalCourses }}</div>
                     <div class="text-caption text-grey">学习课程</div>
                   </div>
                   <div class="text-center">
-                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.completedCourses }}</div>
-                    <div class="text-caption text-grey">完成课程</div>
-                  </div>
-                  <div class="text-center">
-                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.totalRoles }}</div>
-                    <div class="text-caption text-grey">关注职业</div>
-                  </div>
-                  <div class="text-center">
                     <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.studyDays }}</div>
-                    <div class="text-caption text-grey">学习天数</div>
+                    <div class="text-caption text-grey">连续学习</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-h6 font-weight-bold text-grey-darken-1">{{ stats.reviewDays }}</div>
+                    <div class="text-caption text-grey">连续复习</div>
                   </div>
                 </div>
               </div>
@@ -281,7 +312,7 @@ watch(activeTab, (newTab) => {
               :class="{ 'nav-item-active': activeTab === 'roles' }"
               @click="activeTab = 'roles'; currentMode = 'learner'"
             >
-              学习的职业
+              学习的职业路线
             </div>
             <div
               class="nav-item"

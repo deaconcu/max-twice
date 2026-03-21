@@ -62,10 +62,15 @@ export const progressApi = {
 
   /**
    * 获取所有课程进度
+   * @param state 状态过滤（'learning'=进行中, 'completed'=已完成，不传=全部）
+   * @param lastId 分页游标
    */
-  getAllCourseProgress(lastId?: number): Promise<ApiResponse<UserLearning[]>> {
+  getAllCourseProgress(
+    state?: 'learning' | 'completed',
+    lastId?: number
+  ): Promise<ApiResponse<UserLearning[]>> {
     return apiClient.get('/v1/progress/courses', {
-      params: { lastId },
+      params: { state, lastId },
     })
   },
 
@@ -116,9 +121,16 @@ export const progressApi = {
 
   /**
    * 获取用户的路线图列表
+   * @param state 状态过滤（'learning'=进行中, 'completed'=已完成，不传=全部）
+   * @param lastId 分页游标
    */
-  getUserRoadmaps(): Promise<ApiResponse<UserLearning[]>> {
-    return apiClient.get('/v1/progress/roadmaps')
+  getUserRoadmaps(
+    state?: 'learning' | 'completed',
+    lastId?: number
+  ): Promise<ApiResponse<UserLearning[]>> {
+    return apiClient.get('/v1/progress/roadmaps', {
+      params: { state, lastId },
+    })
   },
 
   /**

@@ -3,6 +3,7 @@ package com.prosper.learn.web.v1.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.service.PlatformStatsService;
 import com.prosper.learn.application.service.StatsService;
+import com.prosper.learn.application.service.UserStatsService;
 import com.prosper.learn.analytics.stats.service.RedisStatsDomainService;
 import com.prosper.learn.analytics.stats.service.UserStatsDomainService;
 import com.prosper.learn.analytics.stats.scheduler.StatsSyncScheduler;
@@ -43,6 +44,7 @@ public class StatsController {
     private final UserStatsDomainService userStatsDomainService;
     private final RedisStatsDomainService redisStatsDomainService;
     private final StatsService statsService;
+    private final UserStatsService userStatsService;
     private final StatsSyncScheduler statsSyncScheduler;
     private final PlatformStatsService platformStatsService;
     private final com.prosper.learn.shared.infrastructure.config.SystemProperties systemProperties;
@@ -104,7 +106,7 @@ public class StatsController {
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
             Long userId) {
-        UserStatsDTO stats = userStatsDomainService.getUserAllTimeStats(userId);
+        UserStatsDTO stats = userStatsService.getUserAllTimeStats(userId);
         return ApiResponse.success(stats);
     }
 

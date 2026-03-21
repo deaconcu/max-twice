@@ -123,8 +123,13 @@ public class UserLearningDataService {
     /**
      * 查询用户学习的所有课程（通过 course 表 JOIN）
      * 返回 objectType=node 且是课程根节点的学习记录
+     *
+     * @param userId 用户ID
+     * @param state 状态过滤（null=全部, 1=进行中, 2=已完成）
+     * @param lastId 分页游标（null=第一页）
+     * @param limit 每页数量
      */
-    public List<UserLearningDO> getCoursesByUser(long userId, Long lastId, int limit) {
-        return mapper.getCoursesByUser(userId, lastId, limit);
+    public List<UserLearningDO> getCoursesByUser(long userId, Byte state, Long lastId, int limit) {
+        return mapper.getCoursesByUser(userId, state, lastId, limit);
     }
 }

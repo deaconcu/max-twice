@@ -78,7 +78,7 @@ const recentRoles = computed(() => {
     const name = roadmap?.professionName ?? '未知职业'
     return {
       id: item.id,
-      roleId: item.objectId,
+      roadmapId: item.objectId,
       name,
       progress: Math.round(item.progressPercent / 100),
       icon: roadmap?.professionIcon ?? 'mdi-briefcase-variant',
@@ -184,6 +184,10 @@ const openCourse = (courseId: number): void => {
 
 const openRole = (roleId: number): void => {
   router.push(`/role/${String(roleId)}`)
+}
+
+const openRoadmap = (roadmapId: number): void => {
+  router.push(`/roadmap/${String(roadmapId)}`)
 }
 
 // 暴露 homeLoading 供模板使用（可选，用于显示加载状态）
@@ -549,7 +553,7 @@ void homeLoading
       <v-row>
         <!-- 有数据时显示真实卡片 -->
         <v-col v-for="role in displayRoles" :key="role.id" cols="12" sm="6" md="4" lg="3">
-          <v-card rounded="lg" border hover class="h-100" @click="openRole(role.roleId)">
+          <v-card rounded="lg" border hover class="h-100" @click="openRoadmap(role.roadmapId)">
             <v-card-text class="pa-4">
               <div class="d-flex align-center ga-3 mb-3">
                 <div class="icon-container flex-shrink-0">

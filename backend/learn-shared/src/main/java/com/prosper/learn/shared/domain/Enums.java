@@ -526,6 +526,22 @@ public class Enums {
         public static boolean isValid(int value) {
             return ValueEnum.isValid(UserProgressState.class, (byte)value);
         }
+
+        /**
+         * 根据字符串名称解析状态
+         * @param name 状态名称（learning/completed，不区分大小写）
+         * @return 对应的状态枚举，无效值返回 null
+         */
+        public static UserProgressState fromName(String name) {
+            if (name == null || name.isEmpty()) {
+                return null;
+            }
+            return switch (name.toLowerCase()) {
+                case "learning" -> IN_PROGRESS;
+                case "completed" -> COMPLETED;
+                default -> null;
+            };
+        }
     }
 
     /**

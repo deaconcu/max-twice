@@ -216,10 +216,15 @@ public class UserLearningDomainService {
     /**
      * 查询用户学习的所有课程（objectType=node 且是课程根节点）
      * 通过 course 表 JOIN 过滤出课程
+     *
+     * @param userId 用户ID
+     * @param state 状态过滤（null=全部, 1=进行中, 2=已完成）
+     * @param lastId 分页游标（null=第一页）
+     * @param limit 每页数量
      */
-    public List<UserLearningDO> getCoursesByUser(Long userId, Long lastId, int limit) {
+    public List<UserLearningDO> getCoursesByUser(Long userId, Byte state, Long lastId, int limit) {
         ValidationUtils.requirePositiveId(userId);
-        return userLearningDataService.getCoursesByUser(userId, lastId, limit);
+        return userLearningDataService.getCoursesByUser(userId, state, lastId, limit);
     }
 
     /**

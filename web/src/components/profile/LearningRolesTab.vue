@@ -32,16 +32,16 @@
       <LoadingSpinner v-if="loading" />
 
       <!-- 职业列表 -->
-      <div v-else-if="filteredRoles.length > 0">
+      <div v-else-if="roles.length > 0">
         <div class="role-grid">
           <v-card
-            v-for="role in filteredRoles"
+            v-for="role in roles"
             :key="role.id"
             rounded="lg"
             border
             hover
             class="role-card"
-            @click="goToRole(role.roleId)"
+            @click="goToRoadmap(role.roadmapId)"
           >
             <v-card-text class="pa-4 position-relative">
               <v-btn
@@ -114,12 +114,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
 import { progressApi } from '@/api'
-import { UserProgressState } from '@/enums'
 import { getColorByString } from '@/utils/color'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -128,7 +127,7 @@ import DynamicIcon from '@/components/common/DynamicIcon.vue'
 const router = useRouter()
 
 // Tab 状态
-const statusTab = ref('learning')
+const statusTab = ref<'learning' | 'completed'>('learning')
 
 // 删除确认对话框
 const showDeleteDialog = ref(false)
@@ -140,9 +139,14 @@ const {
   loading,
   execute: fetchRoadmaps,
 } = useFetch({
-  fetchFn: progressApi.getUserRoadmaps,
+  fetchFn: () => progressApi.getUserRoadmaps(statusTab.value),
   immediate: true,
   defaultValue: [],
+})
+
+// 监听 Tab 切换，重新加载数据
+watch(statusTab, () => {
+  fetchRoadmaps()
 })
 
 // 取消学习路线图
@@ -165,33 +169,24 @@ const roles = computed(() => {
     const roadmap = userLearning.object
     // 后端返回的是万分位（0-10000），转换为百分比（0-100）
     const progress = userLearning.progressPercent ? userLearning.progressPercent / 100 : 0
-    // 后端返回的 state：1=进行中, 2=已完成
-    const state = userLearning.state || UserProgressState.IN_PROGRESS
-    const isCompleted = state === UserProgressState.COMPLETED
 
     const title = roadmap?.professionName || '未知职业'
 
     return {
       id: userLearning.id,
-      roleId: roadmap?.id || 0,
+      roadmapId: userLearning.objectId,
       title,
       progress,
       totalCourses: roadmap?.nodeCount || 0,
       icon: roadmap?.professionIcon || 'mdi-briefcase-variant',
       iconColor: getColorByString(title),
-      status: isCompleted ? 'completed' : 'learning',
     }
   })
 })
 
-// 根据状态过滤职业列表
-const filteredRoles = computed(() => {
-  return roles.value.filter((role) => role.status === statusTab.value)
-})
-
-// 跳转到职业详情
-const goToRole = (roleId: number) => {
-  router.push(`/role/${roleId}`)
+// 跳转到职业路线详情
+const goToRoadmap = (roadmapId: number) => {
+  router.push(`/roadmap/${roadmapId}`)
 }
 
 // 取消学习职业

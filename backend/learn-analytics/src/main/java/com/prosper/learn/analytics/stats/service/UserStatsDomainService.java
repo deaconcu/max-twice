@@ -52,9 +52,8 @@ public class UserStatsDomainService {
     /**
      * 获取用户统计数据
      */
-    public UserStatsDTO getUserStats(Long userId) {
-        UserStatsDO stats = userStatsDataService.getOrCreate(userId);
-        return convertToDTO(stats);
+    public UserStatsDO getUserStats(Long userId) {
+        return userStatsDataService.getOrCreate(userId);
     }
 
     /**
@@ -274,21 +273,15 @@ public class UserStatsDomainService {
     /**
      * 批量获取用户统计（排行榜用）
      */
-    public Map<Long, UserStatsDTO> batchGetUserStats(List<Long> userIds) {
-        Map<Long, UserStatsDO> statsMap = userStatsDataService.batchGetByUserIds(userIds);
-
-        return statsMap.entrySet().stream()
-                .collect(java.util.stream.Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> convertToDTO(entry.getValue())
-                ));
+    public Map<Long, UserStatsDO> batchGetUserStats(List<Long> userIds) {
+        return userStatsDataService.batchGetByUserIds(userIds);
     }
 
     /**
      * 获取排行榜 Top N 用户
      */
-    public List<UserStatsDTO> getTopUsersByField(String field, int limit) {
-        List<UserStatsDO> topUsers = switch (field) {
+    public List<UserStatsDO> getTopUsersByField(String field, int limit) {
+        return switch (field) {
             case "views" -> userStatsDataService.getTopUsersByViews(limit);
             case "twices" -> userStatsDataService.getTopUsersByTwices(limit);
             case "likes" -> userStatsDataService.getTopUsersByLikes(limit);
@@ -299,40 +292,6 @@ public class UserStatsDomainService {
             case "created_card_decks" -> userStatsDataService.getTopUsersByCreatedCardDecks(limit);
             default -> throw new IllegalArgumentException("不支持的排序字段: " + field);
         };
-        return topUsers.stream()
-                .map(this::convertToDTO)
-                .collect(java.util.stream.Collectors.toList());
-    }
-
-    // ==================== 私有辅助方法 ====================
-
-    /**
-     * 转换为DTO
-     */
-    private UserStatsDTO convertToDTO(UserStatsDO statsDO) {
-        if (statsDO == null) {
-            return UserStatsDTO.empty();
-        }
-
-        return UserStatsDTO.builder()
-                .userId(statsDO.getUserId())
-                .viewCount(statsDO.getViewCount())
-                .twiceCount(statsDO.getTwiceCount())
-                .likeCount(statsDO.getLikeCount())
-                .commentCount(statsDO.getCommentCount())
-                .learningCourseCount(statsDO.getLearningCourseCount())
-                .completedCourseCount(statsDO.getCompletedCourseCount())
-                .inProgressProfessionCount(statsDO.getInProgressProfessionCount())
-                .completedProfessionCount(statsDO.getCompletedProfessionCount())
-                .followingUserCount(statsDO.getFollowingUserCount())
-                .followingCourseCount(statsDO.getFollowingCourseCount())
-                .followingProfessionCount(statsDO.getFollowingProfessionCount())
-                .createdArticleCount(statsDO.getCreatedArticleCount())
-                .createdIndexCount(statsDO.getCreatedIndexCount())
-                .createdRoadmapCount(statsDO.getCreatedRoadmapCount())
-                .createdCardDeckCount(statsDO.getCreatedCardDeckCount())
-                .lastUpdated(statsDO.getUpdatedAt())
-                .build();
     }
 
     // ==================== 事件监听：用户维度统计更新 ====================
@@ -524,44 +483,29 @@ public class UserStatsDomainService {
     }
 
     /**
-     * 获取用户全部时间统计（历史数据 + 今日实时数据）
+     * 获取用户全部时间统计（累计数据 + 今日实时数据）
      *
      * @param userId 用户ID
-     * @return 全部时间的统计数据
+     * @return 全部时间的统计数据（DO对象，合并了今日实时数据）
      */
-    @Cacheable(value = "allTimeStats",
-               key = "'user:' + #userId + ':' + T(java.time.LocalDate).now().minusDays(1).toString()",
-               unless = "#result == null")
-    public UserStatsDTO getUserAllTimeStats(long userId) {
-        try {
-            // 1. 获取昨天以前的所有历史数据
-            UserStatsDTO historicalStats = getUserHistoricalStats(userId);
+    public UserStatsDO getUserAllTimeStats(long userId) {
+        // 1. 从 user_stats 表获取累计数据
+        UserStatsDO statsDO = userStatsDataService.getOrCreate(userId);
 
-            // 2. 获取今天的实时数据
-            UserDailyStatsDTO todayStats = redisStatsDomainService.getUserTodayStats(userId);
+        // 2. 获取今天的实时数据
+        UserDailyStatsDTO todayStats = redisStatsDomainService.getUserTodayStats(userId);
 
-            // 3. 合并数据
-            int totalViews = (historicalStats.getViewCount() != null ? historicalStats.getViewCount() : 0) +
-                            (todayStats.getViewCount() != null ? todayStats.getViewCount() : 0);
-            int totalTwices = (historicalStats.getTwiceCount() != null ? historicalStats.getTwiceCount() : 0) +
-                             (todayStats.getTwiceCount() != null ? todayStats.getTwiceCount() : 0);
-            int totalLikes = (historicalStats.getLikeCount() != null ? historicalStats.getLikeCount() : 0) +
-                            (todayStats.getLikeCount() != null ? todayStats.getLikeCount() : 0);
-            int totalComments = (historicalStats.getCommentCount() != null ? historicalStats.getCommentCount() : 0) +
-                               (todayStats.getCommentCount() != null ? todayStats.getCommentCount() : 0);
+        // 3. 合并今日数据到累计数据
+        statsDO.setViewCount((statsDO.getViewCount() != null ? statsDO.getViewCount() : 0) +
+                           (todayStats.getViewCount() != null ? todayStats.getViewCount() : 0));
+        statsDO.setTwiceCount((statsDO.getTwiceCount() != null ? statsDO.getTwiceCount() : 0) +
+                            (todayStats.getTwiceCount() != null ? todayStats.getTwiceCount() : 0));
+        statsDO.setLikeCount((statsDO.getLikeCount() != null ? statsDO.getLikeCount() : 0) +
+                           (todayStats.getLikeCount() != null ? todayStats.getLikeCount() : 0));
+        statsDO.setCommentCount((statsDO.getCommentCount() != null ? statsDO.getCommentCount() : 0) +
+                              (todayStats.getCommentCount() != null ? todayStats.getCommentCount() : 0));
 
-            return UserStatsDTO.builder()
-                .userId(userId)
-                .viewCount(totalViews)
-                .twiceCount(totalTwices)
-                .likeCount(totalLikes)
-                .commentCount(totalComments)
-                .build();
-
-        } catch (Exception e) {
-            log.error("获取用户{}全部时间统计失败", userId, e);
-            return UserStatsDTO.empty();
-        }
+        return statsDO;
     }
 
     /**

@@ -154,18 +154,24 @@ public class ProgressController {
 
     /**
      * 获取所有课程进度
-     * 映射: GET /user/course/list → GET /api/v1/progress/courses?lastId=123
+     * 映射: GET /user/course/list → GET /api/v1/progress/courses?state=learning&lastId=123
+     *
+     * @param state 状态过滤（learning=进行中, completed=已完成，不传=全部）
+     * @param lastId 分页游标
      */
     @GetMapping("/progress/courses")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<UserLearningDTO<Object>>> getAllCoursesProgress(
+            @RequestParam(required = false) String state,
             @RequestParam(required = false)
             @Min(value = 1, message = "lastId必须大于0")
             Long lastId,
             @CurrentUser UserDO currentUser) {
+        Enums.UserProgressState progressState = Enums.UserProgressState.fromName(state);
+        Byte stateValue = progressState != null ? progressState.value() : null;
         List<UserLearningDTO<Object>> progressList = userLearningService.getAllCoursesProgress(
-            currentUser.getId(), lastId, 20
+            currentUser.getId(), stateValue, lastId, 20
         );
         return ApiResponse.success(progressList);
     }
@@ -280,18 +286,24 @@ public class ProgressController {
 
     /**
      * 获取所有路线图进度
-     * 映射: GET /user/roadmap/list → GET /api/v1/progress/roadmaps
+     * 映射: GET /user/roadmap/list → GET /api/v1/progress/roadmaps?state=learning&lastId=123
+     *
+     * @param state 状态过滤（learning=进行中, completed=已完成，不传=全部）
+     * @param lastId 分页游标
      */
     @GetMapping("/progress/roadmaps")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<UserLearningDTO<Object>>> getAllRoadmapsProgress(
+            @RequestParam(required = false) String state,
             @RequestParam(required = false)
             @Min(value = 1, message = "lastId必须大于0")
             Long lastId,
             @CurrentUser UserDO currentUser) {
+        Enums.UserProgressState progressState = Enums.UserProgressState.fromName(state);
+        Byte stateValue = progressState != null ? progressState.value() : null;
         List<UserLearningDTO<Object>> progressList = userLearningService.getByUserWithObjects(
-            currentUser.getId(), Enums.ContentType.roadmap, null, lastId, 20
+            currentUser.getId(), Enums.ContentType.roadmap, stateValue, lastId, 20
         );
         return ApiResponse.success(progressList);
     }

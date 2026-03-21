@@ -39,10 +39,11 @@ public class UserStatsDTO {
     private Integer createdRoadmapCount;
     private Integer createdCardDeckCount;
 
-    // 汇总信息
-    private Integer totalLearningItemCount;
-    private Integer totalCreatedItemCount;
-    private LocalDateTime lastUpdated;
+    // 连续天数统计
+    private Integer learningStreakDays;     // 连续学习天数
+    private Integer reviewStreakDays;       // 连续复习天数
+
+    private String updatedAt;
 
     public static UserStatsDTO empty() {
         return UserStatsDTO.builder()
@@ -61,21 +62,8 @@ public class UserStatsDTO {
             .createdIndexCount(0)
             .createdRoadmapCount(0)
             .createdCardDeckCount(0)
-            .totalLearningItemCount(0)
-            .totalCreatedItemCount(0)
+            .learningStreakDays(0)
+            .reviewStreakDays(0)
             .build();
-    }
-
-    // 计算汇总统计
-    public void calculateTotals() {
-        this.totalLearningItemCount = (learningCourseCount != null ? learningCourseCount : 0) +
-                                 (completedCourseCount != null ? completedCourseCount : 0) +
-                                 (inProgressProfessionCount != null ? inProgressProfessionCount : 0) +
-                                 (completedProfessionCount != null ? completedProfessionCount : 0);
-
-        this.totalCreatedItemCount = (createdArticleCount != null ? createdArticleCount : 0) +
-                                (createdIndexCount != null ? createdIndexCount : 0) +
-                                (createdRoadmapCount != null ? createdRoadmapCount : 0) +
-                                (createdCardDeckCount != null ? createdCardDeckCount : 0);
     }
 }

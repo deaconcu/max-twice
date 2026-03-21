@@ -31,10 +31,10 @@
     <LoadingSpinner v-if="loading" />
 
     <!-- 课程列表 -->
-    <div v-else-if="filteredCourses.length > 0">
+    <div v-else-if="courses.length > 0">
       <div class="course-grid">
         <v-card
-          v-for="course in filteredCourses"
+          v-for="course in courses"
           :key="course.id"
           rounded="lg"
           border
@@ -115,12 +115,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
 import { progressApi } from '@/api'
-import { UserProgressState } from '@/enums'
 import { getColorByString } from '@/utils/color'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -129,7 +128,7 @@ import DynamicIcon from '@/components/common/DynamicIcon.vue'
 const router = useRouter()
 
 // Tab 状态
-const statusTab = ref('learning')
+const statusTab = ref<'learning' | 'completed'>('learning')
 
 // 删除确认对话框
 const showDeleteDialog = ref(false)
@@ -141,9 +140,14 @@ const {
   loading,
   execute: fetchCourses,
 } = useFetch({
-  fetchFn: progressApi.getAllCourseProgress,
+  fetchFn: () => progressApi.getAllCourseProgress(statusTab.value),
   immediate: true,
   defaultValue: [],
+})
+
+// 监听 Tab 切换，重新加载数据
+watch(statusTab, () => {
+  fetchCourses()
 })
 
 // 删除课程进度
@@ -166,9 +170,6 @@ const courses = computed(() => {
     const course = userLearning.object
     // 后端返回的是万分位（0-10000），转换为百分比（0-100）
     const progress = userLearning.progressPercent ? userLearning.progressPercent / 100 : 0
-    // 后端返回的 state：1=进行中, 2=已完成
-    const state = userLearning.state || UserProgressState.IN_PROGRESS
-    const isCompleted = state === UserProgressState.COMPLETED
 
     const title = course?.name || '未知课程'
     const totalLessons = course?.nodeCount || 0
@@ -183,19 +184,13 @@ const courses = computed(() => {
       completedLessons,
       icon: course?.icon || 'mdi-book-open-variant',
       iconColor: getColorByString(title),
-      status: isCompleted ? 'completed' : 'learning',
     }
   })
 })
 
-// 根据状态过滤课程列表
-const filteredCourses = computed(() => {
-  return courses.value.filter((course) => course.status === statusTab.value)
-})
-
 // 跳转到课程详情
 const goToCourse = (courseId: number) => {
-  router.push(`/course/${courseId}`)
+  router.push(`/read?courseId=${courseId}`)
 }
 
 // 取消学习课程

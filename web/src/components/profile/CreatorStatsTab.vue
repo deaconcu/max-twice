@@ -20,19 +20,19 @@
 
         <div v-else-if="totalStatsData" class="stats-grid">
           <div class="stat-item">
-            <div class="text-h5 font-weight-bold">{{ formatNumber(totalStatsData.totalViews) }}</div>
+            <div class="text-h5 font-weight-bold">{{ formatNumber(totalStatsData.viewCount) }}</div>
             <div class="text-caption text-medium-emphasis">阅读量</div>
           </div>
           <div class="stat-item">
-            <div class="text-h5 font-weight-bold">{{ formatNumber(totalStatsData.totalTwice) }}</div>
+            <div class="text-h5 font-weight-bold">{{ formatNumber(totalStatsData.twiceCount) }}</div>
             <div class="text-caption text-medium-emphasis">两遍秒懂</div>
           </div>
           <div class="stat-item">
-            <div class="text-h5 font-weight-bold">{{ formatNumber(totalStatsData.totalHelpful) }}</div>
+            <div class="text-h5 font-weight-bold">{{ formatNumber(totalStatsData.likeCount) }}</div>
             <div class="text-caption text-medium-emphasis">有用</div>
           </div>
           <div class="stat-item">
-            <div class="text-h5 font-weight-bold">{{ formatNumber(totalStatsData.totalComments) }}</div>
+            <div class="text-h5 font-weight-bold">{{ formatNumber(totalStatsData.commentCount) }}</div>
             <div class="text-caption text-medium-emphasis">评论</div>
           </div>
         </div>
@@ -89,19 +89,19 @@
         <div v-else-if="statsData">
           <div class="stats-grid mb-4">
             <div class="stat-item">
-              <div class="text-h5 font-weight-bold">{{ formatNumber(statsData.totalViews) }}</div>
+              <div class="text-h5 font-weight-bold">{{ formatNumber(statsData.viewCount) }}</div>
               <div class="text-caption text-medium-emphasis">阅读量</div>
             </div>
             <div class="stat-item">
-              <div class="text-h5 font-weight-bold">{{ formatNumber(statsData.totalTwice) }}</div>
+              <div class="text-h5 font-weight-bold">{{ formatNumber(statsData.twiceCount) }}</div>
               <div class="text-caption text-medium-emphasis">两遍秒懂</div>
             </div>
             <div class="stat-item">
-              <div class="text-h5 font-weight-bold">{{ formatNumber(statsData.totalHelpful) }}</div>
+              <div class="text-h5 font-weight-bold">{{ formatNumber(statsData.likeCount) }}</div>
               <div class="text-caption text-medium-emphasis">有用</div>
             </div>
             <div class="stat-item">
-              <div class="text-h5 font-weight-bold">{{ formatNumber(statsData.totalComments) }}</div>
+              <div class="text-h5 font-weight-bold">{{ formatNumber(statsData.commentCount) }}</div>
               <div class="text-caption text-medium-emphasis">评论</div>
             </div>
           </div>
@@ -122,7 +122,7 @@ import { useUserStore } from '@/stores/modules/user'
 import { statsApi } from '@/api'
 import { useFetch } from '@/composables'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import type { UserStatsDTO, DailyStatsDTO } from '@/types/user'
+import type { UserStatsDTO, UserStatsWithDailyDTO, DailyStatsDTO } from '@/types/user'
 
 const userStore = useUserStore()
 
@@ -186,13 +186,13 @@ const {
   data: statsData,
   loading,
   execute: loadStatsData,
-} = useFetch<UserStatsDTO>({
+} = useFetch<UserStatsWithDailyDTO>({
   fetchFn: () => {
     if (!userStore.userId) {
       throw new Error('请先登录')
     }
     const days = parseInt(selectedPeriod.value)
-    return statsApi.getUserPeriodStats(userStore.userId, days)
+    return statsApi.getUserHistoryStats(userStore.userId, days)
   },
   immediate: true,
   onError: (err) => {

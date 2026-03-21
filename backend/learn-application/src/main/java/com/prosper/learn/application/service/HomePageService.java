@@ -1,6 +1,6 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.analytics.dto.UserStatsDTO;
+import com.prosper.learn.analytics.stats.mapper.UserStatsDO;
 import com.prosper.learn.analytics.stats.service.UserStatsDomainService;
 import com.prosper.learn.application.dto.response.PlatformStatsDTO;
 import com.prosper.learn.application.dto.response.ReviewSummaryDTO;
@@ -84,7 +84,7 @@ public class HomePageService {
         UserLearningStatsDTO stats = new UserLearningStatsDTO();
 
         try {
-            UserStatsDTO userStats = userStatsDomainService.getUserStats(userId);
+            UserStatsDO userStats = userStatsDomainService.getUserStats(userId);
             if (userStats != null) {
                 stats.setCoursesInProgress(userStats.getLearningCourseCount() != null
                         ? userStats.getLearningCourseCount() : 0);
@@ -125,7 +125,7 @@ public class HomePageService {
      */
     private List<UserLearningDTO<Object>> getLearningCourses(Long userId) {
         try {
-            return userLearningService.getAllCoursesProgress(userId, null, LEARNING_COURSES_LIMIT);
+            return userLearningService.getAllCoursesProgress(userId, null, null, LEARNING_COURSES_LIMIT);
         } catch (Exception e) {
             log.error("获取正在学习的课程失败, userId={}", userId, e);
             return new ArrayList<>();

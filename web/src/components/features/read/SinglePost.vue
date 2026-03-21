@@ -773,14 +773,9 @@ watch(
 
 /* 可点击内容区域 */
 .clickable-content {
-  transition: background-color 0.2s ease;
   padding: 12px;
   margin: -12px;
   border-radius: 8px;
-}
-
-.clickable-content:hover {
-  background-color: #fafafa;
 }
 
 .cursor-pointer {

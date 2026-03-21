@@ -204,6 +204,7 @@ public interface UserLearningMapper {
      * 固定查询 objectType=node
      *
      * @param userId 用户ID
+     * @param state 状态过滤（null=全部, 1=进行中, 2=已完成）
      * @param lastId 分页游标（null=第一页）
      * @param limit 每页数量
      */
@@ -212,6 +213,14 @@ public interface UserLearningMapper {
             "WHERE user_id = #{userId} " +
             "AND object_type = " + Enums.ContentType.NODE_VALUE + " " +
             "AND is_root_node = 1 " +
+            "<if test='state != null'>" +
+            "AND (" +
+            "  <choose>" +
+            "    <when test='state == 1'>progress_percent &lt; 10000</when>" +
+            "    <when test='state == 2'>progress_percent &gt;= 10000</when>" +
+            "  </choose>" +
+            ") " +
+            "</if>" +
             "<if test='lastId != null'>" +
             "AND id &lt; #{lastId} " +
             "</if>" +
@@ -219,6 +228,7 @@ public interface UserLearningMapper {
             "LIMIT #{limit}" +
             "</script>")
     List<UserLearningDO> getCoursesByUser(@Param("userId") long userId,
+                                           @Param("state") Byte state,
                                            @Param("lastId") Long lastId,
                                            @Param("limit") int limit);
 }

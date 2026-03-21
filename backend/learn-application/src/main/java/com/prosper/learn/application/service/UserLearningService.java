@@ -137,10 +137,15 @@ public class UserLearningService {
     /**
      * 获取用户所有正在学习的课程（带课程对象）
      * 查询 objectType=node 且 is_root_node=1 的学习记录
+     *
+     * @param userId 用户ID
+     * @param state 状态过滤（null=全部, 1=进行中, 2=已完成）
+     * @param lastId 分页游标（null=第一页）
+     * @param limit 每页数量
      */
-    public List<UserLearningDTO<Object>> getAllCoursesProgress(Long userId, Long lastId, int limit) {
+    public List<UserLearningDTO<Object>> getAllCoursesProgress(Long userId, Byte state, Long lastId, int limit) {
         // 查询课程类型的学习记录（is_root_node=1）
-        List<UserLearningDO> learnings = userLearningDomainService.getCoursesByUser(userId, lastId, limit);
+        List<UserLearningDO> learnings = userLearningDomainService.getCoursesByUser(userId, state, lastId, limit);
 
         if (learnings.isEmpty()) {
             return List.of();
