@@ -189,7 +189,7 @@ const goToReview = () => {
       </v-row>
 
       <!-- 去复习按钮 -->
-      <div v-if="isOwnProfile" class="mt-4 text-center">
+      <div v-if="isOwnProfile" class="mt-4">
         <v-btn
           color="primary"
           variant="tonal"
@@ -275,17 +275,17 @@ const goToReview = () => {
 }
 
 .section {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .section-header {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .section-title {
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: rgb(var(--v-theme-on-surface));
+  color: rgb(var(--v-theme-on-surface-variant));
   margin: 0;
 }
 
@@ -293,21 +293,58 @@ const goToReview = () => {
 .streak-card,
 .creation-card {
   height: 100%;
-  border: 1px solid rgb(var(--v-theme-border));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
   background: rgb(var(--v-theme-surface));
+}
+
+.progress-card :deep(.v-card-text) {
+  padding: 14px !important;
+}
+
+.progress-card :deep(.v-avatar) {
+  width: 34px !important;
+  height: 34px !important;
+}
+
+.progress-card :deep(.v-avatar .v-icon) {
+  font-size: 18px !important;
+}
+
+.progress-card :deep(.text-h5) {
+  font-size: 1.2rem !important;
+}
+
+.streak-card :deep(.v-card-text) {
+  padding: 14px 8px !important;
+}
+
+.streak-card :deep(.text-h4) {
+  font-size: 1.4rem !important;
+}
+
+.creation-card :deep(.v-card-text) {
+  padding: 14px 8px !important;
+}
+
+.creation-card :deep(.v-icon) {
+  margin-bottom: 6px !important;
+}
+
+.creation-card :deep(.text-h5) {
+  font-size: 1.1rem !important;
 }
 
 .clickable {
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .clickable:hover {
-  border-color: rgb(var(--v-theme-primary));
-  transform: translateY(-2px);
+  border-color: rgb(var(--v-theme-primary)) !important;
+  background: rgba(var(--v-theme-primary), 0.04) !important;
 }
 
 .streak-card {
-  background: linear-gradient(135deg, rgba(var(--v-theme-surface), 1) 0%, rgba(var(--v-theme-surface-variant), 0.3) 100%);
+  background: rgb(var(--v-theme-surface));
 }
 </style>

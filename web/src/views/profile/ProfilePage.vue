@@ -344,7 +344,7 @@ const handleNavigate = (tab: string, mode: string) => {
               :class="{ 'nav-item-active': activeTab === 'decks' }"
               @click="activeTab = 'decks'; currentMode = 'creator'"
             >
-              我的卡片组
+              创建的卡片组
             </div>
 
             <!-- 设置 -->
@@ -409,7 +409,7 @@ const handleNavigate = (tab: string, mode: string) => {
 
           <!-- 二级 Tab -->
           <v-tabs
-            v-if="currentMode === 'learner'"
+            v-if="currentMode === 'learner' && activeTab !== 'overview'"
             v-model="activeTab"
             color="primary"
             class="profile-tabs"
