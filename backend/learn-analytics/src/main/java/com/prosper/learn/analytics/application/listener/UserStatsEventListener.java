@@ -1,6 +1,7 @@
 package com.prosper.learn.analytics.application.listener;
 
 import com.prosper.learn.analytics.stats.service.UserStatsDomainService;
+import com.prosper.learn.analytics.stats.service.UserLearningStatsService;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmarkedEvent;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
@@ -8,6 +9,7 @@ import com.prosper.learn.shared.domain.event.content.lifecycle.ContentDeletedEve
 import com.prosper.learn.shared.domain.event.user.learning.LearningCancelledEvent;
 import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
 import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
+import com.prosper.learn.shared.domain.event.user.learning.NodeCompletedEvent;
 import com.prosper.learn.shared.domain.event.user.relationship.UserFollowedEvent;
 import com.prosper.learn.shared.domain.event.user.relationship.UserUnfollowedEvent;
 import com.prosper.learn.shared.domain.event.user.review.CardReviewedEvent;
@@ -47,6 +49,7 @@ import static com.prosper.learn.shared.domain.Enums.ContentType;
 public class UserStatsEventListener {
 
     private final UserStatsDomainService userStatsService;
+    private final UserLearningStatsService userLearningStatsService;
 
     // ==================== 社交关系统计 ====================
 
@@ -248,15 +251,37 @@ public class UserStatsEventListener {
     // ==================== 记忆卡片复习统计 ====================
 
     /**
-     * 记忆卡片复习完成事件 - 更新连续复习天数
+     * 记忆卡片复习完成事件 - 更新连续复习天数 + 记录热力图数据
      */
     @EventListener
     public void onCardReviewed(CardReviewedEvent event) {
         try {
             userStatsService.updateReviewStreak(event.getUserId(), event.getUserToday());
-            log.debug("更新复习连续天数，用户ID: {}", event.getUserId());
+            // 记录热力图数据
+            userLearningStatsService.recordReviewedCards(event.getUserId(), 1);
+            log.debug("更新复习统计，用户ID: {}", event.getUserId());
         } catch (Exception e) {
             log.error("处理卡片复习事件失败，用户ID: {}", event.getUserId(), e);
+        }
+    }
+
+    // ==================== 节点完成统计（热力图） ====================
+
+    /**
+     * 节点完成状态变更事件 - 记录热力图数据
+     */
+    @EventListener
+    public void onNodeCompleted(NodeCompletedEvent event) {
+        try {
+            if (event.isCompleted()) {
+                userLearningStatsService.recordCompletedNode(event.getUserId());
+                log.debug("记录完成节点，用户ID: {}, 节点ID: {}", event.getUserId(), event.getNodeId());
+            } else {
+                userLearningStatsService.recordUncompletedNode(event.getUserId());
+                log.debug("记录取消完成节点，用户ID: {}, 节点ID: {}", event.getUserId(), event.getNodeId());
+            }
+        } catch (Exception e) {
+            log.error("处理节点完成事件失败，用户ID: {}", event.getUserId(), e);
         }
     }
 }

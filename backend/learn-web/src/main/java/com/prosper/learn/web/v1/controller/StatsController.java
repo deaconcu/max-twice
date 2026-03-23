@@ -6,12 +6,14 @@ import com.prosper.learn.application.service.StatsService;
 import com.prosper.learn.application.service.UserStatsService;
 import com.prosper.learn.analytics.stats.service.RedisStatsDomainService;
 import com.prosper.learn.analytics.stats.service.UserStatsDomainService;
+import com.prosper.learn.analytics.stats.service.UserLearningStatsService;
 import com.prosper.learn.analytics.stats.scheduler.StatsSyncScheduler;
 import com.prosper.learn.application.dto.request.RecordViewRequest;
 import com.prosper.learn.application.dto.response.PlatformStatsDTO;
 import com.prosper.learn.analytics.dto.UserDailyStatsDTO;
 import com.prosper.learn.analytics.dto.UserStatsDTO;
 import com.prosper.learn.analytics.dto.UserStatsWithDailyDTO;
+import com.prosper.learn.analytics.dto.HeatmapDataDTO;
 import com.prosper.learn.shared.domain.Enums.UserRole;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
@@ -43,6 +45,7 @@ public class StatsController {
 
     private final UserStatsDomainService userStatsDomainService;
     private final RedisStatsDomainService redisStatsDomainService;
+    private final UserLearningStatsService userLearningStatsService;
     private final StatsService statsService;
     private final UserStatsService userStatsService;
     private final StatsSyncScheduler statsSyncScheduler;
@@ -159,6 +162,24 @@ public class StatsController {
         LocalDate userToday = getUserToday(currentUser);
         userStatsDomainService.updateLearningStreak(currentUser.getId(), userToday);
         return ApiResponse.success();
+    }
+
+    /**
+     * 获取用户热力图数据
+     * GET /api/v1/stats/users/{userId}/heatmap?months=12
+     */
+    @GetMapping("/stats/users/{userId}/heatmap")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<HeatmapDataDTO> getUserHeatmap(
+            @PathVariable @NotNull(message = "用户ID不能为空")
+            @Positive(message = "用户ID必须大于0")
+            Long userId,
+            @RequestParam(defaultValue = "12")
+            @Positive(message = "月数必须大于0")
+            @Max(value = 24, message = "月数不能超过24个月")
+            int months) {
+        HeatmapDataDTO data = userLearningStatsService.getHeatmapData(userId, months);
+        return ApiResponse.success(data);
     }
 
     /**

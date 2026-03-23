@@ -4,6 +4,7 @@ import com.prosper.learn.learning.enrollment.UserLearningDO;
 import com.prosper.learn.learning.enrollment.UserLearningDomainService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
+import com.prosper.learn.shared.domain.event.user.learning.NodeCompletedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.common.utils.ValidationUtils;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class LearningProgressDomainService {
 
     private final UserNodeCompletionDataService userNodeCompletionDataService;
     private final UserLearningDomainService userLearningDomainService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ========== Command 方法（写操作）==========
 
@@ -47,6 +49,8 @@ public class LearningProgressDomainService {
         int inserted = userNodeCompletionDataService.markCompleted(userId, nodeId);
         if (inserted > 0) {
             log.info("Successfully marked node {} as completed for user {}", nodeId, userId);
+            // 发布节点完成事件
+            eventPublisher.publishEvent(NodeCompletedEvent.completed(userId, nodeId));
         } else {
             throw StatusCode.DATABASE_ERROR.exception();
         }
@@ -73,6 +77,8 @@ public class LearningProgressDomainService {
         int deleted = userNodeCompletionDataService.unmarkCompleted(userId, nodeId);
         if (deleted > 0) {
             log.info("Successfully unmarked node {} as completed for user {}", nodeId, userId);
+            // 发布取消完成事件
+            eventPublisher.publishEvent(NodeCompletedEvent.uncompleted(userId, nodeId));
         } else {
             throw StatusCode.DATABASE_ERROR.exception();
         }

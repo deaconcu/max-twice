@@ -30,17 +30,46 @@ public interface UserStatsYearlyMapper {
 
     // ===== yearly表：更新JSON统计数据 =====
 
+    /**
+     * 更新创作统计数据（被浏览、点赞等）
+     * JSON数组格式：[views, twice, like, comments, completedNodes, reviewedCards]
+     * 此方法只更新前4个字段，保留后2个字段不变
+     */
     @Update("UPDATE user_stats_yearly " +
             "SET stats = JSON_SET(" +
             "  COALESCE(stats, JSON_OBJECT()), " +
             "  CONCAT('$.\"', #{dateKey}, '\"'), " +
-            "  JSON_ARRAY(#{views}, #{twice}, #{like}, #{comments})" +
+            "  JSON_ARRAY(#{views}, #{twice}, #{like}, #{comments}, " +
+            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[4]')), 0), " +
+            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[5]')), 0))" +
             ") " +
             "WHERE user_id = #{userId} AND stat_year = #{statYear}")
     int updateYearlyStatsArray(@Param("userId") long userId, @Param("statYear") int statYear,
                               @Param("dateKey") String dateKey, @Param("views") int views,
                               @Param("twice") int twice, @Param("like") int like,
                               @Param("comments") int comments);
+
+    /**
+     * 更新学习统计数据（完成节点、复习卡片）
+     * JSON数组格式：[views, twice, like, comments, completedNodes, reviewedCards]
+     * 此方法只更新后2个字段，保留前4个字段不变
+     */
+    @Update("UPDATE user_stats_yearly " +
+            "SET stats = JSON_SET(" +
+            "  COALESCE(stats, JSON_OBJECT()), " +
+            "  CONCAT('$.\"', #{dateKey}, '\"'), " +
+            "  JSON_ARRAY(" +
+            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[0]')), 0), " +
+            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[1]')), 0), " +
+            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[2]')), 0), " +
+            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[3]')), 0), " +
+            "    #{completedNodes}, #{reviewedCards})" +
+            ") " +
+            "WHERE user_id = #{userId} AND stat_year = #{statYear}")
+    int updateYearlyLearningStats(@Param("userId") long userId, @Param("statYear") int statYear,
+                                  @Param("dateKey") String dateKey,
+                                  @Param("completedNodes") int completedNodes,
+                                  @Param("reviewedCards") int reviewedCards);
 
     // 获取指定日期的统计数据
     @Select("SELECT JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')) " +

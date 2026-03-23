@@ -22,12 +22,4 @@ public class Scheduler {
     public void syncYesterdayStats() {
         statsSyncScheduler.syncYesterdayStats();
     }
-
-    /**
-     * 每天凌晨4:00检查今天是否有遗留的Redis数据需要同步
-     */
-    @Scheduled(cron = "0 0 4 * * ?")
-    public void checkTodayRedisData() {
-        statsSyncScheduler.checkTodayRedisData();
-    }
 }

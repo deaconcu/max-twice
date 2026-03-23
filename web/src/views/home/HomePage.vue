@@ -206,7 +206,7 @@ void homeLoading
       <div
         class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between ga-4 ga-md-6"
       >
-        <!-- 左侧：用户信息 -->
+        <!-- 左侧：用户信息 + 连续学习天数 -->
         <div class="d-flex align-center ga-3 ga-sm-4 flex-grow-1" style="min-width: 0">
           <UserAvatar
             :name="userName"
@@ -216,12 +216,25 @@ void homeLoading
             avatar-class="flex-shrink-0"
           />
           <div style="min-width: 0">
-            <h1
-              class="text-h5 text-sm-h4 font-weight-bold text-truncate"
-              :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-            >
-              {{ t('home.greeting', { name: userName }) }}
-            </h1>
+            <div class="d-flex align-center ga-2 ga-sm-3 flex-wrap">
+              <h1
+                class="text-h5 text-sm-h4 font-weight-bold text-truncate"
+                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+              >
+                {{ t('home.greeting', { name: userName }) }}
+              </h1>
+              <!-- 连续学习天数 -->
+              <v-chip
+                v-if="stats.learningDays > 0"
+                color="warning"
+                variant="tonal"
+                size="small"
+                class="flex-shrink-0"
+              >
+                <v-icon icon="mdi-fire" size="14" class="mr-1" />
+                连续 {{ stats.learningDays }} 天
+              </v-chip>
+            </div>
             <p
               class="text-caption text-sm-body-2 mt-1 text-truncate"
               :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
@@ -231,72 +244,9 @@ void homeLoading
           </div>
         </div>
 
-        <!-- 右侧：学习统计指标 -->
-        <div class="d-flex align-center ga-3 ga-md-4 flex-shrink-0">
-          <!-- 连续学习天数 - 突出显示 -->
-          <div class="d-flex align-center ga-2">
-            <v-icon icon="mdi-fire" color="warning" size="24"></v-icon>
-            <div class="text-center">
-              <div class="text-h5 font-weight-bold text-warning">
-                {{ stats.learningDays }} <span class="text-body-2">天</span>
-              </div>
-              <div class="text-caption text-no-wrap text-medium-emphasis">连续学习</div>
-            </div>
-          </div>
-
-          <!-- 分隔线 -->
-          <v-divider vertical class="d-none d-sm-block stats-divider"></v-divider>
-
-          <!-- 其他三个指标 -->
-          <div class="d-flex align-center ga-4 ga-md-5">
-            <!-- 进行中课程 -->
-            <div class="text-center">
-              <div
-                class="text-h6 font-weight-bold"
-                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-              >
-                {{ stats.coursesInProgress }}
-              </div>
-              <div
-                class="text-caption text-no-wrap"
-                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-              >
-                进行中课程
-              </div>
-            </div>
-
-            <!-- 进行中职业 -->
-            <div class="text-center">
-              <div
-                class="text-h6 font-weight-bold"
-                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-              >
-                {{ stats.professionsInProgress }}
-              </div>
-              <div
-                class="text-caption text-no-wrap"
-                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-              >
-                进行中职业
-              </div>
-            </div>
-
-            <!-- 复习卡片数 -->
-            <div class="text-center">
-              <div
-                class="text-h6 font-weight-bold"
-                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-              >
-                {{ stats.reviewCards || 0 }}
-              </div>
-              <div
-                class="text-caption text-no-wrap"
-                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-              >
-                待复习
-              </div>
-            </div>
-          </div>
+        <!-- 右侧：热力图 -->
+        <div class="d-none d-lg-block flex-shrink-0">
+          <ActivityHeatmap :months="12" />
         </div>
       </div>
     </div>
@@ -416,6 +366,15 @@ void homeLoading
           :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
         >
           今日复习
+          <v-chip
+            v-if="stats.reviewCards > 0"
+            color="grey-darken-1"
+            variant="tonal"
+            size="small"
+            class="ml-2"
+          >
+            {{ stats.reviewCards }}
+          </v-chip>
         </h2>
         <div class="d-flex align-center ga-4">
           <div class="d-flex align-center ga-1">
@@ -543,6 +502,15 @@ void homeLoading
           :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
         >
           正在跟踪的职业路线
+          <v-chip
+            v-if="stats.professionsInProgress > 0"
+            color="grey-darken-1"
+            variant="tonal"
+            size="small"
+            class="ml-2"
+          >
+            {{ stats.professionsInProgress }}
+          </v-chip>
         </h2>
         <v-btn variant="text" size="small" :color="'on-surface'" @click="navigateTo('/role')">
           探索更多
@@ -643,6 +611,15 @@ void homeLoading
           :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
         >
           正在学习的课程
+          <v-chip
+            v-if="stats.coursesInProgress > 0"
+            color="grey-darken-1"
+            variant="tonal"
+            size="small"
+            class="ml-2"
+          >
+            {{ stats.coursesInProgress }}
+          </v-chip>
         </h2>
         <v-btn variant="text" size="small" :color="'on-surface'" @click="navigateTo('/courses')">
           浏览更多
@@ -855,13 +832,6 @@ void homeLoading
   .welcome-section {
     padding-bottom: 40px;
   }
-}
-
-/* 统计指标分隔线 */
-.stats-divider {
-  align-self: stretch;
-  opacity: 0.2;
-  margin: 0 8px;
 }
 
 /* 平台统计卡片 */
