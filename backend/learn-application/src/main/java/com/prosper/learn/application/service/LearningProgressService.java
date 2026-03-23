@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -54,13 +55,13 @@ public class LearningProgressService {
     /**
      * 标记节点完成并返回完整的响应数据
      */
-    public NodeProgressResponseDTO markNodeCompletedWithResponse(long userId, long nodeId, long rootNodeId) {
+    public NodeProgressResponseDTO markNodeCompletedWithResponse(long userId, long nodeId, long rootNodeId, LocalDate userToday) {
         // 验证节点是否存在
         nodeDataService.validateAndGet(nodeId);
         nodeDataService.validateAndGet(rootNodeId);
 
         // 调用领域服务处理核心逻辑（标记节点完成）
-        domainService.markNodeCompleted(userId, nodeId);
+        domainService.markNodeCompleted(userId, nodeId, userToday);
 
         // 更新所有受影响课程的进度
         updateAffectedCoursesProgress(userId, nodeId);
@@ -85,13 +86,13 @@ public class LearningProgressService {
     /**
      * 取消节点完成并返回完整的响应数据
      */
-    public NodeProgressResponseDTO unmarkNodeCompletedWithResponse(long userId, long nodeId, long rootNodeId) {
+    public NodeProgressResponseDTO unmarkNodeCompletedWithResponse(long userId, long nodeId, long rootNodeId, LocalDate userToday) {
         // 验证节点是否存在
         nodeDataService.validateAndGet(nodeId);
         nodeDataService.validateAndGet(rootNodeId);
 
         // 调用领域服务处理核心逻辑（取消节点完成）
-        domainService.unmarkNodeCompleted(userId, nodeId, rootNodeId);
+        domainService.unmarkNodeCompleted(userId, nodeId, rootNodeId, userToday);
 
         // 更新所有受影响课程的进度
         updateAffectedCoursesProgress(userId, nodeId);

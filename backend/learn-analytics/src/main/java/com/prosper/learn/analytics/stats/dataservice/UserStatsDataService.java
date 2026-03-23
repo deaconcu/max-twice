@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -373,126 +374,32 @@ public class UserStatsDataService {
     // ==================== 记忆卡片复习统计 ====================
 
     /**
-     * 更新用户的记忆卡片复习连续天数
-     *
-     * @param userId 用户ID
-     * @param today 用户时区的今天日期
+     * 更新复习连续天数和最后复习日期
      */
-    public void updateReviewStreak(long userId, java.time.LocalDate today) {
-        // 确保统计记录存在
-        UserStatsDO stats = getOrCreate(userId);
-
-        java.time.LocalDate lastDate = stats.getLastCardReviewDate();
-        int newStreakDays;
-
-        if (lastDate == null) {
-            // 首次复习
-            newStreakDays = 1;
-        } else if (lastDate.equals(today)) {
-            // 今天已经复习过，不更新
-            return;
-        } else if (lastDate.equals(today.minusDays(1))) {
-            // 昨天复习过，连续 +1
-            newStreakDays = (stats.getReviewStreakDays() != null ? stats.getReviewStreakDays() : 0) + 1;
-        } else {
-            // 断了，重新从 1 开始
-            newStreakDays = 1;
-        }
-
-        int result = userStatsMapper.updateReviewStreak(userId, newStreakDays, today);
+    public boolean updateReviewStreak(long userId, int streakDays, LocalDate lastReviewDate) {
+        getOrCreate(userId);
+        int result = userStatsMapper.updateReviewStreak(userId, streakDays, lastReviewDate);
         if (result > 0) {
-            log.debug("更新复习连续天数: userId={}, streakDays={}, lastReviewDate={}", userId, newStreakDays, today);
-        } else {
-            log.warn("更新复习连续天数失败: userId={}", userId);
+            log.debug("更新复习连续天数: userId={}, streakDays={}, lastReviewDate={}", userId, streakDays, lastReviewDate);
+            return true;
         }
-    }
-
-    /**
-     * 获取用户的记忆卡片复习连续天数
-     * 如果最后复习日期不是今天或昨天，返回 0
-     *
-     * @param userId 用户ID
-     * @param today 用户时区的今天日期
-     * @return 有效的连续复习天数
-     */
-    public int getReviewStreakDays(long userId, java.time.LocalDate today) {
-        UserStatsDO stats = getByUserId(userId);
-
-        if (stats == null || stats.getLastCardReviewDate() == null) {
-            return 0;
-        }
-
-        java.time.LocalDate lastDate = stats.getLastCardReviewDate();
-
-        // 今天或昨天有复习，streak 有效
-        if (lastDate.equals(today) || lastDate.equals(today.minusDays(1))) {
-            return stats.getReviewStreakDays() != null ? stats.getReviewStreakDays() : 0;
-        }
-
-        // 超过一天没复习，streak 失效
-        return 0;
+        log.warn("更新复习连续天数失败: userId={}", userId);
+        return false;
     }
 
     // ==================== 学习统计（阅读文章）====================
 
     /**
-     * 更新用户的连续学习天数
-     *
-     * @param userId 用户ID
-     * @param today 用户时区的今天日期
+     * 更新学习连续天数和最后学习日期
      */
-    public void updateLearningStreak(long userId, java.time.LocalDate today) {
-        // 确保统计记录存在
-        UserStatsDO stats = getOrCreate(userId);
-
-        java.time.LocalDate lastDate = stats.getLastLearningDate();
-        int newStreakDays;
-
-        if (lastDate == null) {
-            // 首次学习
-            newStreakDays = 1;
-        } else if (lastDate.equals(today)) {
-            // 今天已经学习过，不更新
-            return;
-        } else if (lastDate.equals(today.minusDays(1))) {
-            // 昨天学习过，连续 +1
-            newStreakDays = (stats.getLearningStreakDays() != null ? stats.getLearningStreakDays() : 0) + 1;
-        } else {
-            // 断了，重新从 1 开始
-            newStreakDays = 1;
-        }
-
-        int result = userStatsMapper.updateLearningStreak(userId, newStreakDays, today);
+    public boolean updateLearningStreak(long userId, int streakDays, LocalDate lastLearningDate) {
+        getOrCreate(userId);
+        int result = userStatsMapper.updateLearningStreak(userId, streakDays, lastLearningDate);
         if (result > 0) {
-            log.debug("更新学习连续天数: userId={}, streakDays={}, lastLearningDate={}", userId, newStreakDays, today);
-        } else {
-            log.warn("更新学习连续天数失败: userId={}", userId);
+            log.debug("更新学习连续天数: userId={}, streakDays={}, lastLearningDate={}", userId, streakDays, lastLearningDate);
+            return true;
         }
-    }
-
-    /**
-     * 获取用户的连续学习天数
-     * 如果最后学习日期不是今天或昨天，返回 0
-     *
-     * @param userId 用户ID
-     * @param today 用户时区的今天日期
-     * @return 有效的连续学习天数
-     */
-    public int getLearningStreakDays(long userId, java.time.LocalDate today) {
-        UserStatsDO stats = getByUserId(userId);
-
-        if (stats == null || stats.getLastLearningDate() == null) {
-            return 0;
-        }
-
-        java.time.LocalDate lastDate = stats.getLastLearningDate();
-
-        // 今天或昨天有学习，streak 有效
-        if (lastDate.equals(today) || lastDate.equals(today.minusDays(1))) {
-            return stats.getLearningStreakDays() != null ? stats.getLearningStreakDays() : 0;
-        }
-
-        // 超过一天没学习，streak 失效
-        return 0;
+        log.warn("更新学习连续天数失败: userId={}", userId);
+        return false;
     }
 }

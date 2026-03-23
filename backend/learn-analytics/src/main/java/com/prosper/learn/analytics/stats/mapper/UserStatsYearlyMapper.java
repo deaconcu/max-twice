@@ -40,8 +40,8 @@ public interface UserStatsYearlyMapper {
             "  COALESCE(stats, JSON_OBJECT()), " +
             "  CONCAT('$.\"', #{dateKey}, '\"'), " +
             "  JSON_ARRAY(#{views}, #{twice}, #{like}, #{comments}, " +
-            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[4]')), 0), " +
-            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[5]')), 0))" +
+            "    CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[4]'))), '0') AS SIGNED), " +
+            "    CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[5]'))), '0') AS SIGNED))" +
             ") " +
             "WHERE user_id = #{userId} AND stat_year = #{statYear}")
     int updateYearlyStatsArray(@Param("userId") long userId, @Param("statYear") int statYear,
@@ -59,10 +59,10 @@ public interface UserStatsYearlyMapper {
             "  COALESCE(stats, JSON_OBJECT()), " +
             "  CONCAT('$.\"', #{dateKey}, '\"'), " +
             "  JSON_ARRAY(" +
-            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[0]')), 0), " +
-            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[1]')), 0), " +
-            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[2]')), 0), " +
-            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[3]')), 0), " +
+            "    CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[0]'))), '0') AS SIGNED), " +
+            "    CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[1]'))), '0') AS SIGNED), " +
+            "    CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[2]'))), '0') AS SIGNED), " +
+            "    CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dateKey}, '\"[3]'))), '0') AS SIGNED), " +
             "    #{completedNodes}, #{reviewedCards})" +
             ") " +
             "WHERE user_id = #{userId} AND stat_year = #{statYear}")

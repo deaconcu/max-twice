@@ -1,13 +1,16 @@
 package com.prosper.learn.memory.review;
 
+import com.prosper.learn.shared.domain.event.user.review.CardReviewedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -26,6 +29,7 @@ public class ReviewDomainService {
     private final UserCourseSrsSettingDataService courseSrsSettingDataService;
     private final DailyLimitService dailyLimitService;
     private final SystemProperties systemProperties;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ========== Query 方法 ==========
 
@@ -113,10 +117,11 @@ public class ReviewDomainService {
      * @param courseId 课程ID
      * @param rating 评级（1-4）
      * @param reviewCardCount 用户当前的复习卡片计数（已递增后的值）
+     * @param userToday 用户时区的今天日期（用于发布复习成功事件）
      * @return 更新后的 SRS 状态
      */
     @Transactional
-    public UserCardSrsDO submitReview(Long userId, Long cardId, Long courseId, int rating, long reviewCardCount) {
+    public UserCardSrsDO submitReview(Long userId, Long cardId, Long courseId, int rating, long reviewCardCount, LocalDate userToday) {
         // 获取SRS状态
         UserCardSrsDO card = srsDataService.getByUserAndCard(userId, cardId);
         if (card == null) {
@@ -165,6 +170,11 @@ public class ReviewDomainService {
 
         log.info("Submitted review for user: {} card: {} type: {} rating: {} reappearAt: {} reviewDueAt: {}",
             userId, cardId, card.getType(), rating, card.getReappearAt(), card.getReviewDueAt());
+
+        // 如果最终状态是 REVIEW，发布复习成功事件（用于热力图统计）
+        if (card.getType() == UserCardSrsDO.TYPE_REVIEW) {
+            eventPublisher.publishEvent(new CardReviewedEvent(userId, cardId, rating, userToday));
+        }
 
         return card;
     }

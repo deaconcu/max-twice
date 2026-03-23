@@ -317,7 +317,6 @@ import type { MemoryCardDeck } from '@/types/memory'
 import type { KeysetPageResponse } from '@/types/api'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
-import { useLearningTracker } from '@/composables/useLearningTracker'
 import { VoteType } from '@/enums'
 import { convertVoteType } from '@/utils/postUtils'
 
@@ -331,9 +330,6 @@ const convertVoteType = (voteType: number | null | undefined): string | null => 
 
 const router = useRouter()
 const route = useRoute()
-
-// 学习追踪（停留5分钟+3次交互后上报）
-useLearningTracker()
 
 // 基本状态
 const showFixedBar = ref(false)

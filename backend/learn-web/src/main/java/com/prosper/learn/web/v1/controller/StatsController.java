@@ -50,7 +50,6 @@ public class StatsController {
     private final UserStatsService userStatsService;
     private final StatsSyncScheduler statsSyncScheduler;
     private final PlatformStatsService platformStatsService;
-    private final com.prosper.learn.shared.infrastructure.config.SystemProperties systemProperties;
 
     /**
      * 记录访问
@@ -151,20 +150,6 @@ public class StatsController {
     }
 
     /**
-     * 上报每日学习（阅读文章）
-     * 前端在 read 页满足条件后调用（停留 5 分钟 + 3 次交互）
-     * POST /api/v1/stats/daily-learning
-     */
-    @PostMapping("/stats/daily-learning")
-    @SaCheckLogin
-    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<Void> reportDailyLearning(@CurrentUser UserDO currentUser) {
-        LocalDate userToday = getUserToday(currentUser);
-        userStatsDomainService.updateLearningStreak(currentUser.getId(), userToday);
-        return ApiResponse.success();
-    }
-
-    /**
      * 获取用户热力图数据
      * GET /api/v1/stats/users/{userId}/heatmap?months=12
      */
@@ -180,20 +165,5 @@ public class StatsController {
             int months) {
         HeatmapDataDTO data = userLearningStatsService.getHeatmapData(userId, months);
         return ApiResponse.success(data);
-    }
-
-    /**
-     * 获取用户时区的"今天"日期
-     */
-    private LocalDate getUserToday(UserDO user) {
-        try {
-            if (user != null && user.getTimezone() != null && !user.getTimezone().isEmpty()) {
-                java.time.ZoneId userZone = java.time.ZoneId.of(user.getTimezone());
-                return LocalDate.now(userZone);
-            }
-        } catch (Exception e) {
-            log.warn("获取用户时区失败，使用默认时区: userId={}", user != null ? user.getId() : null, e);
-        }
-        return LocalDate.now(java.time.ZoneId.of(systemProperties.getUser().getDefaultTimezone()));
     }
 }

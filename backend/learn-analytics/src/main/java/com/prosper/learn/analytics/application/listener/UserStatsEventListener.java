@@ -265,16 +265,19 @@ public class UserStatsEventListener {
         }
     }
 
-    // ==================== 节点完成统计（热力图） ====================
+    // ==================== 节点完成统计（热力图 + 连续学习天数） ====================
 
     /**
-     * 节点完成状态变更事件 - 记录热力图数据
+     * 节点完成状态变更事件 - 记录热力图数据 + 更新连续学习天数
      */
     @EventListener
     public void onNodeCompleted(NodeCompletedEvent event) {
         try {
             if (event.isCompleted()) {
+                // 记录热力图数据
                 userLearningStatsService.recordCompletedNode(event.getUserId());
+                // 更新连续学习天数
+                userStatsService.updateLearningStreak(event.getUserId(), event.getUserToday());
                 log.debug("记录完成节点，用户ID: {}, 节点ID: {}", event.getUserId(), event.getNodeId());
             } else {
                 userLearningStatsService.recordUncompletedNode(event.getUserId());

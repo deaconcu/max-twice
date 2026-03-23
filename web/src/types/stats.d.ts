@@ -26,3 +26,26 @@ export interface DailyStats {
   likeCount: number // "喜欢/有帮助"数量
   commentCount: number // 评论数量
 }
+
+/**
+ * 热力图单日数据
+ */
+export interface HeatmapDay {
+  date: string // 格式: yyyy-MM-dd
+  completedNodes: number // 完成节点数
+  reviewedCards: number // 复习卡片数
+  activityValue: number // 活动值 = completedNodes * 10 + reviewedCards
+}
+
+/**
+ * 热力图数据
+ */
+export interface HeatmapData {
+  userId: number
+  startDate: string
+  endDate: string
+  totalCompletedNodes: number
+  totalReviewedCards: number
+  activeDays: number
+  dailyData: HeatmapDay[]
+}

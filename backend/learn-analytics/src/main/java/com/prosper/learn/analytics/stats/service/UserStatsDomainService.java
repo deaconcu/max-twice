@@ -196,7 +196,26 @@ public class UserStatsDomainService {
      */
     @Transactional
     public void updateReviewStreak(Long userId, LocalDate userToday) {
-        userStatsDataService.updateReviewStreak(userId, userToday);
+        UserStatsDO stats = userStatsDataService.getOrCreate(userId);
+
+        LocalDate lastDate = stats.getLastCardReviewDate();
+        int newStreakDays;
+
+        if (lastDate == null) {
+            // 首次复习
+            newStreakDays = 1;
+        } else if (lastDate.equals(userToday)) {
+            // 今天已经复习过，不更新
+            return;
+        } else if (lastDate.equals(userToday.minusDays(1))) {
+            // 昨天复习过，连续 +1
+            newStreakDays = (stats.getReviewStreakDays() != null ? stats.getReviewStreakDays() : 0) + 1;
+        } else {
+            // 断了，重新从 1 开始
+            newStreakDays = 1;
+        }
+
+        userStatsDataService.updateReviewStreak(userId, newStreakDays, userToday);
     }
 
     /**
@@ -207,7 +226,21 @@ public class UserStatsDomainService {
      * @return 有效的连续复习天数
      */
     public int getReviewStreakDays(Long userId, LocalDate userToday) {
-        return userStatsDataService.getReviewStreakDays(userId, userToday);
+        UserStatsDO stats = userStatsDataService.getByUserId(userId);
+
+        if (stats == null || stats.getLastCardReviewDate() == null) {
+            return 0;
+        }
+
+        LocalDate lastDate = stats.getLastCardReviewDate();
+
+        // 今天或昨天有复习，streak 有效
+        if (lastDate.equals(userToday) || lastDate.equals(userToday.minusDays(1))) {
+            return stats.getReviewStreakDays() != null ? stats.getReviewStreakDays() : 0;
+        }
+
+        // 超过一天没复习，streak 失效
+        return 0;
     }
 
     // ==================== 学习统计（阅读文章）====================
@@ -220,7 +253,26 @@ public class UserStatsDomainService {
      */
     @Transactional
     public void updateLearningStreak(Long userId, LocalDate userToday) {
-        userStatsDataService.updateLearningStreak(userId, userToday);
+        UserStatsDO stats = userStatsDataService.getOrCreate(userId);
+
+        LocalDate lastDate = stats.getLastLearningDate();
+        int newStreakDays;
+
+        if (lastDate == null) {
+            // 首次学习
+            newStreakDays = 1;
+        } else if (lastDate.equals(userToday)) {
+            // 今天已经学习过，不更新
+            return;
+        } else if (lastDate.equals(userToday.minusDays(1))) {
+            // 昨天学习过，连续 +1
+            newStreakDays = (stats.getLearningStreakDays() != null ? stats.getLearningStreakDays() : 0) + 1;
+        } else {
+            // 断了，重新从 1 开始
+            newStreakDays = 1;
+        }
+
+        userStatsDataService.updateLearningStreak(userId, newStreakDays, userToday);
     }
 
     /**
@@ -231,7 +283,21 @@ public class UserStatsDomainService {
      * @return 有效的连续学习天数
      */
     public int getLearningStreakDays(Long userId, LocalDate userToday) {
-        return userStatsDataService.getLearningStreakDays(userId, userToday);
+        UserStatsDO stats = userStatsDataService.getByUserId(userId);
+
+        if (stats == null || stats.getLastLearningDate() == null) {
+            return 0;
+        }
+
+        LocalDate lastDate = stats.getLastLearningDate();
+
+        // 今天或昨天有学习，streak 有效
+        if (lastDate.equals(userToday) || lastDate.equals(userToday.minusDays(1))) {
+            return stats.getLearningStreakDays() != null ? stats.getLearningStreakDays() : 0;
+        }
+
+        // 超过一天没学习，streak 失效
+        return 0;
     }
 
     // ==================== 内容创作统计 ====================

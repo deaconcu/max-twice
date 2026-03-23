@@ -10,6 +10,7 @@ import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
 import com.prosper.learn.application.dto.response.userlearning.UserLearningDTO;
 import com.prosper.learn.application.service.LearningProgressService;
 import com.prosper.learn.application.service.UserLearningService;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
@@ -22,6 +23,7 @@ import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -53,7 +55,8 @@ public class ProgressController {
             @Positive(message = "根节点ID必须大于0")
             Long rootNodeId,
             @CurrentUser UserDO currentUser) {
-        NodeProgressResponseDTO result = learningProgressService.markNodeCompletedWithResponse(currentUser.getId(), nodeId, rootNodeId);
+        LocalDate userToday = TimeZoneUtil.getUserToday(currentUser.getTimezone());
+        NodeProgressResponseDTO result = learningProgressService.markNodeCompletedWithResponse(currentUser.getId(), nodeId, rootNodeId, userToday);
         return ApiResponse.success(result);
     }
 
@@ -72,7 +75,8 @@ public class ProgressController {
             @Positive(message = "根节点ID必须大于0")
             Long rootNodeId,
             @CurrentUser UserDO currentUser) {
-        NodeProgressResponseDTO result = learningProgressService.unmarkNodeCompletedWithResponse(currentUser.getId(), nodeId, rootNodeId);
+        LocalDate userToday = TimeZoneUtil.getUserToday(currentUser.getTimezone());
+        NodeProgressResponseDTO result = learningProgressService.unmarkNodeCompletedWithResponse(currentUser.getId(), nodeId, rootNodeId, userToday);
         return ApiResponse.success(result);
     }
 

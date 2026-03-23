@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -35,8 +36,9 @@ public class LearningProgressDomainService {
      *
      * @param userId 用户ID
      * @param nodeId 节点ID
+     * @param userToday 用户时区的今天日期
      */
-    public void markNodeCompleted(long userId, long nodeId) {
+    public void markNodeCompleted(long userId, long nodeId, LocalDate userToday) {
         ValidationUtils.requirePositiveId(userId);
         ValidationUtils.requirePositiveId(nodeId);
 
@@ -50,7 +52,7 @@ public class LearningProgressDomainService {
         if (inserted > 0) {
             log.info("Successfully marked node {} as completed for user {}", nodeId, userId);
             // 发布节点完成事件
-            eventPublisher.publishEvent(NodeCompletedEvent.completed(userId, nodeId));
+            eventPublisher.publishEvent(NodeCompletedEvent.completed(userId, nodeId, userToday));
         } else {
             throw StatusCode.DATABASE_ERROR.exception();
         }
@@ -62,8 +64,9 @@ public class LearningProgressDomainService {
      * @param userId 用户ID
      * @param nodeId 节点ID
      * @param rootNodeId 根节点ID（用于验证）
+     * @param userToday 用户时区的今天日期
      */
-    public void unmarkNodeCompleted(long userId, long nodeId, long rootNodeId) {
+    public void unmarkNodeCompleted(long userId, long nodeId, long rootNodeId, LocalDate userToday) {
         ValidationUtils.requirePositiveId(userId);
         ValidationUtils.requirePositiveId(nodeId);
         ValidationUtils.requirePositiveId(rootNodeId);
@@ -78,7 +81,7 @@ public class LearningProgressDomainService {
         if (deleted > 0) {
             log.info("Successfully unmarked node {} as completed for user {}", nodeId, userId);
             // 发布取消完成事件
-            eventPublisher.publishEvent(NodeCompletedEvent.uncompleted(userId, nodeId));
+            eventPublisher.publishEvent(NodeCompletedEvent.uncompleted(userId, nodeId, userToday));
         } else {
             throw StatusCode.DATABASE_ERROR.exception();
         }

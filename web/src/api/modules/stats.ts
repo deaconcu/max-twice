@@ -1,7 +1,7 @@
 import apiClient from '../client'
 import type { ApiResponse } from '@/types/api'
 import type { UserDailyStatsDTO, UserStatsWithDailyDTO, UserStatsDTO } from '@/types/user'
-import type { PlatformStats } from '@/types/stats'
+import type { PlatformStats, HeatmapData } from '@/types/stats'
 
 /**
  * 统计相关 API
@@ -64,10 +64,11 @@ export const statsApi = {
   },
 
   /**
-   * 上报每日学习（阅读文章）
-   * 前端在 read 页满足条件后调用（停留 5 分钟 + 3 次交互）
+   * 获取用户热力图数据
    */
-  reportDailyLearning(): Promise<ApiResponse<void>> {
-    return apiClient.post('/v1/stats/daily-learning')
+  getHeatmap(userId: number, months = 12): Promise<ApiResponse<HeatmapData>> {
+    return apiClient.get(`/v1/stats/users/${String(userId)}/heatmap`, {
+      params: { months },
+    })
   },
 }

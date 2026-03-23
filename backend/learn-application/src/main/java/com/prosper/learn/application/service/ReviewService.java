@@ -13,14 +13,12 @@ import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDO;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDataService;
 import com.prosper.learn.shared.domain.Enums.CardOrder;
-import com.prosper.learn.shared.domain.event.user.review.CardReviewedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDataService;
 import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +44,6 @@ public class ReviewService {
     private final UserDataService userDataService;
     private final UserCourseSrsSettingDataService courseSettingDataService;
     private final UserCardSrsDataService srsDataService;
-    private final ApplicationEventPublisher eventPublisher;
     private final SystemProperties systemProperties;
     private final MemoryBankService memoryBankService;
 
@@ -121,17 +118,14 @@ public class ReviewService {
         // 1. 递增用户的复习卡片计数
         long reviewCardCount = userDataService.incrementReviewCardCount(userId);
 
-        // 2. 处理 SRS 算法
-        reviewDomainService.submitReview(userId, cardId, courseId, rating, reviewCardCount);
-
-        // 3. 发布复习完成事件（用于更新连续复习天数等统计）
+        // 2. 处理 SRS 算法（内部会判断是否发布复习成功事件）
         LocalDate userToday = getUserToday(user);
-        eventPublisher.publishEvent(new CardReviewedEvent(userId, cardId, rating, userToday));
+        reviewDomainService.submitReview(userId, cardId, courseId, rating, reviewCardCount, userToday);
 
-        // 4. 获取卡片顺序设置
+        // 3. 获取卡片顺序设置
         boolean newFirst = getNewFirst(userId, courseId);
 
-        // 5. 获取下一张卡片
+        // 4. 获取下一张卡片
         UserCardSrsDO nextSrs = reviewDomainService.getNextCard(userId, courseId, reviewCardCount, newFirst);
 
         ReviewSubmitResultDTO result;
@@ -147,7 +141,7 @@ public class ReviewService {
             }
         }
 
-        // 6. 查询当前课程统计并填入返回结果
+        // 5. 查询当前课程统计并填入返回结果
         CourseMemoryBankDTO courseStats = memoryBankService.getSingleCourseStat(userId, courseId);
         result.setCourseStats(courseStats);
 
