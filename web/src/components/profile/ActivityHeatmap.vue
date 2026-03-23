@@ -5,21 +5,66 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
+import { statsApi } from '@/api'
+import { useFetch } from '@/composables'
+import { useUserStore } from '@/stores/modules/user'
+import type { HeatmapData } from '@/types/stats'
 
 interface Props {
-  // 未来接入真实数据时使用
-  // data?: Record<string, number>
-  months?: number // 显示几个月，默认4个月
+  userId?: number // 用户ID，不传则使用当前登录用户
+  months?: number // 显示几个月，默认12个月
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  months: 4,
+  months: 12,
 })
 
-// 生成假数据：最近 N 个月的每日活跃值
-const generateMockData = () => {
-  const data: { date: string; value: number }[] = []
+const userStore = useUserStore()
+
+// 实际使用的用户ID
+const targetUserId = computed(() => props.userId ?? userStore.currentUser?.id)
+
+// 加载热力图数据
+const { data: heatmapData, refresh } = useFetch<HeatmapData>({
+  fetchFn: () => statsApi.getHeatmap(targetUserId.value!, props.months),
+  immediate: !!targetUserId.value,
+  defaultValue: null,
+})
+
+// 监听用户ID变化，重新加载数据
+watch(targetUserId, (newVal) => {
+  if (newVal) {
+    refresh()
+  }
+})
+
+// 日数据类型
+interface DayData {
+  date: string
+  value: number
+  completedNodes: number
+  reviewedCards: number
+}
+
+// 将API数据转换为组件需要的格式
+const activityData = computed((): DayData[] => {
+  if (!heatmapData.value?.dailyData) {
+    return generateEmptyData()
+  }
+
+  // 将 API 返回的数据转换为 date -> dayInfo 的 Map
+  const dataMap = new Map<string, { value: number; completedNodes: number; reviewedCards: number }>()
+  heatmapData.value.dailyData.forEach((day) => {
+    dataMap.set(day.date, {
+      value: day.activityValue,
+      completedNodes: day.completedNodes,
+      reviewedCards: day.reviewedCards,
+    })
+  })
+
+  // 生成完整的日期范围
+  const result: DayData[] = []
   const today = new Date()
   const totalDays = props.months * 30
 
@@ -27,26 +72,38 @@ const generateMockData = () => {
     const date = new Date(today)
     date.setDate(date.getDate() - i)
     const dateStr = date.toISOString().split('T')[0]
+    const dayInfo = dataMap.get(dateStr)
+    result.push({
+      date: dateStr,
+      value: dayInfo?.value ?? 0,
+      completedNodes: dayInfo?.completedNodes ?? 0,
+      reviewedCards: dayInfo?.reviewedCards ?? 0,
+    })
+  }
 
-    // 随机生成活跃值（0-15），有30%的天数为0
-    const random = Math.random()
-    let value = 0
-    if (random > 0.3) {
-      value = Math.floor(Math.random() * 15) + 1
-    }
+  return result
+})
 
-    data.push({ date: dateStr, value })
+// 生成空数据（未登录或加载失败时）
+const generateEmptyData = (): DayData[] => {
+  const data: DayData[] = []
+  const today = new Date()
+  const totalDays = props.months * 30
+
+  for (let i = totalDays - 1; i >= 0; i--) {
+    const date = new Date(today)
+    date.setDate(date.getDate() - i)
+    const dateStr = date.toISOString().split('T')[0]
+    data.push({ date: dateStr, value: 0, completedNodes: 0, reviewedCards: 0 })
   }
 
   return data
 }
 
-const activityData = computed(() => generateMockData())
-
 // 按周分组数据
 const weeklyData = computed(() => {
-  const weeks: { date: string; value: number }[][] = []
-  let currentWeek: { date: string; value: number }[] = []
+  const weeks: DayData[][] = []
+  let currentWeek: DayData[] = []
 
   // 找到第一天是周几，补齐前面的空白
   const firstDate = new Date(activityData.value[0].date)
@@ -54,7 +111,7 @@ const weeklyData = computed(() => {
 
   // 补齐第一周前面的空白
   for (let i = 0; i < firstDayOfWeek; i++) {
-    currentWeek.push({ date: '', value: -1 }) // -1 表示空白
+    currentWeek.push({ date: '', value: -1, completedNodes: 0, reviewedCards: 0 }) // -1 表示空白
   }
 
   activityData.value.forEach((item) => {
@@ -93,13 +150,17 @@ const monthLabels = computed(() => {
   return labels
 })
 
+// 统计数据
+const totalCompletedNodes = computed(() => heatmapData.value?.totalCompletedNodes ?? 0)
+const totalReviewedCards = computed(() => heatmapData.value?.totalReviewedCards ?? 0)
+
 // 根据活跃值获取颜色等级
 const getColorLevel = (value: number): string => {
   if (value < 0) return 'empty'
   if (value === 0) return 'level-0'
-  if (value <= 3) return 'level-1'
-  if (value <= 6) return 'level-2'
-  if (value <= 10) return 'level-3'
+  if (value <= 5) return 'level-1'
+  if (value <= 15) return 'level-2'
+  if (value <= 30) return 'level-3'
   return 'level-4'
 }
 
@@ -115,9 +176,16 @@ const formatDate = (dateStr: string): string => {
 }
 
 // 格式化活跃值显示
-const formatValue = (value: number): string => {
-  if (value <= 0) return '无活动'
-  return `${value} 次活动`
+const formatValue = (day: DayData): string => {
+  if (day.value <= 0) return '无活动'
+  const parts: string[] = []
+  if (day.completedNodes > 0) {
+    parts.push(`完成 ${day.completedNodes} 个节点`)
+  }
+  if (day.reviewedCards > 0) {
+    parts.push(`复习 ${day.reviewedCards} 张卡片`)
+  }
+  return parts.length > 0 ? parts.join('，') : '无活动'
 }
 </script>
 
@@ -166,7 +234,7 @@ const formatValue = (value: number): string => {
             </template>
             <div class="tooltip-content">
               <div class="tooltip-date">{{ formatDate(day.date) }}</div>
-              <div class="tooltip-value">{{ formatValue(day.value) }}</div>
+              <div class="tooltip-value">{{ formatValue(day) }}</div>
             </div>
           </v-tooltip>
         </div>
@@ -176,7 +244,12 @@ const formatValue = (value: number): string => {
     <!-- 图例 -->
     <div class="heatmap-footer">
       <div class="heatmap-summary">
-        <span class="text-caption text-grey">过去一年：完成 <strong class="text-grey-darken-2">128</strong> 个节点，复习 <strong class="text-grey-darken-2">1,024</strong> 张卡片</span>
+        <span class="text-caption text-grey"
+          >过去一年：完成
+          <strong class="text-grey-darken-2">{{ totalCompletedNodes }}</strong> 个节点，复习
+          <strong class="text-grey-darken-2">{{ totalReviewedCards.toLocaleString() }}</strong>
+          张卡片</span
+        >
       </div>
       <div class="heatmap-legend">
         <span class="legend-text">少</span>
