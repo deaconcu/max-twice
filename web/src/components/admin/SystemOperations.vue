@@ -308,14 +308,14 @@ setTimeout(() => {
       </v-card-text>
     </v-card>
 
-    <!-- Redis 统计数据同步 -->
+    <!-- 统计数据同步 -->
     <v-card flat class="border mb-4">
       <v-card-title class="d-flex align-center">
         <v-icon icon="mdi-database-sync" class="mr-2"></v-icon>
-        Redis 统计数据同步
+        统计数据同步
       </v-card-title>
       <v-card-text>
-        <p class="text-body-2 text-grey mb-4">将 Redis 中的统计数据同步到数据库</p>
+        <p class="text-body-2 text-grey mb-4">将统计数据同步到数据库（包含 Redis 统计和学习热力图数据）</p>
         <div class="d-flex ga-3 flex-wrap">
           <v-btn
             variant="tonal"
