@@ -21,6 +21,9 @@ public class HeatmapDataDTO {
     /** 开始日期 */
     private String startDate;
 
+    /** 用户注册日期 */
+    private String joinedDate;
+
     /** 结束日期 */
     private String endDate;
 

@@ -20,6 +20,9 @@ public class HeatmapDayDTO {
     /** 完成节点数 */
     private Integer completedNodes;
 
+    /** 取消完成节点数 */
+    private Integer cancelCompletedNodes;
+
     /** 复习卡片数 */
     private Integer reviewedCards;
 

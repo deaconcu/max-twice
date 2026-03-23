@@ -90,14 +90,14 @@ public class ApiResponse<T> {
     /**
      * 错误响应 (带自定义错误码)
      */
-    public static <T> ApiResponse<T> error(Integer code, String message) {
+    public static <T> ApiResponse<T> fail(Integer code, String message) {
         return new ApiResponse<>(code, message, null);
     }
 
     /**
      * 错误响应（默认系统错误）
      */
-    public static <T> ApiResponse<T> error(String message) {
+    public static <T> ApiResponse<T> fail(String message) {
         return new ApiResponse<>(StatusCode.UNKNOWN_EXCEPTION.getCode(), message, null);
     }
 

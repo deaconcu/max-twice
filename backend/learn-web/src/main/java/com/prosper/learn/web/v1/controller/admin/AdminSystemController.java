@@ -65,7 +65,7 @@ public class AdminSystemController {
                 // 获取完整系统配置
                 List<SystemDO> allConfigs = systemDataService.getAllConfigsWithMeta();
                 if (allConfigs.isEmpty()) {
-                    return ApiResponse.error("系统配置不存在");
+                    return ApiResponse.fail("系统配置不存在");
                 }
                 List<SystemConfigDTO> result = systemConfigConverter.toDTOList(allConfigs);
                 JsonNode config = objectMapper.valueToTree(result);
@@ -84,7 +84,7 @@ public class AdminSystemController {
     private ApiResponse<JsonNode> getSystemConfigPart(String part) throws IOException {
         String configValue = systemDataService.getValue(part);
         if (configValue == null) {
-            return ApiResponse.error("配置部分不存在: " + part);
+            return ApiResponse.fail("配置部分不存在: " + part);
         }
 
         try {
@@ -156,7 +156,7 @@ public class AdminSystemController {
             @RequestParam @NotBlank(message = "配置键不能为空") String key) {
         try {
             if (!systemDataService.exists(key)) {
-                return ApiResponse.error("配置不存在: " + key);
+                return ApiResponse.fail("配置不存在: " + key);
             }
 
             systemDataService.deleteConfig(key);
@@ -179,7 +179,7 @@ public class AdminSystemController {
         try {
             String value = systemDataService.getValue(key);
             if (value == null) {
-                return ApiResponse.error("配置不存在: " + key);
+                return ApiResponse.fail("配置不存在: " + key);
             }
             return ApiResponse.success(value);
         } catch (Exception e) {
@@ -259,7 +259,7 @@ public class AdminSystemController {
             @PathVariable @NotBlank(message = "任务ID不能为空") String taskId) {
         Map<String, Object> result = asyncTaskService.getTaskResult(taskId);
         if (result == null) {
-            return ApiResponse.error("任务不存在或已过期");
+            return ApiResponse.fail("任务不存在或已过期");
         }
         return ApiResponse.success(result);
     }

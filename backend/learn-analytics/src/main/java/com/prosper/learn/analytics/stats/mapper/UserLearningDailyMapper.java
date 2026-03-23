@@ -13,6 +13,7 @@ import java.util.List;
  *     user_id BIGINT NOT NULL,
  *     stat_date DATE NOT NULL,
  *     completed_nodes INT DEFAULT 0,
+ *     cancel_completed_nodes INT DEFAULT 0,
  *     reviewed_cards INT DEFAULT 0,
  *     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
  *     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -27,8 +28,8 @@ public interface UserLearningDailyMapper {
     /**
      * 增加完成节点数（当天有记录则累加，没有则新建）
      */
-    @Insert("INSERT INTO user_learning_daily (user_id, stat_date, completed_nodes, reviewed_cards) " +
-            "VALUES (#{userId}, #{statDate}, #{count}, 0) " +
+    @Insert("INSERT INTO user_learning_daily (user_id, stat_date, completed_nodes, cancel_completed_nodes, reviewed_cards) " +
+            "VALUES (#{userId}, #{statDate}, #{count}, 0, 0) " +
             "ON DUPLICATE KEY UPDATE " +
             "completed_nodes = completed_nodes + #{count}, " +
             "updated_at = NOW()")
@@ -37,21 +38,22 @@ public interface UserLearningDailyMapper {
                                 @Param("count") int count);
 
     /**
-     * 减少完成节点数（取消完成时调用）
+     * 增加取消完成节点数（当天有记录则累加，没有则新建）
      */
-    @Update("UPDATE user_learning_daily " +
-            "SET completed_nodes = GREATEST(0, completed_nodes - #{count}), " +
-            "updated_at = NOW() " +
-            "WHERE user_id = #{userId} AND stat_date = #{statDate}")
-    int decrementCompletedNodes(@Param("userId") long userId,
-                                @Param("statDate") LocalDate statDate,
-                                @Param("count") int count);
+    @Insert("INSERT INTO user_learning_daily (user_id, stat_date, completed_nodes, cancel_completed_nodes, reviewed_cards) " +
+            "VALUES (#{userId}, #{statDate}, 0, #{count}, 0) " +
+            "ON DUPLICATE KEY UPDATE " +
+            "cancel_completed_nodes = cancel_completed_nodes + #{count}, " +
+            "updated_at = NOW()")
+    int incrementCancelCompletedNodes(@Param("userId") long userId,
+                                      @Param("statDate") LocalDate statDate,
+                                      @Param("count") int count);
 
     /**
      * 增加复习卡片数（当天有记录则累加，没有则新建）
      */
-    @Insert("INSERT INTO user_learning_daily (user_id, stat_date, completed_nodes, reviewed_cards) " +
-            "VALUES (#{userId}, #{statDate}, 0, #{count}) " +
+    @Insert("INSERT INTO user_learning_daily (user_id, stat_date, completed_nodes, cancel_completed_nodes, reviewed_cards) " +
+            "VALUES (#{userId}, #{statDate}, 0, 0, #{count}) " +
             "ON DUPLICATE KEY UPDATE " +
             "reviewed_cards = reviewed_cards + #{count}, " +
             "updated_at = NOW()")

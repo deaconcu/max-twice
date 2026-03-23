@@ -54,7 +54,7 @@ public class AdminOperationLogController {
             @PathVariable @Positive(message = "日志ID必须大于0") Long id) {
         OperationLogDTO log = operationLogService.getLogById(id);
         if (log == null) {
-            return ApiResponse.error("操作日志不存在");
+            return ApiResponse.fail("操作日志不存在");
         }
         return ApiResponse.success(log);
     }

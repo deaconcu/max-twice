@@ -63,7 +63,7 @@ public class UserLearningStatsService {
      */
     public void recordUncompletedNode(long userId) {
         LocalDate today = TimeZoneUtil.now();
-        userLearningDailyMapper.decrementCompletedNodes(userId, today, 1);
+        userLearningDailyMapper.incrementCancelCompletedNodes(userId, today, 1);
         log.debug("记录用户{}取消完成1个节点", userId);
     }
 
@@ -88,11 +88,15 @@ public class UserLearningStatsService {
      *
      * @param userId 用户ID
      * @param months 月数（默认12个月）
+     * @param joinedDate 用户注册日期，用于区分"尚未注册"和"无活动"
      * @return 热力图数据
      */
-    public HeatmapDataDTO getHeatmapData(long userId, int months) {
+    public HeatmapDataDTO getHeatmapData(long userId, int months, LocalDate joinedDate) {
         LocalDate endDate = TimeZoneUtil.now();
         LocalDate startDate = endDate.minusMonths(months);
+
+        // 转换注册日期为字符串
+        String joinedDateStr = joinedDate != null ? joinedDate.toString() : null;
 
         // 收集所有日期的数据
         Map<String, HeatmapDayDTO> dataMap = new HashMap<>();
@@ -111,12 +115,14 @@ public class UserLearningStatsService {
                 if (date != null && !date.isBefore(startDate) && !date.isAfter(endDate)) {
                     String dateStr = date.toString();
                     int completedNodes = stats.length > 4 ? stats[4] : 0;
-                    int reviewedCards = stats.length > 5 ? stats[5] : 0;
-                    int activityValue = completedNodes * 10 + reviewedCards;
+                    int cancelCompletedNodes = stats.length > 5 ? stats[5] : 0;
+                    int reviewedCards = stats.length > 6 ? stats[6] : 0;
+                    int activityValue = Math.max(0, (completedNodes - cancelCompletedNodes) * 10 + reviewedCards);
 
                     dataMap.put(dateStr, HeatmapDayDTO.builder()
                         .date(dateStr)
                         .completedNodes(completedNodes)
+                        .cancelCompletedNodes(cancelCompletedNodes)
                         .reviewedCards(reviewedCards)
                         .activityValue(activityValue)
                         .build());
@@ -129,12 +135,14 @@ public class UserLearningStatsService {
         UserLearningDailyDO todayData = userLearningDailyMapper.getByUserIdAndDate(userId, today);
         if (todayData != null) {
             int completedNodes = todayData.getCompletedNodes() != null ? todayData.getCompletedNodes() : 0;
+            int cancelCompletedNodes = todayData.getCancelCompletedNodes() != null ? todayData.getCancelCompletedNodes() : 0;
             int reviewedCards = todayData.getReviewedCards() != null ? todayData.getReviewedCards() : 0;
-            int activityValue = completedNodes * 10 + reviewedCards;
+            int activityValue = Math.max(0, (completedNodes - cancelCompletedNodes) * 10 + reviewedCards);
 
             dataMap.put(today.toString(), HeatmapDayDTO.builder()
                 .date(today.toString())
                 .completedNodes(completedNodes)
+                .cancelCompletedNodes(cancelCompletedNodes)
                 .reviewedCards(reviewedCards)
                 .activityValue(activityValue)
                 .build());
@@ -142,16 +150,21 @@ public class UserLearningStatsService {
 
         // 3. 计算汇总数据
         int totalCompletedNodes = 0;
+        int totalCancelCompletedNodes = 0;
         int totalReviewedCards = 0;
         int activeDays = 0;
 
         for (HeatmapDayDTO day : dataMap.values()) {
             totalCompletedNodes += day.getCompletedNodes();
+            totalCancelCompletedNodes += day.getCancelCompletedNodes();
             totalReviewedCards += day.getReviewedCards();
             if (day.getActivityValue() > 0) {
                 activeDays++;
             }
         }
+
+        // 净完成数 = 完成数 - 取消数
+        int netCompletedNodes = totalCompletedNodes - totalCancelCompletedNodes;
 
         // 4. 转换为列表并排序
         List<HeatmapDayDTO> dailyData = new ArrayList<>(dataMap.values());
@@ -160,8 +173,9 @@ public class UserLearningStatsService {
         return HeatmapDataDTO.builder()
             .userId(userId)
             .startDate(startDate.toString())
+            .joinedDate(joinedDateStr)
             .endDate(endDate.toString())
-            .totalCompletedNodes(totalCompletedNodes)
+            .totalCompletedNodes(netCompletedNodes)
             .totalReviewedCards(totalReviewedCards)
             .activeDays(activeDays)
             .dailyData(dailyData)
@@ -171,7 +185,7 @@ public class UserLearningStatsService {
     /**
      * 获取用户指定年份的学习统计数据
      *
-     * @return Map<dayKey, int[]> 其中 int[] = [views, twice, like, comments, completedNodes, reviewedCards]
+     * @return Map<dayKey, int[]> 其中 int[] = [views, twice, like, comments, completedNodes, cancelCompletedNodes, reviewedCards]
      */
     private Map<String, int[]> getYearLearningStats(long userId, int year) {
         Map<String, int[]> result = new HashMap<>();

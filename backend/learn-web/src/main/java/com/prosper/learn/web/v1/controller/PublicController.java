@@ -151,7 +151,7 @@ public class PublicController {
             return ApiResponse.success(result);
         } catch (Exception e) {
             log.error("Failed to get readonly mode status", e);
-            return ApiResponse.error("查询失败");
+            return ApiResponse.fail("查询失败");
         }
     }
 
@@ -168,7 +168,7 @@ public class PublicController {
         try {
             ProfessionDTO profession = professionService.getById(id, true, null);
             if (profession == null) {
-                return ApiResponse.error(StatusCode.PROFESSION_NOT_FOUND.getCode(), "职业不存在");
+                return ApiResponse.fail(StatusCode.PROFESSION_NOT_FOUND.getCode(), "职业不存在");
             }
             return ApiResponse.success(profession);
         } catch (Exception e) {

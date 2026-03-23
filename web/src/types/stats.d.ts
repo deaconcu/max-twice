@@ -33,8 +33,9 @@ export interface DailyStats {
 export interface HeatmapDay {
   date: string // 格式: yyyy-MM-dd
   completedNodes: number // 完成节点数
+  cancelCompletedNodes: number // 取消完成节点数
   reviewedCards: number // 复习卡片数
-  activityValue: number // 活动值 = completedNodes * 10 + reviewedCards
+  activityValue: number // 活动值 = (completedNodes - cancelCompletedNodes) * 10 + reviewedCards
 }
 
 /**
@@ -43,6 +44,7 @@ export interface HeatmapDay {
 export interface HeatmapData {
   userId: number
   startDate: string
+  joinedDate?: string // 用户注册日期，用于区分"尚未注册"和"无活动"
   endDate: string
   totalCompletedNodes: number
   totalReviewedCards: number

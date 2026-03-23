@@ -11,7 +11,6 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -70,7 +69,7 @@ public class GlobalExceptionHandler {
             localizedMessage = e.getMessage();
         }
         
-        return ApiResponse.error(e.getCode(), localizedMessage).path(request.getRequestURI());
+        return ApiResponse.fail(e.getCode(), localizedMessage).path(request.getRequestURI());
     }
     
     /**
@@ -150,7 +149,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ApiResponse<Object> handleNoResourceFound(NoResourceFoundException e, HttpServletRequest request) {
         log.warn("资源未找到: {}", e.getMessage());
-        return ApiResponse.error(StatusCode.NOT_FOUND.getCode(), StatusCode.NOT_FOUND.getMessage())
+        return ApiResponse.fail(StatusCode.NOT_FOUND.getCode(), StatusCode.NOT_FOUND.getMessage())
                 .path(request.getRequestURI());
     }
 
@@ -160,6 +159,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ApiResponse<Object> handleException(Exception e, HttpServletRequest request) {
         log.error("系统异常", e);
-        return ApiResponse.error("系统繁忙，请稍后重试").path(request.getRequestURI());
+        return ApiResponse.fail("系统繁忙，请稍后重试").path(request.getRequestURI());
     }
 }

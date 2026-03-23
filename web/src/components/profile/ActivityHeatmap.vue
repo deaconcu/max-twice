@@ -44,7 +44,9 @@ interface DayData {
   date: string
   value: number
   completedNodes: number
+  cancelCompletedNodes: number
   reviewedCards: number
+  hasData: boolean // 是否有数据（用户注册后的日期才有数据）
 }
 
 // 将API数据转换为组件需要的格式
@@ -53,12 +55,19 @@ const activityData = computed((): DayData[] => {
     return generateEmptyData()
   }
 
+  // 用户注册日期
+  const joinedDate = heatmapData.value.joinedDate
+
   // 将 API 返回的数据转换为 date -> dayInfo 的 Map
-  const dataMap = new Map<string, { value: number; completedNodes: number; reviewedCards: number }>()
+  const dataMap = new Map<
+    string,
+    { value: number; completedNodes: number; cancelCompletedNodes: number; reviewedCards: number }
+  >()
   heatmapData.value.dailyData.forEach((day) => {
     dataMap.set(day.date, {
       value: day.activityValue,
       completedNodes: day.completedNodes,
+      cancelCompletedNodes: day.cancelCompletedNodes,
       reviewedCards: day.reviewedCards,
     })
   })
@@ -73,11 +82,15 @@ const activityData = computed((): DayData[] => {
     date.setDate(date.getDate() - i)
     const dateStr = date.toISOString().split('T')[0]
     const dayInfo = dataMap.get(dateStr)
+    // 判断是否有数据：日期 >= 用户注册日期
+    const hasData = !joinedDate || dateStr >= joinedDate
     result.push({
       date: dateStr,
       value: dayInfo?.value ?? 0,
       completedNodes: dayInfo?.completedNodes ?? 0,
+      cancelCompletedNodes: dayInfo?.cancelCompletedNodes ?? 0,
       reviewedCards: dayInfo?.reviewedCards ?? 0,
+      hasData,
     })
   }
 
@@ -94,7 +107,14 @@ const generateEmptyData = (): DayData[] => {
     const date = new Date(today)
     date.setDate(date.getDate() - i)
     const dateStr = date.toISOString().split('T')[0]
-    data.push({ date: dateStr, value: 0, completedNodes: 0, reviewedCards: 0 })
+    data.push({
+      date: dateStr,
+      value: 0,
+      completedNodes: 0,
+      cancelCompletedNodes: 0,
+      reviewedCards: 0,
+      hasData: false,
+    })
   }
 
   return data
@@ -111,7 +131,14 @@ const weeklyData = computed(() => {
 
   // 补齐第一周前面的空白
   for (let i = 0; i < firstDayOfWeek; i++) {
-    currentWeek.push({ date: '', value: -1, completedNodes: 0, reviewedCards: 0 }) // -1 表示空白
+    currentWeek.push({
+      date: '',
+      value: -1,
+      completedNodes: 0,
+      cancelCompletedNodes: 0,
+      reviewedCards: 0,
+      hasData: false,
+    }) // -1 表示空白
   }
 
   activityData.value.forEach((item) => {
@@ -155,12 +182,13 @@ const totalCompletedNodes = computed(() => heatmapData.value?.totalCompletedNode
 const totalReviewedCards = computed(() => heatmapData.value?.totalReviewedCards ?? 0)
 
 // 根据活跃值获取颜色等级
-const getColorLevel = (value: number): string => {
-  if (value < 0) return 'empty'
-  if (value === 0) return 'level-0'
-  if (value <= 5) return 'level-1'
-  if (value <= 15) return 'level-2'
-  if (value <= 30) return 'level-3'
+const getColorLevel = (day: DayData): string => {
+  if (day.value < 0) return 'empty' // 补齐周的空白格
+  if (!day.hasData) return 'empty' // 尚未加入
+  if (day.value === 0) return 'level-0'
+  if (day.value <= 5) return 'level-1'
+  if (day.value <= 15) return 'level-2'
+  if (day.value <= 30) return 'level-3'
   return 'level-4'
 }
 
@@ -177,10 +205,11 @@ const formatDate = (dateStr: string): string => {
 
 // 格式化活跃值显示
 const formatValue = (day: DayData): string => {
-  if (day.value <= 0) return '无活动'
+  if (!day.hasData) return '尚未加入'
   const parts: string[] = []
-  if (day.completedNodes > 0) {
-    parts.push(`完成 ${day.completedNodes} 个节点`)
+  if (day.completedNodes > 0 || day.cancelCompletedNodes > 0) {
+    const net = day.completedNodes - day.cancelCompletedNodes
+    parts.push(`共完成 ${net} 个节点（完成 ${day.completedNodes}，取消 ${day.cancelCompletedNodes}）`)
   }
   if (day.reviewedCards > 0) {
     parts.push(`复习 ${day.reviewedCards} 张卡片`)
@@ -223,13 +252,13 @@ const formatValue = (day: DayData): string => {
             v-for="(day, dayIndex) in week"
             :key="dayIndex"
             location="top"
-            :disabled="day.value < 0"
+            :disabled="day.value < 0 || !day.hasData"
           >
             <template #activator="{ props: tooltipProps }">
               <div
                 v-bind="tooltipProps"
                 class="heatmap-cell"
-                :class="getColorLevel(day.value)"
+                :class="getColorLevel(day)"
               />
             </template>
             <div class="tooltip-content">

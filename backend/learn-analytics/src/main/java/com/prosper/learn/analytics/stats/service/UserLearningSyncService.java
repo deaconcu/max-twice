@@ -71,13 +71,14 @@ public class UserLearningSyncService {
                         year,
                         dayKey,
                         daily.getCompletedNodes() != null ? daily.getCompletedNodes() : 0,
+                        daily.getCancelCompletedNodes() != null ? daily.getCancelCompletedNodes() : 0,
                         daily.getReviewedCards() != null ? daily.getReviewedCards() : 0
                     );
 
                     if (updated > 0) {
                         syncCount++;
-                        log.debug("同步用户{}在{}的学习数据: completedNodes={}, reviewedCards={}",
-                            daily.getUserId(), date, daily.getCompletedNodes(), daily.getReviewedCards());
+                        log.debug("同步用户{}在{}的学习数据: completedNodes={}, reviewedCards={}, cancelCompletedNodes={}",
+                            daily.getUserId(), date, daily.getCompletedNodes(), daily.getReviewedCards(), daily.getCancelCompletedNodes());
                     }
                 } catch (Exception e) {
                     log.error("同步用户{}在{}的学习数据失败", daily.getUserId(), date, e);

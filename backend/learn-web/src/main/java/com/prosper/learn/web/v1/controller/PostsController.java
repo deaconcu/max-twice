@@ -5,7 +5,6 @@ import com.prosper.learn.application.dto.request.CreatePostRequest;
 import com.prosper.learn.application.dto.request.UpdatePostRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.node.NodeSearchResultDTO;
-import com.prosper.learn.application.dto.response.node.NodeWithCourseDTO;
 import com.prosper.learn.application.dto.response.post.PostFullDTO;
 import com.prosper.learn.application.dto.response.post.PostSummaryDTO;
 import com.prosper.learn.application.dto.response.post.PostWithVoteDTO;
@@ -72,7 +71,7 @@ public class PostsController {
         }
 
         // 参数不足
-        return ApiResponse.error(400, "必须提供 ids 或 nodeId 参数");
+        return ApiResponse.fail(400, "必须提供 ids 或 nodeId 参数");
     }
 
     /**
@@ -150,7 +149,7 @@ public class PostsController {
 
         Enums.PostType postType = Enums.PostType.getByValue(type);
         if (postType == null) {
-            return ApiResponse.error(400, "无效的帖子类型");
+            return ApiResponse.fail(400, "无效的帖子类型");
         }
         KeysetPageResponse<PostFullDTO> response = postService.getUserPostsWithPagination(
                 userId, lastId, postType, Enums.ContentState.PUBLISHED.value());
@@ -171,7 +170,7 @@ public class PostsController {
 
         Enums.PostType postType = Enums.PostType.getByValue(type);
         if (postType == null) {
-            return ApiResponse.error(400, "无效的帖子类型");
+            return ApiResponse.fail(400, "无效的帖子类型");
         }
         KeysetPageResponse<PostFullDTO> result = postService.getUserPostsWithPagination(currentUser.getId(), lastId, postType, null);
         return ApiResponse.success(result);

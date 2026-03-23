@@ -21,6 +21,9 @@ public class UserLearningDailyDO {
     /** 当日完成节点数 */
     private Integer completedNodes;
 
+    /** 当日取消完成节点数 */
+    private Integer cancelCompletedNodes;
+
     /** 当日复习卡片数 */
     private Integer reviewedCards;
 

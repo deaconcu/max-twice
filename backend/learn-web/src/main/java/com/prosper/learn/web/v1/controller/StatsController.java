@@ -1,6 +1,5 @@
 package com.prosper.learn.web.v1.controller;
 
-import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.service.PlatformStatsService;
 import com.prosper.learn.application.service.StatsService;
 import com.prosper.learn.application.service.UserStatsService;
@@ -16,6 +15,7 @@ import com.prosper.learn.analytics.dto.UserStatsWithDailyDTO;
 import com.prosper.learn.analytics.dto.HeatmapDataDTO;
 import com.prosper.learn.shared.domain.Enums.UserRole;
 import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDataService;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.application.dto.ApiResponse;
@@ -50,6 +50,7 @@ public class StatsController {
     private final UserStatsService userStatsService;
     private final StatsSyncScheduler statsSyncScheduler;
     private final PlatformStatsService platformStatsService;
+    private final UserDataService userDataService;
 
     /**
      * 记录访问
@@ -163,7 +164,12 @@ public class StatsController {
             @Positive(message = "月数必须大于0")
             @Max(value = 24, message = "月数不能超过24个月")
             int months) {
-        HeatmapDataDTO data = userLearningStatsService.getHeatmapData(userId, months);
+        UserDO user = userDataService.getById(userId);
+        if (user == null) {
+            return ApiResponse.fail("用户不存在");
+        }
+        LocalDate joinedDate = user.getCreatedAt() != null ? user.getCreatedAt().toLocalDate() : null;
+        HeatmapDataDTO data = userLearningStatsService.getHeatmapData(userId, months, joinedDate);
         return ApiResponse.success(data);
     }
 }
