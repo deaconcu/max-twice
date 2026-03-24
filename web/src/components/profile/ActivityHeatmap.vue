@@ -58,6 +58,10 @@ const activityData = computed((): DayData[] => {
   // 用户注册日期
   const joinedDate = heatmapData.value.joinedDate
 
+  // 使用后端返回的日期范围（用户时区）
+  const startDate = heatmapData.value.startDate
+  const endDate = heatmapData.value.endDate
+
   // 将 API 返回的数据转换为 date -> dayInfo 的 Map
   const dataMap = new Map<
     string,
@@ -72,15 +76,13 @@ const activityData = computed((): DayData[] => {
     })
   })
 
-  // 生成完整的日期范围
+  // 生成完整的日期范围（基于后端返回的 startDate 和 endDate）
   const result: DayData[] = []
-  const today = new Date()
-  const totalDays = props.months * 30
+  const start = new Date(startDate)
+  const end = new Date(endDate)
 
-  for (let i = totalDays - 1; i >= 0; i--) {
-    const date = new Date(today)
-    date.setDate(date.getDate() - i)
-    const dateStr = date.toISOString().split('T')[0]
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split('T')[0]
     const dayInfo = dataMap.get(dateStr)
     // 判断是否有数据：日期 >= 用户注册日期
     const hasData = !joinedDate || dateStr >= joinedDate

@@ -13,11 +13,16 @@ import com.prosper.learn.application.dto.response.user.UserProfileDTO;
 import com.prosper.learn.application.dto.response.user.UserPublicDTO;
 import com.prosper.learn.application.service.ImageUploadService;
 import com.prosper.learn.application.service.UserService;
+import com.prosper.learn.infrastructure.captcha.TurnstileService;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDomainService;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
+import com.prosper.learn.web.util.IpUtils;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.application.dto.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -41,6 +46,8 @@ public class UsersController {
 
     private final UserService userService;
     private final ImageUploadService imageUploadService;
+    private final TurnstileService turnstileService;
+    private final UserDomainService userDomainService;
 
     /**
      * 获取当前用户信息
@@ -121,7 +128,13 @@ public class UsersController {
      */
     @PostMapping("/auth/register")
     @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<Void> register(@RequestBody @Valid RegisterRequest request) {
+    public ApiResponse<Void> register(@RequestBody @Valid RegisterRequest request, HttpServletRequest httpRequest) {
+        // 验证 Turnstile
+        String remoteIp = IpUtils.getIpAddress(httpRequest);
+        if (!turnstileService.verify(request.getTurnstileToken(), remoteIp)) {
+            throw StatusCode.CAPTCHA_INVALID.exception();
+        }
+
         userService.register(request.getEmail(), request.getPassword());
         return ApiResponse.success();
     }
@@ -132,14 +145,37 @@ public class UsersController {
      */
     @PostMapping("/auth/login")
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<UserBriefDTO> login(@RequestBody @Valid LoginRequest request) {
-        // Service 负责业务验证
-        UserBriefDTO userDTO = userService.validateLogin(request.getEmail(), request.getPassword());
+    public ApiResponse<UserBriefDTO> login(@RequestBody @Valid LoginRequest request, HttpServletRequest httpRequest) {
+        String remoteIp = IpUtils.getIpAddress(httpRequest);
 
-        // Controller 负责认证状态管理
-        StpUtil.login(userDTO.getId());
+        // 检查是否需要验证码
+        if (userDomainService.isCaptchaRequired(remoteIp)) {
+            // 需要验证码但未提供
+            if (request.getTurnstileToken() == null || request.getTurnstileToken().isEmpty()) {
+                throw StatusCode.CAPTCHA_REQUIRED.exception();
+            }
+            // 验证 Turnstile
+            if (!turnstileService.verify(request.getTurnstileToken(), remoteIp)) {
+                throw StatusCode.CAPTCHA_INVALID.exception();
+            }
+        }
 
-        return ApiResponse.success(userDTO);
+        try {
+            // Service 负责业务验证
+            UserBriefDTO userDTO = userService.validateLogin(request.getEmail(), request.getPassword());
+
+            // 登录成功，清除失败记录
+            userDomainService.clearLoginFailures(remoteIp);
+
+            // Controller 负责认证状态管理
+            StpUtil.login(userDTO.getId());
+
+            return ApiResponse.success(userDTO);
+        } catch (Exception e) {
+            // 登录失败，记录失败次数
+            userDomainService.recordLoginFailure(remoteIp);
+            throw e;
+        }
     }
 
     /**

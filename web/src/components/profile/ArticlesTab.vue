@@ -265,9 +265,9 @@ const {
       const response = await userApi.getUserPosts(props.userId, params.lastId, PostType.ARTICLE)
       return {
         code: response.code,
-        data: response.data || [],
+        data: response.data?.items || [],
         message: response.message || '',
-        hasMore: response.data.length === 20, // 假设每页20条，实际应该从后端返回
+        hasMore: response.data?.hasMore || false,
       }
     }
   },

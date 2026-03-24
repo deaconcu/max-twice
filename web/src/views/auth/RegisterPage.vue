@@ -83,6 +83,16 @@
                     {{ errorMessage }}
                   </v-alert>
 
+                  <!-- Turnstile 人机验证 -->
+                  <div class="turnstile-wrapper mt-4">
+                    <TurnstileWidget
+                      ref="turnstileRef"
+                      @verify="onTurnstileVerify"
+                      @error="onTurnstileError"
+                      @expire="onTurnstileExpire"
+                    />
+                  </div>
+
                   <!-- 注册按钮 -->
                   <v-btn
                     type="submit"
@@ -136,11 +146,17 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useAuth } from '@/composables/useAuth'
-import { useEmailRules, useValidationRules, useMaxLength, confirmPasswordRule } from '@/composables/useValidation'
+import {
+  useEmailRules,
+  useValidationRules,
+  useMaxLength,
+  confirmPasswordRule,
+} from '@/composables/useValidation'
 import { RIGHTS_DECLARATION } from '@/constants/site'
 import { HEADER_HEIGHT } from '@/constants/layout'
 import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 import IntroSection from '@/components/common/IntroSection.vue'
+import TurnstileWidget from '@/components/common/TurnstileWidget.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -167,6 +183,22 @@ const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const errorMessage = ref('')
 
+// Turnstile 验证
+const turnstileToken = ref('')
+const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
+
+const onTurnstileVerify = (token: string) => {
+  turnstileToken.value = token
+}
+
+const onTurnstileError = () => {
+  errorMessage.value = '人机验证加载失败，请刷新页面重试'
+}
+
+const onTurnstileExpire = () => {
+  turnstileToken.value = ''
+}
+
 // 确认密码验证规则
 const confirmPasswordRules = computed(() => [
   ...passwordRules.value,
@@ -182,24 +214,37 @@ const handleRegister = async () => {
   const { valid } = await registerFormRef.value.validate()
   if (!valid) return
 
+  // 验证 Turnstile token
+  if (!turnstileToken.value) {
+    errorMessage.value = '请完成人机验证'
+    return
+  }
+
   try {
     errorMessage.value = ''
-    const success = await register(formData.value.email, formData.value.password)
+    const success = await register(
+      formData.value.email,
+      formData.value.password,
+      turnstileToken.value
+    )
 
     if (success) {
       // 注册成功后跳转到邮箱验证页面
       await router.push({
         path: '/verify-email',
-        query: { email: formData.value.email }
+        query: { email: formData.value.email },
       })
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     // 显示后端返回的错误信息
-    if (error?.message) {
+    if (error instanceof Error && error.message) {
       errorMessage.value = error.message
     } else {
       errorMessage.value = t('user.register.registerFailed')
     }
+    // 重置 Turnstile
+    turnstileToken.value = ''
+    turnstileRef.value?.reset()
   }
 }
 
@@ -305,6 +350,12 @@ const goToLogin = () => {
 
 a:hover {
   text-decoration: underline !important;
+}
+
+/* Turnstile 容器 */
+.turnstile-wrapper {
+  display: flex;
+  justify-content: center;
 }
 
 /* Responsive */

@@ -17,4 +17,9 @@ public class LoginRequest {
     @NotBlank(message = "密码不能为空")
     @ConfigurableSize(configKey = "password")
     private String password;
+
+    /**
+     * Turnstile 验证 token（可选，登录失败多次后需要）
+     */
+    private String turnstileToken;
 }

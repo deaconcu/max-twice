@@ -16,4 +16,9 @@ public class RegisterRequest {
     @NotBlank(message = "密码不能为空")
     @ConfigurableSize(configKey = "password")
     private String password;
+
+    /**
+     * Turnstile 验证 token
+     */
+    private String turnstileToken;
 }

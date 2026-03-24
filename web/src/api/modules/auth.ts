@@ -10,20 +10,22 @@ export const authApi = {
   /**
    * 用户登录
    */
-  login(email: string, password: string): Promise<ApiResponse<LoginResponseData>> {
+  login(email: string, password: string, turnstileToken?: string): Promise<ApiResponse<LoginResponseData>> {
     return apiClient.post('/v1/auth/login', {
       email,
       password,
+      turnstileToken,
     })
   },
 
   /**
    * 用户注册
    */
-  register(email: string, password: string): Promise<ApiResponse<void>> {
+  register(email: string, password: string, turnstileToken: string): Promise<ApiResponse<void>> {
     return apiClient.post('/v1/auth/register', {
       email,
       password,
+      turnstileToken,
     })
   },
 

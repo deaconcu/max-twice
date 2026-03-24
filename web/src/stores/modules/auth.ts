@@ -26,10 +26,10 @@ export const useAuthStore = defineStore(
      * 登录
      * @throws {Error} 当登录失败时抛出错误，包含错误码和错误信息
      */
-    const login = async (email: string, password: string): Promise<boolean> => {
+    const login = async (email: string, password: string, turnstileToken?: string): Promise<boolean> => {
       try {
         isLoggingIn.value = true
-        const response = await authApi.login(email, password)
+        const response = await authApi.login(email, password, turnstileToken)
 
         if (response.code === 200 && response.data) {
           const loginData: LoginResponseData = response.data
@@ -64,10 +64,10 @@ export const useAuthStore = defineStore(
      * 注册
      * @throws {Error} 当注册失败时抛出错误，错误信息为后端返回的 message
      */
-    const register = async (email: string, password: string): Promise<boolean> => {
+    const register = async (email: string, password: string, turnstileToken: string): Promise<boolean> => {
       try {
         isRegistering.value = true
-        const response = await authApi.register(email, password)
+        const response = await authApi.register(email, password, turnstileToken)
 
         // 注册成功
         if (response.code === 200) {

@@ -22,10 +22,11 @@ export function useAuth() {
    * 登录
    * @param email 邮箱
    * @param password 密码
+   * @param turnstileToken Turnstile 验证 token（可选，失败多次后需要）
    * @returns Promise<boolean> 登录是否成功
    */
-  const login = async (email: string, password: string): Promise<boolean> => {
-    const success = await authStore.login(email, password)
+  const login = async (email: string, password: string, turnstileToken?: string): Promise<boolean> => {
+    const success = await authStore.login(email, password, turnstileToken)
     if (success) {
       // 登录成功后跳转到首页或重定向地址
       const redirect = router.currentRoute.value.query.redirect as string
@@ -38,10 +39,11 @@ export function useAuth() {
    * 注册
    * @param email 邮箱
    * @param password 密码
+   * @param turnstileToken Turnstile 验证 token
    * @returns Promise<boolean> 注册是否成功
    */
-  const register = async (email: string, password: string): Promise<boolean> => {
-    return await authStore.register(email, password)
+  const register = async (email: string, password: string, turnstileToken: string): Promise<boolean> => {
+    return await authStore.register(email, password, turnstileToken)
   }
 
   /**

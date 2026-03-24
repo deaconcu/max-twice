@@ -19,6 +19,10 @@ export const HTTP_STATUS = {
 export const BUSINESS_ERROR = {
   /** 节点状态异常 - 节点不是发布状态，暂时无法访问或提交内容 */
   NODE_STATE_INVALID: 1309,
+  /** 邮箱未验证 */
+  USER_EMAIL_NOT_VALIDATED: 1104,
+  /** 需要验证码 */
+  CAPTCHA_REQUIRED: 2604,
 } as const
 
 /**

@@ -10,11 +10,13 @@ import com.prosper.learn.user.auth.VerificationDO;
 import com.prosper.learn.user.auth.VerificationDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,10 +40,16 @@ public class UserDomainService {
     private static final String BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    // 登录失败次数相关常量
+    private static final String LOGIN_FAIL_KEY_PREFIX = "login:fail:ip:";
+    private static final int LOGIN_FAIL_MAX_ATTEMPTS = 5;
+    private static final Duration LOGIN_FAIL_EXPIRE_TIME = Duration.ofMinutes(15);
+
     private final UserDataService userDataService;
     private final UserProfileDataService userProfileDataService;
     private final VerificationDataService verificationDataService;
     private final SystemProperties systemProperties;
+    private final StringRedisTemplate stringRedisTemplate;
 
     // ========== 用户状态和角色管理 ==========
 
@@ -257,6 +265,44 @@ public class UserDomainService {
         }
 
         return userDO;
+    }
+
+    // ========== 登录失败次数管理 ==========
+
+    /**
+     * 检查是否需要验证码
+     */
+    public boolean isCaptchaRequired(String ip) {
+        String key = LOGIN_FAIL_KEY_PREFIX + ip;
+        String value = stringRedisTemplate.opsForValue().get(key);
+        if (value == null) {
+            return false;
+        }
+        try {
+            return Integer.parseInt(value) >= LOGIN_FAIL_MAX_ATTEMPTS;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    /**
+     * 记录登录失败
+     */
+    public void recordLoginFailure(String ip) {
+        String key = LOGIN_FAIL_KEY_PREFIX + ip;
+        Long count = stringRedisTemplate.opsForValue().increment(key);
+        if (count != null && count == 1) {
+            stringRedisTemplate.expire(key, LOGIN_FAIL_EXPIRE_TIME);
+        }
+        log.debug("IP {} 登录失败次数: {}", ip, count);
+    }
+
+    /**
+     * 登录成功，清除失败记录
+     */
+    public void clearLoginFailures(String ip) {
+        String key = LOGIN_FAIL_KEY_PREFIX + ip;
+        stringRedisTemplate.delete(key);
     }
 
     // ========== 私有辅助方法 ==========

@@ -163,6 +163,12 @@ public enum StatusCode {
     // 互动相关 25xx
     INTERACTION_CANNOT_UPVOTE_OWN_CONTENT(2501, "不能给自己的内容点赞"),
 
+    // 验证码相关 26xx
+    CAPTCHA_INVALID(2601, "人机验证失败，请重试"),
+    CAPTCHA_EXPIRED(2602, "验证码已过期"),
+    CAPTCHA_SERVICE_ERROR(2603, "验证码服务异常"),
+    CAPTCHA_REQUIRED(2604, "需要进行人机验证"),
+
 
     // 系统错误 9xxx
     SYSTEM_ERROR(9999, "系统繁忙，请稍后重试"),
