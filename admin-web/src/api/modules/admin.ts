@@ -9,6 +9,27 @@ import type {
 } from '@/types/operationLog'
 
 /**
+ * 错误日志 DTO
+ */
+export interface ErrorLogDTO {
+  id: number
+  fingerprint: string
+  source: string
+  errorType: string
+  message: string
+  stackTrace: string
+  url: string
+  userId: number | null
+  ip: string
+  userAgent: string
+  extraData: string
+  count: number
+  firstSeenAt: string
+  lastSeenAt: string
+  status: 'new' | 'ignored' | 'resolved'
+}
+
+/**
  * 审批操作请求
  */
 export interface OperateRequest {
@@ -671,5 +692,47 @@ export const adminApi = {
     error?: string
   }>> {
     return apiClient.get(`/v1/admin/tasks/${taskId}`)
+  },
+
+  // ========== 错误日志 ==========
+
+  /**
+   * 获取错误日志列表
+   */
+  getErrorLogs(params: {
+    source?: string
+    status?: string
+    lastId?: number
+    limit?: number
+  }): Promise<ApiResponse<ErrorLogDTO[]>> {
+    return apiClient.get('/v1/admin/error-logs', { params })
+  },
+
+  /**
+   * 获取错误日志详情
+   */
+  getErrorLogById(id: number): Promise<ApiResponse<ErrorLogDTO>> {
+    return apiClient.get(`/v1/admin/error-logs/${id}`)
+  },
+
+  /**
+   * 更新错误日志状态
+   */
+  updateErrorLogStatus(id: number, status: 'new' | 'ignored' | 'resolved'): Promise<ApiResponse<void>> {
+    return apiClient.put(`/v1/admin/error-logs/${id}/status`, { status })
+  },
+
+  /**
+   * 获取未处理错误数量
+   */
+  getNewErrorCount(): Promise<ApiResponse<number>> {
+    return apiClient.get('/v1/admin/error-logs/count/new')
+  },
+
+  /**
+   * 删除过期错误日志
+   */
+  deleteExpiredErrorLogs(days: number = 30): Promise<ApiResponse<number>> {
+    return apiClient.delete('/v1/admin/error-logs/expired', { params: { days } })
   },
 }

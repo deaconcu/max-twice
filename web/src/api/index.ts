@@ -23,6 +23,7 @@ export { searchApi } from './modules/search'
 export { bookmarkApi } from './modules/bookmark'
 export { tocApi } from './modules/toc'
 export { homeApi } from './modules/home'
+export { errorApi } from './modules/error'
 
 // 导出 apiClient 和 ApiError 供特殊场景使用
 export { default as apiClient } from './client'

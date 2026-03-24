@@ -17,6 +17,7 @@ import CommentReview from '@/components/admin/CommentReview.vue'
 import MemoryCardReview from '@/components/admin/MemoryCardReview.vue'
 import UserManagement from '@/components/admin/UserManagement.vue'
 import OperationLogManagement from '@/components/admin/OperationLogManagement.vue'
+import ErrorLogManagement from '@/components/admin/ErrorLogManagement.vue'
 import ContentGenerator from '@/components/admin/ContentGenerator.vue'
 import ContentGeneratorQueue from '@/components/admin/ContentGeneratorQueue.vue'
 import ContentGeneratorRoadmap from '@/components/admin/ContentGeneratorRoadmap.vue'
@@ -53,6 +54,7 @@ const validTabs = [
   'system-config',
   'system-operations',
   'operation-logs',
+  'error-logs',
   'user-management',
   'content-generator-node',
   'content-generator-path',
@@ -82,6 +84,7 @@ const menuItems = [
   { icon: 'mdi-cog-outline', text: '系统配置', value: 'system-config' },
   { icon: 'mdi-cog-sync', text: '系统操作', value: 'system-operations' },
   { icon: 'mdi-clipboard-text-clock', text: '操作日志', value: 'operation-logs' },
+  { icon: 'mdi-bug-outline', text: '错误日志', value: 'error-logs' },
   { header: '全局内容管理' },
   { icon: 'mdi-account-multiple', text: '用户', value: 'user-management' },
   { icon: 'mdi-briefcase-check-outline', text: '职业', value: 'profession-management' },
@@ -205,6 +208,11 @@ onMounted(async () => {
         <!-- 操作日志 -->
         <v-card v-if="tab == 'operation-logs'" class="px-6 pt-2 pb-6 no-border" rounded="lg">
           <OperationLogManagement />
+        </v-card>
+
+        <!-- 错误日志 -->
+        <v-card v-if="tab == 'error-logs'" class="px-6 pt-2 pb-6 no-border" rounded="lg">
+          <ErrorLogManagement />
         </v-card>
 
         <!-- 职业申请管理 -->

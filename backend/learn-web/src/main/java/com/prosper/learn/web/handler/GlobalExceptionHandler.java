@@ -2,8 +2,11 @@ package com.prosper.learn.web.handler;
 
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
+import cn.dev33.satoken.stp.StpUtil;
+import com.prosper.learn.analytics.monitoring.service.ErrorLogService;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.web.util.IpUtils;
 import com.prosper.learn.web.util.MessageUtils;
 import com.prosper.learn.application.dto.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +25,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 /**
  * 全局异常处理器
  *
@@ -36,6 +42,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 public class GlobalExceptionHandler {
 
     private final MessageUtils messageUtils;
+    private final ErrorLogService errorLogService;
 
     /**
      * 处理未登录异常 - 返回200 + 业务错误码
@@ -159,6 +166,50 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ApiResponse<Object> handleException(Exception e, HttpServletRequest request) {
         log.error("系统异常", e);
+
+        // 记录错误日志
+        recordError(e, request);
+
         return ApiResponse.fail("系统繁忙，请稍后重试").path(request.getRequestURI());
+    }
+
+    /**
+     * 记录错误到数据库
+     */
+    private void recordError(Exception e, HttpServletRequest request) {
+        try {
+            String errorType = e.getClass().getSimpleName();
+            String message = e.getMessage();
+            String stackTrace = getStackTrace(e);
+            String url = request.getRequestURI();
+            Long userId = getCurrentUserId();
+            String ip = IpUtils.getIpAddress(request);
+
+            errorLogService.recordBackendError(errorType, message, stackTrace, url, userId, ip);
+        } catch (Exception ex) {
+            log.error("记录错误日志失败", ex);
+        }
+    }
+
+    /**
+     * 获取当前用户ID
+     */
+    private Long getCurrentUserId() {
+        try {
+            if (StpUtil.isLogin()) {
+                return StpUtil.getLoginIdAsLong();
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    /**
+     * 获取异常堆栈信息
+     */
+    private String getStackTrace(Exception e) {
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
     }
 }
