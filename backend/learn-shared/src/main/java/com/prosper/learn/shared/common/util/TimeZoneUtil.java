@@ -226,14 +226,23 @@ public final class TimeZoneUtil {
      * @return 用户时区的当前日期，如果时区无效则返回系统时区日期
      */
     public static LocalDate getUserToday(String userTimezone) {
+        return LocalDate.now(getZoneId(userTimezone));
+    }
+
+    /**
+     * 解析用户时区字符串为 ZoneId
+     *
+     * @param userTimezone 用户时区（IANA格式，如 "America/Los_Angeles"）
+     * @return ZoneId，如果时区无效则返回系统时区
+     */
+    public static ZoneId getZoneId(String userTimezone) {
         if (userTimezone != null && !userTimezone.isEmpty()) {
             try {
-                ZoneId userZone = ZoneId.of(userTimezone);
-                return LocalDate.now(userZone);
+                return ZoneId.of(userTimezone);
             } catch (Exception e) {
                 // 时区无效，使用系统时区
             }
         }
-        return now();
+        return SYSTEM_ZONE_ID;
     }
 }

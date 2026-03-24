@@ -18,6 +18,7 @@ import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.memory.review.*;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
@@ -28,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -71,9 +71,10 @@ public class MemoryBankService {
         bankDTO.setCourse(courseConverter.toBriefDTO(courseDO));
         bankDTO.setSetting(courseSrsSettingConverter.toDTO(settingDO));
 
-        // 添加今日计数
-        bankDTO.setTodayNewCount(dailyLimitService.getTodayNewCount(userId, courseDO.getId()));
-        bankDTO.setTodayReviewCount(dailyLimitService.getTodayReviewCount(userId, courseDO.getId()));
+        // 添加今日计数（使用用户时区）
+        LocalDate userToday = getUserToday(userId);
+        bankDTO.setTodayNewCount(dailyLimitService.getTodayNewCount(userId, courseDO.getId(), userToday));
+        bankDTO.setTodayReviewCount(dailyLimitService.getTodayReviewCount(userId, courseDO.getId(), userToday));
 
         return bankDTO;
     }
@@ -83,15 +84,18 @@ public class MemoryBankService {
                 .collect(Collectors.toMap(CourseDO::getId, course -> course));
         List<CourseMemoryBankDO> bankDOList = domainService.getBatchCourseCardStats(userId, courseMap.keySet());
 
+        // 获取用户时区的今天日期
+        LocalDate userToday = getUserToday(userId);
+
         List<CourseMemoryBankDTO> bankDTOList = new ArrayList<>();
         for (CourseMemoryBankDO bankDO: bankDOList) {
             CourseMemoryBankDTO courseMemoryBankDTO = courseMemoryBankConverter.toCardStatsDTO(bankDO);
             courseMemoryBankDTO.setCourse(courseConverter.toBriefDTO(courseMap.get(bankDO.getCourseId())));
             courseMemoryBankDTO.setSetting(courseSrsSettingConverter.toDTO(settingMap.get(bankDO.getCourseId())));
 
-            // 添加今日计数
-            courseMemoryBankDTO.setTodayNewCount(dailyLimitService.getTodayNewCount(userId, bankDO.getCourseId()));
-            courseMemoryBankDTO.setTodayReviewCount(dailyLimitService.getTodayReviewCount(userId, bankDO.getCourseId()));
+            // 添加今日计数（使用用户时区）
+            courseMemoryBankDTO.setTodayNewCount(dailyLimitService.getTodayNewCount(userId, bankDO.getCourseId(), userToday));
+            courseMemoryBankDTO.setTodayReviewCount(dailyLimitService.getTodayReviewCount(userId, bankDO.getCourseId(), userToday));
 
             bankDTOList.add(courseMemoryBankDTO);
         }
@@ -150,16 +154,9 @@ public class MemoryBankService {
      * 获取用户时区的"今天"日期
      */
     private LocalDate getUserToday(Long userId) {
-        try {
-            UserDO user = userDataService.getById(userId);
-            if (user != null && user.getTimezone() != null && !user.getTimezone().isEmpty()) {
-                ZoneId userZone = ZoneId.of(user.getTimezone());
-                return LocalDate.now(userZone);
-            }
-        } catch (Exception e) {
-            log.warn("获取用户时区失败，使用默认时区: userId={}", userId, e);
-        }
-        return LocalDate.now(ZoneId.of(systemProperties.getUser().getDefaultTimezone()));
+        UserDO user = userDataService.getById(userId);
+        String timezone = user != null ? user.getTimezone() : null;
+        return TimeZoneUtil.getUserToday(timezone);
     }
 
     /**
@@ -202,11 +199,13 @@ public class MemoryBankService {
         Map<Long, Integer> todayNewCounts = new HashMap<>();
         Map<Long, Integer> todayReviewCounts = new HashMap<>();
         if (needStats) {
+            // 获取用户时区的今天日期
+            LocalDate userToday = getUserToday(userId);
             // 预查各课程今日计数，传入 DataService 用于计算剩余额度
             for (UserCourseSrsSettingDO setting : validSettings) {
                 Long courseId = setting.getCourseId();
-                todayNewCounts.put(courseId, dailyLimitService.getTodayNewCount(userId, courseId));
-                todayReviewCounts.put(courseId, dailyLimitService.getTodayReviewCount(userId, courseId));
+                todayNewCounts.put(courseId, dailyLimitService.getTodayNewCount(userId, courseId, userToday));
+                todayReviewCounts.put(courseId, dailyLimitService.getTodayReviewCount(userId, courseId, userToday));
             }
             List<CourseMemoryBankDO> statsList = domainService.getBatchCourseCardStatsOptimized(userId, validSettings, todayReviewCounts);
             statsMap = statsList.stream()
@@ -258,8 +257,10 @@ public class MemoryBankService {
                 .stream().filter(s -> s.getCourseId().equals(courseId)).findFirst().orElse(null);
         if (setting == null) return null;
 
-        int todayNewCount = dailyLimitService.getTodayNewCount(userId, courseId);
-        int todayReviewCount = dailyLimitService.getTodayReviewCount(userId, courseId);
+        // 获取用户时区的今天日期
+        LocalDate userToday = getUserToday(userId);
+        int todayNewCount = dailyLimitService.getTodayNewCount(userId, courseId, userToday);
+        int todayReviewCount = dailyLimitService.getTodayReviewCount(userId, courseId, userToday);
 
         Map<Long, Integer> todayReviewCounts = new HashMap<>();
         todayReviewCounts.put(courseId, todayReviewCount);

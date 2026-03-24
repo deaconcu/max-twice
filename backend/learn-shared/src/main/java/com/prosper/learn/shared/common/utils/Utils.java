@@ -26,7 +26,6 @@ public class Utils {
     }
 
     private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss");
-    private static final LocalDateTime now = LocalDateTime.now();
 
     // ========== 预编译的正则表达式（用于 stripFormatting 性能优化）==========
 

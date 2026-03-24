@@ -169,7 +169,8 @@ public class StatsController {
             return ApiResponse.fail("用户不存在");
         }
         LocalDate joinedDate = user.getCreatedAt() != null ? user.getCreatedAt().toLocalDate() : null;
-        HeatmapDataDTO data = userLearningStatsService.getHeatmapData(userId, months, joinedDate);
+        String timezone = user.getTimezone();
+        HeatmapDataDTO data = userLearningStatsService.getHeatmapData(userId, months, joinedDate, timezone);
         return ApiResponse.success(data);
     }
 }

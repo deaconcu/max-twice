@@ -139,7 +139,7 @@ public class RoadmapsController {
     @GetMapping("/users/{userId}/roadmaps")
     public ApiResponse<List<RoadmapDetailDTO>> getUserRoadmaps(
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
-            @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId) {
+            @RequestParam(required = false) Long lastId) {
 
         List<RoadmapDetailDTO> roadmaps = roadmapService.getUserRoadmaps(userId, lastId, ContentState.PUBLISHED);
         return ApiResponse.success(roadmaps);

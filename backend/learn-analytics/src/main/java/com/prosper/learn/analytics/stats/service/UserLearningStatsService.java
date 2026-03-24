@@ -39,46 +39,46 @@ public class UserLearningStatsService {
      * 记录完成节点
      *
      * @param userId 用户ID
+     * @param userToday 用户时区的今天日期
      * @param count 完成数量（默认1）
      */
-    public void recordCompletedNodes(long userId, int count) {
+    public void recordCompletedNodes(long userId, LocalDate userToday, int count) {
         if (count <= 0) return;
 
-        LocalDate today = TimeZoneUtil.now();
-        userLearningDailyMapper.incrementCompletedNodes(userId, today, count);
-        log.debug("记录用户{}完成{}个节点", userId, count);
+        userLearningDailyMapper.incrementCompletedNodes(userId, userToday, count);
+        log.debug("记录用户{}完成{}个节点，日期: {}", userId, count, userToday);
     }
 
     /**
      * 记录完成节点（默认1个）
      */
-    public void recordCompletedNode(long userId) {
-        recordCompletedNodes(userId, 1);
+    public void recordCompletedNode(long userId, LocalDate userToday) {
+        recordCompletedNodes(userId, userToday, 1);
     }
 
     /**
      * 记录取消完成节点
      *
      * @param userId 用户ID
+     * @param userToday 用户时区的今天日期
      */
-    public void recordUncompletedNode(long userId) {
-        LocalDate today = TimeZoneUtil.now();
-        userLearningDailyMapper.incrementCancelCompletedNodes(userId, today, 1);
-        log.debug("记录用户{}取消完成1个节点", userId);
+    public void recordUncompletedNode(long userId, LocalDate userToday) {
+        userLearningDailyMapper.incrementCancelCompletedNodes(userId, userToday, 1);
+        log.debug("记录用户{}取消完成1个节点，日期: {}", userId, userToday);
     }
 
     /**
      * 记录复习卡片
      *
      * @param userId 用户ID
+     * @param userToday 用户时区的今天日期
      * @param count 复习数量
      */
-    public void recordReviewedCards(long userId, int count) {
+    public void recordReviewedCards(long userId, LocalDate userToday, int count) {
         if (count <= 0) return;
 
-        LocalDate today = TimeZoneUtil.now();
-        userLearningDailyMapper.incrementReviewedCards(userId, today, count);
-        log.debug("记录用户{}复习{}张卡片", userId, count);
+        userLearningDailyMapper.incrementReviewedCards(userId, userToday, count);
+        log.debug("记录用户{}复习{}张卡片，日期: {}", userId, count, userToday);
     }
 
     // ===== 查询接口 =====
@@ -89,10 +89,13 @@ public class UserLearningStatsService {
      * @param userId 用户ID
      * @param months 月数（默认12个月）
      * @param joinedDate 用户注册日期，用于区分"尚未注册"和"无活动"
+     * @param timezone 用户时区（用于确定"今天"是哪一天）
      * @return 热力图数据
      */
-    public HeatmapDataDTO getHeatmapData(long userId, int months, LocalDate joinedDate) {
-        LocalDate endDate = TimeZoneUtil.now();
+    public HeatmapDataDTO getHeatmapData(long userId, int months, LocalDate joinedDate, String timezone) {
+        // 获取用户时区的今天日期
+        LocalDate today = TimeZoneUtil.getUserToday(timezone);
+        LocalDate endDate = today;
         LocalDate startDate = endDate.minusMonths(months);
 
         // 转换注册日期为字符串
@@ -131,7 +134,6 @@ public class UserLearningStatsService {
         }
 
         // 2. 从 daily 表获取今日数据（覆盖 yearly 中可能存在的旧数据）
-        LocalDate today = TimeZoneUtil.now();
         UserLearningDailyDO todayData = userLearningDailyMapper.getByUserIdAndDate(userId, today);
         if (todayData != null) {
             int completedNodes = todayData.getCompletedNodes() != null ? todayData.getCompletedNodes() : 0;

@@ -40,9 +40,10 @@ public class ReviewDomainService {
      * @param courseId 课程ID（必须指定）
      * @param reviewCardCount 用户当前的复习卡片计数
      * @param newFirst true=先新卡后复习，false=先复习后新卡
+     * @param userToday 用户时区的今天日期
      * @return SRS 状态，无卡片时返回 null
      */
-    public UserCardSrsDO getNextCard(Long userId, Long courseId, long reviewCardCount, boolean newFirst) {
+    public UserCardSrsDO getNextCard(Long userId, Long courseId, long reviewCardCount, boolean newFirst, LocalDate userToday) {
         if (courseId == null) {
             throw StatusCode.INVALID_PARAMETER.exception("必须指定课程");
         }
@@ -61,9 +62,9 @@ public class ReviewDomainService {
             ? setting.getDailyReviewLimit()
             : systemProperties.getSrs().getDefaultDailyReviewLimit();
 
-        // 从 Redis 获取今日计数
-        int todayNewCount = dailyLimitService.getTodayNewCount(userId, courseId);
-        int todayReviewCount = dailyLimitService.getTodayReviewCount(userId, courseId);
+        // 从 Redis 获取今日计数（使用用户时区）
+        int todayNewCount = dailyLimitService.getTodayNewCount(userId, courseId, userToday);
+        int todayReviewCount = dailyLimitService.getTodayReviewCount(userId, courseId, userToday);
 
         boolean canShowNew = todayNewCount < dailyNewLimit;
         boolean canShowReview = todayReviewCount < dailyReviewLimit;
@@ -118,10 +119,11 @@ public class ReviewDomainService {
      * @param rating 评级（1-4）
      * @param reviewCardCount 用户当前的复习卡片计数（已递增后的值）
      * @param userToday 用户时区的今天日期（用于发布复习成功事件）
+     * @param userTimezone 用户时区字符串（用于计算 Redis TTL）
      * @return 更新后的 SRS 状态
      */
     @Transactional
-    public UserCardSrsDO submitReview(Long userId, Long cardId, Long courseId, int rating, long reviewCardCount, LocalDate userToday) {
+    public UserCardSrsDO submitReview(Long userId, Long cardId, Long courseId, int rating, long reviewCardCount, LocalDate userToday, String userTimezone) {
         // 获取SRS状态
         UserCardSrsDO card = srsDataService.getByUserAndCard(userId, cardId);
         if (card == null) {
@@ -156,14 +158,14 @@ public class ReviewDomainService {
         // 更新数据库
         srsDataService.update(card);
 
-        // 更新今日计数（Redis）
+        // 更新今日计数（Redis，使用用户时区）
         if (courseId != null) {
             if (originalType == UserCardSrsDO.TYPE_NEW) {
                 // 新卡片首次学习
-                dailyLimitService.incrementNewCount(userId, courseId);
+                dailyLimitService.incrementNewCount(userId, courseId, userToday, userTimezone);
             } else if (originalType == UserCardSrsDO.TYPE_REVIEW) {
                 // 复习卡片
-                dailyLimitService.incrementReviewCount(userId, courseId);
+                dailyLimitService.incrementReviewCount(userId, courseId, userToday, userTimezone);
             }
             // LEARNING/RELEARNING 不计入上限，因为它们是同一次学习的延续
         }

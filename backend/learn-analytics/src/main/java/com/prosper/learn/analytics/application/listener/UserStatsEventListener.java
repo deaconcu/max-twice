@@ -257,9 +257,9 @@ public class UserStatsEventListener {
     public void onCardReviewed(CardReviewedEvent event) {
         try {
             userStatsService.updateReviewStreak(event.getUserId(), event.getUserToday());
-            // 记录热力图数据
-            userLearningStatsService.recordReviewedCards(event.getUserId(), 1);
-            log.debug("更新复习统计，用户ID: {}", event.getUserId());
+            // 记录热力图数据（使用用户时区的今天日期）
+            userLearningStatsService.recordReviewedCards(event.getUserId(), event.getUserToday(), 1);
+            log.debug("更新复习统计，用户ID: {}, 日期: {}", event.getUserId(), event.getUserToday());
         } catch (Exception e) {
             log.error("处理卡片复习事件失败，用户ID: {}", event.getUserId(), e);
         }
@@ -274,14 +274,14 @@ public class UserStatsEventListener {
     public void onNodeCompleted(NodeCompletedEvent event) {
         try {
             if (event.isCompleted()) {
-                // 记录热力图数据
-                userLearningStatsService.recordCompletedNode(event.getUserId());
+                // 记录热力图数据（使用用户时区的今天日期）
+                userLearningStatsService.recordCompletedNode(event.getUserId(), event.getUserToday());
                 // 更新连续学习天数
                 userStatsService.updateLearningStreak(event.getUserId(), event.getUserToday());
-                log.debug("记录完成节点，用户ID: {}, 节点ID: {}", event.getUserId(), event.getNodeId());
+                log.debug("记录完成节点，用户ID: {}, 节点ID: {}, 日期: {}", event.getUserId(), event.getNodeId(), event.getUserToday());
             } else {
-                userLearningStatsService.recordUncompletedNode(event.getUserId());
-                log.debug("记录取消完成节点，用户ID: {}, 节点ID: {}", event.getUserId(), event.getNodeId());
+                userLearningStatsService.recordUncompletedNode(event.getUserId(), event.getUserToday());
+                log.debug("记录取消完成节点，用户ID: {}, 节点ID: {}, 日期: {}", event.getUserId(), event.getNodeId(), event.getUserToday());
             }
         } catch (Exception e) {
             log.error("处理节点完成事件失败，用户ID: {}", event.getUserId(), e);

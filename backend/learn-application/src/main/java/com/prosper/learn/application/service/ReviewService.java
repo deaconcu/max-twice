@@ -12,6 +12,7 @@ import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDO;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDataService;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.Enums.CardOrder;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
@@ -23,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -75,8 +75,11 @@ public class ReviewService {
         // 获取卡片顺序设置
         boolean newFirst = getNewFirst(userId, courseId);
 
-        // 获取下一张卡片
-        UserCardSrsDO nextSrs = reviewDomainService.getNextCard(userId, courseId, reviewCardCount, newFirst);
+        // 获取用户时区的今天日期
+        LocalDate userToday = getUserToday(user);
+
+        // 获取下一张卡片（传入用户时区）
+        UserCardSrsDO nextSrs = reviewDomainService.getNextCard(userId, courseId, reviewCardCount, newFirst, userToday);
         if (nextSrs == null) {
             return ReviewSubmitResultDTO.empty();
         }
@@ -120,13 +123,14 @@ public class ReviewService {
 
         // 2. 处理 SRS 算法（内部会判断是否发布复习成功事件）
         LocalDate userToday = getUserToday(user);
-        reviewDomainService.submitReview(userId, cardId, courseId, rating, reviewCardCount, userToday);
+        String userTimezone = user.getTimezone();
+        reviewDomainService.submitReview(userId, cardId, courseId, rating, reviewCardCount, userToday, userTimezone);
 
         // 3. 获取卡片顺序设置
         boolean newFirst = getNewFirst(userId, courseId);
 
-        // 4. 获取下一张卡片
-        UserCardSrsDO nextSrs = reviewDomainService.getNextCard(userId, courseId, reviewCardCount, newFirst);
+        // 4. 获取下一张卡片（传入用户时区）
+        UserCardSrsDO nextSrs = reviewDomainService.getNextCard(userId, courseId, reviewCardCount, newFirst, userToday);
 
         ReviewSubmitResultDTO result;
         if (nextSrs == null) {
@@ -219,14 +223,7 @@ public class ReviewService {
      * 获取用户时区的"今天"日期
      */
     private LocalDate getUserToday(UserDO user) {
-        try {
-            if (user != null && user.getTimezone() != null && !user.getTimezone().isEmpty()) {
-                ZoneId userZone = ZoneId.of(user.getTimezone());
-                return LocalDate.now(userZone);
-            }
-        } catch (Exception e) {
-            log.warn("获取用户时区失败，使用默认时区: userId={}", user != null ? user.getId() : null, e);
-        }
-        return LocalDate.now(ZoneId.of(systemProperties.getUser().getDefaultTimezone()));
+        String timezone = user != null ? user.getTimezone() : null;
+        return TimeZoneUtil.getUserToday(timezone);
     }
 }

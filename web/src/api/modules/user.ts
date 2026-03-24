@@ -67,7 +67,20 @@ export const userApi = {
   /**
    * 获取用户的帖子列表
    */
-  getUserPosts(userId: number, lastId?: number, type = 2): Promise<ApiResponse<Post[]>> {
+  getUserPosts(
+    userId: number,
+    lastId?: number,
+    type = 2
+  ): Promise<
+    ApiResponse<{
+      items: Post[]
+      hasMore: boolean
+      nextCursor?: {
+        lastScore?: number
+        lastId?: number
+      }
+    }>
+  > {
     return apiClient.get(`/v1/users/${String(userId)}/posts`, {
       params: { lastId, type },
     })
