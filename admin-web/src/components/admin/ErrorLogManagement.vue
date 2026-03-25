@@ -305,55 +305,53 @@ fetchLogs(true)
     <!-- 详情弹窗 -->
     <v-dialog v-model="detailDialog" max-width="800">
       <v-card v-if="selectedLog" variant="flat" rounded="lg">
-        <v-card-title class="d-flex justify-space-between align-center pa-6 pb-4">
+        <v-card-title class="d-flex justify-space-between align-center pt-2 pb-2 px-4">
           <span>错误详情</span>
           <v-btn icon="mdi-close" variant="text" size="small" @click="detailDialog = false"></v-btn>
         </v-card-title>
 
-        <v-card-text>
+        <v-card-text class="py-0 px-4">
           <!-- 基本信息 -->
-          <v-row dense class="mb-4">
-            <v-col cols="6">
-              <span class="text-caption text-grey mr-2">来源</span>
-              <v-chip :color="getSourceColor(selectedLog.source)" size="small" variant="tonal">
-                {{ getSourceText(selectedLog.source) }}
-              </v-chip>
-            </v-col>
-            <v-col cols="6">
-              <span class="text-caption text-grey mr-2">状态</span>
-              <v-chip :color="getStatusColor(selectedLog.status)" size="small" variant="tonal">
-                {{ getStatusText(selectedLog.status) }}
-              </v-chip>
-            </v-col>
-            <v-col cols="6">
-              <span class="text-caption text-grey mr-2">错误类型</span>
-              <span class="text-body-2">{{ selectedLog.errorType }}</span>
-            </v-col>
-            <v-col cols="6">
-              <span class="text-caption text-grey mr-2">发生次数</span>
-              <span class="text-body-2">{{ selectedLog.count }}</span>
-            </v-col>
-            <v-col cols="6">
-              <span class="text-caption text-grey mr-2">首次发生</span>
-              <span class="text-body-2">{{ selectedLog.firstSeenAt }}</span>
-            </v-col>
-            <v-col cols="6">
-              <span class="text-caption text-grey mr-2">最近发生</span>
-              <span class="text-body-2">{{ selectedLog.lastSeenAt }}</span>
-            </v-col>
-            <v-col cols="12">
-              <span class="text-caption text-grey mr-2">URL</span>
-              <span class="text-body-2">{{ selectedLog.url }}</span>
-            </v-col>
-            <v-col cols="6">
-              <span class="text-caption text-grey mr-2">IP</span>
-              <span class="text-body-2">{{ selectedLog.ip || '-' }}</span>
-            </v-col>
-            <v-col cols="6">
-              <span class="text-caption text-grey mr-2">用户ID</span>
-              <span class="text-body-2">{{ selectedLog.userId || '-' }}</span>
-            </v-col>
-          </v-row>
+          <v-table density="compact" class="mb-4">
+            <tbody>
+              <tr>
+                <td class="text-caption text-grey" style="width: 90px">来源</td>
+                <td>
+                  <v-chip :color="getSourceColor(selectedLog.source)" size="small" variant="tonal">
+                    {{ getSourceText(selectedLog.source) }}
+                  </v-chip>
+                </td>
+                <td class="text-caption text-grey" style="width: 90px">状态</td>
+                <td>
+                  <v-chip :color="getStatusColor(selectedLog.status)" size="small" variant="tonal">
+                    {{ getStatusText(selectedLog.status) }}
+                  </v-chip>
+                </td>
+              </tr>
+              <tr>
+                <td class="text-caption text-grey">错误类型</td>
+                <td>{{ selectedLog.errorType }}</td>
+                <td class="text-caption text-grey">发生次数</td>
+                <td>{{ selectedLog.count }}</td>
+              </tr>
+              <tr>
+                <td class="text-caption text-grey">首次发生</td>
+                <td>{{ selectedLog.firstSeenAt }}</td>
+                <td class="text-caption text-grey">最近发生</td>
+                <td>{{ selectedLog.lastSeenAt }}</td>
+              </tr>
+              <tr>
+                <td class="text-caption text-grey">IP</td>
+                <td>{{ selectedLog.ip || '-' }}</td>
+                <td class="text-caption text-grey">用户ID</td>
+                <td>{{ selectedLog.userId || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="text-caption text-grey">URL</td>
+                <td colspan="3">{{ selectedLog.url }}</td>
+              </tr>
+            </tbody>
+          </v-table>
 
           <!-- 错误消息 -->
           <div class="text-caption text-grey mb-1">错误消息</div>
@@ -364,7 +362,7 @@ fetchLogs(true)
           <div class="code-block stack-trace">{{ selectedLog.stackTrace || '无堆栈信息' }}</div>
         </v-card-text>
 
-        <v-card-actions>
+        <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
           <v-btn
             v-if="selectedLog.status !== 'ignored'"
