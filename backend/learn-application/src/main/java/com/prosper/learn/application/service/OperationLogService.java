@@ -38,22 +38,18 @@ public class OperationLogService {
 
     /**
      * 记录操作日志
+     * 注意：失败会抛出异常，调用方事务会回滚（强一致性）
      */
     public void recordLog(OperationLogDTO logDTO) {
-        try {
-            // DTO 转换为 DO
-            OperationLogDO logDO = operationLogConverter.toDataObject(logDTO);
+        // DTO 转换为 DO
+        OperationLogDO logDO = operationLogConverter.toDataObject(logDTO);
 
-            // 调用 DomainService 记录日志
-            operationLogDomainService.recordLog(logDO);
+        // 调用 DomainService 记录日志
+        operationLogDomainService.recordLog(logDO);
 
-            log.info("Operation log recorded: operator={}, module={}, type={}, target={}:{}",
-                    logDTO.getOperatorName(), logDTO.getModule(), logDTO.getOperationType(),
-                    logDTO.getTargetType(), logDTO.getTargetId());
-        } catch (Exception e) {
-            log.error("Failed to record operation log", e);
-            // 操作日志记录失败不应抛出异常影响主业务
-        }
+        log.info("Operation log recorded: operator={}, module={}, type={}, target={}:{}",
+                logDTO.getOperatorName(), logDTO.getModule(), logDTO.getOperationType(),
+                logDTO.getTargetType(), logDTO.getTargetId());
     }
 
     /**

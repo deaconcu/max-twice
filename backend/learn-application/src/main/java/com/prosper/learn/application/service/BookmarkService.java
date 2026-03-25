@@ -19,6 +19,7 @@ import com.prosper.learn.shared.domain.Enums;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -39,6 +40,7 @@ public class BookmarkService {
     /**
      * 切换收藏状态
      */
+    @Transactional
     public boolean toggleBookmark(long userId, long objectId, Enums.ContentType contentType) {
         // 验证对象存在并获取 parentId
         Long parentId = validateAndGetParentId(objectId, contentType);

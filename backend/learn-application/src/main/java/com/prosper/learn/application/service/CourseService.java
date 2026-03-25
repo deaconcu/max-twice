@@ -252,6 +252,7 @@ public class CourseService {
      *
      * 应用层职责：编排领域服务 + 发送通知（跨Interaction域）
      */
+    @Transactional
     public void approve(long id, UserDO operator) {
         CourseDO courseDO = courseDataService.validateAndGet(id);
         Utils.validateStateTransition(courseDO.getState(), ContentState.PUBLISHED);
@@ -279,6 +280,7 @@ public class CourseService {
      *
      * 应用层职责：编排领域服务 + 发送通知（跨Interaction域）
      */
+    @Transactional
     public void reject(long id, String reason, UserDO operator) {
         CourseDO courseDO = courseDataService.validateAndGet(id);
         Utils.validateStateTransition(courseDO.getState(), ContentState.REJECTED);
@@ -302,6 +304,7 @@ public class CourseService {
      *
      * 应用层职责：编排领域服务，ban 不发送消息
      */
+    @Transactional
     public void ban(long id, String reason, UserDO operator) {
         CourseDO courseDO = courseDataService.validateAndGet(id);
         Utils.validateStateTransition(courseDO.getState(), ContentState.BANNED);
@@ -326,6 +329,7 @@ public class CourseService {
     /**
      * 删除课程
      */
+    @Transactional
     public void delete(long id, UserDO operator) {
         CourseDO courseDO = courseDataService.validateAndGet(id);
 

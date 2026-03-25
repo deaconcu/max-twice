@@ -1,6 +1,7 @@
 package com.prosper.learn.web.v1.config;
 
 import com.prosper.learn.web.v1.interceptor.ReadOnlyModeInterceptor;
+import com.prosper.learn.web.v1.interceptor.RequestContextInterceptor;
 import com.prosper.learn.web.v1.resolver.CurrentUserArgumentResolver;
 import com.prosper.learn.web.v1.resolver.JsonParamArgumentResolver;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     private final JsonParamArgumentResolver jsonParamArgumentResolver;
     private final CurrentUserArgumentResolver currentUserArgumentResolver;
     private final ReadOnlyModeInterceptor readOnlyModeInterceptor;
+    private final RequestContextInterceptor requestContextInterceptor;
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
@@ -31,6 +33,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        // 注册请求上下文拦截器（优先级最高，最先执行）
+        registry.addInterceptor(requestContextInterceptor)
+                .addPathPatterns("/api/v1/**")
+                .order(0);
+
         // 注册只读模式拦截器
         // 只拦截写操作（POST/PUT/DELETE/PATCH），GET 请求在拦截器内部会直接放行
         registry.addInterceptor(readOnlyModeInterceptor)

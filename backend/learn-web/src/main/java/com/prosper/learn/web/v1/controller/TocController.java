@@ -1,7 +1,7 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import com.prosper.learn.content.toc.TocDomainService;
+import com.prosper.learn.application.service.TocService;
 import com.prosper.learn.content.toc.UserNodeTocDO;
 import com.prosper.learn.content.toc.UserNodeTocDataService;
 import com.prosper.learn.user.profile.UserDO;
@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 @Validated
 public class TocController {
 
-    private final TocDomainService tocDomainService;
+    private final TocService tocService;
     private final UserNodeTocDataService userNodeTocDataService;
 
     /**
@@ -46,7 +46,7 @@ public class TocController {
             @JsonParam("indexArray") @NotBlank(message = "索引数组不能为空") String indexArray,
             @CurrentUser UserDO currentUser) {
 
-        tocDomainService.updateUserNodeToc(currentUser.getId(), nodeId, indexArray);
+        tocService.updateUserNodeToc(currentUser.getId(), nodeId, indexArray);
         return ApiResponse.success("目录更新成功", null);
     }
 

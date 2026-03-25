@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -55,6 +56,7 @@ public class LearningProgressService {
     /**
      * 标记节点完成并返回完整的响应数据
      */
+    @Transactional
     public NodeProgressResponseDTO markNodeCompletedWithResponse(long userId, long nodeId, long rootNodeId, LocalDate userToday) {
         // 验证节点是否存在
         nodeDataService.validateAndGet(nodeId);
@@ -86,6 +88,7 @@ public class LearningProgressService {
     /**
      * 取消节点完成并返回完整的响应数据
      */
+    @Transactional
     public NodeProgressResponseDTO unmarkNodeCompletedWithResponse(long userId, long nodeId, long rootNodeId, LocalDate userToday) {
         // 验证节点是否存在
         nodeDataService.validateAndGet(nodeId);

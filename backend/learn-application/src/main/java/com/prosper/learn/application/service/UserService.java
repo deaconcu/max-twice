@@ -159,6 +159,7 @@ public class UserService {
     /**
      * 更新用户状态（管理员操作）
      */
+    @Transactional
     public UserAdminDTO updateUserState(Long userId, boolean ban, UserDO operator) {
         // 委托给 DomainService
         userDomainService.updateUserState(userId, ban);
@@ -199,6 +200,7 @@ public class UserService {
      * 只有管理员可以修改用户角色
      * 只有超级管理员可以设置超级管理员
      */
+    @Transactional
     public UserAdminDTO setUserRole(Long userId, Integer roleCode, UserDO operator) {
         validateUserId(userId);
 
@@ -221,6 +223,7 @@ public class UserService {
     /**
      * 更新当前用户信息
      */
+    @Transactional
     public void updateCurrentUser(Long userId, String name, String biography, String timezone) {
         validateUsername(name);
 
@@ -294,6 +297,7 @@ public class UserService {
      *
      * @param email 邮箱
      */
+    @Transactional
     public void resendVerificationCode(String email) {
         validateEmailFormat(email);
 

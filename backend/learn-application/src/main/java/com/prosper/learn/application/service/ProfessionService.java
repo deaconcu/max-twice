@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -226,6 +227,7 @@ public class ProfessionService {
 
     // ========== Command 方法 ==========
 
+    @Transactional
     public Long create(CreateProfessionRequest request, UserDO creator) {
         // 调用 DomainService 创建职业
         return professionDomainService.create(
@@ -238,6 +240,7 @@ public class ProfessionService {
         );
     }
 
+    @Transactional
     public void update(Long id, UpdateProfessionRequest request, UserDO operator) {
         // 参数验证
         if (request == null) {
@@ -258,6 +261,7 @@ public class ProfessionService {
         );
     }
 
+    @Transactional
     public void approve(long id, UserDO operator) {
         // 调用 DomainService 执行审核通过
         professionDomainService.approve(
@@ -277,6 +281,7 @@ public class ProfessionService {
         ));
     }
 
+    @Transactional
     public void reject(long id, String reason, UserDO operator) {
         // 调用 DomainService 执行拒绝
         professionDomainService.reject(
@@ -299,6 +304,7 @@ public class ProfessionService {
         ));
     }
 
+    @Transactional
     public void ban(long id, String reason, UserDO operator) {
         // 调用 DomainService 执行封禁
         professionDomainService.ban(
@@ -317,6 +323,7 @@ public class ProfessionService {
     /**
      * 删除职业
      */
+    @Transactional
     public void delete(long id, UserDO operator) {
         // 调用 DomainService 执行删除
         professionDomainService.delete(id);

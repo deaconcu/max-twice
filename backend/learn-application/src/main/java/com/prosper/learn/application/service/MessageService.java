@@ -176,65 +176,6 @@ public class MessageService {
         return toDTOV1(messageDO);
     }
 
-// --注释掉检查 START (2025/12/29 待私信功能开发时启用)
-//    /**
-//     * 获取消息列表
-//     *
-//     * @param type 消息类型
-//     * @param senderId 发送者ID
-//     * @param receiverId 接收者ID
-//     * @param lastId 最后一条消息ID
-//     * @param conversation 是否为对话模式
-//     * @return 消息DTO列表
-//     */
-//    public List<MessageDTO> getList(int type, long senderId, long receiverId, long lastId, int conversation) {
-//        // 委托给领域服务获取数据
-//        List<MessageDO> messageDOList = messageDomainService.getMessagesList(
-//                type, senderId, receiverId, lastId, DEFAULT_PAGE_SIZE, conversation);
-//
-//        // DTO转换
-//        return toDTOV1(messageDOList);
-//    }
-// --注释掉检查 STOP (2025/12/29 待私信功能开发时启用)
-
-// --注释掉检查 START (2025/12/10 11:16):
-//    /**
-//     * 获取系统消息
-//     */
-//    public List<MessageDTO> getSystemMessage(int page, int length) {
-//        if (page < 1) return new ArrayList<>();
-//
-//        List<MessageDO> messageDOList = messageDomainService.getApplyCourseMessages((page - 1) * length, length);
-//        return messageConverter.toDTO(messageDOList);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:16)
-
-// --注释掉检查 START (2025/12/10 11:16):
-//    /**
-//     * 获取课程申请列表（带分页信息）
-//     */
-//    public Map<String, Object> getApplyCourseListWithPagination(int page, int length) {
-//        if (page < 1) page = 1;
-//        if (length < 1) length = 1;
-//        if (length > 100) length = 100;
-//        int count = (int) getApplyCourseCount();
-//        int totalPage = count / length + 1;
-//        if (page > totalPage) page = totalPage;
-//
-//        Map<String, Object> resultMap = new HashMap<>();
-//        List<MessageDTO> messageDTOList = getApplyCourseMessage(page, length);
-//        resultMap.put("messages", messageDTOList);
-//
-//        Map<String, Integer> pagination = new HashMap<>();
-//        pagination.put("total", count);
-//        pagination.put("pageSize", length);
-//        pagination.put("currentPage", page);
-//        pagination.put("totalPages", totalPage);
-//        resultMap.put("pagination", pagination);
-//        return resultMap;
-//    }
-// --注释掉检查 STOP (2025/12/10 11:16)
-
     /**
      * 按分类获取消息列表（返回包含 lastViewedMessageId 的响应）
      *

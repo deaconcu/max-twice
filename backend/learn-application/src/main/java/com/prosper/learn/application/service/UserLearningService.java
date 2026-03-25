@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -235,6 +236,7 @@ public class UserLearningService {
     /**
      * 开始学习（发布学习开始事件）
      */
+    @Transactional
     public void startLearning(Long userId, Enums.ContentType objectType, Long objectId) {
         // 默认 isRootNode=FALSE（普通节点或路线图）
         userLearningDomainService.startLearning(userId, objectType, objectId, Enums.Bool.FALSE.value());
@@ -263,6 +265,7 @@ public class UserLearningService {
      * 开始学习课程
      * 接收 courseId，内部转换为 rootNodeId，并标记 isRootNode=TRUE
      */
+    @Transactional
     public void startLearningCourse(Long userId, Long courseId) {
         // 1. 获取课程的根节点ID
         CourseDO course = courseDataService.getById(courseId);
@@ -304,6 +307,7 @@ public class UserLearningService {
     /**
      * 取消学习
      */
+    @Transactional
     public void cancelLearning(Long userId, Enums.ContentType objectType, Long objectId) {
         userLearningDomainService.cancelLearning(userId, objectType, objectId);
     }
@@ -312,6 +316,7 @@ public class UserLearningService {
      * 取消学习课程
      * 接收 courseId，内部转换为 rootNodeId
      */
+    @Transactional
     public void cancelLearningCourse(Long userId, Long courseId) {
         // 1. 获取课程的根节点ID
         CourseDO course = courseDataService.getById(courseId);
@@ -331,6 +336,7 @@ public class UserLearningService {
     /**
      * 更新学习进度
      */
+    @Transactional
     public void updateProgress(Long userId, Enums.ContentType objectType, Long objectId, Integer progressPercent) {
         userLearningDomainService.updateProgress(userId, objectType, objectId, progressPercent);
     }
@@ -339,6 +345,7 @@ public class UserLearningService {
      * 更新课程学习进度
      * 接收 courseId，内部转换为 rootNodeId
      */
+    @Transactional
     public void updateCourseProgress(Long userId, Long courseId, Integer progressPercent) {
         // 1. 获取课程的根节点ID
         CourseDO course = courseDataService.getById(courseId);
