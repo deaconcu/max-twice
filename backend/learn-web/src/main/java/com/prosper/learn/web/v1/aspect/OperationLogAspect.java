@@ -6,12 +6,13 @@ import com.prosper.learn.infrastructure.context.RequestContext;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.util.IpUtils;
 import com.prosper.learn.web.v1.annotation.OperationLog;
-import com.prosper.learn.web.v1.interceptor.RequestContextInterceptor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
@@ -33,6 +34,7 @@ import java.lang.reflect.Parameter;
 @Component
 @Slf4j
 @RequiredArgsConstructor
+@Order(Ordered.LOWEST_PRECEDENCE - 1)
 public class OperationLogAspect {
 
     private final OperationLogService operationLogService;
@@ -41,7 +43,7 @@ public class OperationLogAspect {
     @Around("@annotation(operationLog)")
     public Object logOperation(ProceedingJoinPoint joinPoint, OperationLog operationLog) throws Throwable {
         // 1. 获取当前用户信息（从 RequestContext 获取）
-        UserDO currentUser = RequestContext.get(RequestContextInterceptor.KEY_CURRENT_USER);
+        UserDO currentUser = RequestContext.getCurrentUser();
         if (currentUser == null) {
             throw new IllegalStateException("无法获取当前用户，操作日志记录失败");
         }

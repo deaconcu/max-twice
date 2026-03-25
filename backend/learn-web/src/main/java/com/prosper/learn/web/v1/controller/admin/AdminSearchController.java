@@ -4,6 +4,7 @@ import com.prosper.learn.application.dto.ApiResponse;
 import com.prosper.learn.application.service.MeilisearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import com.prosper.learn.web.v1.annotation.OperationLog;
@@ -21,6 +22,7 @@ public class AdminSearchController {
     private final MeilisearchService meilisearchService;
 
     @PostMapping("/sync-all")
+    @Transactional
     @OperationLog(
         module = "系统维护",
         type = "全量同步搜索",
@@ -35,6 +37,7 @@ public class AdminSearchController {
     }
 
     @PostMapping("/sync-courses")
+    @Transactional
     @OperationLog(
         module = "系统维护",
         type = "同步课程搜索",
@@ -49,6 +52,7 @@ public class AdminSearchController {
     }
 
     @PostMapping("/sync-nodes")
+    @Transactional
     @OperationLog(
         module = "系统维护",
         type = "同步节点搜索",
@@ -63,6 +67,7 @@ public class AdminSearchController {
     }
 
     @PostMapping("/sync-users")
+    @Transactional
     @OperationLog(
         module = "系统维护",
         type = "同步用户搜索",
@@ -77,6 +82,7 @@ public class AdminSearchController {
     }
 
     @PostMapping("/sync-professions")
+    @Transactional
     @OperationLog(
         module = "系统维护",
         type = "同步职业搜索",

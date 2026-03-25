@@ -18,6 +18,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -90,6 +91,7 @@ public class AdminUserController {
     @PostMapping("/users/{id}/role")
     @RequireRole(UserRole.ADMIN)
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @Transactional
     @OperationLog(
         module = "用户管理",
         type = "修改用户角色",
@@ -115,6 +117,7 @@ public class AdminUserController {
     @PutMapping("/users/{id}/state")
     @RequireRole(UserRole.ADMIN)
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @Transactional
     @OperationLog(
         module = "用户管理",
         type = "#ban ? '封禁用户' : '解封用户'",
@@ -140,6 +143,7 @@ public class AdminUserController {
     @PostMapping("/users/{id}/ban")
     @RequireRole(UserRole.ADMIN)
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @Transactional
     @OperationLog(
         module = "用户管理",
         type = "#ban ? '封禁用户' : '解封用户'",

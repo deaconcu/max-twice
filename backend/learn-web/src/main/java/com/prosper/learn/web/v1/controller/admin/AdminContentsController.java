@@ -26,6 +26,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -229,6 +230,7 @@ public class AdminContentsController {
     @PutMapping("/roadmap/{id}")
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @Transactional
     @OperationLog(
         module = "用户内容管理",
         type = "更新路线图",
@@ -251,6 +253,7 @@ public class AdminContentsController {
     @PutMapping("/course/{id}")
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @Transactional
     @OperationLog(
         module = "全局内容管理",
         type = "更新课程",
@@ -302,6 +305,7 @@ public class AdminContentsController {
     @PutMapping("/profession/{id}")
     @RequireRole(UserRole.ADMIN)
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @Transactional
     @OperationLog(
         module = "全局内容管理",
         type = "更新职业",
@@ -375,6 +379,7 @@ public class AdminContentsController {
     @PostMapping("/{contentType}/{id}/operate")
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @Transactional
     @OperationLog(
         module = "#contentType == 'course' || #contentType == 'profession' || #contentType == 'node' ? '全局内容管理' : '用户内容管理'",
         type = "#request.action.toUpperCase() == 'APPROVE' ? '审核通过' : " +
@@ -528,6 +533,7 @@ public class AdminContentsController {
      */
     @PostMapping("/nodes/init-embeddings")
     @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.HOURS, limitType = LimitType.GLOBAL)
+    @Transactional
     @OperationLog(
         module = "系统维护",
         type = "初始化节点Embedding",
@@ -558,6 +564,7 @@ public class AdminContentsController {
      */
     @PostMapping("/nodes/recalculate-references")
     @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.HOURS, limitType = LimitType.GLOBAL)
+    @Transactional
     @OperationLog(
         module = "系统维护",
         type = "重算节点引用数",
@@ -582,6 +589,7 @@ public class AdminContentsController {
      * POST /api/v1/admin/contents/course/create
      */
     @PostMapping("/course/create")
+    @Transactional
     @OperationLog(
         module = "全局内容管理",
         type = "创建课程",
@@ -603,6 +611,7 @@ public class AdminContentsController {
      * POST /api/v1/admin/contents/node/create
      */
     @PostMapping("/node/create")
+    @Transactional
     @OperationLog(
         module = "全局内容管理",
         type = "创建节点",

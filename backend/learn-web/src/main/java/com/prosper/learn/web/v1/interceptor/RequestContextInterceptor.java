@@ -21,8 +21,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Slf4j
 public class RequestContextInterceptor implements HandlerInterceptor {
 
-    public static final String KEY_CURRENT_USER = "currentUser";
-
     private final UserDataService userDataService;
 
     @Override
@@ -35,7 +33,7 @@ public class RequestContextInterceptor implements HandlerInterceptor {
                 Long userId = StpUtil.getLoginIdAsLong();
                 UserDO user = userDataService.getById(userId);
                 if (user != null) {
-                    RequestContext.set(KEY_CURRENT_USER, user);
+                    RequestContext.setCurrentUser(user);
                 }
             }
         } catch (Exception e) {

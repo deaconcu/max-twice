@@ -18,6 +18,7 @@ import com.prosper.learn.web.v1.annotation.JsonParam;
 import com.prosper.learn.web.v1.annotation.OperationLog;
 import com.prosper.learn.web.v1.annotation.RequireRole;
 import jakarta.validation.constraints.*;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -109,6 +110,7 @@ public class AdminSystemController {
      */
     @PostMapping("/system")
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @Transactional
     @OperationLog(
         module = "系统配置",
         type = "修改系统配置",
@@ -144,6 +146,7 @@ public class AdminSystemController {
      */
     @DeleteMapping("/system")
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @Transactional
     @OperationLog(
         module = "系统配置",
         type = "删除系统配置",
@@ -195,6 +198,7 @@ public class AdminSystemController {
      */
     @PostMapping("/system/readonly-mode")
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @Transactional
     @OperationLog(
         module = "系统配置",
         type = "#enable ? '开启只读模式' : '关闭只读模式'",
@@ -229,6 +233,7 @@ public class AdminSystemController {
      */
     @PostMapping("/tasks/recalculate-sub-course-counts")
     @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @Transactional
     @OperationLog(
         module = "系统任务",
         type = "重算子课程数量",
