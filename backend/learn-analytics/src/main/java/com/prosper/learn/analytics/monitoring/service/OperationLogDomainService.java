@@ -31,26 +31,22 @@ public class OperationLogDomainService {
 
     /**
      * 记录操作日志
+     * 注意：失败会抛出异常，调用方事务会回滚（强一致性）
      *
      * @param logDO 操作日志对象
      */
     public void recordLog(OperationLogDO logDO) {
-        try {
-            // 设置创建时间
-            if (logDO.getCreatedAt() == null) {
-                logDO.setCreatedAt(TimeZoneUtil.nowDateTime());
-            }
-
-            // 插入数据库
-            operationLogDataService.insert(logDO);
-
-            log.debug("Operation log recorded: operator={}, module={}, type={}, target={}:{}",
-                    logDO.getOperatorId(), logDO.getModule(), logDO.getOperationType(),
-                    logDO.getTargetType(), logDO.getTargetId());
-        } catch (Exception e) {
-            log.error("Failed to record operation log", e);
-            // 操作日志记录失败不应抛出异常影响主业务
+        // 设置创建时间
+        if (logDO.getCreatedAt() == null) {
+            logDO.setCreatedAt(TimeZoneUtil.nowDateTime());
         }
+
+        // 插入数据库
+        operationLogDataService.insert(logDO);
+
+        log.debug("Operation log recorded: operator={}, module={}, type={}, target={}:{}",
+                logDO.getOperatorId(), logDO.getModule(), logDO.getOperationType(),
+                logDO.getTargetType(), logDO.getTargetId());
     }
 
     // ========== Query 方法（读操作）==========
