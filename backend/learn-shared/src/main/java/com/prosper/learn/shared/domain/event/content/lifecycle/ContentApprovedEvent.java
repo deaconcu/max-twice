@@ -1,6 +1,7 @@
 package com.prosper.learn.shared.domain.event.content.lifecycle;
 
 import static com.prosper.learn.shared.domain.Enums.ContentType;
+import static com.prosper.learn.shared.domain.Enums.PostType;
 import lombok.Data;
 
 import java.util.List;
@@ -46,8 +47,8 @@ public class ContentApprovedEvent {
     /** 帖子ID（memory_card_deck 类型使用）*/
     private Long postId;
 
-    /** 帖子类型（post 类型使用，1=CONTENTS, 2=ARTICLE）*/
-    private Integer postType;
+    /** 帖子类型（post 类型使用）*/
+    private PostType postType;
 
     /** 目录型帖子引用的节点ID列表（post 类型且 postType=CONTENTS 时使用）*/
     private List<Long> referencedNodeIds;
@@ -93,7 +94,7 @@ public class ContentApprovedEvent {
     }
 
     /** Post 类型构造函数 */
-    public static ContentApprovedEvent forPost(Long creatorId, Long postId, String postPreview, Long nodeId, String nodeName, String courseName, Integer postType) {
+    public static ContentApprovedEvent forPost(Long creatorId, Long postId, String postPreview, Long nodeId, String nodeName, String courseName, PostType postType) {
         ContentApprovedEvent event = new ContentApprovedEvent();
         event.creatorId = creatorId;
         event.contentId = postId;
@@ -113,7 +114,7 @@ public class ContentApprovedEvent {
         event.contentId = postId;
         event.contentType = ContentType.post;
         event.nodeId = nodeId;
-        event.postType = 1; // PostType.CONTENTS
+        event.postType = PostType.index;
         event.referencedNodeIds = referencedNodeIds;
         return event;
     }

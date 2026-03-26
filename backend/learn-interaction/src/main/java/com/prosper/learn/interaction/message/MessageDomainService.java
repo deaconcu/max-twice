@@ -176,35 +176,6 @@ public class MessageDomainService {
         createSystemMessage(MessageType.invite.value(), receiverId, Utils.toJson(messageMap));
     }
 
-    /**
-     * 更新消息
-     *
-     * @param message 要更新的消息
-     */
-    public void updateMessage(MessageDO message) {
-        messageDataService.update(message);
-        log.debug("Updated message: {}", message.getId());
-    }
-
-    /**
-     * 修改课程申请回复
-     */
-    public void modifyCourseApply(long messageId, String reply) {
-        MessageDO messageDO = getById(messageId);
-
-        String content = messageDO.getContent();
-        try {
-            Map<String, String> map = objectMapper.readValue(content, Map.class);
-            map.put("reply", reply);
-
-            content = objectMapper.writeValueAsString(map);
-            messageDO.setContent(content);
-            updateMessage(messageDO);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     // ========== 审核通知方法 ==========
 
     /**
@@ -255,29 +226,6 @@ public class MessageDomainService {
             case REJECTED -> MessageType.postRejected.value();
             case BANNED -> MessageType.postBanned.value();
             default -> throw new RuntimeException("帖子审核操作只支持 REJECTED 和 BANNED");
-        };
-
-        createSystemMessage(type, userId, Utils.toJson(data));
-    }
-
-    /**
-     * 发送评论审核通知
-     */
-    public void sendCommentModeration(long userId, long commentId, String commentPreview,
-                                      String objectType, long objectId, String objectTitle,
-                                      ModerationAction action, String reason) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("commentId", commentId);
-        data.put("commentPreview", Utils.stripFormatting(commentPreview));
-        data.put("objectType", objectType);
-        data.put("objectId", objectId);
-        data.put("objectTitle", objectTitle);
-        data.put("reason", reason != null ? reason : "");
-
-        int type = switch (action) {
-            case REJECTED -> MessageType.commentRejected.value();
-            case BANNED -> MessageType.commentBanned.value();
-            default -> throw new RuntimeException("评论审核操作只支持 REJECTED 和 BANNED");
         };
 
         createSystemMessage(type, userId, Utils.toJson(data));
@@ -378,32 +326,6 @@ public class MessageDomainService {
     }
 
     // ========== Query 方法（读操作）==========
-
-// --注释掉检查 START (2025/12/29 待私信功能开发时启用)
-//    /**
-//     * 获取消息列表（核心查询逻辑）
-//     *
-//     * @param type 消息类型
-//     * @param senderId 发送者ID
-//     * @param receiverId 接收者ID
-//     * @param lastId 最后一条消息ID
-//     * @param pageSize 分页大小
-//     * @param conversation 是否为对话模式
-//     * @return 消息DO列表
-//     */
-//    public List<MessageDO> getMessagesList(int type, long senderId, long receiverId,
-//                                         long lastId, int pageSize, int conversation) {
-//        if (type == MessageType.applyCourse.value()) {
-//            return messageDataService.listByPull(type, lastId, pageSize);
-//        } else if (senderId == 0) {
-//            return messageDataService.listByPull(type, lastId, pageSize);
-//        } else if (conversation == 0) {
-//            return messageDataService.getListByUser(type, senderId, receiverId, lastId, pageSize);
-//        } else {
-//            return messageDataService.getConversationByUser(senderId, receiverId, lastId, pageSize);
-//        }
-//    }
-// --注释掉检查 STOP (2025/12/29 待私信功能开发时启用)
 
     /**
      * 按分类获取消息列表（核心查询逻辑）

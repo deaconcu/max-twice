@@ -77,23 +77,6 @@ public class UserService {
         return toProfileDTO(userDO);
     }
 
-// --注释掉检查 START (2025/12/10 11:32):
-//    /**
-//     * 获取用户公开信息（包含关注状态）
-//     * 被屏蔽的用户会抛出异常
-//     */
-//    public UserPublicDTO getUser(Long userId, Long viewerId) {
-//        validateUserId(viewerId);
-//        UserDO userDO = validateUserExists(userId);
-//
-//        if (userDO.getState() != null && userDO.getState() == UserState.BANNED.value()) {
-//            throw ErrorCode.USER_BANNED.exception();
-//        }
-//
-//        return toPublicDTO(userDO, viewerId);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:32)
-
     /**
      * 根据用户名获取用户公开信息（包含关注状态）
      * 被屏蔽的用户会抛出异常
@@ -107,18 +90,6 @@ public class UserService {
         }
 
         return toPublicDTO(userDO, viewerId);
-    }
-
-    /**
-     * 批量加载用户简要信息
-     */
-    public Map<Long, UserBriefDTO> getUserMap(List<Long> ids) {
-        if (ids.isEmpty()) {
-            return new HashMap<>();
-        }
-
-        List<UserBriefDTO> userList = toBriefDTO(userDataService.getByIds(ids));
-        return userList.stream().collect(Collectors.toMap(UserBriefDTO::getId, user -> user));
     }
 
     /**
@@ -322,48 +293,6 @@ public class UserService {
         log.info("重新发送验证码成功: {}", email);
     }
 
-// --注释掉检查 START (2025/12/10 11:32):
-//    /**
-//     * 关注用户
-//     */
-//    @Transactional
-//    public void follow(Long followerId, Long followeeId) {
-//        validateUserId(followerId);
-//        validateUserExists(followeeId);
-//
-//        if (followerId.equals(followeeId)) {
-//            throw ErrorCode.INVALID_PARAMETER.exception();
-//        }
-//
-//        FollowDO followDO = followDataService.get(followerId, followeeId);
-//        if (systemProperties.getUser().isEnableDuplicateFollowCheck() && followDO != null) {
-//            throw ErrorCode.USER_ALREADY_FOLLOWED.exception();
-//        }
-//
-//        if (followDO == null) {
-//            UserDO follower = userDataService.getById(followerId);
-//            followDataService.insert(followerId, followeeId);
-//            messageService.createFollowMessage(followeeId, follower.getId());
-//        }
-//    }
-// --注释掉检查 STOP (2025/12/10 11:32)
-
-// --注释掉检查 START (2025/12/10 11:32):
-//    /**
-//     * 取消关注
-//     */
-//    @Transactional
-//    public void unfollow(Long followerId, Long followeeId) {
-//        validateUserId(followerId);
-//        validateUserExists(followeeId);
-//
-//        FollowDO followDO = followDataService.get(followerId, followeeId);
-//        if (followDO != null) {
-//            followDataService.delete(followerId, followeeId);
-//        }
-//    }
-// --注释掉检查 STOP (2025/12/10 11:32)
-
     /**
      * 生成验证码
      * 使用 SecureRandom 确保密码学安全
@@ -426,21 +355,6 @@ public class UserService {
     public List<UserSummaryDTO> toSummaryDTO(List<UserDO> userDOList) {
         return userConverter.toSummaryDTO(userDOList);
     }
-
-// --注释掉检查 START (2025/12/10 11:32):
-//    /**
-//     * 转换为带订阅信息的用户 DTO
-//     * 用途：用户个人中心
-//     * 替代：原 V3
-//     */
-//    public UserWithSubscriptionsDTO toWithSubscriptionsDTO(UserDO userDO) {
-//        if (userDO == null) return null;
-//
-//        UserWithSubscriptionsDTO dto = userConverter.toWithSubscriptionsDTO(userDO);
-//        dto.setSubscriptions(getSubscriptions(userDO.getId()));
-//        return dto;
-//    }
-// --注释掉检查 STOP (2025/12/10 11:32)
 
     /**
      * 转换为公开用户信息 DTO（含关注状态）
@@ -648,15 +562,4 @@ public class UserService {
             dto.setProgress(progressMap.getOrDefault(dto.getId(), 0));
         }
     }
-
-// --注释掉检查 START (2025/12/10 11:32):
-//    private FolloweeDTO createFolloweeDTO(FollowDO followDO, UserDO userDO) {
-//        FolloweeDTO followeeDTO = new FolloweeDTO();
-//        followeeDTO.setId(followDO.getFolloweeId());
-//        followeeDTO.setName(userDO.getName());
-//        followeeDTO.setBiography(userDO.getBiography());
-//        followeeDTO.setCreatedAt(Utils.getTimeString(followDO.getCreatedAt()));
-//        return followeeDTO;
-//    }
-// --注释掉检查 STOP (2025/12/10 11:32)
 }

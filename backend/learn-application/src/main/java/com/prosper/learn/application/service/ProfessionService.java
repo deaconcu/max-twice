@@ -175,13 +175,6 @@ public class ProfessionService {
         return toDTO(professionDOList);
     }
 
-// --注释掉检查 START (2025/12/10 11:23):
-//    public List<ProfessionDTO> getListBySubCategoryAndLastId(int subCategory, Long lastId) {
-//        List<ProfessionDO> professionDOList = professionDomainService.listBySubCategoryAndLastId(subCategory, lastId);
-//        return toDTO(professionDOList);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:23)
-
     public List<ProfessionDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, Long lastId, int limit) {
         List<ProfessionDO> professionDOList = professionDomainService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId, limit);
         return toDTO(professionDOList);

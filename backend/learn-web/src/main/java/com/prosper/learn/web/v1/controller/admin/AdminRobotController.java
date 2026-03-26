@@ -1,4 +1,4 @@
-package com.prosper.learn.web.v1.controller;
+package com.prosper.learn.web.v1.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;

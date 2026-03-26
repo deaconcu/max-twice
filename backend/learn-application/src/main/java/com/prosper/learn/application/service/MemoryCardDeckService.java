@@ -25,6 +25,8 @@ import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEven
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRemovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRestoredEvent;
+
+import static com.prosper.learn.shared.domain.Enums.ContentState;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
@@ -617,7 +619,7 @@ public class MemoryCardDeckService {
         eventPublisher.publishEvent(ContentBannedEvent.forMemoryCardDeck(
             deck.getCreatorId(),
             deck.getId(),
-            previousState,
+            ContentState.getByValue(previousState),
             deck.getPostId(),
             nodeId,
             postContentPreview,
@@ -714,7 +716,7 @@ public class MemoryCardDeckService {
             auditorId,  // operatorId
             deck.getCreatorId(),
             deck.getId(),
-            previousState,
+            ContentState.getByValue(previousState),
             deck.getPostId(),
             nodeId,
             postContentPreview,

@@ -33,6 +33,8 @@ import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEven
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRemovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRestoredEvent;
+
+import static com.prosper.learn.shared.domain.Enums.ContentState;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
@@ -835,7 +837,7 @@ public class RoadmapService {
         eventPublisher.publishEvent(ContentBannedEvent.forRoadmap(
             roadmap.getCreatorId(),
             roadmap.getId(),
-            previousState,
+            ContentState.getByValue(previousState),
             roadmap.getProfessionId(),
             profession != null ? profession.getName() : null,
             reason
@@ -917,7 +919,7 @@ public class RoadmapService {
             operator.getId(),  // operatorId
             roadmap.getCreatorId(),
             roadmap.getId(),
-            previousState,
+            ContentState.getByValue(previousState),
             roadmap.getProfessionId(),
             profession != null ? profession.getName() : null,
             reason
@@ -928,26 +930,6 @@ public class RoadmapService {
         roadmap.setState(ContentState.PUBLISHED.value());
         return toSummaryDTO(roadmap);
     }
-
-// --注释掉检查 START (2025/12/10 11:24):
-//    /**
-//     * 清除描述并批准路线图
-//     */
-//    @Transactional
-//    public RoadmapSummaryDTO approveAndClearDescription(long id, UserDO operator) {
-//        RoadmapDO roadmap = roadmapDataService.getById(id);
-//        if (roadmap == null) {
-//            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
-//        }
-//
-//        // 委托给 DomainService
-//        domainService.approveAndClearDescription(id);
-//        roadmap.setDescription("");
-//        roadmap.setState(ContentState.PUBLISHED.value());
-//
-//        return toSummaryDTO(roadmap);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:24)
 
     /**
      * 更新路线图描述（管理员操作）

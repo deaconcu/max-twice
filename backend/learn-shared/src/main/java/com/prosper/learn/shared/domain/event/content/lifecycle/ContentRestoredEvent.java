@@ -1,6 +1,8 @@
 package com.prosper.learn.shared.domain.event.content.lifecycle;
 
+import static com.prosper.learn.shared.domain.Enums.ContentState;
 import static com.prosper.learn.shared.domain.Enums.ContentType;
+import static com.prosper.learn.shared.domain.Enums.PostType;
 import lombok.Data;
 
 /**
@@ -27,14 +29,14 @@ public class ContentRestoredEvent {
     /** 内容类型 */
     private ContentType contentType;
 
-    /** 之前的状态（REJECTED=3 或 BANNED=4）*/
-    private Byte previousState;
+    /** 之前的状态（REJECTED 或 BANNED）*/
+    private ContentState previousState;
 
     /** 节点ID（post 类型使用）*/
     private Long nodeId;
 
-    /** 帖子类型（post 类型使用，1=ARTICLE, 2=INDEX）*/
-    private Integer postType;
+    /** 帖子类型（post 类型使用）*/
+    private PostType postType;
 
     /** 职业ID（roadmap 类型使用）*/
     private Long professionId;
@@ -60,8 +62,8 @@ public class ContentRestoredEvent {
     // ========== 各类型专用构造函数 ==========
 
     /** Post 类型构造函数 */
-    public static ContentRestoredEvent forPost(Long operatorId, Long creatorId, Long postId, Byte previousState,
-                                               Long nodeId, Integer postType, String postPreview, String nodeName,
+    public static ContentRestoredEvent forPost(Long operatorId, Long creatorId, Long postId, ContentState previousState,
+                                               Long nodeId, PostType postType, String postPreview, String nodeName,
                                                String courseName, String reason) {
         ContentRestoredEvent event = new ContentRestoredEvent();
         event.operatorId = operatorId;
@@ -79,7 +81,7 @@ public class ContentRestoredEvent {
     }
 
     /** Roadmap 类型构造函数 */
-    public static ContentRestoredEvent forRoadmap(Long operatorId, Long creatorId, Long roadmapId, Byte previousState,
+    public static ContentRestoredEvent forRoadmap(Long operatorId, Long creatorId, Long roadmapId, ContentState previousState,
                                                   Long professionId, String professionName, String reason) {
         ContentRestoredEvent event = new ContentRestoredEvent();
         event.operatorId = operatorId;
@@ -94,7 +96,7 @@ public class ContentRestoredEvent {
     }
 
     /** MemoryCardDeck 类型构造函数 */
-    public static ContentRestoredEvent forMemoryCardDeck(Long operatorId, Long creatorId, Long deckId, Byte previousState,
+    public static ContentRestoredEvent forMemoryCardDeck(Long operatorId, Long creatorId, Long deckId, ContentState previousState,
                                                          Long postId, Long nodeId, String postPreview, String reason) {
         ContentRestoredEvent event = new ContentRestoredEvent();
         event.operatorId = operatorId;
@@ -110,7 +112,7 @@ public class ContentRestoredEvent {
     }
 
     /** Comment 类型构造函数 */
-    public static ContentRestoredEvent forComment(Long operatorId, Long creatorId, Long commentId, Byte previousState,
+    public static ContentRestoredEvent forComment(Long operatorId, Long creatorId, Long commentId, ContentState previousState,
                                                   ContentType commentTargetType, Long commentTargetId, String reason) {
         ContentRestoredEvent event = new ContentRestoredEvent();
         event.operatorId = operatorId;

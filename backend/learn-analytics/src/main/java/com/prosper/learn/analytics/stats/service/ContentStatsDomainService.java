@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.domain.Enums.ContentState;
 import static com.prosper.learn.shared.domain.Enums.ContentType;
+import static com.prosper.learn.shared.domain.Enums.PostType;
 
 /**
  * 内容统计业务服务
@@ -151,19 +152,6 @@ public class ContentStatsDomainService {
             .build();
     }
 
-    /**
-     * 获取内容的点赞数
-     *
-     * @param contentType 内容类型
-     * @param contentId 内容ID
-     * @return 点赞数，如果没有统计数据则返回0
-     */
-    public Integer getLikesCount(ContentType contentType, Long contentId) {
-        return contentStatsDataService.getByContent(contentType, contentId)
-            .map(stats -> stats.getLikeCount() != null ? stats.getLikeCount() : 0)
-            .orElse(0);
-    }
-
     // ==================== 事件处理方法（由 ContentStatsEventListener 调用）====================
 
     public void handlePostApproved(ContentApprovedEvent event) {
@@ -174,7 +162,7 @@ public class ContentStatsDomainService {
 
         contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), 1);
 
-        if (event.getPostType() == 1) { // CONTENTS
+        if (event.getPostType() == PostType.index) {
             contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), 1);
 
             // 批量更新被引用节点的引用数统计
@@ -183,7 +171,7 @@ public class ContentStatsDomainService {
                 log.debug("批量更新 {} 个节点引用数 +1（被目录帖子 {} 引用）",
                     event.getReferencedNodeIds().size(), event.getContentId());
             }
-        } else if (event.getPostType() == 2) { // ARTICLE
+        } else if (event.getPostType() == PostType.article) {
             contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), 1);
         }
 
@@ -195,7 +183,7 @@ public class ContentStatsDomainService {
 
         contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), -1);
 
-        if (event.getPostType() == 1) { // CONTENTS
+        if (event.getPostType() == PostType.index) {
             contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), -1);
 
             // 批量更新被引用节点的引用数统计
@@ -204,7 +192,7 @@ public class ContentStatsDomainService {
                 log.debug("批量更新 {} 个节点引用数 -1（目录帖子 {} 被下架）",
                     event.getReferencedNodeIds().size(), event.getContentId());
             }
-        } else if (event.getPostType() == 2) { // ARTICLE
+        } else if (event.getPostType() == PostType.article) {
             contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), -1);
         }
 
@@ -216,7 +204,7 @@ public class ContentStatsDomainService {
 
         contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), -1);
 
-        if (event.getPostType() == 1) { // CONTENTS
+        if (event.getPostType() == PostType.index) {
             contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), -1);
 
             // 批量更新被引用节点的引用数统计
@@ -225,7 +213,7 @@ public class ContentStatsDomainService {
                 log.debug("批量更新 {} 个节点引用数 -1（目录帖子 {} 被封禁）",
                     event.getReferencedNodeIds().size(), event.getContentId());
             }
-        } else if (event.getPostType() == 2) { // ARTICLE
+        } else if (event.getPostType() == PostType.article) {
             contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), -1);
         }
     }
@@ -286,10 +274,10 @@ public class ContentStatsDomainService {
             case post -> {
                 if (event.getNodeId() != null && event.getPostType() != null) {
                     contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), 1);
-                    if (event.getPostType() == 1) {
-                        contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), 1);
-                    } else if (event.getPostType() == 2) {
+                    if (event.getPostType() == PostType.index) {
                         contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), 1);
+                    } else if (event.getPostType() == PostType.article) {
+                        contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), 1);
                     }
                 }
             }

@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.prosper.learn.shared.domain.Enums.ContentState;
+import static com.prosper.learn.shared.domain.Enums.PostType;
 
 /**
  * 用户统计领域服务
@@ -165,26 +166,6 @@ public class UserStatsDomainService {
     public void incrementCompletedCourses(Long userId, int delta) {
         userStatsDataService.incrementCompletedCourses(userId, delta);
     }
-
-// --注释掉检查 START (2025/12/10 11:32):
-//    /**
-//     * 增量更新正在进行职业数
-//     */
-//    @Transactional
-//    public void incrementInProgressProfessions(Long userId, int delta) {
-//        userStatsDataService.incrementInProgressProfessions(userId, delta);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:32)
-
-// --注释掉检查 START (2025/12/10 11:32):
-//    /**
-//     * 增量更新已完成职业数
-//     */
-//    @Transactional
-//    public void incrementCompletedProfessions(Long userId, int delta) {
-//        userStatsDataService.incrementCompletedProfessions(userId, delta);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:32)
 
     // ==================== 记忆卡片复习统计 ====================
 
@@ -366,7 +347,6 @@ public class UserStatsDomainService {
      * 监听内容审核通过事件 - 增加用户创作统计
      */
     @EventListener
-    //@Async
     public void onContentApproved(ContentApprovedEvent event) {
         try {
             switch (event.getContentType()) {
@@ -384,7 +364,6 @@ public class UserStatsDomainService {
      * 监听内容下架事件 - 减少用户创作统计
      */
     @EventListener
-    //@Async
     public void onContentRemoved(ContentRemovedEvent event) {
         try {
             switch (event.getContentType()) {
@@ -401,10 +380,9 @@ public class UserStatsDomainService {
      * 监听内容封禁事件 - 减少用户创作统计（仅 PUBLISHED 状态）
      */
     @EventListener
-    //@Async
     public void onContentBanned(ContentBannedEvent event) {
         try {
-            if (event.getPreviousState() != ContentState.PUBLISHED.value()) {
+            if (event.getPreviousState() != ContentState.PUBLISHED) {
                 return;
             }
 
@@ -423,10 +401,9 @@ public class UserStatsDomainService {
      * 监听内容恢复事件 - 恢复用户创作统计
      */
     @EventListener
-    //@Async
     public void onContentRestored(ContentRestoredEvent event) {
         try {
-            if (event.getPreviousState() != ContentState.BANNED.value()) {
+            if (event.getPreviousState() != ContentState.BANNED) {
                 return;
             }
 
@@ -444,34 +421,34 @@ public class UserStatsDomainService {
     // ==================== Post 处理 ====================
 
     private void handlePostApproved(ContentApprovedEvent event) {
-        if (event.getPostType() == 1) {
-            userStatsDataService.incrementCreatedArticles(event.getCreatorId(), 1);
-        } else if (event.getPostType() == 2) {
+        if (event.getPostType() == PostType.index) {
             userStatsDataService.incrementCreatedIndexs(event.getCreatorId(), 1);
+        } else if (event.getPostType() == PostType.article) {
+            userStatsDataService.incrementCreatedArticles(event.getCreatorId(), 1);
         }
     }
 
     private void handlePostRemoved(ContentRemovedEvent event) {
-        if (event.getPostType() == 1) {
-            userStatsDataService.incrementCreatedArticles(event.getCreatorId(), -1);
-        } else if (event.getPostType() == 2) {
+        if (event.getPostType() == PostType.index) {
             userStatsDataService.incrementCreatedIndexs(event.getCreatorId(), -1);
+        } else if (event.getPostType() == PostType.article) {
+            userStatsDataService.incrementCreatedArticles(event.getCreatorId(), -1);
         }
     }
 
     private void handlePostBanned(ContentBannedEvent event) {
-        if (event.getPostType() == 1) {
-            userStatsDataService.incrementCreatedArticles(event.getCreatorId(), -1);
-        } else if (event.getPostType() == 2) {
+        if (event.getPostType() == PostType.index) {
             userStatsDataService.incrementCreatedIndexs(event.getCreatorId(), -1);
+        } else if (event.getPostType() == PostType.article) {
+            userStatsDataService.incrementCreatedArticles(event.getCreatorId(), -1);
         }
     }
 
     private void handlePostRestored(ContentRestoredEvent event) {
-        if (event.getPostType() == 1) {
-            userStatsDataService.incrementCreatedArticles(event.getCreatorId(), 1);
-        } else if (event.getPostType() == 2) {
+        if (event.getPostType() == PostType.index) {
             userStatsDataService.incrementCreatedIndexs(event.getCreatorId(), 1);
+        } else if (event.getPostType() == PostType.article) {
+            userStatsDataService.incrementCreatedArticles(event.getCreatorId(), 1);
         }
     }
 
@@ -572,36 +549,6 @@ public class UserStatsDomainService {
                               (todayStats.getCommentCount() != null ? todayStats.getCommentCount() : 0));
 
         return statsDO;
-    }
-
-    /**
-     * 获取用户昨天以前的所有历史数据汇总
-     *
-     * @param userId 用户ID
-     * @return 历史数据汇总
-     */
-    @Cacheable(value = "historicalStats",
-               key = "'user:' + #userId + ':until:' + T(java.time.LocalDate).now().minusDays(1).toString()",
-               unless = "#result == null")
-    public UserStatsDTO getUserHistoricalStats(long userId) {
-        try {
-            LocalDate yesterday = TimeZoneUtil.yesterday();
-            LocalDate startDate = LocalDate.of(2020, 1, 1);
-
-            Map<String, Integer> totalStats = getUserDateRangeStats(userId, startDate, yesterday);
-
-            return UserStatsDTO.builder()
-                .userId(userId)
-                .viewCount(totalStats.get("viewCount"))
-                .twiceCount(totalStats.get("twiceCount"))
-                .likeCount(totalStats.get("likeCount"))
-                .commentCount(totalStats.get("commentCount"))
-                .build();
-
-        } catch (Exception e) {
-            log.error("获取用户{}历史统计数据失败", userId, e);
-            return UserStatsDTO.empty();
-        }
     }
 
     /**

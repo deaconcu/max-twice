@@ -1,6 +1,5 @@
 package com.prosper.learn.memory.card;
 
-import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -44,12 +43,6 @@ public interface MemoryCardMapper {
             "</script>"})
     List<MemoryCardDO> getFirstCardByDeckIds(@Param("deckIds") List<Long> deckIds, @Param("state") int state);
 
-// --注释掉检查 START (2025/12/10 12:01):
-//    @Select("SELECT * FROM memory_card WHERE creator_id = #{creatorId} AND state = #{state} " +
-//            "ORDER BY created_at DESC LIMIT #{limit}")
-//    List<MemoryCardDO> getListByCreator(long creatorId, int state, int limit);
-// --注释掉检查 STOP (2025/12/10 12:01)
-
     @Insert("INSERT INTO memory_card " +
             "(deck_id, creator_id, current_version_id, state) " +
             "VALUES " +
@@ -83,11 +76,6 @@ public interface MemoryCardMapper {
             " AND deleted_at IS NULL" +
             "</script>"})
     int batchUpdateCurrentVersionId(@Param("cards") List<MemoryCardDO> cards);
-
-// --注释掉检查 START (2025/12/10 12:01):
-//    @Update("UPDATE memory_card SET state = #{state} WHERE id = #{id}")
-//    int updateState(long id, int state);
-// --注释掉检查 STOP (2025/12/10 12:01)
 
     /**
      * 批量更新卡片
@@ -142,15 +130,5 @@ public interface MemoryCardMapper {
             " AND deleted_at IS NULL" +
             "</script>"})
     int batchSoftDelete(@Param("cardIds") List<Long> cardIds, @Param("now") LocalDateTime now);
-
-// --注释掉检查 START (2025/12/10 12:01):
-//    @Select("SELECT id FROM memory_card WHERE deck_id = #{deckId} AND state = " + Enums.ContentState.PUBLISHED_VALUE + " ORDER BY id")
-//    List<Long> getCardIdsByDeckId(long deckId);
-// --注释掉检查 STOP (2025/12/10 12:01)
-
-// --注释掉检查 START (2025/12/10 12:01):
-//    @Select("SELECT COUNT(*) FROM memory_card WHERE creator_id = #{creatorId} AND state = #{state}")
-//    int countByCreator(long creatorId, int state);
-// --注释掉检查 STOP (2025/12/10 12:01)
 
 }

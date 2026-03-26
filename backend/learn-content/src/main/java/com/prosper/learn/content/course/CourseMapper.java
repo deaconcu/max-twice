@@ -38,11 +38,6 @@ public interface CourseMapper {
     @Select("SELECT * FROM course where parent_course_id = #{parentCourseId} ORDER BY created_at DESC")
     List<CourseDO> listByParent(long parentCourseId);
 
-// --注释掉检查 START (2025/12/10 12:01):
-//    @Select("SELECT * FROM course where state = #{state.value} and creator_id = #{creatorId} ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
-//    List<CourseDO> list(ContentState state, long creatorId, int limit, int offset);
-// --注释掉检查 STOP (2025/12/10 12:01)
-
     // 根据状态和lastId获取列表，支持limit参数（只返回主课程）
     @Select({"<script>",
             "SELECT * FROM course WHERE parent_course_id = 0",

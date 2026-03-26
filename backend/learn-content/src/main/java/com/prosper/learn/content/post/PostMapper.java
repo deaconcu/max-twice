@@ -30,13 +30,6 @@ public interface PostMapper {
             "order by created_at desc limit #{limit}")
     List<PostDO> getListByNode(long nodeId, int limit, byte state);
 
-// --注释掉检查 START (2025/12/10 12:02):
-//    @Select("SELECT * FROM post " +
-//            "WHERE node_id = #{nodeId} and id < #{lastId} and state = #{state} AND deleted_at IS NULL " +
-//            "order by id desc limit #{limit}")
-//    List<PostDO> getListByLastId(long nodeId, long lastId, int limit, byte state);
-// --注释掉检查 STOP (2025/12/10 12:02)
-
     @Select({"<script>",
             "SELECT * FROM post WHERE creator_id = #{userId} and type = #{type}",
             "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
@@ -68,11 +61,6 @@ public interface PostMapper {
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<PostDO> getListByNodeAndScoreAndPaginated(long nodeId, double lastScore, long lastId, int limit, byte state);
-
-// --注释掉检查 START (2025/12/10 12:02):
-//    @Select("SELECT id, created_at FROM post WHERE state = #{state} AND deleted_at IS NULL")
-//    List<PostDO> getAllPostsForScoreCalculation(byte state);
-// --注释掉检查 STOP (2025/12/10 12:02)
 
     @Select({"<script>",
             "SELECT * FROM post WHERE deleted_at IS NULL",

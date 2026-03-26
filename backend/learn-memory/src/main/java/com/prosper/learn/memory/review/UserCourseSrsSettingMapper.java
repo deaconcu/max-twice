@@ -29,17 +29,6 @@ public interface UserCourseSrsSettingMapper {
             "ORDER BY created_at DESC")
     List<UserCourseSrsSettingDO> getByUser(long userId);
 
-// --注释掉检查 START (2025/12/10 12:04):
-//    @Select("SELECT * FROM user_course_srs_setting WHERE user_id = #{userId} AND state = #{state} " +
-//            "ORDER BY created_at DESC")
-//    List<UserCourseSrsSettingDO> getByUserAndState(long userId, int state);
-// --注释掉检查 STOP (2025/12/10 12:04)
-
-// --注释掉检查 START (2025/12/10 12:04):
-//    @Select("SELECT * FROM user_course_srs_setting WHERE course_id = #{courseId} AND state = #{state}")
-//    List<UserCourseSrsSettingDO> getByCourseAndState(long courseId, int state);
-// --注释掉检查 STOP (2025/12/10 12:04)
-
     @Insert("INSERT INTO user_course_srs_setting " +
             "(user_id, course_id, frequency_setting, state, card_order, daily_new_limit, daily_review_limit, frozen_at, frozen_duration) " +
             "VALUES " +
@@ -54,32 +43,5 @@ public interface UserCourseSrsSettingMapper {
             "updated_at = NOW() " +
             "WHERE id = #{id}")
     void update(UserCourseSrsSettingDO setting);
-
-// --注释掉检查 START (2025/12/10 12:04):
-//    @Update("UPDATE user_course_srs_setting SET frequency_setting = #{frequencySetting} " +
-//            "WHERE user_id = #{userId} AND course_id = #{courseId}")
-//    int updateFrequencySetting(long userId, long courseId, int frequencySetting);
-// --注释掉检查 STOP (2025/12/10 12:04)
-
-// --注释掉检查 START (2025/12/10 12:04):
-//    @Update("UPDATE user_course_srs_setting SET state = #{state} " +
-//            "WHERE user_id = #{userId} AND course_id = #{courseId}")
-//    int updateState(long userId, long courseId, int state);
-// --注释掉检查 STOP (2025/12/10 12:04)
-
-// --注释掉检查 START (2025/12/10 12:04):
-//    @Delete("DELETE FROM user_course_srs_setting WHERE user_id = #{userId} AND course_id = #{courseId}")
-//    int deleteByUserAndCourse(long userId, long courseId);
-// --注释掉检查 STOP (2025/12/10 12:04)
-
-// --注释掉检查 START (2025/12/10 12:04):
-//    @Select("SELECT COUNT(*) FROM user_course_srs_setting WHERE user_id = #{userId}")
-//    int countByUser(long userId);
-// --注释掉检查 STOP (2025/12/10 12:04)
-
-// --注释掉检查 START (2025/12/10 12:04):
-//    @Select("SELECT COUNT(*) FROM user_course_srs_setting WHERE user_id = #{userId} AND state = #{state}")
-//    int countByUserAndState(long userId, int state);
-// --注释掉检查 STOP (2025/12/10 12:04)
 
 }

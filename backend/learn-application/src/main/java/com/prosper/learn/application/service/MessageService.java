@@ -357,17 +357,6 @@ public class MessageService {
         messageDomainService.sendPostModeration(userId, postId, postPreview, nodeId, nodeName, courseName, action, reason);
     }
 
-// --注释掉检查 START (2025/12/10 11:16):
-//    /**
-//     * 发送评论审核通知
-//     */
-//    public void sendCommentModeration(long userId, long commentId, String commentPreview,
-//                                      String objectType, long objectId, String objectTitle,
-//                                      ModerationAction action, String reason) {
-//        messageDomainService.sendCommentModeration(userId, commentId, commentPreview, objectType, objectId, objectTitle, action, reason);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:16)
-
     /**
      * 发送职业审核通知
      */
@@ -392,17 +381,6 @@ public class MessageService {
                                          ModerationAction action, String reason) {
         messageDomainService.sendMemoryDeckModeration(userId, deckId, postId, postTitle, action, reason);
     }
-
-// --注释掉检查 START (2025/12/10 11:16):
-//    /**
-//     * 发送节点审核通知
-//     */
-//    public void sendNodeModeration(long userId, long nodeId, String nodeName,
-//                                   long courseId, String courseName,
-//                                   ModerationAction action, String reason) {
-//        messageDomainService.sendNodeModeration(userId, nodeId, nodeName, courseId, courseName, action, reason);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:16)
 
     // ========== Private 辅助方法 ==========
 

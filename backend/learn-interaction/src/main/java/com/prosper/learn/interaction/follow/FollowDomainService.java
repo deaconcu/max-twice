@@ -76,21 +76,6 @@ public class FollowDomainService {
     // ========== Query 方法 ==========
 
     /**
-     * 检查用户是否关注了另一个用户
-     *
-     * @param followerId 关注者ID
-     * @param followeeId 被关注者ID
-     * @return true 表示已关注，false 表示未关注
-     */
-    public boolean isFollowing(Long followerId, Long followeeId) {
-        validateUserId(followerId, "关注者ID");
-        validateUserId(followeeId, "被关注者ID");
-
-        FollowDO followDO = followDataService.get(followerId, followeeId);
-        return followDO != null;
-    }
-
-    /**
      * 获取用户的关注列表
      *
      * @param userId 用户ID
@@ -101,21 +86,6 @@ public class FollowDomainService {
         validateUserId(userId, "用户ID");
         return followDataService.getList(userId, lastId, DEFAULT_PAGE_SIZE);
     }
-
-// --注释掉检查 START (2025/12/10 11:12):
-//    /**
-//     * 获取关注记录
-//     *
-//     * @param followerId 关注者ID
-//     * @param followeeId 被关注者ID
-//     * @return 关注记录，如果不存在则返回 null
-//     */
-//    public FollowDO getFollowRecord(Long followerId, Long followeeId) {
-//        validateUserId(followerId, "关注者ID");
-//        validateUserId(followeeId, "被关注者ID");
-//        return followDataService.get(followerId, followeeId);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:12)
 
     // ========== Private 辅助方法 ==========
 

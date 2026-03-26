@@ -201,7 +201,7 @@ public class CommentService {
         eventPublisher.publishEvent(ContentBannedEvent.forComment(
             commentDO.getCreatorId(),
             commentDO.getId(),
-            previousState,
+            ContentState.getByValue(previousState),
             commentTargetType,
             commentDO.getObjectId(),
             reason

@@ -10,14 +10,6 @@ public interface MessageMapper {
             "WHERE id = #{id}")
     MessageDO getById(long id);
 
-// --注释掉检查 START (2025/12/10 12:02):
-//    @Select("SELECT * FROM message " +
-//            "WHERE type = #{type} " +
-//            "ORDER BY created_at DESC " +
-//            "LIMIT #{offset}, #{limit}")
-//    List<MessageDO> listAll(int type, int limit, int offset);
-// --注释掉检查 STOP (2025/12/10 12:02)
-
     @Select("SELECT * FROM message " +
             "WHERE type = #{type} and id < #{lastId}" +
             "ORDER BY created_at DESC " +

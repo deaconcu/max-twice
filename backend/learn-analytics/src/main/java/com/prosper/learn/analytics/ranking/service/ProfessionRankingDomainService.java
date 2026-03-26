@@ -22,54 +22,6 @@ public class ProfessionRankingDomainService {
     private static final String HOT_PROFESSIONS_KEY = "profession:hot:ranking";
     private static final String PROFESSION_LEARNING_PREFIX = "profession:learning:";
 
-// --注释掉检查 START (2025/12/10 11:19):
-//    /**
-//     * 增加职业学习数
-//     */
-//    public void incrementLearning(long professionId) {
-//        validateProfessionId(professionId);
-//        String key = generateLearningKey(professionId);
-//        redisTemplate.opsForValue().increment(key);
-//        updateProfessionRanking(professionId);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:19)
-
-// --注释掉检查 START (2025/12/10 11:19):
-//    /**
-//     * 减少职业学习数
-//     */
-//    public void decrementLearning(long professionId) {
-//        validateProfessionId(professionId);
-//        String key = generateLearningKey(professionId);
-//        Long count = redisTemplate.opsForValue().decrement(key);
-//        if (count != null && count < 0) {
-//            redisTemplate.opsForValue().set(key, "0");
-//        }
-//        updateProfessionRanking(professionId);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:19)
-
-// --注释掉检查 START (2025/12/10 11:35):
-//    /**
-//     * 更新职业排行榜
-//     */
-//    private void updateProfessionRanking(long professionId) {
-//        try {
-//            String learningKey = generateLearningKey(professionId);
-//            String learningCountStr = redisTemplate.opsForValue().get(learningKey);
-//            long learningCount = learningCountStr != null ? Long.parseLong(learningCountStr) : 0;
-//
-//            // 更新排行榜（这里只按学习人数排序）
-//            redisTemplate.opsForZSet().add(HOT_PROFESSIONS_KEY, String.valueOf(professionId), learningCount);
-//
-//            log.debug("Updated profession ranking: professionId={}, learningCount={}",
-//                     professionId, learningCount);
-//        } catch (Exception e) {
-//            log.error("Failed to update profession ranking for professionId: {}", professionId, e);
-//        }
-//    }
-// --注释掉检查 STOP (2025/12/10 11:35)
-
     /**
      * 获取热门职业ID列表（按学习人数降序）
      */

@@ -68,13 +68,4 @@ public class CourseRankingDomainService {
             return Collections.emptyList();
         }
     }
-
-// --注释掉检查 START (2025/12/10 11:11):
-//    /**
-//     * 获取默认热门课程列表（Top 10）
-//     */
-//    public List<Long> getDefaultHotCourseIds() {
-//        return getHotCourseIds(10);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:11)
 }

@@ -1,7 +1,7 @@
 package com.prosper.learn.analytics.application.listener;
 
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
-import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
+import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmarkedEvent;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentSharedEvent;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
@@ -12,11 +12,9 @@ import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import static com.prosper.learn.shared.domain.Enums.ContentState;
-import static com.prosper.learn.shared.domain.Enums.ContentType;
 
 /**
  * 内容统计事件监听器
@@ -45,7 +43,7 @@ import static com.prosper.learn.shared.domain.Enums.ContentType;
 public class ContentStatsEventListener {
 
     private final ContentStatsDataService contentStatsDataService;
-    private final UserStatsDataService userStatsDataService;
+    private final ContentStatsDomainService contentStatsDomainService;
 
     // ==================== 分享事件 ====================
 
@@ -53,7 +51,6 @@ public class ContentStatsEventListener {
      * 内容分享事件 - 直接写数据库
      */
     @EventListener
-    //@Async
     public void onContentShared(ContentSharedEvent event) {
         try {
             contentStatsDataService.incrementShares(event.getContentType(), event.getContentId(), 1);
@@ -70,7 +67,6 @@ public class ContentStatsEventListener {
      * 内容收藏事件 - 直接写数据库
      */
     @EventListener
-    //@Async
     public void onContentBookmarked(ContentBookmarkedEvent event) {
         try {
             contentStatsDataService.incrementBookmarks(event.getContentType(), event.getContentId(), 1);
@@ -85,7 +81,6 @@ public class ContentStatsEventListener {
      * 取消内容收藏事件 - 直接写数据库
      */
     @EventListener
-    //@Async
     public void onContentUnbookmarked(ContentUnbookmarkedEvent event) {
         try {
             contentStatsDataService.incrementBookmarks(event.getContentType(), event.getContentId(), -1);
@@ -102,7 +97,6 @@ public class ContentStatsEventListener {
      * 课程/路线图学习开始事件 - 直接写数据库
      */
     @EventListener
-    //@Async
     public void onLearningStarted(LearningStartedEvent event) {
         try {
             contentStatsDataService.incrementInProgressUsers(event.getContentType(), event.getContentId(), 1);
@@ -118,7 +112,6 @@ public class ContentStatsEventListener {
      * 学习中用户减1
      */
     @EventListener
-    //@Async
     public void onLearningCancelled(LearningCancelledEvent event) {
         try {
             contentStatsDataService.incrementInProgressUsers(event.getContentType(), event.getContentId(), -1);
@@ -134,7 +127,6 @@ public class ContentStatsEventListener {
      * 学习中用户减1，完成用户加1
      */
     @EventListener
-    //@Async
     public void onLearningCompleted(LearningCompletedEvent event) {
         try {
             contentStatsDataService.incrementInProgressUsers(event.getContentType(), event.getContentId(), -1);
@@ -152,13 +144,12 @@ public class ContentStatsEventListener {
      * 监听内容审核通过事件 - 增加对象维度统计
      */
     @EventListener
-    //@Async
     public void onContentApproved(ContentApprovedEvent event) {
         try {
             switch (event.getContentType()) {
-                case post -> handlePostApproved(event);
-                case roadmap -> handleRoadmapApproved(event);
-                case memory_card_deck -> handleCardDeckApproved(event);
+                case post -> contentStatsDomainService.handlePostApproved(event);
+                case roadmap -> contentStatsDomainService.handleRoadmapApproved(event);
+                case memory_card_deck -> contentStatsDomainService.handleCardDeckApproved(event);
                 // comment 的统计由 RedisStatsEventListener 写入 Redis，定时同步到数据库
                 default -> log.debug("内容类型 {} 审核通过，无需更新对象统计", event.getContentType());
             }
@@ -172,7 +163,6 @@ public class ContentStatsEventListener {
      * 监听内容审核拒绝事件 - 增加 reject_count
      */
     @EventListener
-    //@Async
     public void onContentRejected(ContentRejectedEvent event) {
         try {
             // 增加 reject_count
@@ -197,7 +187,6 @@ public class ContentStatsEventListener {
      * 监听内容下架事件 - 减少对象维度统计 + reject_count++
      */
     @EventListener
-    //@Async
     public void onContentRemoved(ContentRemovedEvent event) {
         try {
             // 增加 reject_count
@@ -213,9 +202,9 @@ public class ContentStatsEventListener {
 
             // 减少对象统计
             switch (event.getContentType()) {
-                case post -> handlePostRemoved(event);
-                case roadmap -> handleRoadmapRemoved(event);
-                case memory_card_deck -> handleCardDeckRemoved(event);
+                case post -> contentStatsDomainService.handlePostRemoved(event);
+                case roadmap -> contentStatsDomainService.handleRoadmapRemoved(event);
+                case memory_card_deck -> contentStatsDomainService.handleCardDeckRemoved(event);
                 default -> log.warn("内容类型 {} 不支持 REMOVE 操作", event.getContentType());
             }
         } catch (Exception e) {
@@ -228,11 +217,10 @@ public class ContentStatsEventListener {
      * 监听内容封禁事件 - 减少对象维度统计（仅 PUBLISHED 状态）
      */
     @EventListener
-    //@Async
     public void onContentBanned(ContentBannedEvent event) {
         try {
             // 只有之前是 PUBLISHED 状态才需要减少统计
-            if (event.getPreviousState() != ContentState.PUBLISHED.value()) {
+            if (event.getPreviousState() != ContentState.PUBLISHED) {
                 log.debug("内容之前不是PUBLISHED状态，无需减少对象统计: contentType={}, contentId={}, previousState={}",
                     event.getContentType(), event.getContentId(), event.getPreviousState());
                 return;
@@ -240,9 +228,9 @@ public class ContentStatsEventListener {
 
             // 减少对象统计
             switch (event.getContentType()) {
-                case post -> handlePostBanned(event);
-                case roadmap -> handleRoadmapBanned(event);
-                case memory_card_deck -> handleCardDeckBanned(event);
+                case post -> contentStatsDomainService.handlePostBanned(event);
+                case roadmap -> contentStatsDomainService.handleRoadmapBanned(event);
+                case memory_card_deck -> contentStatsDomainService.handleCardDeckBanned(event);
                 // comment 的统计由 RedisStatsEventListener 处理
                 default -> log.debug("内容类型 {} 封禁，无需更新对象统计", event.getContentType());
             }
@@ -256,17 +244,16 @@ public class ContentStatsEventListener {
      * 监听内容恢复事件 - 恢复对象维度统计 / reject_count--
      */
     @EventListener
-    //@Async
     public void onContentRestored(ContentRestoredEvent event) {
         try {
             // 从 BANNED 恢复，需要恢复统计
-            if (event.getPreviousState() == ContentState.BANNED.value()) {
-                handleRestoreFromBanned(event);
+            if (event.getPreviousState() == ContentState.BANNED) {
+                contentStatsDomainService.handleRestoreFromBanned(event);
                 return;
             }
 
             // 从 REJECTED 恢复，只需 reject_count--
-            if (event.getPreviousState() == ContentState.REJECTED.value()) {
+            if (event.getPreviousState() == ContentState.REJECTED) {
                 contentStatsDataService.incrementRejectCount(event.getContentType(), event.getContentId(), -1);
                 log.debug("从REJECTED恢复，reject_count--: contentType={}, contentId={}",
                     event.getContentType(), event.getContentId());
@@ -274,132 +261,6 @@ public class ContentStatsEventListener {
         } catch (Exception e) {
             log.error("处理内容恢复事件失败: contentType={}, contentId={}",
                 event.getContentType(), event.getContentId(), e);
-        }
-    }
-
-    // ==================== Post 处理 ====================
-
-    private void handlePostApproved(ContentApprovedEvent event) {
-        if (event.getNodeId() == null || event.getPostType() == null) {
-            log.warn("Post审核通过事件缺少参数: nodeId={}, postType={}", event.getNodeId(), event.getPostType());
-            return;
-        }
-
-        contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), 1);
-
-        if (event.getPostType() == 1) { // ARTICLE
-            contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), 1);
-        } else if (event.getPostType() == 2) { // INDEX
-            contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), 1);
-        }
-
-        log.debug("Post统计已增加: nodeId={}, postType={}", event.getNodeId(), event.getPostType());
-    }
-
-    private void handlePostRemoved(ContentRemovedEvent event) {
-        if (event.getNodeId() == null || event.getPostType() == null) return;
-
-        contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), -1);
-
-        if (event.getPostType() == 1) {
-            contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), -1);
-        } else if (event.getPostType() == 2) {
-            contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), -1);
-        }
-
-        log.debug("Post统计已减少: nodeId={}, postType={}", event.getNodeId(), event.getPostType());
-    }
-
-    private void handlePostBanned(ContentBannedEvent event) {
-        if (event.getNodeId() == null || event.getPostType() == null) return;
-
-        contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), -1);
-
-        if (event.getPostType() == 1) {
-            contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), -1);
-        } else if (event.getPostType() == 2) {
-            contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), -1);
-        }
-    }
-
-    // ==================== Roadmap 处理 ====================
-
-    private void handleRoadmapApproved(ContentApprovedEvent event) {
-        if (event.getProfessionId() == null) return;
-        contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), 1);
-    }
-
-    private void handleRoadmapRemoved(ContentRemovedEvent event) {
-        if (event.getProfessionId() == null) return;
-        contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), -1);
-    }
-
-    private void handleRoadmapBanned(ContentBannedEvent event) {
-        if (event.getProfessionId() == null) return;
-        contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), -1);
-    }
-
-    // ==================== MemoryCardDeck 处理 ====================
-
-    private void handleCardDeckApproved(ContentApprovedEvent event) {
-        // CardDeck 同时属于 Post 和 Node，需要同时更新两者的统计
-        if (event.getPostId() != null) {
-            contentStatsDataService.incrementCardDecks(ContentType.post, event.getPostId(), 1);
-        }
-        if (event.getNodeId() != null) {
-            contentStatsDataService.incrementCardDecks(ContentType.node, event.getNodeId(), 1);
-        }
-    }
-
-    private void handleCardDeckRemoved(ContentRemovedEvent event) {
-        // CardDeck 同时属于 Post 和 Node，需要同时减少两者的统计
-        if (event.getPostId() != null) {
-            contentStatsDataService.incrementCardDecks(ContentType.post, event.getPostId(), -1);
-        }
-        if (event.getNodeId() != null) {
-            contentStatsDataService.incrementCardDecks(ContentType.node, event.getNodeId(), -1);
-        }
-    }
-
-    private void handleCardDeckBanned(ContentBannedEvent event) {
-        // CardDeck 同时属于 Post 和 Node，需要同时减少两者的统计
-        if (event.getPostId() != null) {
-            contentStatsDataService.incrementCardDecks(ContentType.post, event.getPostId(), -1);
-        }
-        if (event.getNodeId() != null) {
-            contentStatsDataService.incrementCardDecks(ContentType.node, event.getNodeId(), -1);
-        }
-    }
-
-    // ==================== 恢复处理 ====================
-
-    private void handleRestoreFromBanned(ContentRestoredEvent event) {
-        switch (event.getContentType()) {
-            case post -> {
-                if (event.getNodeId() != null && event.getPostType() != null) {
-                    contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), 1);
-                    if (event.getPostType() == 1) {
-                        contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), 1);
-                    } else if (event.getPostType() == 2) {
-                        contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), 1);
-                    }
-                }
-            }
-            case roadmap -> {
-                if (event.getProfessionId() != null) {
-                    contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), 1);
-                }
-            }
-            case memory_card_deck -> {
-                // CardDeck 同时属于 Post 和 Node，需要同时恢复两者的统计
-                if (event.getPostId() != null) {
-                    contentStatsDataService.incrementCardDecks(ContentType.post, event.getPostId(), 1);
-                }
-                if (event.getNodeId() != null) {
-                    contentStatsDataService.incrementCardDecks(ContentType.node, event.getNodeId(), 1);
-                }
-            }
-            // comment 的统计由 RedisStatsEventListener 处理，不在这里直接写数据库
         }
     }
 }

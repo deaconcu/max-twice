@@ -1,6 +1,8 @@
 package com.prosper.learn.shared.domain.event.content.lifecycle;
 
+import static com.prosper.learn.shared.domain.Enums.ContentState;
 import static com.prosper.learn.shared.domain.Enums.ContentType;
+import static com.prosper.learn.shared.domain.Enums.PostType;
 import lombok.Data;
 
 import java.util.List;
@@ -26,13 +28,13 @@ public class ContentBannedEvent {
     private ContentType contentType;
 
     /** 之前的状态（用于判断是否需要减少统计） */
-    private Byte previousState;
+    private ContentState previousState;
 
     /** 节点ID（post 类型使用）*/
     private Long nodeId;
 
-    /** 帖子类型（post 类型使用，1=CONTENTS, 2=ARTICLE）*/
-    private Integer postType;
+    /** 帖子类型（post 类型使用）*/
+    private PostType postType;
 
     /** 目录型帖子引用的节点ID列表（post 类型且 postType=CONTENTS 时使用）*/
     private List<Long> referencedNodeIds;
@@ -61,7 +63,7 @@ public class ContentBannedEvent {
     // ========== 各类型专用构造函数 ==========
 
     /** Post 类型构造函数 */
-    public static ContentBannedEvent forPost(Long creatorId, Long postId, Byte previousState, Long nodeId, Integer postType,
+    public static ContentBannedEvent forPost(Long creatorId, Long postId, ContentState previousState, Long nodeId, PostType postType,
                                              String postPreview, String nodeName, String courseName, String reason) {
         ContentBannedEvent event = new ContentBannedEvent();
         event.creatorId = creatorId;
@@ -78,21 +80,21 @@ public class ContentBannedEvent {
     }
 
     /** Index 类型 Post 构造函数（目录型帖子，只包含必要字段）*/
-    public static ContentBannedEvent forIndexPost(Long creatorId, Long postId, Byte previousState, Long nodeId, String reason, List<Long> referencedNodeIds) {
+    public static ContentBannedEvent forIndexPost(Long creatorId, Long postId, ContentState previousState, Long nodeId, String reason, List<Long> referencedNodeIds) {
         ContentBannedEvent event = new ContentBannedEvent();
         event.creatorId = creatorId;
         event.contentId = postId;
         event.contentType = ContentType.post;
         event.previousState = previousState;
         event.nodeId = nodeId;
-        event.postType = 1; // PostType.CONTENTS
+        event.postType = PostType.index;
         event.reason = reason;
         event.referencedNodeIds = referencedNodeIds;
         return event;
     }
 
     /** Roadmap 类型构造函数 */
-    public static ContentBannedEvent forRoadmap(Long creatorId, Long roadmapId, Byte previousState, Long professionId,
+    public static ContentBannedEvent forRoadmap(Long creatorId, Long roadmapId, ContentState previousState, Long professionId,
                                                 String professionName, String reason) {
         ContentBannedEvent event = new ContentBannedEvent();
         event.creatorId = creatorId;
@@ -106,7 +108,7 @@ public class ContentBannedEvent {
     }
 
     /** MemoryCardDeck 类型构造函数 */
-    public static ContentBannedEvent forMemoryCardDeck(Long creatorId, Long deckId, Byte previousState, Long postId, Long nodeId,
+    public static ContentBannedEvent forMemoryCardDeck(Long creatorId, Long deckId, ContentState previousState, Long postId, Long nodeId,
                                                        String postPreview, String reason) {
         ContentBannedEvent event = new ContentBannedEvent();
         event.creatorId = creatorId;
@@ -121,7 +123,7 @@ public class ContentBannedEvent {
     }
 
     /** Comment 类型构造函数 */
-    public static ContentBannedEvent forComment(Long creatorId, Long commentId, Byte previousState,
+    public static ContentBannedEvent forComment(Long creatorId, Long commentId, ContentState previousState,
                                                 ContentType commentTargetType, Long commentTargetId, String reason) {
         ContentBannedEvent event = new ContentBannedEvent();
         event.creatorId = creatorId;

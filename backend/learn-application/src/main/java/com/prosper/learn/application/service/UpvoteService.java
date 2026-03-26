@@ -263,25 +263,6 @@ public class UpvoteService {
 
     // ========== Query 方法（读操作）==========
 
-// --注释掉检查 START (2025/12/10 11:26):
-//    /**
-//     * 检查用户是否已经给指定内容投过票
-//     */
-//    public boolean hasUpvoted(long contentId, ContentType contentType, long userId) {
-//        return upvoteDomainService.hasUpvoted(contentId, contentType.value(), userId);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:26)
-
-// --注释掉检查 START (2025/12/10 11:26):
-//    /**
-//     * 批量检查用户对指定内容的投票状态
-//     * @return 已投票的内容ID集合
-//     */
-//    public Set<Long> getUpvotedIds(List<Long> contentIds, ContentType contentType, long userId) {
-//        return upvoteDomainService.getUpvotedIds(contentIds, contentType.value(), userId);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:26)
-
     /**
      * 获取用户对指定对象的点赞状态
      *

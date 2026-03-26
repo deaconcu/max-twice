@@ -1,6 +1,7 @@
 package com.prosper.learn.shared.domain.event.content.lifecycle;
 
 import static com.prosper.learn.shared.domain.Enums.ContentType;
+import static com.prosper.learn.shared.domain.Enums.PostType;
 import lombok.Data;
 
 import java.util.List;
@@ -28,8 +29,8 @@ public class ContentRemovedEvent {
     /** 节点ID（post 类型使用）*/
     private Long nodeId;
 
-    /** 帖子类型（post 类型使用，1=CONTENTS, 2=ARTICLE）*/
-    private Integer postType;
+    /** 帖子类型（post 类型使用）*/
+    private PostType postType;
 
     /** 目录型帖子引用的节点ID列表（post 类型且 postType=CONTENTS 时使用）*/
     private List<Long> referencedNodeIds;
@@ -58,7 +59,7 @@ public class ContentRemovedEvent {
     // ========== 各类型专用构造函数 ==========
 
     /** Post 类型构造函数 */
-    public static ContentRemovedEvent forPost(Long creatorId, Long postId, Long nodeId, Integer postType,
+    public static ContentRemovedEvent forPost(Long creatorId, Long postId, Long nodeId, PostType postType,
                                               String postPreview, String nodeName, String courseName, String reason) {
         ContentRemovedEvent event = new ContentRemovedEvent();
         event.creatorId = creatorId;
@@ -80,7 +81,7 @@ public class ContentRemovedEvent {
         event.contentId = postId;
         event.contentType = ContentType.post;
         event.nodeId = nodeId;
-        event.postType = 1; // PostType.CONTENTS
+        event.postType = PostType.index;
         event.reason = reason;
         event.referencedNodeIds = referencedNodeIds;
         return event;
