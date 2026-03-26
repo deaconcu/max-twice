@@ -87,15 +87,6 @@ public class PostDomainService {
     }
 
     /**
-     * 根据节点和分数获取帖子列表（分页版本）
-     */
-    public List<PostDO> getListByNodeAndScorePaginated(long nodeId, double lastScore, long lastId, int limit, Byte state) {
-        List<PostDO> posts = postDataService.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastId, limit, state);
-        posts.forEach(this::processIdToName);
-        return posts;
-    }
-
-    /**
      * 根据状态获取帖子列表
      */
     public List<PostDO> listByState(Byte state, Long lastId, int limit) {
@@ -114,23 +105,29 @@ public class PostDomainService {
     }
 
     /**
-     * 根据ID列表或节点查询帖子
+     * 根据节点获取帖子列表（按分数排序，支持分页）
+     *
+     * @param nodeId 节点ID
+     * @param lastScore 上一页最后一条的分数（首页传null）
+     * @param lastPostingId 上一页最后一条的ID（首页传null）
+     * @param count 查询数量
+     * @param state 帖子状态
+     * @return 帖子列表
      */
-    public List<PostDO> getPostsByIdsOrNode(List<Long> ids, Long nodeId, Double lastScore, Long lastPostingId, int count, Byte state) {
-        List<PostDO> posts = null;
-        if (ids != null && !ids.isEmpty()) {
-            posts = postDataService.getByIds(ids);
-        } else if (nodeId != null && nodeId > 0) {
-            // 首次请求（无分页参数）：使用不带分页条件的查询
-            if (lastScore == null || lastPostingId == null) {
-                posts = postDataService.getListByNodeAndScore(nodeId, count, state);
-            } else {
-                // 后续请求（有分页参数）：使用带分页条件的查询
-                posts = postDataService.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastPostingId, count, state);
-            }
+    public List<PostDO> getNodePostsByScore(Long nodeId, Double lastScore, Long lastPostingId, int count, Byte state) {
+        if (nodeId == null || nodeId <= 0) {
+            return List.of();
         }
 
-        if (posts == null) return List.of();
+        List<PostDO> posts;
+        // 首次请求（无分页参数）：使用不带分页条件的查询
+        if (lastScore == null || lastPostingId == null) {
+            posts = postDataService.getListByNodeAndScore(nodeId, count, state);
+        } else {
+            // 后续请求（有分页参数）：使用带分页条件的查询
+            posts = postDataService.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastPostingId, count, state);
+        }
+
         posts.forEach(this::processIdToName);
         return posts;
     }

@@ -433,21 +433,6 @@ public class RoadmapDomainService {
         log.info("Updated description for roadmap: {}", id);
     }
 
-    /**
-     * 清除描述并批准路线图
-     */
-    @Transactional
-    public void approveAndClearDescription(long id) {
-        roadmapDataService.validateExists(id);
-
-        RoadmapDO roadmap = roadmapDataService.getById(id);
-        roadmap.setDescription("");
-        roadmap.setState(ContentState.PUBLISHED.value());
-        roadmapDataService.update(roadmap);
-
-        log.info("Approved and cleared description for roadmap: {}", id);
-    }
-
     // ========== 内容解析方法 ==========
 
     /**

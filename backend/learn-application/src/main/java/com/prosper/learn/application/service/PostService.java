@@ -215,8 +215,8 @@ public class PostService {
         int pageSize = 20; // 每页数量
 
         // 查询 pageSize + 1 条数据，用于判断是否有更多
-        List<PostDO> postDOList = domainService.getPostsByIdsOrNode(
-                null, nodeId, lastScore, lastPostingId, pageSize + 1, ContentState.PUBLISHED.value());
+        List<PostDO> postDOList = domainService.getNodePostsByScore(
+                nodeId, lastScore, lastPostingId, pageSize + 1, ContentState.PUBLISHED.value());
 
         // 判断是否有更多数据
         boolean hasMore = postDOList.size() > pageSize;
