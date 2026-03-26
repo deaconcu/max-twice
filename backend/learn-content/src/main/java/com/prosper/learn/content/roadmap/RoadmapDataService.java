@@ -1,95 +1,71 @@
 package com.prosper.learn.content.roadmap;
 
-import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * 路线图数据服务，提供缓存功能
+ * 路线图数据服务
+ * 负责路线图数据的 CRUD 和缓存管理
  */
 @Slf4j
 @Service
-public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMapper, Long> {
-    
-    @Autowired
-    private RoadmapMapper roadmapMapper;
-    
-    @Override
-    protected RoadmapMapper mapper() {
-        return roadmapMapper;
-    }
-    
-    @Override
-    protected String getCacheName() {
-        return "roadmaps";
-    }
-    
-    @Override
-    protected String getEntityName() {
-        return "Roadmap";
-    }
-    
-    @Override
-    protected Long getEntityId(RoadmapDO entity) {
-        return entity.getId();
-    }
-    
-    @Override
-    protected RoadmapDO getByIdFromMapper(RoadmapMapper mapper, Long id) {
-        return mapper.getById(id);
-    }
-    
-    @Override
-    protected List<RoadmapDO> getByIdsFromMapper(RoadmapMapper mapper, Collection<Long> ids) {
-        return mapper.getByIds(ids.stream().collect(Collectors.toList()));
-    }
-    
-    @Override
-    protected Map<Long, RoadmapDO> getMapByIdsFromMapper(RoadmapMapper mapper, Collection<Long> ids) {
-        return getByIdsFromMapper(mapper, ids).stream()
-                .collect(Collectors.toMap(RoadmapDO::getId, Function.identity()));
-    }
-    
-    @Override
-    protected Duration getCacheTtl() {
-        return Duration.ofMinutes(20);  // 路线图相对稳定，较长缓存时间
-    }
+@RequiredArgsConstructor
+public class RoadmapDataService {
 
-    @Override
-    protected int deleteByIdFromMapper(RoadmapMapper mapper, Long id) {
-        return 0;
+    private final RoadmapMapper roadmapMapper;
+
+    // ==================== 查询方法 ====================
+
+    /**
+     * 根据ID查询路线图
+     */
+    @Cacheable(value = "roadmaps", key = "#id", unless = "#result == null")
+    public RoadmapDO getById(Long id) {
+        if (id == null) {
+            return null;
+        }
+        return roadmapMapper.getById(id);
     }
 
     /**
-     * 更新路线图并清除缓存
+     * 批量根据ID查询路线图
      */
-    @CacheEvict(value = "roadmaps", key = "#roadmap.id")
-    public void update(RoadmapDO roadmap) {
-        if (roadmap == null || roadmap.getId() == null) {
-            throw new IllegalArgumentException("Roadmap or roadmap ID cannot be null");
+    public List<RoadmapDO> getByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
         }
-        
-        try {
-            roadmapMapper.update(roadmap);
-            log.debug("Updated roadmap {}", roadmap.getId());
-        } catch (Exception e) {
-            log.error("Error updating roadmap: {}", roadmap.getId(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
+        List<Long> validIds = ids.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (validIds.isEmpty()) {
+            return new ArrayList<>();
         }
+        return roadmapMapper.getByIds(validIds);
     }
-    
+
+    /**
+     * 批量根据ID查询路线图并转为Map
+     */
+    public Map<Long, RoadmapDO> getMapByIds(Collection<Long> ids) {
+        return getByIds(ids).stream()
+                .collect(Collectors.toMap(RoadmapDO::getId, Function.identity()));
+    }
+
     /**
      * 统计公开路线图数量
      */
@@ -98,21 +74,18 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
     }
 
     /**
-     * 插入新路线图
+     * 根据状态查询路线图列表
      */
-    public void insert(RoadmapDO roadmapDO) {
-        roadmapMapper.insert(roadmapDO);
+    public List<RoadmapDO> listByState(Byte state, Long lastId, int limit) {
+        return roadmapMapper.listByState(state, lastId, limit);
     }
 
     /**
-     * 更新投票数
+     * 高级筛选路线图列表
      */
-    /*
-    @CacheEvict(value = "roadmaps", key = "#roadmapId")
-    public void updateVoteCount(Long roadmapId, int voteDelta) {
-        roadmapMapper.updateVoteCount(roadmapId, voteDelta);
+    public List<RoadmapDO> listByFilter(Long roadmapId, Long professionId, Long creatorId, Long lastId, int limit) {
+        return roadmapMapper.listByFilter(roadmapId, professionId, creatorId, lastId, limit);
     }
-     */
 
     /**
      * 根据职业获取路线图列表（支持动态排序）
@@ -144,18 +117,47 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
         return roadmapMapper.getListByCreatorWithPaging(creatorId, lastId, limit, state);
     }
 
+    // ==================== 验证方法 ====================
+
     /**
-     * Admin管理：按状态查询路线图列表
+     * 验证路线图ID并获取路线图
      */
-    public List<RoadmapDO> listByState(Byte state, Long lastId, int limit) {
-        return roadmapMapper.listByState(state, lastId, limit);
+    public RoadmapDO validateAndGet(Long id) {
+        if (id == null || id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("路线图ID无效");
+        }
+        RoadmapDO roadmap = getById(id);
+        if (roadmap == null) {
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
+        }
+        return roadmap;
     }
 
     /**
-     * Admin管理：高级筛选路线图列表
+     * 验证路线图存在
      */
-    public List<RoadmapDO> listByFilter(Long roadmapId, Long professionId, Long creatorId, Long lastId, int limit) {
-        return roadmapMapper.listByFilter(roadmapId, professionId, creatorId, lastId, limit);
+    public void validateExists(Long id) {
+        validateAndGet(id);
+    }
+
+    // ==================== 写入方法 ====================
+
+    /**
+     * 插入路线图
+     */
+    public void insert(RoadmapDO roadmapDO) {
+        roadmapMapper.insert(roadmapDO);
+    }
+
+    /**
+     * 更新路线图
+     */
+    @CacheEvict(value = "roadmaps", key = "#roadmap.id")
+    public void update(RoadmapDO roadmap) {
+        if (roadmap == null || roadmap.getId() == null) {
+            throw new IllegalArgumentException("Roadmap or roadmap ID cannot be null");
+        }
+        roadmapMapper.update(roadmap);
     }
 
     /**
@@ -188,20 +190,5 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
     @CacheEvict(value = "roadmaps", key = "#id")
     public int softDelete(long id) {
         return roadmapMapper.softDelete(id);
-    }
-
-    /**
-     * 重写父类方法，抛出 ROADMAP_NOT_FOUND 而不是通用的 NOT_FOUND
-     */
-    @Override
-    public RoadmapDO validateAndGet(Long id) {
-        if (id == null || id <= 0) {
-            throw StatusCode.INVALID_PARAMETER.exception();
-        }
-        RoadmapDO roadmap = getById(id);
-        if (roadmap == null) {
-            throw StatusCode.ROADMAP_NOT_FOUND.exception();
-        }
-        return roadmap;
     }
 }

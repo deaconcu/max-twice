@@ -9,7 +9,9 @@ import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.shared.domain.Enums.*;
 import com.prosper.learn.shared.domain.exception.StatusCode;
-import com.prosper.learn.user.profile.*;
+import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDataService;
+import com.prosper.learn.user.profile.UserDomainService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,9 +46,6 @@ public class RoadmapsControllerTest extends BaseControllerTest {
 
     @Autowired
     private UserDataService userDataService;
-
-    @Autowired
-    private UserProfileDataService userProfileDataService;
 
     @Autowired
     private ProfessionDataService professionDataService;

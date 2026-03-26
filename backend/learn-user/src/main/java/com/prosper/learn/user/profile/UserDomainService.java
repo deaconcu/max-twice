@@ -46,7 +46,6 @@ public class UserDomainService {
     private static final Duration LOGIN_FAIL_EXPIRE_TIME = Duration.ofMinutes(15);
 
     private final UserDataService userDataService;
-    private final UserProfileDataService userProfileDataService;
     private final VerificationDataService verificationDataService;
     private final SystemProperties systemProperties;
     private final StringRedisTemplate stringRedisTemplate;

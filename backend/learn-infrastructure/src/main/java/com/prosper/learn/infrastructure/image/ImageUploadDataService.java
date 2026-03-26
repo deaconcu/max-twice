@@ -1,76 +1,33 @@
 package com.prosper.learn.infrastructure.image;
 
-import com.prosper.learn.shared.dataservice.AbstractDataService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 图片上传数据服务
+ * 负责图片上传记录的 CRUD
+ *
+ * 无缓存：查询不频繁，主要是写操作
  */
 @Service
-public class ImageUploadDataService extends AbstractDataService<ImageUploadDO, ImageUploadMapper, Long> {
+@RequiredArgsConstructor
+public class ImageUploadDataService {
 
-    @Autowired
-    private ImageUploadMapper imageUploadMapper;
+    private final ImageUploadMapper imageUploadMapper;
 
-    @Override
-    protected ImageUploadMapper mapper() {
-        return imageUploadMapper;
-    }
-
-    @Override
-    protected String getCacheName() {
-        return "imageUploads";
-    }
-
-    @Override
-    protected String getEntityName() {
-        return "ImageUpload";
-    }
-
-    @Override
-    protected Long getEntityId(ImageUploadDO entity) {
-        return entity.getId();
-    }
-
-    @Override
-    protected ImageUploadDO getByIdFromMapper(ImageUploadMapper mapper, Long id) {
-        return mapper.getById(id);
-    }
-
-    @Override
-    protected List<ImageUploadDO> getByIdsFromMapper(ImageUploadMapper mapper, Collection<Long> ids) {
-        return List.of(); // 图片上传不需要批量按ID查询
-    }
-
-    @Override
-    protected Map<Long, ImageUploadDO> getMapByIdsFromMapper(ImageUploadMapper mapper, Collection<Long> ids) {
-        return Map.of(); // 图片上传不需要批量按ID查询
-    }
-
-    @Override
-    protected int deleteByIdFromMapper(ImageUploadMapper mapper, Long id) {
-        return mapper.delete(id);
-    }
+    // ==================== 查询方法 ====================
 
     /**
      * 根据URL查询图片
      */
     public ImageUploadDO getByFileUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            return null;
+        }
         return imageUploadMapper.getByFileUrl(fileUrl);
-    }
-
-    /**
-     * 根据引用类型和引用ID查询图片列表
-     */
-    public List<ImageUploadDO> getByRef(String refType, Long refId) {
-        return imageUploadMapper.getByRef(refType, refId);
     }
 
     /**
@@ -88,8 +45,16 @@ public class ImageUploadDataService extends AbstractDataService<ImageUploadDO, I
     }
 
     /**
+     * 查询用户上传历史
+     */
+    public List<ImageUploadDO> getByUserId(Long userId, int limit) {
+        return imageUploadMapper.getByUserId(userId, limit);
+    }
+
+    // ==================== 写入方法 ====================
+
+    /**
      * 插入图片记录
-     * 注意：insert 不需要 @CacheEvict，因为新记录还未被缓存
      */
     public void insert(ImageUploadDO imageUpload) {
         imageUploadMapper.insert(imageUpload);
@@ -97,26 +62,21 @@ public class ImageUploadDataService extends AbstractDataService<ImageUploadDO, I
 
     /**
      * 更新图片记录
-     * 清除缓存，确保下次查询时读取最新数据
      */
-    @CacheEvict(value = "imageUploads", key = "#imageUpload.id")
     public void update(ImageUploadDO imageUpload) {
+        if (imageUpload == null || imageUpload.getId() == null) {
+            throw new IllegalArgumentException("ImageUpload or ID cannot be null");
+        }
         imageUploadMapper.update(imageUpload);
     }
 
     /**
      * 删除图片记录
-     * 清除缓存
      */
-    @CacheEvict(value = "imageUploads", key = "#id")
     public void delete(Long id) {
+        if (id == null) {
+            return;
+        }
         imageUploadMapper.delete(id);
-    }
-
-    /**
-     * 查询用户上传历史
-     */
-    public List<ImageUploadDO> getByUserId(Long userId, int limit) {
-        return imageUploadMapper.getByUserId(userId, limit);
     }
 }

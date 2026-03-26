@@ -35,8 +35,6 @@ import com.prosper.learn.shared.domain.event.content.interaction.ContentViewedEv
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDataService;
-import com.prosper.learn.user.profile.UserProfileDO;
-import com.prosper.learn.user.profile.UserProfileDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -64,7 +62,6 @@ public class PageService {
     private final UserDataService userDataService;
     private final CommentDataService commentDataService;
     private final UserLearningDomainService userLearningDomainService;
-    private final UserProfileDataService userProfileDataService;
     private final SystemProperties systemProperties;
     private final NodeConverter nodeConverter;
     private final PostConverter postConverter;

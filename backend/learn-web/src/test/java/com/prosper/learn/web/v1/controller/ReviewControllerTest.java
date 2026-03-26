@@ -9,8 +9,6 @@ import com.prosper.learn.memory.card.MemoryCardVersionDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDomainService;
-import com.prosper.learn.memory.review.UserCardInCourseDataService;
-import com.prosper.learn.memory.review.UserCardInCourseDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.content.course.CourseDO;
@@ -76,9 +74,6 @@ public class ReviewControllerTest extends BaseControllerTest {
 
     @Autowired
     private NodeDataService nodeDataService;
-
-    @Autowired
-    private UserCardInCourseDataService userCardInCourseDataService;
 
     @BeforeEach
     void setUp() {
@@ -184,18 +179,6 @@ public class ReviewControllerTest extends BaseControllerTest {
         return srs;
     }
 
-    /**
-     * 创建用户卡片与课程的关联
-     */
-    private void createUserCardInCourse(Long userId, Long cardId, Long deckId, Long courseId) {
-        UserCardInCourseDO relation = new UserCardInCourseDO();
-        relation.setUserId(userId);
-        relation.setCardId(cardId);
-        relation.setDeckId(deckId);
-        relation.setCourseId(courseId);
-        userCardInCourseDataService.insert(relation);
-    }
-
     // ==================== 1. 获取复习队列接口测试 ====================
 
     /**
@@ -293,11 +276,6 @@ public class ReviewControllerTest extends BaseControllerTest {
         MemoryCardDO card1 = createCard("Java问题1", "Java答案1", deck1.getId(), user1.getId());
         MemoryCardDO card2 = createCard("Java问题2", "Java答案2", deck1.getId(), user1.getId());
         MemoryCardDO card3 = createCard("Python问题1", "Python答案1", deck2.getId(), user1.getId());
-
-        // 创建 user_card_in_course 关联
-        createUserCardInCourse(user1.getId(), card1.getId(), deck1.getId(), course1.getId());
-        createUserCardInCourse(user1.getId(), card2.getId(), deck1.getId(), course1.getId());
-        createUserCardInCourse(user1.getId(), card3.getId(), deck2.getId(), course2.getId());
 
         // 都已到期
         createSrsState(user1.getId(), card1.getId(), deck1.getId(), deck1.getNodeId(),

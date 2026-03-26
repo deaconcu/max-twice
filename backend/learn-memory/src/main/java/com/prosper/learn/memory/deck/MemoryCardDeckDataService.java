@@ -1,97 +1,170 @@
 package com.prosper.learn.memory.deck;
 
-import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.exception.StatusCode;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * 记忆卡片组数据服务
+ * 负责记忆卡片组数据的 CRUD 和缓存管理
+ *
+ * 缓存策略：
+ * - 只缓存单条查询 getById
+ * - 列表查询直接走数据库
+ * - 写操作清除相关缓存
  */
-@Slf4j
 @Service
-public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDeckDO, MemoryCardDeckMapper, Long> {
+@RequiredArgsConstructor
+public class MemoryCardDeckDataService {
 
-    @Autowired
-    private MemoryCardDeckMapper memoryCardDeckMapper;
+    private final MemoryCardDeckMapper memoryCardDeckMapper;
 
-    @Override
-    protected MemoryCardDeckMapper mapper() {
-        return memoryCardDeckMapper;
-    }
+    // ==================== 查询方法 ====================
 
-    @Override
-    protected String getCacheName() {
-        return "memory_card_decks";
-    }
-
-    @Override
-    protected String getEntityName() {
-        return "MemoryCardDeck";
-    }
-
-    @Override
-    protected Long getEntityId(MemoryCardDeckDO entity) {
-        return entity.getId();
-    }
-
-    @Override
-    protected MemoryCardDeckDO getByIdFromMapper(MemoryCardDeckMapper mapper, Long id) {
-        return mapper.get(id);
-    }
-
-    @Override
-    protected List<MemoryCardDeckDO> getByIdsFromMapper(MemoryCardDeckMapper mapper, Collection<Long> ids) {
-        return mapper.getByIds(ids.stream().collect(Collectors.toList()));
-    }
-
-    @Override
-    protected Map<Long, MemoryCardDeckDO> getMapByIdsFromMapper(MemoryCardDeckMapper mapper, Collection<Long> ids) {
-        return mapper.getMapByIds(ids);
-    }
-
-    @Override
-    protected Duration getCacheTtl() {
-        return Duration.ofMinutes(15);
-    }
-
-    @Override
-    protected int deleteByIdFromMapper(MemoryCardDeckMapper mapper, Long id) {
-        return 0;
+    /**
+     * 根据ID查询卡片组
+     */
+    @Cacheable(value = "memoryCardDecks", key = "#id", unless = "#result == null")
+    public MemoryCardDeckDO getById(Long id) {
+        if (id == null) {
+            return null;
+        }
+        return memoryCardDeckMapper.get(id);
     }
 
     /**
-     * 验证并获取卡片组
-     *
-     * @param id 卡片组ID
-     * @return 卡片组实体
-     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当卡片组不存在时抛出 MEMORY_CARD_DECK_NOT_FOUND (2201)
+     * 批量根据ID查询卡片组
      */
-    @Override
+    public List<MemoryCardDeckDO> getByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Long> validIds = ids.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (validIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return memoryCardDeckMapper.getByIds(validIds);
+    }
+
+    /**
+     * 批量根据ID查询卡片组并转为Map
+     */
+    public Map<Long, MemoryCardDeckDO> getMapByIds(Collection<Long> ids) {
+        return getByIds(ids).stream()
+                .collect(Collectors.toMap(MemoryCardDeckDO::getId, Function.identity()));
+    }
+
+    // ==================== 按帖子查询 ====================
+
+    public List<MemoryCardDeckDO> getListByPostWithIdPaging(long postId, int state, Long lastId, int limit) {
+        return memoryCardDeckMapper.getListByPostWithIdPaging(postId, state, lastId, limit);
+    }
+
+    public List<MemoryCardDeckDO> getListByPostDynamic(long postId, int state, String sortBy, Double lastScore, Long lastId, int limit) {
+        return memoryCardDeckMapper.getListByPostDynamic(postId, state, sortBy, lastScore, lastId, limit);
+    }
+
+    public List<MemoryCardDeckDO> getListByPostForReview(long postId, int state, int limit) {
+        return memoryCardDeckMapper.getListByPostForReview(postId, state, limit);
+    }
+
+    // ==================== 按帖子和创建者查询 ====================
+
+    public List<MemoryCardDeckDO> getListByPostAndCreator(long postId, long creatorId, int state, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreator(postId, creatorId, state, limit);
+    }
+
+    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(long postId, long creatorId, byte state, Long lastId, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorWithIdPaging(postId, creatorId, state, lastId, limit);
+    }
+
+    public List<MemoryCardDeckDO> getListByPostAndCreatorForReview(long postId, long creatorId, int state, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorForReview(postId, creatorId, state, limit);
+    }
+
+    public List<MemoryCardDeckDO> getListByPostAndCreatorAllStates(long postId, long creatorId, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorAllStates(postId, creatorId, limit);
+    }
+
+    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPagingAllStates(long postId, long creatorId, Long lastId, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorWithIdPagingAllStates(postId, creatorId, lastId, limit);
+    }
+
+    public List<MemoryCardDeckDO> getListByPostAndCreatorDynamicAllStates(long postId, long creatorId, String sortBy, Double lastScore, Long lastId, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorDynamicAllStates(postId, creatorId, sortBy, lastScore, lastId, limit);
+    }
+
+    // ==================== 按创建者查询 ====================
+
+    public List<MemoryCardDeckDO> getListByCreator(long creatorId, int limit) {
+        return memoryCardDeckMapper.getListByCreator(creatorId, limit);
+    }
+
+    public List<MemoryCardDeckDO> getListByCreatorWithIdPaging(long creatorId, Long lastId, int limit) {
+        return memoryCardDeckMapper.getListByCreatorWithIdPaging(creatorId, lastId, limit);
+    }
+
+    public List<MemoryCardDeckDO> getListByCreatorWithIdPagingAndState(long creatorId, int state, Long lastId, int limit) {
+        return memoryCardDeckMapper.getListByCreatorWithIdPagingAndState(creatorId, state, lastId, limit);
+    }
+
+    public List<MemoryCardDeckDO> getListByCreatorForReview(long creatorId, int state, int limit) {
+        return memoryCardDeckMapper.getListByCreatorForReview(creatorId, state, limit);
+    }
+
+    // ==================== 按节点查询 ====================
+
+    public List<MemoryCardDeckDO> getListByNode(long nodeId, int state, int limit) {
+        return memoryCardDeckMapper.getListByNode(nodeId, state, limit);
+    }
+
+    public List<MemoryCardDeckDO> getListByNodeKeyset(long nodeId, double lastScore, long lastId, int state, int limit) {
+        return memoryCardDeckMapper.getListByNodeKeyset(nodeId, lastScore, lastId, state, limit);
+    }
+
+    // ==================== 按状态查询 ====================
+
+    public List<MemoryCardDeckDO> listByState(int state, Long lastId, int limit) {
+        return memoryCardDeckMapper.listByState(state, lastId, limit);
+    }
+
+    // ==================== 验证方法 ====================
+
+    /**
+     * 验证并获取卡片组
+     */
     public MemoryCardDeckDO validateAndGet(Long id) {
-        if (id == null) {
-            throw StatusCode.INVALID_PARAMETER.exception("卡片组ID不能为空");
+        if (id == null || id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("卡片组ID无效");
         }
-
-        if (id <= 0) {
-            throw StatusCode.INVALID_PARAMETER.exception("卡片组ID必须大于0");
-        }
-
         MemoryCardDeckDO deck = getById(id);
         if (deck == null) {
             throw StatusCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
         }
-
         return deck;
     }
+
+    /**
+     * 验证卡片组存在
+     */
+    public void validateExists(Long id) {
+        validateAndGet(id);
+    }
+
+    // ==================== 写入方法 ====================
 
     /**
      * 插入卡片组
@@ -100,344 +173,52 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
         if (deck == null) {
             throw new IllegalArgumentException("Deck cannot be null");
         }
-        
-        try {
-            return memoryCardDeckMapper.insert(deck);
-        } catch (Exception e) {
-            log.error("Error inserting deck: {}", deck.getId(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
+        return memoryCardDeckMapper.insert(deck);
     }
 
     /**
-     * 更新卡片组并清除缓存
+     * 更新卡片组
      */
-    @CacheEvict(value = "memory_card_decks", key = "#deck.id")
+    @CacheEvict(value = "memoryCardDecks", key = "#deck.id")
     public void update(MemoryCardDeckDO deck) {
         if (deck == null || deck.getId() == null) {
             throw new IllegalArgumentException("Deck or deck ID cannot be null");
         }
-
-        try {
-            memoryCardDeckMapper.update(deck);
-            log.debug("Updated deck {}", deck.getId());
-        } catch (Exception e) {
-            log.error("Error updating deck: {}", deck.getId(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
+        memoryCardDeckMapper.update(deck);
     }
 
     /**
-     * 更新审核状态并清除缓存
+     * 软删除卡片组
      */
-    @CacheEvict(value = "memory_card_decks", key = "#id")
-    public boolean updateAuditStatus(long id, int state, long auditorId) {
-        try {
-            int result = memoryCardDeckMapper.updateAuditStatus(id, state, auditorId);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error updating deck audit status: {}", id, e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 更新分数并清除缓存
-     */
-    @CacheEvict(value = "memory_card_decks", key = "#id")
-    public boolean updateScore(long id, int upvoteCount, double score) {
-        try {
-            int result = memoryCardDeckMapper.updateScore(id, score);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error updating deck score: {}", id, e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 更新卡片数量并清除缓存
-     */
-    @CacheEvict(value = "memory_card_decks", key = "#id")
-    public boolean updateCardCount(long id, int cardCount) {
-        try {
-            int result = memoryCardDeckMapper.updateCardCount(id, cardCount);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error updating deck card count: {}", id, e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 更新状态并清除缓存
-     */
-    @CacheEvict(value = "memory_card_decks", key = "#id")
-    public boolean updateState(long id, byte state) {
-        try {
-            int result = memoryCardDeckMapper.updateState(id, state);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error updating deck state: {}", id, e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 原子操作：增加卡片数量并设置状态
-     */
-    @CacheEvict(value = "memory_card_decks", key = "#id")
-    public boolean incrementCardCountAndSetState(long id, byte state) {
-        try {
-            int result = memoryCardDeckMapper.incrementCardCountAndSetState(id, state);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error incrementing card count and setting state: {}", id, e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 原子操作：增加卡片数量、设置状态并增加版本号
-     */
-    @CacheEvict(value = "memory_card_decks", key = "#id")
-    public boolean incrementCardCountAndSetStateAndVersion(long id, byte state) {
-        try {
-            int result = memoryCardDeckMapper.incrementCardCountAndSetStateAndVersion(id, state);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error incrementing card count, setting state and incrementing version: {}", id, e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 原子操作：减少卡片数量（保证不会小于0）
-     */
-    @CacheEvict(value = "memory_card_decks", key = "#id")
-    public boolean decrementCardCount(long id) {
-        try {
-            int result = memoryCardDeckMapper.decrementCardCount(id);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error decrementing card count: {}", id, e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 原子操作：减少卡片数量并增加版本号
-     */
-    @CacheEvict(value = "memory_card_decks", key = "#id")
-    public boolean decrementCardCountAndIncrementVersion(long id) {
-        try {
-            int result = memoryCardDeckMapper.decrementCardCountAndIncrementVersion(id);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error decrementing card count and incrementing version: {}", id, e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 原子操作：更新状态并增加版本号
-     */
-    @CacheEvict(value = "memory_card_decks", key = "#id")
-    public boolean updateStateAndIncrementVersion(long id, byte state) {
-        try {
-            int result = memoryCardDeckMapper.updateStateAndIncrementVersion(id, state);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error updating state and incrementing version: {}", id, e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 根据帖子获取卡片组列表
-     */
-    public List<MemoryCardDeckDO> getListByPost(long postId, int state, int limit) {
-        return memoryCardDeckMapper.getListByPost(postId, state, limit);
-    }
-
-    /**
-     * 根据帖子获取卡片组列表 - ID分页
-     */
-    public List<MemoryCardDeckDO> getListByPostWithIdPaging(long postId, int state, Long lastId, int limit) {
-        return memoryCardDeckMapper.getListByPostWithIdPaging(postId, state, lastId, limit);
-    }
-
-    /**
-     * 根据帖子获取卡片组列表 - Keyset分页
-     */
-    public List<MemoryCardDeckDO> getListByPostKeyset(long postId, double lastScore, long lastId, int state, int limit) {
-        return memoryCardDeckMapper.getListByPostKeyset(postId, lastScore, lastId, state, limit);
-    }
-
-    /**
-     * 根据帖子获取卡片组列表 - 动态排序和分页
-     * sortBy=createdAt: 按ID降序
-     * sortBy=score: 按分数降序
-     */
-    public List<MemoryCardDeckDO> getListByPostDynamic(long postId, int state, String sortBy, Double lastScore, Long lastId, int limit) {
-        return memoryCardDeckMapper.getListByPostDynamic(postId, state, sortBy, lastScore, lastId, limit);
-    }
-
-    /**
-     * 根据创建者获取卡片组列表
-     */
-    public List<MemoryCardDeckDO> getListByCreator(long creatorId, int limit) {
-        return memoryCardDeckMapper.getListByCreator(creatorId, limit);
-    }
-
-    /**
-     * 根据创建者获取卡片组列表 - ID分页
-     */
-    public List<MemoryCardDeckDO> getListByCreatorWithIdPaging(long creatorId, Long lastId, int limit) {
-        return memoryCardDeckMapper.getListByCreatorWithIdPaging(creatorId, lastId, limit);
-    }
-
-    /**
-     * 根据创建者获取卡片组列表 - ID分页（带状态过滤）
-     */
-    public List<MemoryCardDeckDO> getListByCreatorWithIdPagingAndState(long creatorId, int state, Long lastId, int limit) {
-        return memoryCardDeckMapper.getListByCreatorWithIdPagingAndState(creatorId, state, lastId, limit);
-    }
-
-    /**
-     * 根据创建者获取卡片组列表 - Keyset分页
-     */
-    public List<MemoryCardDeckDO> getListByCreatorKeyset(long creatorId, double lastScore, long lastId, int state, int limit) {
-        return memoryCardDeckMapper.getListByCreatorKeyset(creatorId, lastScore, lastId, state, limit);
-    }
-
-    /**
-     * 根据状态获取卡片组列表
-     */
-    public List<MemoryCardDeckDO> getListByState(int state, int limit) {
-        return memoryCardDeckMapper.getListByState(state, limit);
-    }
-
-    /**
-     * 根据状态获取卡片组列表 - Keyset分页
-     */
-    public List<MemoryCardDeckDO> getListByStateKeyset(double lastScore, long lastId, int state, int limit) {
-        return memoryCardDeckMapper.getListByStateKeyset(lastScore, lastId, state, limit);
-    }
-
-    /**
-     * 根据状态获取卡片组列表 - ID分页
-     */
-    public List<MemoryCardDeckDO> listByState(int state, Long lastId, int limit) {
-        return memoryCardDeckMapper.listByState(state, lastId, limit);
-    }
-
-    /**
-     * 根据帖子获取卡片组列表 - 审核专用
-     */
-    public List<MemoryCardDeckDO> getListByPostForReview(long postId, int state, int limit) {
-        return memoryCardDeckMapper.getListByPostForReview(postId, state, limit);
-    }
-
-    /**
-     * 根据创建者获取卡片组列表 - 审核专用
-     */
-    public List<MemoryCardDeckDO> getListByCreatorForReview(long creatorId, int state, int limit) {
-        return memoryCardDeckMapper.getListByCreatorForReview(creatorId, state, limit);
-    }
-
-    /**
-     * 根据帖子和创建者获取卡片组列表 - 审核专用
-     */
-    public List<MemoryCardDeckDO> getListByPostAndCreatorForReview(long postId, long creatorId, int state, int limit) {
-        return memoryCardDeckMapper.getListByPostAndCreatorForReview(postId, creatorId, state, limit);
-    }
-
-    /**
-     * 统计帖子下的卡片组数量
-     */
-    public int countByPost(long postId, int state) {
-        return memoryCardDeckMapper.countByPost(postId, state);
-    }
-
-    /**
-     * 统计创建者的卡片组数量
-     */
-    public int countByCreator(long creatorId, int state) {
-        return memoryCardDeckMapper.countByCreator(creatorId, state);
-    }
-
-    /**
-     * 根据帖子和创建者获取卡片组列表
-     */
-    public List<MemoryCardDeckDO> getListByPostAndCreator(long postId, long creatorId, int state, int limit) {
-        return memoryCardDeckMapper.getListByPostAndCreator(postId, creatorId, state, limit);
-    }
-
-    /**
-     * 根据帖子和创建者获取卡片组列表 - ID分页
-     */
-    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(long postId, long creatorId, byte state, Long lastId, int limit) {
-        return memoryCardDeckMapper.getListByPostAndCreatorWithIdPaging(postId, creatorId, state, lastId, limit);
-    }
-
-    /**
-     * 根据帖子和创建者获取卡片组列表 - Keyset分页
-     */
-    public List<MemoryCardDeckDO> getListByPostAndCreatorKeyset(long postId, long creatorId, double lastScore, long lastId, int state, int limit) {
-        return memoryCardDeckMapper.getListByPostAndCreatorKeyset(postId, creatorId, lastScore, lastId, state, limit);
-    }
-
-    /**
-     * 根据帖子和创建者获取卡片组列表 - 动态排序和分页
-     */
-    public List<MemoryCardDeckDO> getListByPostAndCreatorDynamic(long postId, long creatorId, int state, String sortBy, Double lastScore, Long lastId, int limit) {
-        return memoryCardDeckMapper.getListByPostAndCreatorDynamic(postId, creatorId, state, sortBy, lastScore, lastId, limit);
-    }
-
-    /**
-     * 根据帖子和创建者获取卡片组列表 - 所有状态
-     */
-    public List<MemoryCardDeckDO> getListByPostAndCreatorAllStates(long postId, long creatorId, int limit) {
-        return memoryCardDeckMapper.getListByPostAndCreatorAllStates(postId, creatorId, limit);
-    }
-
-    /**
-     * 根据帖子和创建者获取卡片组列表 - ID分页，所有状态
-     */
-    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPagingAllStates(long postId, long creatorId, Long lastId, int limit) {
-        return memoryCardDeckMapper.getListByPostAndCreatorWithIdPagingAllStates(postId, creatorId, lastId, limit);
-    }
-
-    /**
-     * 根据帖子和创建者获取卡片组列表 - Keyset分页，所有状态
-     */
-    public List<MemoryCardDeckDO> getListByPostAndCreatorKeysetAllStates(long postId, long creatorId, double lastScore, long lastId, int limit) {
-        return memoryCardDeckMapper.getListByPostAndCreatorKeysetAllStates(postId, creatorId, lastScore, lastId, limit);
-    }
-
-    /**
-     * 根据帖子和创建者获取卡片组列表 - 动态排序和分页，所有状态
-     */
-    public List<MemoryCardDeckDO> getListByPostAndCreatorDynamicAllStates(long postId, long creatorId, String sortBy, Double lastScore, Long lastId, int limit) {
-        return memoryCardDeckMapper.getListByPostAndCreatorDynamicAllStates(postId, creatorId, sortBy, lastScore, lastId, limit);
-    }
-
-    /**
-     * 根据节点ID获取卡片组列表
-     */
-    public List<MemoryCardDeckDO> getListByNode(long nodeId, int state, int limit) {
-        return memoryCardDeckMapper.getListByNode(nodeId, state, limit);
-    }
-
-    /**
-     * 根据节点ID获取卡片组列表 - Keyset分页
-     */
-    public List<MemoryCardDeckDO> getListByNodeKeyset(long nodeId, double lastScore, long lastId, int state, int limit) {
-        return memoryCardDeckMapper.getListByNodeKeyset(nodeId, lastScore, lastId, state, limit);
-    }
-
+    @CacheEvict(value = "memoryCardDecks", key = "#deckId")
     public int softDelete(long deckId) {
         return memoryCardDeckMapper.softDelete(deckId);
+    }
+
+    /**
+     * 增加卡片数量并设置状态和版本号
+     */
+    @CacheEvict(value = "memoryCardDecks", key = "#id")
+    public boolean incrementCardCountAndSetStateAndVersion(long id, byte state) {
+        int result = memoryCardDeckMapper.incrementCardCountAndSetStateAndVersion(id, state);
+        return result > 0;
+    }
+
+    /**
+     * 减少卡片数量并增加版本号
+     */
+    @CacheEvict(value = "memoryCardDecks", key = "#id")
+    public boolean decrementCardCountAndIncrementVersion(long id) {
+        int result = memoryCardDeckMapper.decrementCardCountAndIncrementVersion(id);
+        return result > 0;
+    }
+
+    /**
+     * 更新状态并增加版本号
+     */
+    @CacheEvict(value = "memoryCardDecks", key = "#id")
+    public boolean updateStateAndIncrementVersion(long id, byte state) {
+        int result = memoryCardDeckMapper.updateStateAndIncrementVersion(id, state);
+        return result > 0;
     }
 }

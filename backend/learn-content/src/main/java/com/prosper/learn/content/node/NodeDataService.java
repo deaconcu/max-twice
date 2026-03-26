@@ -1,118 +1,70 @@
 package com.prosper.learn.content.node;
 
-import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * 节点数据服务，提供缓存功能
- * 专注于数据访问和缓存管理，避免循环依赖
+ * 节点数据服务
+ * 负责节点数据的 CRUD 和缓存管理
  */
 @Slf4j
 @Service
-public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Long> {
-    
-    @Autowired
-    private NodeMapper nodeMapper;
-    
-    @Override
-    protected NodeMapper mapper() {
-        return nodeMapper;
-    }
-    
-    @Override
-    protected String getCacheName() {
-        return "nodes";
-    }
-    
-    @Override
-    protected String getEntityName() {
-        return "Node";
-    }
-    
-    @Override
-    protected Long getEntityId(NodeDO entity) {
-        return entity.getId();
-    }
-    
-    @Override
-    protected NodeDO getByIdFromMapper(NodeMapper mapper, Long id) {
-        return mapper.getById(id);
-    }
-    
-    @Override
-    protected List<NodeDO> getByIdsFromMapper(NodeMapper mapper, Collection<Long> ids) {
-        return mapper.getByIds(ids.stream().collect(Collectors.toList()));
-    }
-    
-    @Override
-    protected Map<Long, NodeDO> getMapByIdsFromMapper(NodeMapper mapper, Collection<Long> ids) {
-        return mapper.getMapByIds(ids);
-    }
-    
-    @Override
-    protected Duration getCacheTtl() {
-        return Duration.ofMinutes(15);
-    }
+@RequiredArgsConstructor
+public class NodeDataService {
 
-    @Override
-    protected int deleteByIdFromMapper(NodeMapper mapper, Long id) {
-        return 0;
-    }
+    private final NodeMapper nodeMapper;
+
+    // ==================== 查询方法 ====================
 
     /**
-     * 验证并获取节点
-     *
-     * @param id 节点ID
-     * @return 节点实体
-     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当节点不存在时抛出 NODE_NOT_FOUND (1302)
+     * 根据ID查询节点
      */
-    @Override
-    public NodeDO validateAndGet(Long id) {
+    @Cacheable(value = "nodes", key = "#id", unless = "#result == null")
+    public NodeDO getById(Long id) {
         if (id == null) {
-            throw StatusCode.INVALID_PARAMETER.exception("节点ID不能为空");
+            return null;
         }
-
-        if (id <= 0) {
-            throw StatusCode.INVALID_PARAMETER.exception("节点ID必须大于0");
-        }
-
-        NodeDO node = getById(id);
-        if (node == null) {
-            throw StatusCode.NODE_NOT_FOUND.exception();
-        }
-
-        return node;
+        return nodeMapper.getById(id);
     }
 
     /**
-     * 更新节点并清除缓存
+     * 批量根据ID查询节点
      */
-    @CacheEvict(value = "nodes", key = "#node.id")
-    public void update(NodeDO node) {
-        if (node == null || node.getId() == null) {
-            throw new IllegalArgumentException("Node or node ID cannot be null");
+    public List<NodeDO> getByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
         }
-        
-        try {
-            nodeMapper.update(node);
-            log.debug("Updated node {}", node.getId());
-        } catch (Exception e) {
-            log.error("Error updating node: {}", node.getId(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
+        List<Long> validIds = ids.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (validIds.isEmpty()) {
+            return new ArrayList<>();
         }
+        return nodeMapper.getByIds(validIds);
     }
-    
+
+    /**
+     * 批量根据ID查询节点并转为Map
+     */
+    public Map<Long, NodeDO> getMapByIds(Collection<Long> ids) {
+        return getByIds(ids).stream()
+                .collect(Collectors.toMap(NodeDO::getId, Function.identity()));
+    }
+
     /**
      * 统计活跃节点数量
      */
@@ -120,6 +72,9 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
         return nodeMapper.countActiveNodes();
     }
 
+    /**
+     * 查询用户有帖子的节点ID列表
+     */
     public List<Long> selectIdsByUserIdAndPost(long afterId, long userId, int limit) {
         return nodeMapper.selectIdsByUserIdAndPost(afterId, userId, limit);
     }
@@ -132,13 +87,6 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
     }
 
     /**
-     * 插入新节点
-     */
-    public void insert(NodeDO nodeDO) {
-        nodeMapper.insert(nodeDO);
-    }
-
-    /**
      * 按状态获取节点列表（支持正序/倒序分页）
      */
     public List<NodeDO> listByState(Byte state, Long lastId, int limit, boolean orderAsc) {
@@ -146,10 +94,53 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
     }
 
     /**
-     * Admin - 高级筛选节点列表（不含 state）
+     * 高级筛选节点列表
      */
     public List<NodeDO> listByFilter(Long nodeId, Long courseId, Long creatorId, Long lastId, int limit) {
         return nodeMapper.listByFilter(nodeId, courseId, creatorId, lastId, limit);
+    }
+
+    // ==================== 验证方法 ====================
+
+    /**
+     * 验证节点ID并获取节点
+     */
+    public NodeDO validateAndGet(Long id) {
+        if (id == null || id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("节点ID无效");
+        }
+        NodeDO node = getById(id);
+        if (node == null) {
+            throw StatusCode.NODE_NOT_FOUND.exception();
+        }
+        return node;
+    }
+
+    /**
+     * 验证节点存在
+     */
+    public void validateExists(Long id) {
+        validateAndGet(id);
+    }
+
+    // ==================== 写入方法 ====================
+
+    /**
+     * 插入节点
+     */
+    public void insert(NodeDO nodeDO) {
+        nodeMapper.insert(nodeDO);
+    }
+
+    /**
+     * 更新节点
+     */
+    @CacheEvict(value = "nodes", key = "#node.id")
+    public void update(NodeDO node) {
+        if (node == null || node.getId() == null) {
+            throw new IllegalArgumentException("Node or node ID cannot be null");
+        }
+        nodeMapper.update(node);
     }
 
     /**

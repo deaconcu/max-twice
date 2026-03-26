@@ -1,70 +1,81 @@
 package com.prosper.learn.interaction.message;
 
-import com.prosper.learn.shared.dataservice.AbstractDataService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
+import com.prosper.learn.shared.domain.exception.StatusCode;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 消息数据服务
+ * 负责消息数据的 CRUD
+ *
+ * 无缓存：消息是即时数据，缓存意义不大
  */
 @Service
-public class MessageDataService extends AbstractDataService<MessageDO, MessageMapper, Long> {
+@RequiredArgsConstructor
+public class MessageDataService {
 
-    @Autowired
-    private MessageMapper messageMapper;
+    private final MessageMapper messageMapper;
 
-    @Override
-    protected MessageMapper mapper() {
-        return messageMapper;
-    }
+    // ==================== 查询方法 ====================
 
-    @Override
-    protected String getCacheName() {
-        return "messages";
-    }
-
-    @Override
-    protected String getEntityName() {
-        return "Message";
-    }
-
-    @Override
-    protected Long getEntityId(MessageDO entity) {
-        return entity.getId();
-    }
-
-    @Override
-    protected MessageDO getByIdFromMapper(MessageMapper mapper, Long id) {
+    /**
+     * 根据ID查询消息
+     */
+    public MessageDO getById(Long id) {
+        if (id == null) {
+            return null;
+        }
         return messageMapper.getById(id);
     }
 
-    @Override
-    protected List<MessageDO> getByIdsFromMapper(MessageMapper mapper, Collection<Long> ids) {
-        return List.of(); // MessageMapper没有批量查询方法
-    }
-
-    @Override
-    protected Map<Long, MessageDO> getMapByIdsFromMapper(MessageMapper mapper, Collection<Long> ids) {
-        return Map.of(); // MessageMapper没有批量查询方法
-    }
-
-    @Override
-    protected int deleteByIdFromMapper(MessageMapper mapper, Long id) {
-        return 0;
+    /**
+     * 按类型查询消息列表
+     */
+    public List<MessageDO> listByType(int type, long receiverId, Long lastId, int limit) {
+        return messageMapper.listByType(type, receiverId, lastId, limit);
     }
 
     /**
-     * 更新消息
+     * 按分类查询消息列表
+     * @param category 消息分类 1=互动消息, 2=系统消息, 3=私信
      */
-    @CacheEvict(value = "messages", key = "#messageDO.id")
-    public void update(MessageDO messageDO) {
-        messageMapper.update(messageDO);
+    public List<MessageDO> listByCategory(long receiverId, int category, Long lastId, int limit) {
+        return messageMapper.listByCategory(receiverId, category, lastId, limit);
     }
+
+    /**
+     * 查询全部消息（互动+系统，category IN (1, 2)）
+     */
+    public List<MessageDO> listAllMessages(long receiverId, Long lastId, int limit) {
+        return messageMapper.listAllMessages(receiverId, lastId, limit);
+    }
+
+    /**
+     * 统计未读消息数量
+     */
+    public int countUnreadMessages(long receiverId, long lastViewedMessageId) {
+        return messageMapper.countUnreadMessages(receiverId, lastViewedMessageId);
+    }
+
+    // ==================== 验证方法 ====================
+
+    /**
+     * 验证并获取消息
+     */
+    public MessageDO validateAndGet(Long id) {
+        if (id == null || id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("消息ID无效");
+        }
+        MessageDO message = getById(id);
+        if (message == null) {
+            throw StatusCode.MESSAGE_NOT_FOUND.exception();
+        }
+        return message;
+    }
+
+    // ==================== 写入方法 ====================
 
     /**
      * 插入消息
@@ -74,77 +85,12 @@ public class MessageDataService extends AbstractDataService<MessageDO, MessageMa
     }
 
     /**
-     * 根据类型分页查询消息
+     * 更新消息
      */
-    public List<MessageDO> listByPull(int type, long lastId, int limit) {
-        return messageMapper.listByPull(type, lastId, limit);
-    }
-
-    /**
-     * 根据用户查询消息列表
-     */
-    public List<MessageDO> getListByUser(int type, long senderId, long receiverId, long lastId, int limit) {
-        return messageMapper.getListByUser(type, senderId, receiverId, lastId, limit);
-    }
-
-    /**
-     * 获取用户对话消息
-     */
-    public List<MessageDO> getConversationByUser(long senderId, long receiverId, long lastId, int limit) {
-        return messageMapper.getConversationByUser(senderId, receiverId, lastId, limit);
-    }
-
-    /**
-     * 按类型查询消息列表
-     * @param type 消息类型
-     * @param receiverId 接收者ID
-     * @param lastId 最后一条消息ID，为null时查询首页
-     * @param limit 查询数量
-     * @return 消息列表
-     */
-    public List<MessageDO> listByType(int type, long receiverId, Long lastId, int limit) {
-        return messageMapper.listByType(type, receiverId, lastId, limit);
-    }
-
-// --注释掉检查 START (2025/12/10 11:15):
-//    /**
-//     * 获取课程申请消息列表
-//     */
-//    public List<MessageDO> getApplyCourseListByUser(long senderId, long lastId, int limit) {
-//        return messageMapper.getApplyCourseListByUser(senderId, lastId, limit);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:15)
-
-    /**
-     * 按分类查询消息列表
-     * @param receiverId 接收者ID
-     * @param category 消息分类 1=互动消息, 2=系统消息, 3=私信
-     * @param lastId 最后一条消息ID，为null时查询首页
-     * @param limit 查询数量
-     * @return 消息列表
-     */
-    public List<MessageDO> listByCategory(long receiverId, int category, Long lastId, int limit) {
-        return messageMapper.listByCategory(receiverId, category, lastId, limit);
-    }
-
-    /**
-     * 查询全部消息（互动+系统，category IN (1, 2)）
-     * @param receiverId 接收者ID
-     * @param lastId 最后一条消息ID，为null时查询首页
-     * @param limit 查询数量
-     * @return 消息列表
-     */
-    public List<MessageDO> listAllMessages(long receiverId, Long lastId, int limit) {
-        return messageMapper.listAllMessages(receiverId, lastId, limit);
-    }
-
-    /**
-     * 统计未读消息数量
-     * @param receiverId 接收者ID
-     * @param lastViewedMessageId 最后查看的消息ID
-     * @return 未读消息数量
-     */
-    public int countUnreadMessages(long receiverId, long lastViewedMessageId) {
-        return messageMapper.countUnreadMessages(receiverId, lastViewedMessageId);
+    public void update(MessageDO messageDO) {
+        if (messageDO == null || messageDO.getId() == null) {
+            throw new IllegalArgumentException("Message or message ID cannot be null");
+        }
+        messageMapper.update(messageDO);
     }
 }

@@ -1,128 +1,80 @@
 package com.prosper.learn.interaction.upvote;
 
-import com.prosper.learn.interaction.follow.FollowDO;
-import com.prosper.learn.shared.dataservice.AbstractDataService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 投票数据服务
+ * 负责投票数据的 CRUD 和缓存管理
+ *
+ * 缓存策略：
+ * - 缓存用户对特定对象的投票查询（高频调用，判断是否已点赞）
+ * - 列表查询直接走数据库
+ * - 写操作清除相关缓存
  */
 @Service
-public class UpvoteDataService extends AbstractDataService<UpvoteDO, UpvoteMapper, Long> {
+@RequiredArgsConstructor
+public class UpvoteDataService {
 
-    @Autowired
-    private UpvoteMapper upvoteMapper;
+    private final UpvoteMapper upvoteMapper;
 
-    @Override
-    protected UpvoteMapper mapper() {
-        return upvoteMapper;
-    }
-
-    @Override
-    protected String getCacheName() {
-        return "upvotes";
-    }
-
-    @Override
-    protected String getEntityName() {
-        return "Upvote";
-    }
-
-    @Override
-    protected Long getEntityId(UpvoteDO entity) {
-        return entity.getId();
-    }
-
-    @Override
-    protected UpvoteDO getByIdFromMapper(UpvoteMapper mapper, Long id) {
-        throw new UnsupportedOperationException();
-    }
-
-    public UpvoteDO getById(Long id) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public List<UpvoteDO> getByIds(Collection<Long> ids) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Map<Long, UpvoteDO> getMapByIds(Collection<Long> ids) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected List<UpvoteDO> getByIdsFromMapper(UpvoteMapper mapper, Collection<Long> ids) {
-        return List.of(); // 投票实体不支持批量按ID查询
-    }
-
-    @Override
-    protected Map<Long, UpvoteDO> getMapByIdsFromMapper(UpvoteMapper mapper, Collection<Long> ids) {
-        return Map.of(); // 投票实体不支持批量按ID查询
-    }
-
-    @Override
-    protected int deleteByIdFromMapper(UpvoteMapper mapper, Long id) {
-        return 0;
-    }
+    // ==================== 查询方法 ====================
 
     /**
      * 获取用户对特定对象的投票
      */
-    @Cacheable(value = "upvotesByUser", key = "#userId + '_' + #objectId + '_' + #objectType")
+    @Cacheable(value = "upvotes", key = "#userId + '_' + #objectId + '_' + #objectType", unless = "#result == null")
     public UpvoteDO getByUserAndObject(long userId, long objectId, int objectType) {
         return upvoteMapper.getByUserAndObject(userId, objectId, objectType);
     }
 
     /**
+     * 获取用户的投票列表
+     */
+    public List<UpvoteDO> getList(long userId, List<Long> objectIds, int objectType) {
+        if (objectIds == null || objectIds.isEmpty()) {
+            return List.of();
+        }
+        return upvoteMapper.getList(userId, objectIds, objectType);
+    }
+
+    // ==================== 写入方法 ====================
+
+    /**
+     * 插入投票记录
+     */
+    @CacheEvict(value = "upvotes", key = "#upvoteDO.userId + '_' + #upvoteDO.objectId + '_' + #upvoteDO.objectType")
+    public void insert(UpvoteDO upvoteDO) {
+        upvoteMapper.insert(upvoteDO);
+    }
+
+    /**
      * 更新投票记录
      */
-    @CacheEvict(value = "upvotesByUser", key = "#upvoteDO.userId + '_' + #upvoteDO.objectId + '_' + #upvoteDO.objectType")
+    @CacheEvict(value = "upvotes", key = "#upvoteDO.userId + '_' + #upvoteDO.objectId + '_' + #upvoteDO.objectType")
     public void update(UpvoteDO upvoteDO) {
         upvoteMapper.update(upvoteDO);
     }
 
     /**
-     * 删除投票记录（先查询获取信息，再删除并清除缓存）
+     * 删除投票记录
      */
     public void delete(long id) {
-        // 先查询获取完整信息
         UpvoteDO upvote = upvoteMapper.getById(id);
         if (upvote != null) {
-            // 清除对应缓存
-            evictUserUpvoteCache(upvote.getUserId(), upvote.getObjectId(), upvote.getObjectType());
-            // 删除数据
+            evictCache(upvote.getUserId(), upvote.getObjectId(), upvote.getObjectType());
             upvoteMapper.delete(id);
         }
     }
 
-    /**
-     * 手动清除用户投票缓存
-     */
-    @CacheEvict(value = "upvotesByUser", key = "#userId + '_' + #objectId + '_' + #objectType")
-    public void evictUserUpvoteCache(long userId, long objectId, int objectType) {
-        // 缓存清除由注解自动处理
-    }
-    
-    /**
-     * 获取用户的投票列表（不缓存）
-     */
-    public List<UpvoteDO> getList(long userId, List<Long> objectIds, int objectType) {
-        return upvoteMapper.getList(userId, objectIds, objectType);
-    }
+    // ==================== 缓存辅助方法 ====================
 
-    /**
-     * 插入新的投票记录
-     */
-    public void insert(UpvoteDO upvoteDO) {
-        upvoteMapper.insert(upvoteDO);
+    @CacheEvict(value = "upvotes", key = "#userId + '_' + #objectId + '_' + #objectType")
+    public void evictCache(long userId, long objectId, int objectType) {
+        // 仅用于清除缓存
     }
 }

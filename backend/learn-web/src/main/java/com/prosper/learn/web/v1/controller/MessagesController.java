@@ -82,47 +82,7 @@ public class MessagesController {
         return ApiResponse.success(count);
     }
 
-// --注释掉检查 START (2025/12/29 待私信功能开发时启用)
-//    /**
-//     * 获取消息列表
-//     * 映射: GET /message → GET /api/v1/messages
-//     */
-//    @GetMapping("/messages")
-//    @SaCheckLogin
-//    public ApiResponse<List<MessageDTO>> getMessageList(
-//            @RequestParam @NotNull(message = "用户ID不能为空")
-//            @Positive(message = "用户ID必须大于0")
-//            Long userId,
-//            @RequestParam @NotNull(message = "消息类型不能为空")
-//            @Positive(message = "消息类型必须大于0")
-//            int type,
-//            @RequestParam @NotNull(message = "最后ID不能为空")
-//            @Min(value = 0, message = "最后ID不能小于0")
-//            Long lastId,
-//            @RequestParam @NotNull(message = "会话类型不能为空")
-//            @Min(value = 0, message = "会话类型不能小于0")
-//            int conversation,
-//            @CurrentUser UserDO currentUser) {
-//
-//        List<MessageDTO> messageDTOList = messageService.getList(type, currentUser.getId(), userId, lastId, conversation);
-//        return ApiResponse.success(messageDTOList);
-//    }
-// --注释掉检查 STOP (2025/12/29 待私信功能开发时启用)
-
-// --注释掉检查 START (2025/12/29 待管理后台开发时启用)
-//    /**
-//     * 发送系统消息
-//     * 映射: POST /message/system → POST /api/v1/messages/system
-//     */
-//    @PostMapping("/messages/system")
-//    public ApiResponse<Void> postSystemMessage(@RequestBody @Valid SendMessageRequest request) {
-//
-//        //messageService.createSystemMessage(request.getType(), request.getUserId(), request.getContent());
-//        return ApiResponse.success();
-//    }
-// --注释掉检查 STOP (2025/12/29 待管理后台开发时启用)
-
-    /**
+/**
      * 邀请用户
      * 映射: POST /message/invite → POST /api/v1/messages/invite
      */

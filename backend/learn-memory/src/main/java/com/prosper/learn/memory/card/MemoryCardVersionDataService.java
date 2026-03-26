@@ -1,97 +1,89 @@
 package com.prosper.learn.memory.card;
 
-import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.exception.StatusCode;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * 记忆卡片版本数据服务
+ * 负责记忆卡片版本数据的 CRUD 和缓存管理
+ *
+ * 缓存策略：
+ * - 只缓存单条查询 getById
+ * - 列表/批量查询直接走数据库
+ * - 写操作清除相关缓存
  */
-@Slf4j
 @Service
-public class MemoryCardVersionDataService extends AbstractDataService<MemoryCardVersionDO, MemoryCardVersionMapper, Long> {
+@RequiredArgsConstructor
+public class MemoryCardVersionDataService {
 
-    @Autowired
-    private MemoryCardVersionMapper memoryCardVersionMapper;
+    private final MemoryCardVersionMapper memoryCardVersionMapper;
 
-    @Override
-    protected MemoryCardVersionMapper mapper() {
-        return memoryCardVersionMapper;
-    }
+    // ==================== 查询方法 ====================
 
-    @Override
-    protected String getCacheName() {
-        return "memory_card_versions";
-    }
-
-    @Override
-    protected String getEntityName() {
-        return "MemoryCardVersion";
-    }
-
-    @Override
-    protected Long getEntityId(MemoryCardVersionDO entity) {
-        return entity.getId();
-    }
-
-    @Override
-    protected MemoryCardVersionDO getByIdFromMapper(MemoryCardVersionMapper mapper, Long id) {
-        return mapper.get(id);
-    }
-
-    @Override
-    protected List<MemoryCardVersionDO> getByIdsFromMapper(MemoryCardVersionMapper mapper, Collection<Long> ids) {
-        return mapper.getByIds(ids.stream().collect(Collectors.toList()));
-    }
-
-    @Override
-    protected Map<Long, MemoryCardVersionDO> getMapByIdsFromMapper(MemoryCardVersionMapper mapper, Collection<Long> ids) {
-        return mapper.getMapByIds(ids);
-    }
-
-    @Override
-    protected Duration getCacheTtl() {
-        return Duration.ofHours(1);
-    }
-
-    @Override
-    protected int deleteByIdFromMapper(MemoryCardVersionMapper mapper, Long id) {
-        return 0;
+    /**
+     * 根据ID查询卡片版本
+     */
+    @Cacheable(value = "memoryCardVersions", key = "#id", unless = "#result == null")
+    public MemoryCardVersionDO getById(Long id) {
+        if (id == null) {
+            return null;
+        }
+        return memoryCardVersionMapper.get(id);
     }
 
     /**
-     * 验证并获取卡片版本
-     *
-     * @param id 卡片版本ID
-     * @return 卡片版本实体
-     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当卡片版本不存在时抛出 MEMORY_CARD_VERSION_NOT_FOUND (2203)
+     * 批量根据ID查询卡片版本
      */
-    @Override
+    public List<MemoryCardVersionDO> getByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Long> validIds = ids.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (validIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return memoryCardVersionMapper.getByIds(validIds);
+    }
+
+    /**
+     * 批量根据ID查询卡片版本并转为Map
+     */
+    public Map<Long, MemoryCardVersionDO> getMapByIds(Collection<Long> ids) {
+        return getByIds(ids).stream()
+                .collect(Collectors.toMap(MemoryCardVersionDO::getId, Function.identity()));
+    }
+
+    // ==================== 验证方法 ====================
+
+    /**
+     * 验证并获取卡片版本
+     */
     public MemoryCardVersionDO validateAndGet(Long id) {
-        if (id == null) {
-            throw StatusCode.INVALID_PARAMETER.exception("卡片版本ID不能为空");
+        if (id == null || id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("卡片版本ID无效");
         }
-
-        if (id <= 0) {
-            throw StatusCode.INVALID_PARAMETER.exception("卡片版本ID必须大于0");
-        }
-
         MemoryCardVersionDO version = getById(id);
         if (version == null) {
             throw StatusCode.MEMORY_CARD_VERSION_NOT_FOUND.exception();
         }
-
         return version;
     }
+
+    // ==================== 写入方法 ====================
 
     /**
      * 插入卡片版本
@@ -100,13 +92,7 @@ public class MemoryCardVersionDataService extends AbstractDataService<MemoryCard
         if (version == null) {
             throw new IllegalArgumentException("Version cannot be null");
         }
-
-        try {
-            return memoryCardVersionMapper.insert(version);
-        } catch (Exception e) {
-            log.error("Error inserting card version: cardId={}", version.getCardId(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
+        return memoryCardVersionMapper.insert(version);
     }
 
     /**
@@ -116,96 +102,15 @@ public class MemoryCardVersionDataService extends AbstractDataService<MemoryCard
         if (versions == null || versions.isEmpty()) {
             return 0;
         }
-        
-        try {
-            int result = memoryCardVersionMapper.batchInsert(versions);
-            log.info("Batch inserted {} memory card versions", versions.size());
-            return result;
-        } catch (Exception e) {
-            log.error("Error batch inserting memory card versions: count={}", versions.size(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
+        return memoryCardVersionMapper.batchInsert(versions);
     }
 
     /**
-     * 更新版本激活状态并清除缓存
+     * 更新版本激活状态
      */
-    @CacheEvict(value = "memory_card_versions", key = "#id")
+    @CacheEvict(value = "memoryCardVersions", key = "#id")
     public boolean updateActiveStatus(long id, boolean isActive) {
-        try {
-            int result = memoryCardVersionMapper.updateActiveStatus(id, isActive);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error updating version active status: {}", id, e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
+        int result = memoryCardVersionMapper.updateActiveStatus(id, isActive);
+        return result > 0;
     }
-
-    /**
-     * 停用卡片的所有版本
-     */
-    public boolean deactivateAllVersions(long cardId) {
-        try {
-            // 先获取该卡片的所有版本以获得ID列表用于清除缓存
-            List<MemoryCardVersionDO> versions = memoryCardVersionMapper.getVersionsByCard(cardId);
-            
-            int result = memoryCardVersionMapper.deactivateAllVersions(cardId);
-            
-            // 如果更新成功，清除相关的缓存记录
-            if (result > 0 && !versions.isEmpty()) {
-                for (MemoryCardVersionDO version : versions) {
-                    evictCache(version.getId());
-                }
-                log.debug("Evicted cache for {} versions of card {}", versions.size(), cardId);
-            }
-            
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error deactivating all versions for card: {}", cardId, e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 根据卡片获取所有版本
-     */
-    public List<MemoryCardVersionDO> getVersionsByCard(long cardId) {
-        return memoryCardVersionMapper.getVersionsByCard(cardId);
-    }
-
-    /**
-     * 根据卡片获取活跃版本
-     */
-    public MemoryCardVersionDO getActiveVersionByCard(long cardId) {
-        return memoryCardVersionMapper.getActiveVersionByCard(cardId);
-    }
-
-    /**
-     * 根据卡片和版本号获取版本
-     */
-    public MemoryCardVersionDO getVersionByCardAndVersion(long cardId, int version) {
-        return memoryCardVersionMapper.getVersionByCardAndVersion(cardId, version);
-    }
-
-    /**
-     * 根据内容哈希获取版本
-     */
-    public List<MemoryCardVersionDO> getByContentHash(String contentHash) {
-        return memoryCardVersionMapper.getByContentHash(contentHash);
-    }
-
-    /**
-     * 获取卡片的最大版本号
-     */
-    public Integer getMaxVersionByCard(long cardId) {
-        return memoryCardVersionMapper.getMaxVersionByCard(cardId);
-    }
-
-    /**
-     * 统计卡片的版本数量
-     */
-    public int countByCard(long cardId) {
-        return memoryCardVersionMapper.countByCard(cardId);
-    }
-
 }

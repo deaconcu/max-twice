@@ -1,199 +1,65 @@
 package com.prosper.learn.memory.card;
 
-import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
  * 记忆卡片数据服务
+ * 负责记忆卡片数据的 CRUD 和缓存管理
+ *
+ * 缓存策略：
+ * - 只缓存单条查询 getById
+ * - 列表查询直接走数据库
+ * - 写操作清除相关缓存
  */
 @Slf4j
 @Service
-public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, MemoryCardMapper, Long> {
+@RequiredArgsConstructor
+public class MemoryCardDataService {
 
-    @Autowired
-    private MemoryCardMapper memoryCardMapper;
+    private final MemoryCardMapper memoryCardMapper;
 
-    @Override
-    protected MemoryCardMapper mapper() {
-        return memoryCardMapper;
-    }
-
-    @Override
-    protected String getCacheName() {
-        return "memory_cards";
-    }
-
-    @Override
-    protected String getEntityName() {
-        return "MemoryCard";
-    }
-
-    @Override
-    protected Long getEntityId(MemoryCardDO entity) {
-        return entity.getId();
-    }
-
-    @Override
-    protected MemoryCardDO getByIdFromMapper(MemoryCardMapper mapper, Long id) {
-        return mapper.get(id);
-    }
-
-    @Override
-    protected List<MemoryCardDO> getByIdsFromMapper(MemoryCardMapper mapper, Collection<Long> ids) {
-        return mapper.getByIds(ids.stream().collect(Collectors.toList()));
-    }
-
-    @Override
-    protected Map<Long, MemoryCardDO> getMapByIdsFromMapper(MemoryCardMapper mapper, Collection<Long> ids) {
-        return mapper.getMapByIds(ids);
-    }
-
-    @Override
-    protected Duration getCacheTtl() {
-        return Duration.ofMinutes(20);
-    }
-
-    @Override
-    protected int deleteByIdFromMapper(MemoryCardMapper mapper, Long id) {
-        return 0;
-    }
+    // ==================== 查询方法 ====================
 
     /**
-     * 验证并获取卡片
-     *
-     * @param id 卡片ID
-     * @return 卡片实体
-     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当卡片不存在时抛出 MEMORY_CARD_NOT_FOUND (2202)
+     * 根据ID查询卡片
      */
-    @Override
-    public MemoryCardDO validateAndGet(Long id) {
+    @Cacheable(value = "memoryCards", key = "#id", unless = "#result == null")
+    public MemoryCardDO getById(Long id) {
         if (id == null) {
-            throw StatusCode.INVALID_PARAMETER.exception("卡片ID不能为空");
+            return null;
         }
-
-        if (id <= 0) {
-            throw StatusCode.INVALID_PARAMETER.exception("卡片ID必须大于0");
-        }
-
-        MemoryCardDO card = getById(id);
-        if (card == null) {
-            throw StatusCode.MEMORY_CARD_NOT_FOUND.exception();
-        }
-
-        return card;
+        return memoryCardMapper.get(id);
     }
 
     /**
-     * 插入卡片
+     * 批量根据ID查询卡片
      */
-    public int insert(MemoryCardDO card) {
-        if (card == null) {
-            throw new IllegalArgumentException("Card cannot be null");
+    public List<MemoryCardDO> getByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
         }
-
-        try {
-            return memoryCardMapper.insert(card);
-        } catch (Exception e) {
-            log.error("Error inserting card: deckId={}", card.getDeckId(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
+        List<Long> validIds = ids.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (validIds.isEmpty()) {
+            return new ArrayList<>();
         }
+        return memoryCardMapper.getByIds(validIds);
     }
-
-    /**
-     * 批量插入卡片
-     */
-    public int batchInsert(List<MemoryCardDO> cards) {
-        if (cards == null || cards.isEmpty()) {
-            return 0;
-        }
-        
-        try {
-            int result = memoryCardMapper.batchInsert(cards);
-            log.info("Batch inserted {} memory cards", cards.size());
-            return result;
-        } catch (Exception e) {
-            log.error("Error batch inserting memory cards: count={}", cards.size(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 更新卡片并清除缓存
-     */
-    @CacheEvict(value = "memory_cards", key = "#card.id")
-    public void update(MemoryCardDO card) {
-        if (card == null || card.getId() == null) {
-            throw new IllegalArgumentException("Card or card ID cannot be null");
-        }
-
-        try {
-            memoryCardMapper.update(card);
-            log.debug("Updated card {}", card.getId());
-        } catch (Exception e) {
-            log.error("Error updating card: {}", card.getId(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-// --注释掉检查 START (2025/12/10 11:13):
-//    /**
-//     * 更新卡片状态并清除缓存
-//     */
-//    @CacheEvict(value = "memory_cards", key = "#id")
-//    public boolean updateState(long id, int state) {
-//        try {
-//            int result = memoryCardMapper.updateState(id, state);
-//            return result > 0;
-//        } catch (Exception e) {
-//            log.error("Error updating card state: {}", id, e);
-//            throw ErrorCode.DATABASE_ERROR.exception(e);
-//        }
-//    }
-// --注释掉检查 STOP (2025/12/10 11:13)
-
-    /**
-     * 根据卡片组获取卡片列表
-     */
-    public List<MemoryCardDO> getListByDeck(long deckId, int state) {
-        return memoryCardMapper.getListByDeck(deckId, state);
-    }
-
-// --注释掉检查 START (2025/12/10 11:13):
-//    /**
-//     * 根据创建者获取卡片列表
-//     */
-//    public List<MemoryCardDO> getListByCreator(long creatorId, int state, int limit) {
-//        return memoryCardMapper.getListByCreator(creatorId, state, limit);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:13)
-
-    /**
-     * 统计卡片组下的卡片数量
-     */
-    public int countByDeck(long deckId, int state) {
-        return memoryCardMapper.countByDeck(deckId, state);
-    }
-
-// --注释掉检查 START (2025/12/10 11:13):
-//    /**
-//     * 统计创建者的卡片数量
-//     */
-//    public int countByCreator(long creatorId, int state) {
-//        return memoryCardMapper.countByCreator(creatorId, state);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:13)
 
     /**
      * 根据卡片组ID获取卡片列表（只获取已发布状态的卡片）
@@ -202,7 +68,7 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
         if (deckId == null) {
             return List.of();
         }
-        return getListByDeck(deckId, Enums.ContentState.PUBLISHED.value());
+        return memoryCardMapper.getListByDeck(deckId, Enums.ContentState.PUBLISHED.value());
     }
 
     /**
@@ -215,27 +81,54 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
         return memoryCardMapper.getByDeckIds(deckIds, Enums.ContentState.PUBLISHED.value());
     }
 
+    // ==================== 验证方法 ====================
+
     /**
-     * 批量获取每个 deck 的第一张卡片（只获取已发布状态的卡片）
+     * 验证并获取卡片
      */
-    public List<MemoryCardDO> getFirstCardByDeckIds(List<Long> deckIds) {
-        if (deckIds == null || deckIds.isEmpty()) {
-            return List.of();
+    public MemoryCardDO validateAndGet(Long id) {
+        if (id == null || id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("卡片ID无效");
         }
-        return memoryCardMapper.getFirstCardByDeckIds(deckIds, Enums.ContentState.PUBLISHED.value());
+        MemoryCardDO card = getById(id);
+        if (card == null) {
+            throw StatusCode.MEMORY_CARD_NOT_FOUND.exception();
+        }
+        return card;
     }
 
-// --注释掉检查 START (2025/12/10 11:13):
-//    /**
-//     * 根据卡片组ID获取卡片ID列表（只获取正常状态的卡片）
-//     */
-//    public List<Long> getCardIdsByDeckId(Long deckId) {
-//        if (deckId == null) {
-//            return List.of();
-//        }
-//        return memoryCardMapper.getCardIdsByDeckId(deckId);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:13)
+    // ==================== 写入方法 ====================
+
+    /**
+     * 插入卡片
+     */
+    public int insert(MemoryCardDO card) {
+        if (card == null) {
+            throw new IllegalArgumentException("Card cannot be null");
+        }
+        return memoryCardMapper.insert(card);
+    }
+
+    /**
+     * 批量插入卡片
+     */
+    public int batchInsert(List<MemoryCardDO> cards) {
+        if (cards == null || cards.isEmpty()) {
+            return 0;
+        }
+        return memoryCardMapper.batchInsert(cards);
+    }
+
+    /**
+     * 更新卡片
+     */
+    @CacheEvict(value = "memoryCards", key = "#card.id")
+    public void update(MemoryCardDO card) {
+        if (card == null || card.getId() == null) {
+            throw new IllegalArgumentException("Card or card ID cannot be null");
+        }
+        memoryCardMapper.update(card);
+    }
 
     /**
      * 批量更新卡片的当前版本ID
@@ -244,66 +137,23 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
         if (cards == null || cards.isEmpty()) {
             return 0;
         }
-
-        try {
-            int result = memoryCardMapper.batchUpdateCurrentVersionId(cards);
-            log.info("Batch updated current version id for {} memory cards", cards.size());
-
-            // 清除相关缓存
-            for (MemoryCardDO card : cards) {
-                evictCache(card.getId());
-            }
-
-            return result;
-        } catch (Exception e) {
-            log.error("Error batch updating current version id: count={}", cards.size(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
+        int result = memoryCardMapper.batchUpdateCurrentVersionId(cards);
+        // 清除相关缓存
+        for (MemoryCardDO card : cards) {
+            evictCacheById(card.getId());
         }
-    }
-
-    /**
-     * 批量更新卡片
-     */
-    public int batchUpdate(List<MemoryCardDO> cards) {
-        if (cards == null || cards.isEmpty()) {
-            return 0;
-        }
-
-        try {
-            int result = memoryCardMapper.batchUpdate(cards);
-            log.info("Batch updated {} memory cards", cards.size());
-
-            // 清除相关缓存
-            for (MemoryCardDO card : cards) {
-                evictCache(card.getId());
-            }
-
-            return result;
-        } catch (Exception e) {
-            log.error("Error batch updating memory cards: count={}", cards.size(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
+        return result;
     }
 
     /**
      * 软删除卡片
      */
+    @CacheEvict(value = "memoryCards", key = "#card.id")
     public int softDelete(MemoryCardDO card) {
         if (card == null || card.getId() == null) {
             throw new IllegalArgumentException("Card or card ID cannot be null");
         }
-
-        try {
-            int result = memoryCardMapper.softDelete(card);
-            if (result > 0) {
-                evictCache(card.getId());
-                log.debug("Soft deleted card {}", card.getId());
-            }
-            return result;
-        } catch (Exception e) {
-            log.error("Error soft deleting card: {}", card.getId(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
-        }
+        return memoryCardMapper.softDelete(card);
     }
 
     /**
@@ -313,21 +163,18 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
         if (cardIds == null || cardIds.isEmpty()) {
             return 0;
         }
-
-        try {
-            int result = memoryCardMapper.batchSoftDelete(cardIds, now);
-            log.info("Batch soft deleted {} memory cards", cardIds.size());
-
-            // 清除相关缓存
-            for (Long cardId : cardIds) {
-                evictCache(cardId);
-            }
-
-            return result;
-        } catch (Exception e) {
-            log.error("Error batch soft deleting memory cards: count={}", cardIds.size(), e);
-            throw StatusCode.DATABASE_ERROR.exception(e);
+        int result = memoryCardMapper.batchSoftDelete(cardIds, now);
+        // 清除相关缓存
+        for (Long cardId : cardIds) {
+            evictCacheById(cardId);
         }
+        return result;
     }
 
+    // ==================== 缓存辅助方法 ====================
+
+    @CacheEvict(value = "memoryCards", key = "#id")
+    public void evictCacheById(Long id) {
+        // 仅用于清除缓存
+    }
 }

@@ -12,7 +12,6 @@ import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
-import com.prosper.learn.memory.review.UserCardInCourseDataService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDO;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDataService;
@@ -74,9 +73,6 @@ public class MemoryBankControllerTest extends BaseControllerTest {
 
     @Autowired
     private MemoryCardDataService cardDataService;
-
-    @Autowired
-    private UserCardInCourseDataService userCardInCourseDataService;
 
     @Autowired
     private UserCourseSrsSettingDataService srsSettingDataService;
