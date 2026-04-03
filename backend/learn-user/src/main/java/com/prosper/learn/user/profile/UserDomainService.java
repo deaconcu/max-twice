@@ -68,7 +68,7 @@ public class UserDomainService {
             userDataService.updateState(userId, UserState.ACTIVE.value());
         }
 
-        log.info("User {} state changed to: {}", userId, ban ? "BANNED" : "ACTIVE");
+        log.info("用户状态变更: userId={}，状态={}", userId, ban ? "已封禁" : "正常");
     }
 
     /**
@@ -97,7 +97,7 @@ public class UserDomainService {
         // 3. 执行角色修改
         userDataService.updateRole(userId, roleCode);
 
-        log.info("User {} role changed to {} by operator {}", userId, newRole.getDescription(), operatorId);
+        log.info("用户角色变更: userId={}，新角色={}，操作者={}", userId, newRole.getDescription(), operatorId);
     }
 
     /**
@@ -113,7 +113,7 @@ public class UserDomainService {
         userDO.setTimezone(timezone);
         userDataService.update(userDO);
 
-        log.info("User {} info updated: name={}, timezone={}", userId, name, timezone);
+        log.info("用户信息更新: userId={}，name={}，timezone={}", userId, name, timezone);
     }
 
     /**
@@ -125,7 +125,7 @@ public class UserDomainService {
         if (updated == 0) {
             throw StatusCode.USER_NOT_FOUND.exception("用户不存在");
         }
-        log.info("User {} avatar updated: {}", userId, avatarUrl);
+        log.info("用户头像更新: userId={}，avatar={}", userId, avatarUrl);
     }
 
     // ========== 用户注册和验证 ==========
@@ -158,7 +158,7 @@ public class UserDomainService {
         user.setLastViewedMessageId(0L); // 设置最后查看消息ID默认值
         userDataService.insert(user);
 
-        log.info("User created: userId={}, email={}", user.getId(), email);
+        log.info("用户创建成功: userId={}，email={}", user.getId(), email);
         return user;
     }
 
@@ -179,7 +179,7 @@ public class UserDomainService {
             LocalDateTime canSendAt = lastVerification.getCreatedAt().plusSeconds(sendIntervalSeconds);
 
             if (LocalDateTime.now().isBefore(canSendAt)) {
-                log.warn("Verification code send too frequent for email: {}", email);
+                log.warn("用户验证码发送过于频繁: email={}", email);
                 throw StatusCode.USER_VERIFICATION_CODE_SEND_TOO_FREQUENT.exception();
             }
         }
@@ -187,7 +187,7 @@ public class UserDomainService {
         // 2. 创建新验证码
         VerificationDO verification = new VerificationDO(email, code);
         verificationDataService.insert(verification);
-        log.info("Verification code created for email: {}", email);
+        log.info("用户验证码创建成功: email={}", email);
     }
 
     /**
@@ -209,7 +209,7 @@ public class UserDomainService {
         int expiryMinutes = systemProperties.getUser().getVerificationCodeExpiryMinutes();
         LocalDateTime expiresAt = verificationDO.getCreatedAt().plusMinutes(expiryMinutes);
         if (LocalDateTime.now().isAfter(expiresAt)) {
-            log.warn("Verification code expired for email: {}", email);
+            log.warn("用户验证码已过期: email={}", email);
             throw StatusCode.USER_VERIFICATION_CODE_EXPIRED.exception();
         }
 
@@ -230,7 +230,7 @@ public class UserDomainService {
 
         if (!user.getEmailValidated()) {
             userDataService.updateEmailValidated(user.getId(), true);
-            log.info("User {} email validated", user.getId());
+            log.info("用户邮箱验证成功: userId={}", user.getId());
         }
 
         return user;

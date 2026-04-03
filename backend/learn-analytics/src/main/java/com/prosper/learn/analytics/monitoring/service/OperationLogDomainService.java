@@ -44,7 +44,7 @@ public class OperationLogDomainService {
         // 插入数据库
         operationLogDataService.insert(logDO);
 
-        log.debug("Operation log recorded: operator={}, module={}, type={}, target={}:{}",
+        log.debug("操作日志 记录成功: operator={}，module={}，type={}，target={}:{}",
                 logDO.getOperatorId(), logDO.getModule(), logDO.getOperationType(),
                 logDO.getTargetType(), logDO.getTargetId());
     }

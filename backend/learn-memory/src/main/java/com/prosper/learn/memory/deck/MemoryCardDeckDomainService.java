@@ -77,7 +77,7 @@ public class MemoryCardDeckDomainService {
             throw StatusCode.SYSTEM_ERROR.exception("创建卡片组失败");
         }
 
-        log.info("Created deck {} with {} cards by user {}", deck.getId(), cardCount, creatorId);
+        log.info("卡片组创建成功: deckId={}，cardCount={}，creatorId={}", deck.getId(), cardCount, creatorId);
         return deck;
     }
 
@@ -109,7 +109,7 @@ public class MemoryCardDeckDomainService {
         // 更新数据库
         deckDataService.update(deck);
 
-        log.info("Updated deck {} by user {}", deckId, userId);
+        log.info("卡片组更新成功: deckId={}，userId={}", deckId, userId);
         return deck;
     }
 
@@ -143,7 +143,7 @@ public class MemoryCardDeckDomainService {
             throw StatusCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
         }
 
-        log.info("Deleted deck {} by user {}", deckId, userId);
+        log.info("卡片组删除成功: deckId={}，userId={}", deckId, userId);
     }
 
     /**
@@ -167,7 +167,7 @@ public class MemoryCardDeckDomainService {
 
         deckDataService.update(deck);
 
-        log.info("Deck {} approved", deckId);
+        log.info("卡片组审核通过: deckId={}", deckId);
     }
 
     /**
@@ -188,7 +188,7 @@ public class MemoryCardDeckDomainService {
 
         deckDataService.update(deck);
 
-        log.info("Deck {} rejected, reason: {}", deckId, reason);
+        log.info("卡片组审核拒绝: deckId={}，reason={}", deckId, reason);
     }
 
     /**
@@ -209,7 +209,7 @@ public class MemoryCardDeckDomainService {
 
         deckDataService.update(deck);
 
-        log.info("Deck {} banned, reason: {}", deckId, reason);
+        log.info("卡片组封禁: deckId={}，reason={}", deckId, reason);
     }
 
     /**
@@ -233,7 +233,7 @@ public class MemoryCardDeckDomainService {
 
         deckDataService.update(deck);
 
-        log.info("Deck {} restored", deckId);
+        log.info("卡片组恢复: deckId={}", deckId);
     }
 
     /**
@@ -265,7 +265,7 @@ public class MemoryCardDeckDomainService {
         deck.setUpdatedAt(LocalDateTime.now());
         deckDataService.update(deck);
 
-        log.info("Replaced all cards for deck {} by user {}", deckId, userId);
+        log.info("卡片组全部卡片替换成功: deckId={}，userId={}", deckId, userId);
         return deck;
     }
 
@@ -566,7 +566,7 @@ public class MemoryCardDeckDomainService {
         if (removeOtherDeckCards) {
             int deletedCount = userCardSrsDataService.deleteByUserAndNodeExcludeDeck(userId, nodeId, deckId);
             if (deletedCount > 0) {
-                log.info("Deleted {} cards from other decks for user {} in node {}", deletedCount, userId, nodeId);
+                log.info("卡片组删除其他来源卡片: userId={}，nodeId={}，deletedCount={}", userId, nodeId, deletedCount);
             }
         }
 
@@ -617,7 +617,7 @@ public class MemoryCardDeckDomainService {
                 } else {
                     // 已删除的卡片：删除学习记录
                     userCardSrsDataService.deleteByUserAndCard(userId, userState.getCardId());
-                    log.info("Deleted SRS state for removed card: {} for user: {}", userState.getCardId(), userId);
+                    log.info("卡片组删除已移除卡片的SRS状态: cardId={}，userId={}", userState.getCardId(), userId);
                 }
             }
 
@@ -653,7 +653,7 @@ public class MemoryCardDeckDomainService {
                     // 已删除的卡片：如果在选中列表中，则删除学习记录
                     if (cardIds.contains(userState.getCardId())) {
                         userCardSrsDataService.deleteByUserAndCard(userId, userState.getCardId());
-                        log.info("Deleted SRS state for removed card: {} for user: {}", userState.getCardId(), userId);
+                        log.info("卡片组删除已移除卡片的SRS状态: cardId={}，userId={}", userState.getCardId(), userId);
                     }
                 }
             }
@@ -676,11 +676,11 @@ public class MemoryCardDeckDomainService {
         // 批量插入新增卡片的SRS状态（已包含courseId）
         if (!newSrsStates.isEmpty()) {
             userCardSrsDataService.batchInsertIgnoreSrsStates(newSrsStates);
-            log.info("Created {} new SRS states for added cards for user: {} in course: {}",
+            log.info("卡片组创建新增卡片SRS状态: count={}，userId={}，courseId={}",
                     newSrsStates.size(), userId, courseId);
         }
 
-        log.info("User {} accepted changes for deck {} with {} target items",
+        log.info("卡片组接受更新: userId={}，deckId={}，targetItems={}",
                 userId, deckId, cardIds.isEmpty() ? userStates.size() + newSrsStates.size() : cardIds.size());
     }
 
@@ -700,7 +700,7 @@ public class MemoryCardDeckDomainService {
         checkNotNull(courseId, "课程ID不能为空");
 
         int movedCount = userCardSrsDataService.updateCourseIdByUserAndNode(userId, nodeId, courseId);
-        log.info("User {} moved {} cards from node {} to course {}", userId, movedCount, nodeId, courseId);
+        log.info("卡片组移动节点到课程: userId={}，nodeId={}，courseId={}，movedCount={}", userId, nodeId, courseId, movedCount);
         return movedCount;
     }
 }

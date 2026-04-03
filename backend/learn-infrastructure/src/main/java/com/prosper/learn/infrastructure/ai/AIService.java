@@ -29,7 +29,7 @@ public class AIService {
     public String generateContent(String prompt, String systemPrompt) {
         String aiService = systemProperties.getRobot().getAiService();
 
-        log.info("Using AI service: {}, model: {}", aiService, systemProperties.getRobot().getModel());
+        log.info("AI 使用服务: {}，模型: {}", aiService, systemProperties.getRobot().getModel());
 
         if ("gemini".equalsIgnoreCase(aiService)) {
             return geminiService.generateContent(prompt, systemPrompt);
@@ -49,7 +49,7 @@ public class AIService {
         if ("opencode".equalsIgnoreCase(aiService)) {
             opencodeService.resetSession();
         } else {
-            log.info("{} service does not have session, reset ignored", aiService);
+            log.info("AI {} 服务不支持 session，重置已忽略", aiService);
         }
     }
 
@@ -61,7 +61,7 @@ public class AIService {
         if ("opencode".equalsIgnoreCase(aiService)) {
             opencodeService.summarizeSession();
         } else {
-            log.info("{} service does not have session, summarize ignored", aiService);
+            log.info("AI {} 服务不支持 session，压缩已忽略", aiService);
         }
     }
 }

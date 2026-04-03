@@ -82,7 +82,7 @@ public class PublicController {
                     .body(ApiResponse.success(categoryNode));
 
         } catch (Exception e) {
-            log.error("Failed to get course categories", e);
+            log.error("公开接口 获取课程分类失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -115,7 +115,7 @@ public class PublicController {
                     .body(ApiResponse.success(categoryNode));
 
         } catch (Exception e) {
-            log.error("Failed to get profession categories", e);
+            log.error("公开接口 获取职业分类失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -129,7 +129,7 @@ public class PublicController {
             byte[] hash = md.digest(content.getBytes());
             return "\"" + HexFormat.of().formatHex(hash) + "\"";
         } catch (NoSuchAlgorithmException e) {
-            log.error("Failed to generate ETag", e);
+            log.error("公开接口 生成 ETag 失败", e);
             // 降级：使用 hashCode
             return "\"" + Integer.toHexString(content.hashCode()) + "\"";
         }
@@ -150,7 +150,7 @@ public class PublicController {
 
             return ApiResponse.success(result);
         } catch (Exception e) {
-            log.error("Failed to get readonly mode status", e);
+            log.error("公开接口 获取只读模式状态失败", e);
             return ApiResponse.fail("查询失败");
         }
     }
@@ -172,7 +172,7 @@ public class PublicController {
             }
             return ApiResponse.success(profession);
         } catch (Exception e) {
-            log.error("Failed to get profession: {}", id, e);
+            log.error("公开接口 获取职业详情失败: {}", id, e);
             throw e;
         }
     }
@@ -193,7 +193,7 @@ public class PublicController {
             List<RoadmapSummaryDTO> roadmaps = roadmapService.getRoadmapsByProfessionPublic(professionId, lastId, pageSize);
             return ApiResponse.success(roadmaps);
         } catch (Exception e) {
-            log.error("Failed to get roadmaps for profession: {}", professionId, e);
+            log.error("公开接口 获取职业路线图列表失败: {}", professionId, e);
             throw e;
         }
     }
@@ -216,7 +216,7 @@ public class PublicController {
             Map<String, Object> result = pageService.readPageByPathPublic(courseId, path);
             return ApiResponse.success(result);
         } catch (Exception e) {
-            log.error("Failed to read page: courseId={}, path={}", courseId, path, e);
+            log.error("公开接口 读取页面失败: courseId={}，path={}", courseId, path, e);
             throw e;
         }
     }

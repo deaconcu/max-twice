@@ -20,7 +20,7 @@ public class MeilisearchInitListener {
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
-        log.info("Initializing Meilisearch indexes...");
+        log.info("Meilisearch 索引初始化开始...");
         meilisearchService.initializeIndexes();
     }
 }

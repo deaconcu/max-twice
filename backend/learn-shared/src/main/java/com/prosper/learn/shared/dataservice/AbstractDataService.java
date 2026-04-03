@@ -55,18 +55,18 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
     @Override
     public T getById(Y id) {
         if (id == null) {
-            log.warn("Attempt to query {} with null id", getEntityName());
+            log.warn("数据服务 尝试以空 ID 查询 {}", getEntityName());
             return null;
         }
 
         try {
             T result = getByIdFromMapper(mapper(), id);
             if (result == null) {
-                log.debug("No {} found with id: {}", getEntityName(), id);
+                log.debug("数据服务 未找到 {}: id={}", getEntityName(), id);
             }
             return result;
         } catch (Exception e) {
-            log.error("Error querying {} with id: {}", getEntityName(), id, e);
+            log.error("数据服务 查询 {} 失败，id: {}", getEntityName(), id, e);
             throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
@@ -89,7 +89,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
         try {
             return getByIdsFromMapper(mapper(), validIds);
         } catch (Exception e) {
-            log.error("Error batch querying {} with ids: {}", getEntityName(), validIds, e);
+            log.error("数据服务 批量查询 {} 失败，ids: {}", getEntityName(), validIds, e);
             throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
@@ -111,11 +111,11 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
         try {
             int result = deleteByIdFromMapper(mapper(), id);
             if (result > 0) {
-                log.debug("Deleted {} with id: {}", getEntityName(), id);
+                log.debug("数据服务 删除成功 {}: id={}", getEntityName(), id);
             }
             return result > 0;
         } catch (Exception e) {
-            log.error("Error deleting {} with id: {}", getEntityName(), id, e);
+            log.error("数据服务 删除 {} 失败，id: {}", getEntityName(), id, e);
             throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }

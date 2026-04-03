@@ -1,6 +1,7 @@
 package com.prosper.learn.content.course;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 不包含：
  * - DTO 转换（由 ApplicationService 负责）
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CourseDomainService {
@@ -49,6 +51,7 @@ public class CourseDomainService {
         courseDO.setSubCategory(subCategory);
         courseDO.setIcon(icon);
         courseDataService.update(courseDO);
+        log.info("课程 更新成功: courseId={}", courseId);
     }
 
     /**
@@ -60,5 +63,6 @@ public class CourseDomainService {
     public void deleteCourse(long courseId) {
         courseDataService.validateAndGet(courseId);
         courseDataService.delete(courseId);
+        log.info("课程 删除成功: courseId={}", courseId);
     }
 }

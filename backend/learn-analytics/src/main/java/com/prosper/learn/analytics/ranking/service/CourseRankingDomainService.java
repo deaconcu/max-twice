@@ -47,12 +47,12 @@ public class CourseRankingDomainService {
     public List<Long> getHotCourseIds(int limit) {
         // 参数验证
         if (limit <= 0) {
-            log.warn("Invalid limit parameter: {}", limit);
+            log.warn("课程排行榜 limit 参数无效: {}", limit);
             return Collections.emptyList();
         }
 
         if (limit > 200) {
-            log.warn("Limit {} exceeds maximum, capping at 200", limit);
+            log.warn("课程排行榜 limit {} 超过最大值，限制为 200", limit);
             limit = 200;
         }
 
@@ -60,11 +60,11 @@ public class CourseRankingDomainService {
             List<Long> courseIds = contentStatsDataService.getTopContentIdsByPopularity(
                 ContentType.course, limit);
 
-            log.debug("Retrieved {} hot course IDs", courseIds.size());
+            log.debug("课程排行榜 获取热门课程 {} 个", courseIds.size());
             return courseIds;
 
         } catch (Exception e) {
-            log.error("Failed to get hot course IDs with limit: {}", limit, e);
+            log.error("课程排行榜 获取热门课程失败，limit: {}", limit, e);
             return Collections.emptyList();
         }
     }

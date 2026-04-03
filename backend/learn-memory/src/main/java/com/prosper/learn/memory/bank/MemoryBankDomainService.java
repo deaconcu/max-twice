@@ -92,8 +92,8 @@ public class MemoryBankDomainService {
 
         // 4. 批量添加卡片到课程
         if (cards != null && !cards.isEmpty()) {
-            log.info("Adding {} cards from deck: {} to memory bank for user: {} in course: {}",
-                cards.size(), deckId, userId, courseId);
+            log.info("记忆库 添加卡片: deckId={}，count={}，userId={}，courseId={}",
+                deckId, cards.size(), userId, courseId);
 
             // 构建SRS状态对象（包含courseId）
             List<UserCardSrsDO> srsList = new ArrayList<>();
@@ -106,7 +106,7 @@ public class MemoryBankDomainService {
             // 批量创建SRS状态（自动跳过已存在的）
             userCardSrsDataService.batchInsertIgnoreSrsStates(srsList);
         } else {
-            log.info("No cards found in deck: {} to add to memory bank for user: {} in course: {}",
+            log.info("记忆库 卡片组无卡片可添加: deckId={}，userId={}，courseId={}",
                 deckId, userId, courseId);
         }
     }
@@ -169,7 +169,7 @@ public class MemoryBankDomainService {
         existingSetting.setUpdatedAt(LocalDateTime.now());
         courseSrsSettingDataService.update(existingSetting);
 
-        log.info("Updated course setting for user: {} course: {}", userId, courseId);
+        log.info("记忆库 课程设置更新成功: userId={}，courseId={}", userId, courseId);
     }
 
     /**
@@ -191,7 +191,7 @@ public class MemoryBankDomainService {
             // 直接删除SRS状态（现在一张卡片只属于一个课程）
             userCardSrsDataService.batchDeleteByUserAndCards(userId, cardIds);
 
-            log.info("Removed {} cards from course: {} for user: {}",
+            log.info("记忆库 移除卡片: count={}，courseId={}，userId={}",
                 cardIds.size(), courseId, userId);
         }
     }

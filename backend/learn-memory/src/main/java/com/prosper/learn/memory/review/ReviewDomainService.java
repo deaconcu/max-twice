@@ -170,7 +170,7 @@ public class ReviewDomainService {
             // LEARNING/RELEARNING 不计入上限，因为它们是同一次学习的延续
         }
 
-        log.info("Submitted review for user: {} card: {} type: {} rating: {} reappearAt: {} reviewDueAt: {}",
+        log.info("卡片复习 提交成功: userId={}，cardId={}，type={}，rating={}，reappearAt={}，reviewDueAt={}",
             userId, cardId, card.getType(), rating, card.getReappearAt(), card.getReviewDueAt());
 
         // 如果最终状态是 REVIEW，发布复习成功事件（用于热力图统计）

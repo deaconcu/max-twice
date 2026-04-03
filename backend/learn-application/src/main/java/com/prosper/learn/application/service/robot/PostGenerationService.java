@@ -76,7 +76,7 @@ public class PostGenerationService {
 
         // 根据配置选择 AI provider
         String response = aiService.generateContent(prompt, systemPrompt);
-        log.info("AI response length: {}", response != null ? response.length() : 0);
+        log.info("Robot AI 响应长度: {}", response != null ? response.length() : 0);
 
         Long postId = handleResponse(nodeId, aiUserId, response);
 
@@ -96,12 +96,12 @@ public class PostGenerationService {
                             if (!hasAiPost) {
                                 // 只有没有AI post的节点才加入队列，继承父节点的contentType和recursive
                                 postQueueService.enqueue(childNodeId, contentType, true, false);
-                                log.info("Added child node {} to AI generation queue from contents post {}", childNodeId, postId);
+                                log.info("Robot 子节点 {} 已加入 AI 生成队列，来源帖子: {}", childNodeId, postId);
                             } else {
-                                log.info("Child node {} already has AI post, skipping queue", childNodeId);
+                                log.info("Robot 子节点 {} 已有 AI 帖子，跳过队列", childNodeId);
                             }
                         } catch (NumberFormatException e) {
-                            log.warn("Invalid node ID format in post content: {}", nodeIdStr);
+                            log.warn("Robot 帖子内容中节点 ID 格式无效: {}", nodeIdStr);
                         }
                     }
                 }
@@ -110,9 +110,9 @@ public class PostGenerationService {
             // 为创建的帖子生成记忆卡片组
             try {
                 //createMemoryCardsForPost(postId, aiUserId, response);
-                log.info("Successfully created memory cards for post: {}", postId);
+                log.info("Robot 帖子 {} 记忆卡片创建成功", postId);
             } catch (Exception e) {
-                log.warn("Failed to create memory cards for post: {}, error: {}", postId, e.getMessage());
+                log.warn("Robot 帖子 {} 记忆卡片创建失败，错误: {}", postId, e.getMessage());
                 // 不抛出异常，避免影响主要的帖子创建功能
             }
         }
@@ -303,7 +303,7 @@ public class PostGenerationService {
                     return root.path("text").asText();
                 }
             } catch (Exception e) {
-                throw new RuntimeException("Failed to parse OpenCode response", e);
+                throw new RuntimeException("Robot OpenCode 响应解析失败", e);
             }
         }
     }
@@ -343,7 +343,7 @@ public class PostGenerationService {
             memoryCardDeckService.createDeck(aiUser, deckRequest);
 
         } catch (Exception e) {
-            log.error("Failed to create memory cards for post: {}", postId, e);
+            log.error("Robot 帖子 {} 记忆卡片创建失败", postId, e);
             throw new RuntimeException(e);
         }
     }
@@ -357,10 +357,10 @@ public class PostGenerationService {
             String prompt = buildMemoryCardPrompt(articleContent);
             String response = aiService.generateContent(prompt, systemPrompt);
 
-            log.info("Memory card generation response length: {}", response.length());
+            log.info("Robot 记忆卡片生成响应长度: {}", response.length());
             return parseMemoryCardResponse(response);
         } catch (Exception e) {
-            log.warn("Failed to generate AI memory cards: {}", e.getMessage());
+            log.warn("Robot AI 记忆卡片生成失败: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -428,7 +428,7 @@ public class PostGenerationService {
                 content = content.substring(7, content.length() - 3).trim();
             }
             // 尝试解析JSON数组
-            log.info("Parsing memory card content length: {}", content.length());
+            log.info("Robot 记忆卡片内容解析长度: {}", content.length());
             JsonNode cardsArray = objectMapper.readTree(content);
             if (!cardsArray.isArray()) {
                 throw new RuntimeException("Response is not a JSON array");
@@ -453,7 +453,7 @@ public class PostGenerationService {
 
             return cards;
         } catch (Exception e) {
-            log.warn("Failed to parse AI memory card response: {}", e.getMessage());
+            log.warn("Robot AI 记忆卡片响应解析失败: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -479,6 +479,6 @@ public class PostGenerationService {
         // 创建卡片组
         UserDO aiUser = userDataService.getById(aiUserId);
         memoryCardDeckService.createDeck(aiUser, deckRequest);
-        log.info("Created AI memory cards for post {}", postId);
+        log.info("Robot 帖子 {} AI 记忆卡片创建成功", postId);
     }
 }

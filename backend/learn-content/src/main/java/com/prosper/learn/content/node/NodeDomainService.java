@@ -39,7 +39,7 @@ public class NodeDomainService {
         Utils.validateStateTransition(nodeDO.getState(), ContentState.PUBLISHED);
 
         nodeDataService.approve(nodeId);
-        log.info("Node {} approved", nodeId);
+        log.info("节点 审核通过: nodeId={}", nodeId);
     }
 
     /**
@@ -58,7 +58,7 @@ public class NodeDomainService {
         Utils.validateStateTransition(nodeDO.getState(), ContentState.REJECTED);
 
         nodeDataService.reject(nodeId, reason);
-        log.info("Node {} rejected, reason: {}", nodeId, reason);
+        log.info("节点 审核拒绝: nodeId={}，reason={}", nodeId, reason);
     }
 
     /**
@@ -77,7 +77,7 @@ public class NodeDomainService {
         Utils.validateStateTransition(nodeDO.getState(), ContentState.BANNED);
 
         nodeDataService.ban(nodeId, reason);
-        log.info("Node {} banned, reason: {}", nodeId, reason);
+        log.info("节点 封禁: nodeId={}，reason={}", nodeId, reason);
     }
 
     /**

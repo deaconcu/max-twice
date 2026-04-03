@@ -252,7 +252,7 @@ public class RoadmapService {
             }
             return 0;
         } catch (Exception e) {
-            log.error("Failed to count nodes in content", e);
+            log.error("路线图服务 节点数量统计失败", e);
             return 0;
         }
     }

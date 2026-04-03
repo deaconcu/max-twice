@@ -50,9 +50,9 @@ public class SystemDomainService {
         try {
             loadCourseCategories();
             loadProfessionCategories();
-            log.info("System configuration loaded successfully");
+            log.info("系统配置加载成功");
         } catch (Exception e) {
-            log.error("Failed to load system configuration", e);
+            log.error("系统配置加载失败", e);
             // 不抛出异常，避免应用启动失败
         }
     }
@@ -64,7 +64,7 @@ public class SystemDomainService {
         try {
             String configValue = systemDataService.getValue("courseCategories");
             if (configValue == null) {
-                log.warn("Course categories configuration not found");
+                log.warn("系统配置 课程分类配置未找到");
                 return;
             }
 
@@ -80,9 +80,9 @@ public class SystemDomainService {
             // 构建快速查询索引
             buildCourseCategoryIndex(categoryNode);
 
-            log.info("Course categories loaded: {} main categories", courseMainCategoryIds.size());
+            log.info("系统配置 课程分类加载完成: {} 个主分类", courseMainCategoryIds.size());
         } catch (IOException e) {
-            log.error("Failed to parse course categories config", e);
+            log.error("系统配置 课程分类配置解析失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -94,7 +94,7 @@ public class SystemDomainService {
         try {
             String configValue = systemDataService.getValue("professionCategories");
             if (configValue == null) {
-                log.warn("Profession categories configuration not found");
+                log.warn("系统配置 职业分类配置未找到");
                 return;
             }
 
@@ -110,9 +110,9 @@ public class SystemDomainService {
             // 构建快速查询索引
             buildProfessionCategoryIndex(categoryNode);
 
-            log.info("Profession categories loaded: {} main categories", professionMainCategoryIds.size());
+            log.info("系统配置 职业分类加载完成: {} 个主分类", professionMainCategoryIds.size());
         } catch (IOException e) {
-            log.error("Failed to parse profession categories config", e);
+            log.error("系统配置 职业分类配置解析失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -169,7 +169,7 @@ public class SystemDomainService {
             this.courseSubCategoryMap = subCategoryMap;
 
         } catch (Exception e) {
-            log.error("Failed to build course category index", e);
+            log.error("系统配置 构建课程分类索引失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -217,7 +217,7 @@ public class SystemDomainService {
             this.professionSubCategoryMap = subCategoryMap;
 
         } catch (Exception e) {
-            log.error("Failed to build profession category index", e);
+            log.error("系统配置 构建职业分类索引失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -296,9 +296,9 @@ public class SystemDomainService {
      * 重新加载配置（供管理接口调用）
      */
     public void reload() {
-        log.info("Reloading system configuration...");
+        log.info("系统配置 重新加载中...");
         loadCourseCategories();
         loadProfessionCategories();
-        log.info("System configuration reloaded successfully");
+        log.info("系统配置 重新加载完成");
     }
 }

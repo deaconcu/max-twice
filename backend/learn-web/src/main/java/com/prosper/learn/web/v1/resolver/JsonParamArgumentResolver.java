@@ -123,7 +123,7 @@ public class JsonParamArgumentResolver implements HandlerMethodArgumentResolver 
                 return objectMapper.convertValue(fieldValue, targetType);
             }
         } catch (Exception e) {
-            log.error("Failed to convert field '{}' to type {}: {}", fieldName, targetType.getSimpleName(), e.getMessage());
+            log.error("参数解析 字段 '{}' 转换为类型 {} 失败: {}", fieldName, targetType.getSimpleName(), e.getMessage());
             throw new IllegalArgumentException(
                 String.format("Failed to convert field '%s' to %s: %s", 
                     fieldName, targetType.getSimpleName(), e.getMessage()), e);

@@ -96,7 +96,7 @@ public class SearchController {
             }
             return results;
         } catch (Exception e) {
-            log.error("Failed to extract search hits", e);
+            log.error("搜索服务 提取搜索结果失败", e);
             return Collections.emptyList();
         }
     }

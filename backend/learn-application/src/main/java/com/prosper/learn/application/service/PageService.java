@@ -787,7 +787,7 @@ public class PageService {
 
             return objectMapper.writeValueAsString(nodeList);
         } catch (Exception e) {
-            log.warn("Failed to enrich index post content: {}", content, e);
+            log.warn("页面服务 目录帖子内容解析失败: {}", content, e);
             return "[]";
         }
     }

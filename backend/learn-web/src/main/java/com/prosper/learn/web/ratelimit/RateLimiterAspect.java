@@ -53,7 +53,7 @@ public class RateLimiterAspect {
                 .getMethod()
                 .getAnnotation(RateLimit.class);
         } catch (Exception e) {
-            log.debug("Failed to get method annotation", e);
+            log.debug("限流切面 获取方法注解失败", e);
         }
 
         // 2. 如果方法上没有，再从类上获取
@@ -74,7 +74,7 @@ public class RateLimiterAspect {
 
         // 2. 生成 Key 和配置
         String key = generateKey(joinPoint, rateLimit);
-        log.debug("Rate limit check for key: {}", key);
+        log.debug("限流切面 检查key: {}", key);
 
         BucketConfiguration configuration = BucketConfiguration.builder()
             .addLimit(Bandwidth.simple(
@@ -89,7 +89,7 @@ public class RateLimiterAspect {
         if (bucket.tryConsume(1)) {
             return joinPoint.proceed();
         } else {
-            log.warn("Rate limit exceeded - key: {}, method: {}", key, joinPoint.getSignature().toShortString());
+            log.warn("限流拦截 请求超限 - key: {}，method: {}", key, joinPoint.getSignature().toShortString());
             throw StatusCode.RATE_LIMIT_EXCEEDED.exception();
         }
     }
@@ -128,7 +128,7 @@ public class RateLimiterAspect {
         }
         boolean shouldSkip = StpUtil.hasRoleOr(skipRoles);
         if (shouldSkip) {
-            log.debug("Rate limit skipped for user '{}' with roles.", StpUtil.getLoginId());
+            log.debug("限流切面 用户 {} 拥有白名单角色，跳过限流", StpUtil.getLoginId());
         }
         return shouldSkip;
     }

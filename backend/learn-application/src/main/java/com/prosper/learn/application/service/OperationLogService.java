@@ -47,7 +47,7 @@ public class OperationLogService {
         // 调用 DomainService 记录日志
         operationLogDomainService.recordLog(logDO);
 
-        log.info("Operation log recorded: operator={}, module={}, type={}, target={}:{}",
+        log.info("操作日志 记录成功: operator={}，module={}，type={}，target={}:{}",
                 logDTO.getOperatorName(), logDTO.getModule(), logDTO.getOperationType(),
                 logDTO.getTargetType(), logDTO.getTargetId());
     }
@@ -130,7 +130,7 @@ public class OperationLogService {
         try {
             return LocalDateTime.parse(dateTimeStr, DATE_TIME_FORMATTER);
         } catch (Exception e) {
-            log.warn("Failed to parse datetime: {}", dateTimeStr);
+            log.warn("操作日志 日期时间解析失败: {}", dateTimeStr);
             return null;
         }
     }

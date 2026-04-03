@@ -51,7 +51,7 @@ public class OpencodeService {
      */
     public void resetSession() {
         redisTemplate.delete(SESSION_KEY);
-        log.info("OpenCode session reset, deleted key: {}", SESSION_KEY);
+        log.info("OpenCode 会话重置，已删除 key: {}", SESSION_KEY);
     }
 
     /**
@@ -60,7 +60,7 @@ public class OpencodeService {
     public void summarizeSession() {
         String sessionId = redisTemplate.opsForValue().get(SESSION_KEY);
         if (sessionId == null || sessionId.isEmpty()) {
-            log.warn("No active OpenCode session to summarize");
+            log.warn("OpenCode 没有活动会话可压缩");
             return;
         }
         summarizeSessionById(sessionId);
@@ -72,13 +72,13 @@ public class OpencodeService {
     private String getOrCreateSession() {
         String sessionId = redisTemplate.opsForValue().get(SESSION_KEY);
         if (sessionId != null && !sessionId.isEmpty()) {
-            log.debug("Reusing existing OpenCode session: {}", sessionId);
+            log.debug("OpenCode 复用现有会话: {}", sessionId);
             return sessionId;
         }
 
         sessionId = createSession();
         redisTemplate.opsForValue().set(SESSION_KEY, sessionId, SESSION_EXPIRE_HOURS, TimeUnit.HOURS);
-        log.info("Created new OpenCode session: {}", sessionId);
+        log.info("OpenCode 创建新会话: {}", sessionId);
         return sessionId;
     }
 
@@ -124,12 +124,12 @@ public class OpencodeService {
                     .build();
             HttpResponse<String> resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() / 100 != 2) {
-                log.warn("Summarize OpenCode session failed: {}", resp.statusCode());
+                log.warn("OpenCode 会话压缩失败: {}", resp.statusCode());
             } else {
-                log.info("OpenCode session summarized successfully");
+                log.info("OpenCode 会话压缩成功");
             }
         } catch (Exception e) {
-            log.warn("Failed to summarize OpenCode session", e);
+            log.warn("OpenCode 会话压缩失败", e);
             // 不抛出异常，summarize 失败不影响主流程
         }
     }
@@ -141,16 +141,16 @@ public class OpencodeService {
         try {
             return sendMessage(sessionId, prompt, systemPrompt);
         } catch (Exception e) {
-            log.warn("Send message to OpenCode failed with session {}: {}", sessionId, e.getMessage());
+            log.warn("OpenCode 发送消息失败，session {}: {}", sessionId, e.getMessage());
             // 检查 Redis 中是否还有 sessionId，有的话就抛出异常不重连
             String existingSessionId = redisTemplate.opsForValue().get(SESSION_KEY);
             if (existingSessionId != null && !existingSessionId.isEmpty()) {
-                log.info("Session exists in redis, not reconnecting");
+                log.info("OpenCode Redis 中存在会话，不重连");
                 throw e;
             }
 
             // Redis 中没有 sessionId 时才重新创建
-            log.info("No session in redis, creating new session");
+            log.info("OpenCode Redis 中无会话，创建新会话");
             String newSessionId = getOrCreateSession();
             return sendMessage(newSessionId, prompt, systemPrompt);
         }
@@ -178,7 +178,7 @@ public class OpencodeService {
                 root.put("system", systemPrompt);
             }
 
-            log.info("Send to OpenCode: {}", root);
+            log.info("OpenCode 发送请求: {}", root);
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(URI.create(systemProperties.getRobot().getOpencodeBaseUrl() + "/session/" + sessionId + "/message"))
                     .header("Content-Type", "application/json")
@@ -189,7 +189,7 @@ public class OpencodeService {
             if (resp.statusCode() / 100 != 2) throw new RuntimeException("send message failed: " + resp.statusCode());
 
             String responseBody = resp.body();
-            log.info("OpenCode full response: {}", responseBody);
+            log.info("OpenCode 完整响应: {}", responseBody);
 
             return responseBody;
         } catch (Exception e) {

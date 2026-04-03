@@ -45,11 +45,11 @@ public class TimestampInterceptor implements Interceptor {
             // INSERT 操作：设置 createdAt 和 updatedAt
             setFieldValue(parameter, "createdAt", now);
             setFieldValue(parameter, "updatedAt", now);
-            log.debug("Auto-fill createdAt and updatedAt for INSERT: {}", parameter.getClass().getSimpleName());
+            log.debug("时间戳拦截器 INSERT 自动填充 createdAt 和 updatedAt: {}", parameter.getClass().getSimpleName());
         } else if (SqlCommandType.UPDATE.equals(sqlCommandType)) {
             // UPDATE 操作：设置 updatedAt
             setFieldValue(parameter, "updatedAt", now);
-            log.debug("Auto-fill updatedAt for UPDATE: {}", parameter.getClass().getSimpleName());
+            log.debug("时间戳拦截器 UPDATE 自动填充 updatedAt: {}", parameter.getClass().getSimpleName());
         }
 
         return invocation.proceed();
@@ -76,7 +76,7 @@ public class TimestampInterceptor implements Interceptor {
                 }
             }
         } catch (Exception e) {
-            log.warn("Failed to set field {} for {}: {}", fieldName, obj.getClass().getSimpleName(), e.getMessage());
+            log.warn("时间戳拦截器 设置字段 {} 失败 {}: {}", fieldName, obj.getClass().getSimpleName(), e.getMessage());
         }
     }
 

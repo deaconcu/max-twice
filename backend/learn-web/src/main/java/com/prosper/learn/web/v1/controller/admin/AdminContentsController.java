@@ -545,11 +545,11 @@ public class AdminContentsController {
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int batchSize,
             @CurrentUser UserDO currentUser) {
 
-        log.info("Starting batch initialization of node embeddings, batchSize: {}", batchSize);
+        log.info("管理后台 开始批量初始化节点向量，batchSize: {}", batchSize);
 
         var result = nodeService.initializeNodeEmbeddings(batchSize);
 
-        log.info("Node embeddings initialization completed: {}", result);
+        log.info("管理后台 节点向量初始化完成: {}", result);
 
         return ApiResponse.success(result);
     }

@@ -328,10 +328,10 @@ public class LearningProgressService {
                 }
             }
 
-            log.info("Updated course {} hierarchical progress: {}%", courseId, finalProgress);
+            log.info("学习进度 课程 {} 层级进度更新: {}%", courseId, finalProgress);
 
         } catch (Exception e) {
-            log.error("Error updating course progress: {}", e.getMessage());
+            log.error("学习进度 课程进度更新失败: {}", e.getMessage());
         }
     }
 

@@ -64,7 +64,7 @@ public class ProfessionDomainService {
 
         professionDataService.insert(professionDO);
 
-        log.info("Created profession: id={}, name={}, creatorId={}",
+        log.info("职业 创建成功: professionId={}，name={}，creatorId={}",
                 professionDO.getId(), name, creatorId);
         return professionDO.getId();
     }
@@ -111,7 +111,7 @@ public class ProfessionDomainService {
 
         professionDataService.update(professionDO);
 
-        log.info("Updated profession: id={}", id);
+        log.info("职业 更新成功: professionId={}", id);
     }
 
     /**
@@ -139,7 +139,7 @@ public class ProfessionDomainService {
             throw StatusCode.PROFESSION_STATE_CONFLICT.exception();
         }
 
-        log.info("Approved profession: id={}", id);
+        log.info("职业 审核通过: professionId={}", id);
         return rowsAffected;
     }
 
@@ -171,7 +171,7 @@ public class ProfessionDomainService {
             throw StatusCode.PROFESSION_STATE_CONFLICT.exception();
         }
 
-        log.info("Rejected profession: id={}, reason={}", id, reasonValue);
+        log.info("职业 审核拒绝: professionId={}，reason={}", id, reasonValue);
         return rowsAffected;
     }
 
@@ -203,7 +203,7 @@ public class ProfessionDomainService {
             throw StatusCode.PROFESSION_STATE_CONFLICT.exception();
         }
 
-        log.info("Banned profession: id={}, reason={}", id, reasonValue);
+        log.info("职业 封禁: professionId={}，reason={}", id, reasonValue);
         return rowsAffected;
     }
 
@@ -222,7 +222,7 @@ public class ProfessionDomainService {
         // 执行删除
         professionDataService.delete(id);
 
-        log.info("Deleted profession: id={}", id);
+        log.info("职业 删除成功: professionId={}", id);
     }
 
     // ========== Query 方法（读操作）==========

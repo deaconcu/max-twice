@@ -4,6 +4,7 @@ import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import static com.prosper.learn.shared.domain.Enums.ContentState.*;
  * 评论领域服务
  * 只依赖 interaction 模块，处理评论的核心业务逻辑
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CommentDomainService {
@@ -60,6 +62,8 @@ public class CommentDomainService {
 
         // 插入数据库
         commentDataService.insert(commentDO);
+        log.info("评论 创建成功: commentId={}，objectId={}，objectType={}，creatorId={}",
+            commentDO.getId(), objectId, objectType, creatorId);
         return commentDataService.getById(commentDO.getId());
     }
 
@@ -75,6 +79,7 @@ public class CommentDomainService {
             commentDO.setState(PUBLISHED.value());
             commentDO.setReason(null);  // 清空拒绝原因
             commentDataService.update(commentDO);
+            log.info("评论 审核通过: commentId={}", id);
         }
 
         return commentDO;
@@ -87,6 +92,7 @@ public class CommentDomainService {
     public void rejectComment(Long id, String reason) {
         commentDataService.validateAndGet(id);
         commentDataService.reject(id, reason);
+        log.info("评论 审核拒绝: commentId={}，reason={}", id, reason);
     }
 
     /**
@@ -96,6 +102,7 @@ public class CommentDomainService {
     public void banComment(Long id, String reason) {
         commentDataService.validateAndGet(id);
         commentDataService.ban(id, reason);
+        log.info("评论 封禁: commentId={}，reason={}", id, reason);
     }
 
     /**

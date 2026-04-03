@@ -209,7 +209,7 @@ public class UserDataService {
         evictUserIdByNameCache(oldUser.getName());
         evictUserIdByEmailCache(oldUser.getEmail());
 
-        log.debug("Updated user {}", user.getId());
+        log.debug("用户 更新成功: userId={}", user.getId());
     }
 
     /**

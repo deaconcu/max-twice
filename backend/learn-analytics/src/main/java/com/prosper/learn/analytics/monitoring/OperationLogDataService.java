@@ -24,7 +24,7 @@ public class OperationLogDataService {
         try {
             operationLogMapper.insert(logDO);
         } catch (Exception e) {
-            log.error("Failed to insert operation log", e);
+            log.error("操作日志 插入失败", e);
             // 操作日志记录失败不应影响主业务，只记录错误日志
         }
     }

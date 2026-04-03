@@ -80,7 +80,7 @@ public class RobotRoadmapGenerationService {
                 TimeUnit.DAYS
             );
         } catch (Exception e) {
-            log.error("Failed to save task to Redis", e);
+            log.error("Robot Redis 任务保存失败", e);
             throw new RuntimeException("创建任务失败", e);
         }
 
@@ -97,7 +97,7 @@ public class RobotRoadmapGenerationService {
     @Async
     public void executeGenerateAsync(String taskId, Long professionId, Long userId) {
         try {
-            log.info("开始生成路径，taskId={}, professionId={}", taskId, professionId);
+            log.info("Robot 开始生成路径，taskId={}, professionId={}", taskId, professionId);
 
             // 查询职业信息
             ProfessionDO profession = professionDataService.validateAndGet(professionId);
@@ -109,7 +109,7 @@ public class RobotRoadmapGenerationService {
             // 调用 AI 生成
             String result = aiService.generateContent(prompt, systemPrompt);
 
-            log.info("路径生成完成，taskId={}, result length={}", taskId, result.length());
+            log.info("Robot 路径生成完成，taskId={}，响应长度={}", taskId, result.length());
 
             // 更新任务状态为成功
             updateTaskStatus(taskId, "COMPLETED", result, null);
@@ -118,7 +118,7 @@ public class RobotRoadmapGenerationService {
             saveToHistory(userId, taskId);
 
         } catch (Exception e) {
-            log.error("路径生成失败，taskId={}", taskId, e);
+            log.error("Robot 路径生成失败，taskId={}", taskId, e);
             updateTaskStatus(taskId, "FAILED", null, e.getMessage());
         }
     }
@@ -135,7 +135,7 @@ public class RobotRoadmapGenerationService {
         try {
             return objectMapper.readValue(taskJson, RobotRoadmapTaskDTO.class);
         } catch (Exception e) {
-            log.error("Failed to parse task from Redis", e);
+            log.error("Robot Redis 任务解析失败", e);
             throw new RuntimeException("解析任务状态失败", e);
         }
     }
@@ -159,7 +159,7 @@ public class RobotRoadmapGenerationService {
                 TimeUnit.DAYS
             );
         } catch (Exception e) {
-            log.error("Failed to update task status", e);
+            log.error("Robot 任务状态更新失败", e);
         }
     }
 
@@ -178,9 +178,9 @@ public class RobotRoadmapGenerationService {
                 redisTemplate.opsForZSet().removeRange(historyKey, 0, count - MAX_HISTORY_SIZE - 1);
             }
 
-            log.info("Saved taskId {} to history for user {}", taskId, userId);
+            log.info("Robot 任务 {} 已保存到用户 {} 的历史记录", taskId, userId);
         } catch (Exception e) {
-            log.error("Failed to save history", e);
+            log.error("Robot 历史记录保存失败", e);
         }
     }
 
@@ -200,7 +200,7 @@ public class RobotRoadmapGenerationService {
                 try {
                     return getTaskStatus(taskId);
                 } catch (Exception e) {
-                    log.warn("Failed to load task {}: {}", taskId, e.getMessage());
+                    log.warn("Robot 任务 {} 加载失败: {}", taskId, e.getMessage());
                     return null;
                 }
             })
@@ -245,10 +245,10 @@ public class RobotRoadmapGenerationService {
                 redisTemplate.opsForZSet().removeRange(listKey, 0, count - MAX_DRAFT_SIZE - 1);
             }
 
-            log.info("Saved draft {} for profession {} user {}", draftId, professionId, userId);
+            log.info("Robot 草稿 {} 已保存，职业: {}，用户: {}", draftId, professionId, userId);
             return draftId;
         } catch (Exception e) {
-            log.error("Failed to save draft", e);
+            log.error("Robot 草稿保存失败", e);
             throw new RuntimeException("保存草稿失败", e);
         }
     }
@@ -281,7 +281,7 @@ public class RobotRoadmapGenerationService {
             }
         }
 
-        log.info("Deleted draft {} for user {}", draftId, userId);
+        log.info("Robot 草稿 {} 已删除，用户: {}", draftId, userId);
     }
 
     /**
@@ -317,7 +317,7 @@ public class RobotRoadmapGenerationService {
                         .createdAt(createdAt)
                         .build();
                 } catch (Exception e) {
-                    log.warn("Failed to parse draft value {}: {}", value, e.getMessage());
+                    log.warn("Robot 草稿值 {} 解析失败: {}", value, e.getMessage());
                     return null;
                 }
             })

@@ -2,6 +2,7 @@ package com.prosper.learn.interaction.follow;
 
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import java.util.List;
  * - 关注关系的查询
  * - 关注列表的获取
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FollowDomainService {
@@ -48,6 +50,7 @@ public class FollowDomainService {
 
         // 创建关注记录
         followDataService.insert(followerId, followeeId);
+        log.debug("关注 新增: followerId={}，followeeId={}", followerId, followeeId);
         return true;
     }
 
@@ -70,6 +73,7 @@ public class FollowDomainService {
 
         // 删除关注记录
         followDataService.delete(followerId, followeeId);
+        log.debug("关注 取消: followerId={}，followeeId={}", followerId, followeeId);
         return true;
     }
 

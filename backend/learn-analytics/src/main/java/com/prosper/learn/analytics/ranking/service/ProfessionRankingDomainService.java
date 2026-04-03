@@ -37,7 +37,7 @@ public class ProfessionRankingDomainService {
                     .map(Long::parseLong)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("Failed to get hot profession ids with limit: {}", limit, e);
+            log.error("职业排行榜 获取热门职业失败，limit: {}", limit, e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -52,7 +52,7 @@ public class ProfessionRankingDomainService {
             String learningCountStr = redisTemplate.opsForValue().get(learningKey);
             return learningCountStr != null ? Long.parseLong(learningCountStr) : 0;
         } catch (Exception e) {
-            log.error("Failed to get profession learning count for professionId: {}", professionId, e);
+            log.error("职业排行榜 获取职业学习人数失败，professionId: {}", professionId, e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -67,10 +67,10 @@ public class ProfessionRankingDomainService {
             redisTemplate.opsForValue().set(learningKey, String.valueOf(learningCount));
             redisTemplate.opsForZSet().add(HOT_PROFESSIONS_KEY, String.valueOf(professionId), learningCount);
             
-            log.debug("Initialized profession stats: professionId={}, learningCount={}", 
+            log.debug("职业排行榜 初始化统计: professionId={}，learningCount={}",
                      professionId, learningCount);
         } catch (Exception e) {
-            log.error("Failed to initialize profession stats for professionId: {}", professionId, e);
+            log.error("职业排行榜 初始化统计失败，professionId: {}", professionId, e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -90,9 +90,9 @@ public class ProfessionRankingDomainService {
                 redisTemplate.delete(learningKeys);
             }
             
-            log.info("Cleared all profession stats from Redis");
+            log.info("职业排行榜 已清空所有 Redis 统计数据");
         } catch (Exception e) {
-            log.error("Failed to clear profession stats", e);
+            log.error("职业排行榜 清空统计数据失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }

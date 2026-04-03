@@ -278,7 +278,7 @@ public class MessageService {
                         nodeIdSet.add(((Number) nodeIdObj).longValue());
                     }
                 } catch (Exception e) {
-                    log.warn("Failed to parse invite message content: {}", messageDO.getContent(), e);
+                    log.warn("消息服务 邀请消息内容解析失败: {}", messageDO.getContent(), e);
                 }
             }
         }
@@ -329,7 +329,7 @@ public class MessageService {
                         }
                     }
                 } catch (Exception e) {
-                    log.warn("Failed to enrich invite message: {}", messageDO.getContent(), e);
+                    log.warn("消息服务 邀请消息补充信息失败: {}", messageDO.getContent(), e);
                 }
             }
 

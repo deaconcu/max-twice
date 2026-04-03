@@ -44,7 +44,7 @@ public class OpenRouterService {
             String apiKey = getApiKey();
             String modelName = systemProperties.getRobot().getModel();
 
-            log.info("Calling OpenRouter API: model={}, prompt length={}, system prompt length={}",
+            log.info("OpenRouter 调用 API: model={}，prompt 长度={}，system prompt 长度={}",
                 modelName, prompt.length(), systemPrompt != null ? systemPrompt.length() : 0);
 
             // 构建消息列表
@@ -85,13 +85,13 @@ public class OpenRouterService {
             JsonNode jsonNode = objectMapper.readTree(response);
             String text = jsonNode.path("choices").get(0).path("message").path("content").asText();
 
-            log.info("OpenRouter response length: {}", text != null ? text.length() : 0);
-            log.info("OpenRouter extracted text: {}", text);
+            log.info("OpenRouter 响应长度: {}", text != null ? text.length() : 0);
+            log.info("OpenRouter 提取的文本: {}", text);
 
             return text;
 
         } catch (Exception e) {
-            log.error("Failed to call OpenRouter API", e);
+            log.error("OpenRouter API 调用失败", e);
             throw new RuntimeException("OpenRouter API call failed: " + e.getMessage(), e);
         }
     }

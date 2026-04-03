@@ -84,6 +84,6 @@ public class RobotScanner {
             total += c;
             if (c == 0) break;
         }
-        if (total > 0) log.info("robot scan enqueued {} nodes", total);
+        if (total > 0) log.info("Robot 扫描入队 {} 个节点", total);
     }
 }

@@ -52,7 +52,7 @@ public class MeilisearchService {
 
     public void initializeIndexes() {
         if (meilisearchClient == null) {
-            log.info("Meilisearch is disabled, skipping initialization");
+            log.info("Meilisearch 未启用，跳过初始化");
             return;
         }
         try {
@@ -66,9 +66,9 @@ public class MeilisearchService {
             configureIndex(INDEX_USERS, new String[]{"name"});
             configureIndex(INDEX_PROFESSIONS, new String[]{"name", "description"});
 
-            log.info("Meilisearch indexes initialized");
+            log.info("Meilisearch 索引初始化完成");
         } catch (Exception e) {
-            log.error("Failed to initialize indexes", e);
+            log.error("Meilisearch 索引初始化失败", e);
         }
     }
 
@@ -78,9 +78,9 @@ public class MeilisearchService {
         } catch (Exception e) {
             try {
                 meilisearchClient.createIndex(indexName, primaryKey);
-                log.info("Created index: {}", indexName);
+                log.info("Meilisearch 创建索引: {}", indexName);
             } catch (Exception ex) {
-                log.error("Failed to create index: {}", indexName, ex);
+                log.error("Meilisearch 创建索引失败: {}", indexName, ex);
             }
         }
     }
@@ -91,7 +91,7 @@ public class MeilisearchService {
             index.updateSearchableAttributesSettings(searchableAttributes);
             index.updateSortableAttributesSettings(new String[]{"id"});
         } catch (Exception e) {
-            log.error("Failed to configure index: {}", indexName, e);
+            log.error("Meilisearch 配置索引失败: {}", indexName, e);
         }
     }
 
@@ -99,7 +99,7 @@ public class MeilisearchService {
 
     public void syncAll() {
         if (meilisearchClient == null) return;
-        log.info("Starting full sync...");
+        log.info("Meilisearch 开始全量同步...");
         long start = System.currentTimeMillis();
 
         int courses = syncAllCourses();
@@ -107,14 +107,14 @@ public class MeilisearchService {
         int users = syncAllUsers();
         int professions = syncAllProfessions();
 
-        log.info("Full sync done in {}ms. Courses: {}, Nodes: {}, Users: {}, Professions: {}",
+        log.info("Meilisearch 全量同步完成，耗时 {}ms，课程: {}，节点: {}，用户: {}，职业: {}",
             System.currentTimeMillis() - start, courses, nodes, users, professions);
     }
 
     public int syncAllCourses() {
         if (meilisearchClient == null) return 0;
         try {
-            log.info("Syncing courses...");
+            log.info("Meilisearch 同步课程...");
             meilisearchClient.deleteIndex(INDEX_COURSES);
             createIndexIfNotExists(INDEX_COURSES, "id");
             configureIndex(INDEX_COURSES, new String[]{"name", "description"});
@@ -130,15 +130,15 @@ public class MeilisearchService {
                 lastId = list.get(list.size() - 1).getId();
 
                 if (total % 1000 == 0) {
-                    log.info("Synced {} courses", total);
+                    log.info("Meilisearch 已同步 {} 个课程", total);
                 }
 
                 if (list.size() < 20) break;
             }
-            log.info("Finished syncing {} courses", total);
+            log.info("Meilisearch 课程同步完成，共 {} 个", total);
             return total;
         } catch (Exception e) {
-            log.error("Failed to sync courses", e);
+            log.error("Meilisearch 同步课程失败", e);
             return 0;
         }
     }
@@ -146,7 +146,7 @@ public class MeilisearchService {
     public int syncAllNodes() {
         if (meilisearchClient == null) return 0;
         try {
-            log.info("Syncing nodes...");
+            log.info("Meilisearch 同步节点...");
             meilisearchClient.deleteIndex(INDEX_NODES);
             createIndexIfNotExists(INDEX_NODES, "id");
             configureIndex(INDEX_NODES, new String[]{"name", "description"});
@@ -162,15 +162,15 @@ public class MeilisearchService {
                 lastId = list.get(list.size() - 1).getId();
 
                 if (total % 1000 == 0) {
-                    log.info("Synced {} nodes", total);
+                    log.info("Meilisearch 已同步 {} 个节点", total);
                 }
 
                 if (list.size() < 1000) break;
             }
-            log.info("Finished syncing {} nodes", total);
+            log.info("Meilisearch 节点同步完成，共 {} 个", total);
             return total;
         } catch (Exception e) {
-            log.error("Failed to sync nodes", e);
+            log.error("Meilisearch 同步节点失败", e);
             return 0;
         }
     }
@@ -178,7 +178,7 @@ public class MeilisearchService {
     public int syncAllUsers() {
         if (meilisearchClient == null) return 0;
         try {
-            log.info("Syncing users...");
+            log.info("Meilisearch 同步用户...");
             meilisearchClient.deleteIndex(INDEX_USERS);
             createIndexIfNotExists(INDEX_USERS, "id");
             configureIndex(INDEX_USERS, new String[]{"name"});
@@ -194,15 +194,15 @@ public class MeilisearchService {
                 lastId = list.get(list.size() - 1).getId();
 
                 if (total % 1000 == 0) {
-                    log.info("Synced {} users", total);
+                    log.info("Meilisearch 已同步 {} 个用户", total);
                 }
 
                 if (list.size() < 1000) break;
             }
-            log.info("Finished syncing {} users", total);
+            log.info("Meilisearch 用户同步完成，共 {} 个", total);
             return total;
         } catch (Exception e) {
-            log.error("Failed to sync users", e);
+            log.error("Meilisearch 同步用户失败", e);
             return 0;
         }
     }
@@ -210,7 +210,7 @@ public class MeilisearchService {
     public int syncAllProfessions() {
         if (meilisearchClient == null) return 0;
         try {
-            log.info("Syncing professions...");
+            log.info("Meilisearch 同步职业...");
             meilisearchClient.deleteIndex(INDEX_PROFESSIONS);
             createIndexIfNotExists(INDEX_PROFESSIONS, "id");
             configureIndex(INDEX_PROFESSIONS, new String[]{"name", "description"});
@@ -227,15 +227,15 @@ public class MeilisearchService {
                 lastId = list.get(list.size() - 1).getId();
 
                 if (total % 1000 == 0) {
-                    log.info("Synced {} professions", total);
+                    log.info("Meilisearch 已同步 {} 个职业", total);
                 }
 
                 if (list.size() < 1000) break;
             }
-            log.info("Finished syncing {} professions", total);
+            log.info("Meilisearch 职业同步完成，共 {} 个", total);
             return total;
         } catch (Exception e) {
-            log.error("Failed to sync professions", e);
+            log.error("Meilisearch 同步职业失败", e);
             return 0;
         }
     }
@@ -301,7 +301,7 @@ public class MeilisearchService {
             );
             meilisearchClient.index(INDEX_COURSES).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
         } catch (Exception e) {
-            log.error("Failed to index course: {}", course.getId(), e);
+            log.error("Meilisearch 索引课程失败: {}", course.getId(), e);
         }
     }
 
@@ -311,7 +311,7 @@ public class MeilisearchService {
         try {
             meilisearchClient.index(INDEX_COURSES).deleteDocument(String.valueOf(id));
         } catch (Exception e) {
-            log.error("Failed to delete course: {}", id, e);
+            log.error("Meilisearch 删除课程失败: {}", id, e);
         }
     }
 
@@ -330,7 +330,7 @@ public class MeilisearchService {
             );
             meilisearchClient.index(INDEX_NODES).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
         } catch (Exception e) {
-            log.error("Failed to index node: {}", node.getId(), e);
+            log.error("Meilisearch 索引节点失败: {}", node.getId(), e);
         }
     }
 
@@ -340,7 +340,7 @@ public class MeilisearchService {
         try {
             meilisearchClient.index(INDEX_NODES).deleteDocument(String.valueOf(id));
         } catch (Exception e) {
-            log.error("Failed to delete node: {}", id, e);
+            log.error("Meilisearch 删除节点失败: {}", id, e);
         }
     }
 
@@ -351,7 +351,7 @@ public class MeilisearchService {
             Map<String, Object> doc = Map.of("id", user.getId(), "name", user.getName());
             meilisearchClient.index(INDEX_USERS).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
         } catch (Exception e) {
-            log.error("Failed to index user: {}", user.getId(), e);
+            log.error("Meilisearch 索引用户失败: {}", user.getId(), e);
         }
     }
 
@@ -361,7 +361,7 @@ public class MeilisearchService {
         try {
             meilisearchClient.index(INDEX_USERS).deleteDocument(String.valueOf(id));
         } catch (Exception e) {
-            log.error("Failed to delete user: {}", id, e);
+            log.error("Meilisearch 删除用户失败: {}", id, e);
         }
     }
 
@@ -380,7 +380,7 @@ public class MeilisearchService {
             );
             meilisearchClient.index(INDEX_PROFESSIONS).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
         } catch (Exception e) {
-            log.error("Failed to index profession: {}", profession.getId(), e);
+            log.error("Meilisearch 索引职业失败: {}", profession.getId(), e);
         }
     }
 
@@ -390,7 +390,7 @@ public class MeilisearchService {
         try {
             meilisearchClient.index(INDEX_PROFESSIONS).deleteDocument(String.valueOf(id));
         } catch (Exception e) {
-            log.error("Failed to delete profession: {}", id, e);
+            log.error("Meilisearch 删除职业失败: {}", id, e);
         }
     }
 
@@ -402,7 +402,7 @@ public class MeilisearchService {
             return meilisearchClient.index(INDEX_COURSES)
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
-            log.error("Search courses failed", e);
+            log.error("Meilisearch 搜索课程失败", e);
             return null;
         }
     }
@@ -413,7 +413,7 @@ public class MeilisearchService {
             return meilisearchClient.index(INDEX_NODES)
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
-            log.error("Search nodes failed", e);
+            log.error("Meilisearch 搜索节点失败", e);
             return null;
         }
     }
@@ -424,7 +424,7 @@ public class MeilisearchService {
             return meilisearchClient.index(INDEX_USERS)
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
-            log.error("Search users failed", e);
+            log.error("Meilisearch 搜索用户失败", e);
             return null;
         }
     }
@@ -435,7 +435,7 @@ public class MeilisearchService {
             return meilisearchClient.index(INDEX_PROFESSIONS)
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
-            log.error("Search professions failed", e);
+            log.error("Meilisearch 搜索职业失败", e);
             return null;
         }
     }

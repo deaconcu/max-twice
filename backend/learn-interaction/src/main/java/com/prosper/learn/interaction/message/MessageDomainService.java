@@ -51,7 +51,7 @@ public class MessageDomainService {
         messageDO.setCategory(category);
 
         messageDataService.insert(messageDO);
-        log.debug("Created message: senderId={}, receiverId={}, type={}", senderId, receiverId, type);
+        log.debug("消息创建成功: senderId={}，receiverId={}，type={}", senderId, receiverId, type);
 
         return messageDO;
     }

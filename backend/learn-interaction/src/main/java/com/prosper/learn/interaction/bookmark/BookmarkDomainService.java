@@ -37,11 +37,13 @@ public class BookmarkDomainService {
             // 添加收藏
             bookmarkDataService.create(userId, objectId, contentType.value(), parentId);
             eventPublisher.publishEvent(new ContentBookmarkedEvent(userId, objectId, contentType));
+            log.debug("收藏 新增: userId={}，objectId={}，contentType={}", userId, objectId, contentType);
             return true;
         } else {
             // 取消收藏
             bookmarkDataService.delete(existing.getId());
             eventPublisher.publishEvent(new ContentUnbookmarkedEvent(userId, objectId, contentType));
+            log.debug("收藏 取消: userId={}，objectId={}，contentType={}", userId, objectId, contentType);
             return false;
         }
     }

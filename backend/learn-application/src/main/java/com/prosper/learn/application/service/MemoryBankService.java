@@ -403,6 +403,6 @@ public class MemoryBankService {
         // 调用 DomainService 执行领域逻辑
         domainService.removeCardsFromCourse(userId, courseId, cardIds);
 
-        log.info("Removed deck: {} from course: {} for user: {}", deckId, courseId, userId);
+        log.info("记忆库 从课程移除卡片组: deckId={}，courseId={}，userId={}", deckId, courseId, userId);
     }
 }

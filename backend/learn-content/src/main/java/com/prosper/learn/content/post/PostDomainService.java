@@ -155,7 +155,7 @@ public class PostDomainService {
         postDO.setState(state.value());
 
         postDataService.insert(postDO);
-        log.info("Created article post: {} in node: {} by user: {}", postDO.getId(), nodeId, userId);
+        log.info("帖子创建成功: postId={}，nodeId={}，userId={}", postDO.getId(), nodeId, userId);
 
         return postDO.getId();
     }
@@ -174,7 +174,7 @@ public class PostDomainService {
             throw StatusCode.NODE_STATE_INVALID.exception();
         }
 
-        log.info("Creating index post with content: {}", jsonContent);
+        log.info("创建目录帖子，内容: {}", jsonContent);
 
         // 验证JSON格式并解析
         List<ChapterInfo> chapterInfos = parseJsonToChapterInfoList(jsonContent);
@@ -215,7 +215,7 @@ public class PostDomainService {
         postDO.setState(state.value());
         postDataService.insert(postDO);
 
-        log.info("Created index post: {} in node: {} by user: {}", postDO.getId(), nodeId, userId);
+        log.info("目录帖子创建成功: postId={}，nodeId={}，userId={}", postDO.getId(), nodeId, userId);
         return postDO.getId();
     }
 
@@ -239,7 +239,7 @@ public class PostDomainService {
     private void updateArticlePost(PostDO postDO, String content) {
         postDO.setContent(content);
         postDataService.update(postDO);
-        log.info("Updated article post: {}", postDO.getId());
+        log.info("文章帖子更新成功: postId={}", postDO.getId());
     }
 
     /**
@@ -291,7 +291,7 @@ public class PostDomainService {
 
         postDO.setContent(jsonContent);
         postDataService.update(postDO);
-        log.info("Updated index post: {}", postDO.getId());
+        log.info("目录帖子更新成功: postId={}", postDO.getId());
     }
 
     /**
@@ -306,7 +306,7 @@ public class PostDomainService {
             throw StatusCode.POST_NOT_FOUND.exception();
         }
 
-        log.info("Soft deleted post: {}", id);
+        log.info("帖子软删除成功: postId={}", id);
     }
 
     /**
@@ -319,7 +319,7 @@ public class PostDomainService {
         postDO.setReason(reason);
         postDataService.update(postDO);
 
-        log.info("Updated post {} state to: {}", id, state);
+        log.info("帖子状态更新: postId={}，state={}", id, state);
     }
 
     /**
@@ -332,7 +332,7 @@ public class PostDomainService {
         postDO.setReason(null);
         postDataService.update(postDO);
 
-        log.info("Approved post: {}", id);
+        log.info("帖子审核通过: postId={}", id);
     }
 
     /**
@@ -343,7 +343,7 @@ public class PostDomainService {
         postDataService.validateAndGet(id);
         postDataService.reject(id, reason);
 
-        log.info("Rejected post: {} with reason: {}", id, reason);
+        log.info("帖子审核拒绝: postId={}，reason={}", id, reason);
     }
 
     /**
@@ -354,7 +354,7 @@ public class PostDomainService {
         postDataService.validateAndGet(id);
         postDataService.ban(id, reason);
 
-        log.info("Banned post: {} with reason: {}", id, reason);
+        log.info("帖子封禁: postId={}，reason={}", id, reason);
     }
 
     // ========== 验证方法 ==========
@@ -462,9 +462,9 @@ public class PostDomainService {
                 post.setContent(jsonContent);
             }
         } catch (NumberFormatException e) {
-            log.warn("Failed to parse content IDs for post {}: {}", post.getId(), post.getContent(), e);
+            log.warn("帖子内容ID解析失败: postId={}，content={}", post.getId(), post.getContent(), e);
         } catch (Exception e) {
-            log.error("Failed to convert node info to JSON for post {}", post.getId(), e);
+            log.error("帖子节点信息转JSON失败: postId={}", post.getId(), e);
         }
     }
 }

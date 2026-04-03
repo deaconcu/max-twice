@@ -100,7 +100,7 @@ public class DailyLimitService {
             }
             return Integer.parseInt(value.toString());
         } catch (Exception e) {
-            log.warn("Failed to get daily count for user {} course {} type {}: {}",
+            log.warn("每日限额 获取计数失败: userId={}，courseId={}，type={}，error={}",
                     userId, courseId, type, e.getMessage());
             return 0;
         }
@@ -123,7 +123,7 @@ public class DailyLimitService {
             }
             return newValue != null ? newValue.intValue() : 0;
         } catch (Exception e) {
-            log.warn("Failed to increment daily count for user {} course {} type {}: {}",
+            log.warn("每日限额 增加计数失败: userId={}，courseId={}，type={}，error={}",
                     userId, courseId, type, e.getMessage());
             return 0;
         }

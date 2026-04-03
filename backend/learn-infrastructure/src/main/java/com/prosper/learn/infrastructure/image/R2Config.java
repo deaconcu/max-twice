@@ -60,7 +60,7 @@ public class R2Config {
                 .forcePathStyle(true)  // 使用路径样式访问，R2 要求
                 .build();
 
-        log.info("R2 client initialized successfully");
+        log.info("R2 客户端初始化成功");
     }
 
     public S3Client getS3Client() {

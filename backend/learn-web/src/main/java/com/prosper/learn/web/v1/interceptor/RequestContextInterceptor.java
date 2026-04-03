@@ -38,7 +38,7 @@ public class RequestContextInterceptor implements HandlerInterceptor {
             }
         } catch (Exception e) {
             // 获取用户失败不影响请求继续
-            log.debug("Failed to get current user for RequestContext: {}", e.getMessage());
+            log.debug("请求上下文 获取当前用户失败: {}", e.getMessage());
         }
         return true;
     }

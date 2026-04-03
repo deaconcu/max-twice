@@ -47,7 +47,7 @@ public class GeminiService {
 
             GenerateContentConfig config = configBuilder.build();
 
-            log.info("Calling Gemini API: model={}, prompt length={}, system prompt length={}",
+            log.info("Gemini 调用 API: model={}，prompt 长度={}，system prompt 长度={}",
                 modelName, prompt.length(), systemPrompt != null ? systemPrompt.length() : 0);
 
             // 调用 Gemini API
@@ -55,12 +55,12 @@ public class GeminiService {
                 client.models.generateContent(modelName, prompt, config);
 
             String text = response.text();
-            log.info("Gemini response length: {}", text != null ? text.length() : 0);
-            log.info("Gemini full response: {}", text);
+            log.info("Gemini 响应长度: {}", text != null ? text.length() : 0);
+            log.info("Gemini 完整响应: {}", text);
 
             return text;
         } catch (Exception e) {
-            log.error("Failed to call Gemini API", e);
+            log.error("Gemini API 调用失败", e);
             throw new RuntimeException("Gemini API call failed: " + e.getMessage(), e);
         }
     }
@@ -74,7 +74,7 @@ public class GeminiService {
                 if (geminiClient == null) {
                     // Client 从环境变量 GEMINI_API_KEY 读取 API Key
                     geminiClient = new Client();
-                    log.info("Gemini Client initialized (API Key from env: GEMINI_API_KEY)");
+                    log.info("Gemini Client 初始化完成（API Key 来自环境变量 GEMINI_API_KEY）");
                 }
             }
         }

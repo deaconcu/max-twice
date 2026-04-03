@@ -52,7 +52,7 @@ public class MilvusService {
     @PostConstruct
     public void init() {
         if (!enabled) {
-            log.info("Milvus is disabled, skipping initialization");
+            log.info("Milvus 未启用，跳过初始化");
             return;
         }
 
@@ -64,14 +64,14 @@ public class MilvusService {
 
             // 创建客户端
             milvusClient = new MilvusClientV2(config);
-            log.info("Connected to Milvus at {}:{}", host, port);
+            log.info("Milvus 连接成功: {}:{}", host, port);
 
             // 初始化 collection
             initializeCollection();
 
         } catch (Exception e) {
-            log.error("Failed to initialize Milvus", e);
-            throw new RuntimeException("Milvus initialization failed", e);
+            log.error("Milvus 初始化失败", e);
+            throw new RuntimeException("Milvus 初始化失败", e);
         }
     }
 
@@ -79,7 +79,7 @@ public class MilvusService {
     public void destroy() {
         if (milvusClient != null) {
             milvusClient.close();
-            log.info("Milvus client closed");
+            log.info("Milvus 客户端已关闭");
         }
     }
 
@@ -93,7 +93,7 @@ public class MilvusService {
             );
 
             if (exists) {
-                log.info("Collection '{}' already exists", collectionName);
+                log.info("Milvus 集合 '{}' 已存在", collectionName);
                 return;
             }
 
@@ -136,11 +136,11 @@ public class MilvusService {
                     .build();
 
             milvusClient.createCollection(request);
-            log.info("Created collection '{}' with HNSW index", collectionName);
+            log.info("Milvus 创建集合 '{}'，使用 HNSW 索引", collectionName);
 
         } catch (Exception e) {
-            log.error("Failed to initialize collection", e);
-            throw new RuntimeException("Collection initialization failed", e);
+            log.error("Milvus 初始化集合失败", e);
+            throw new RuntimeException("Milvus 初始化集合失败", e);
         }
     }
 
@@ -149,7 +149,7 @@ public class MilvusService {
      */
     public void upsert(long nodeId, float[] embedding) {
         if (!enabled) {
-            log.debug("Milvus is disabled, skipping upsert for node: {}", nodeId);
+            log.debug("Milvus 未启用，跳过 upsert 节点: {}", nodeId);
             return;
         }
 
@@ -171,11 +171,11 @@ public class MilvusService {
                     .build();
 
             milvusClient.upsert(upsertReq);
-            log.debug("Upserted embedding for node: {}", nodeId);
+            log.debug("Milvus upsert 节点向量: {}", nodeId);
 
         } catch (Exception e) {
-            log.error("Failed to upsert embedding for node: {}", nodeId, e);
-            throw new RuntimeException("Upsert failed", e);
+            log.error("Milvus upsert 节点向量失败: {}", nodeId, e);
+            throw new RuntimeException("Milvus upsert 失败", e);
         }
     }
 
@@ -184,7 +184,7 @@ public class MilvusService {
      */
     public void upsertBatch(List<Long> nodeIds, List<float[]> embeddings) {
         if (!enabled) {
-            log.debug("Milvus is disabled, skipping batch upsert for {} nodes", nodeIds.size());
+            log.debug("Milvus 未启用，跳过批量 upsert {} 个节点", nodeIds.size());
             return;
         }
 
@@ -212,11 +212,11 @@ public class MilvusService {
                     .build();
 
             milvusClient.upsert(upsertReq);
-            log.info("Batch upserted {} embeddings", nodeIds.size());
+            log.info("Milvus 批量 upsert {} 个向量", nodeIds.size());
 
         } catch (Exception e) {
-            log.error("Failed to batch upsert {} embeddings", nodeIds.size(), e);
-            throw new RuntimeException("Batch upsert failed", e);
+            log.error("Milvus 批量 upsert {} 个向量失败", nodeIds.size(), e);
+            throw new RuntimeException("Milvus 批量 upsert 失败", e);
         }
     }
 
@@ -230,7 +230,7 @@ public class MilvusService {
      */
     public List<SearchResult> searchSimilar(float[] queryEmbedding, int topK, double threshold) {
         if (!enabled) {
-            log.debug("Milvus is disabled, returning empty search results");
+            log.debug("Milvus 未启用，返回空搜索结果");
             return Collections.emptyList();
         }
 
@@ -278,12 +278,12 @@ public class MilvusService {
                 }
             }
 
-            log.debug("Found {} similar nodes (threshold={})", results.size(), threshold);
+            log.debug("Milvus 搜索到 {} 个相似节点（阈值={}）", results.size(), threshold);
             return results;
 
         } catch (Exception e) {
-            log.error("Failed to search similar nodes", e);
-            throw new RuntimeException("Search failed", e);
+            log.error("Milvus 搜索相似节点失败", e);
+            throw new RuntimeException("Milvus 搜索失败", e);
         }
     }
 
@@ -292,7 +292,7 @@ public class MilvusService {
      */
     public void update(long nodeId, float[] embedding) {
         upsert(nodeId, embedding);
-        log.debug("Updated embedding for node: {}", nodeId);
+        log.debug("Milvus 更新节点向量: {}", nodeId);
     }
 
     /**
@@ -300,7 +300,7 @@ public class MilvusService {
      */
     public void delete(long nodeId) {
         if (!enabled) {
-            log.debug("Milvus is disabled, skipping delete for node: {}", nodeId);
+            log.debug("Milvus 未启用，跳过删除节点: {}", nodeId);
             return;
         }
 
@@ -311,10 +311,10 @@ public class MilvusService {
                     .build();
 
             milvusClient.delete(deleteReq);
-            log.debug("Deleted embedding for node: {}", nodeId);
+            log.debug("Milvus 删除节点向量: {}", nodeId);
 
         } catch (Exception e) {
-            log.error("Failed to delete embedding for node: {}", nodeId, e);
+            log.error("Milvus 删除节点向量失败: {}", nodeId, e);
             // 删除失败不抛异常，避免影响主流程
         }
     }
@@ -324,7 +324,7 @@ public class MilvusService {
      */
     public void deleteBatch(List<Long> nodeIds) {
         if (!enabled) {
-            log.debug("Milvus is disabled, skipping batch delete for {} nodes", nodeIds != null ? nodeIds.size() : 0);
+            log.debug("Milvus 未启用，跳过批量删除 {} 个节点", nodeIds != null ? nodeIds.size() : 0);
             return;
         }
 
@@ -342,10 +342,10 @@ public class MilvusService {
                     .build();
 
             milvusClient.delete(deleteReq);
-            log.info("Batch deleted {} embeddings", nodeIds.size());
+            log.info("Milvus 批量删除 {} 个向量", nodeIds.size());
 
         } catch (Exception e) {
-            log.error("Failed to batch delete {} embeddings", nodeIds.size(), e);
+            log.error("Milvus 批量删除 {} 个向量失败", nodeIds.size(), e);
         }
     }
 }

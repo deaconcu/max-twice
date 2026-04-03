@@ -50,7 +50,7 @@ public class LearningProgressDomainService {
         // 标记为完成
         int inserted = userNodeCompletionDataService.markCompleted(userId, nodeId);
         if (inserted > 0) {
-            log.info("Successfully marked node {} as completed for user {}", nodeId, userId);
+            log.info("用户 {} 标记节点 {} 为已完成", userId, nodeId);
             // 发布节点完成事件
             eventPublisher.publishEvent(NodeCompletedEvent.completed(userId, nodeId, userToday));
         } else {
@@ -79,7 +79,7 @@ public class LearningProgressDomainService {
         // 取消完成
         int deleted = userNodeCompletionDataService.unmarkCompleted(userId, nodeId);
         if (deleted > 0) {
-            log.info("Successfully unmarked node {} as completed for user {}", nodeId, userId);
+            log.info("用户 {} 取消标记节点 {} 为已完成", userId, nodeId);
             // 发布取消完成事件
             eventPublisher.publishEvent(NodeCompletedEvent.uncompleted(userId, nodeId, userToday));
         } else {

@@ -494,7 +494,7 @@ public class MemoryCardDeckService {
         // 如果有卡片数据，批量创建卡片（调用 MemoryCardService）
         if (request.getCards() != null && !request.getCards().isEmpty()) {
             memoryCardService.batchCreateCards(user, deck.getId(), request.getCards());
-            log.info("Created deck {} with {} cards", deck.getId(), request.getCards().size());
+            log.info("卡片组 创建成功: deckId={}，卡片数={}", deck.getId(), request.getCards().size());
         }
 
         // 转换并返回（包含创建者信息）
@@ -548,7 +548,7 @@ public class MemoryCardDeckService {
             nodeId  // NEW: 需要更新 node 统计
         ));
 
-        log.info("Deck {} approved by user {}", deckId, auditorId);
+        log.info("卡片组 审核通过: deckId={}，审核人={}", deckId, auditorId);
     }
 
     /**
@@ -581,7 +581,7 @@ public class MemoryCardDeckService {
             reason
         ));
 
-        log.info("Deck {} rejected by user {}, reason: {}", deckId, auditorId, reason);
+        log.info("卡片组 审核拒绝: deckId={}，审核人={}，原因: {}", deckId, auditorId, reason);
     }
 
     /**
@@ -626,7 +626,7 @@ public class MemoryCardDeckService {
             reason
         ));
 
-        log.info("Deck {} banned by user {}, reason: {}", deckId, auditorId, reason);
+        log.info("卡片组 封禁: deckId={}，审核人={}，原因: {}", deckId, auditorId, reason);
     }
 
     /**
@@ -672,7 +672,7 @@ public class MemoryCardDeckService {
             reason
         ));
 
-        log.info("Deck {} removed by user {}, reason: {}", deckId, auditorId, reason);
+        log.info("卡片组 下架: deckId={}，审核人={}，原因: {}", deckId, auditorId, reason);
     }
 
     /**
@@ -723,7 +723,7 @@ public class MemoryCardDeckService {
             reason
         ));
 
-        log.info("Deck {} restored by user {}", deckId, auditorId);
+        log.info("卡片组 恢复: deckId={}，审核人={}", deckId, auditorId);
     }
 
     /**
@@ -808,7 +808,7 @@ public class MemoryCardDeckService {
         // 批量创建新卡片（调用 MemoryCardService）
         if (request.getCards() != null && !request.getCards().isEmpty()) {
             memoryCardService.batchCreateCards(user, deckId, request.getCards());
-            log.info("Replaced with {} new cards for deck {}", request.getCards().size(), deckId);
+            log.info("卡片组 替换卡片: deckId={}，新卡片数={}", deckId, request.getCards().size());
         }
 
         // 重新计算分数（跨域服务）
@@ -816,7 +816,7 @@ public class MemoryCardDeckService {
         // 需要再次更新 deck（因为分数被修改了）
         deckDomainService.updateDeck(deckId, userId, null);
 
-        log.info("Replaced all cards for deck {} by user {}", deckId, userId);
+        log.info("卡片组 全部卡片替换完成: deckId={}，用户={}", deckId, userId);
 
         // 返回更新后的卡片组信息
         return deckAssembler.toFullDTO(deck, userId);
@@ -839,7 +839,7 @@ public class MemoryCardDeckService {
         // 将任务加入队列（跨域服务）
         postQueueService.enqueueMemoryCards(postId);
 
-        log.info("Queued AI memory card generation task for post {} requested by user {}", postId, userId);
+        log.info("卡片组 AI 生成任务入队: postId={}，用户={}", postId, userId);
     }
 
     /**
@@ -869,6 +869,6 @@ public class MemoryCardDeckService {
         // 调用 DomainService 执行移动
         deckDomainService.moveNodeToCourse(userId, nodeId, courseId);
 
-        log.info("User {} moved node {} to course {}", userId, nodeId, courseId);
+        log.info("卡片组 移动节点到课程: userId={}，nodeId={}，courseId={}", userId, nodeId, courseId);
     }
 }

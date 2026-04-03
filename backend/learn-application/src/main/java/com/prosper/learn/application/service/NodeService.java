@@ -201,7 +201,7 @@ public class NodeService {
                     .toList();
 
         } catch (Exception e) {
-            log.error("Failed to search similar nodes for query: {}", query, e);
+            log.error("节点向量搜索 搜索失败，query: {}", query, e);
             return List.of();
         }
     }
@@ -372,7 +372,7 @@ public class NodeService {
                     break;
                 }
 
-                log.info("Processing batch: {} nodes, starting from ID: {}", nodes.size(), lastId);
+                log.info("节点向量初始化 处理批次: {} 个节点，起始 ID: {}", nodes.size(), lastId);
 
                 try {
                     // 准备批量文本
@@ -388,11 +388,11 @@ public class NodeService {
                     milvusService.upsertBatch(nodeIds, embeddings);
 
                     successCount += nodes.size();
-                    log.info("Batch upsert successful: {} nodes", nodes.size());
+                    log.info("节点向量初始化 批量插入成功: {} 个节点", nodes.size());
 
                 } catch (Exception e) {
                     // 批量失败时，回退到逐个处理
-                    log.warn("Batch processing failed, falling back to individual processing", e);
+                    log.warn("节点向量初始化 批量处理失败，回退到逐个处理", e);
                     for (NodeDO node : nodes) {
                         try {
                             String text = node.getName() + "\n\n" + node.getDescription();
@@ -401,7 +401,7 @@ public class NodeService {
                             successCount++;
                         } catch (Exception ex) {
                             failCount++;
-                            log.error("Failed to initialize embedding for node: {} ({})", node.getId(), node.getName(), ex);
+                            log.error("节点向量初始化 节点 {} ({}) 失败", node.getId(), node.getName(), ex);
                         }
                     }
                 }
@@ -414,13 +414,13 @@ public class NodeService {
                     break;
                 }
 
-                log.info("Batch completed: success={}, fail={}, nextId={}", successCount, failCount, lastId);
+                log.info("节点向量初始化 批次完成: success={}，fail={}，nextId={}", successCount, failCount, lastId);
             }
         } catch (Exception e) {
-            log.error("Batch initialization failed", e);
+            log.error("节点向量初始化 批量初始化失败", e);
         }
 
-        log.info("Embedding initialization completed: total={}, success={}, fail={}",
+        log.info("节点向量初始化 全部完成: total={}，success={}，fail={}",
                 successCount + failCount, successCount, failCount);
 
         return Map.of(

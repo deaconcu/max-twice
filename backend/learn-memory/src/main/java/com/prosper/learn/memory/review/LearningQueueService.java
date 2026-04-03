@@ -50,9 +50,9 @@ public class LearningQueueService {
         String key = getKey(userId);
         try {
             redisTemplate.opsForValue().set(key, queue, EXPIRE_HOURS, TimeUnit.HOURS);
-            log.debug("Saved learning queue for user {}: {} cards", userId, queue.size());
+            log.debug("学习队列保存成功: userId={}，cardCount={}", userId, queue.size());
         } catch (Exception e) {
-            log.warn("Failed to save learning queue for user {}: {}", userId, e.getMessage());
+            log.warn("学习队列保存失败: userId={}，error={}", userId, e.getMessage());
         }
     }
 
@@ -87,7 +87,7 @@ public class LearningQueueService {
                         .collect(Collectors.toList());
             }
         } catch (Exception e) {
-            log.warn("Failed to get learning queue for user {}: {}", userId, e.getMessage());
+            log.warn("学习队列获取失败: userId={}，error={}", userId, e.getMessage());
         }
         return Collections.emptyList();
     }
@@ -105,9 +105,9 @@ public class LearningQueueService {
         String key = getKey(userId);
         try {
             redisTemplate.delete(key);
-            log.debug("Cleared learning queue for user {}", userId);
+            log.debug("学习队列清除成功: userId={}", userId);
         } catch (Exception e) {
-            log.warn("Failed to clear learning queue for user {}: {}", userId, e.getMessage());
+            log.warn("学习队列清除失败: userId={}，error={}", userId, e.getMessage());
         }
     }
 
@@ -140,7 +140,7 @@ public class LearningQueueService {
                 .collect(Collectors.toList());
 
         if (filteredQueue.size() != queue.size()) {
-            log.debug("Filtered learning queue for user {}: {} -> {} cards",
+            log.debug("学习队列过滤: userId={}，{} -> {} 张卡片",
                      userId, queue.size(), filteredQueue.size());
         }
 
@@ -222,7 +222,7 @@ public class LearningQueueService {
         }
 
         saveQueue(userId, newQueue);
-        log.debug("Reordered queue for user {}, card {} with rating {}", userId, cardId, rating);
+        log.debug("学习队列重排: userId={}，cardId={}，rating={}", userId, cardId, rating);
     }
 
     /**
@@ -255,7 +255,7 @@ public class LearningQueueService {
         }
 
         saveQueue(userId, newQueue);
-        log.debug("Loaded more cards to queue for user {}, size: {}", userId, newQueue.size());
+        log.debug("学习队列加载更多: userId={}，size={}", userId, newQueue.size());
     }
 
     /**
@@ -280,6 +280,6 @@ public class LearningQueueService {
             return;
         }
         saveQueue(userId, new ArrayList<>(cardIds));
-        log.debug("Initialized queue for user {} with {} cards", userId, cardIds.size());
+        log.debug("学习队列初始化: userId={}，cardCount={}", userId, cardIds.size());
     }
 }

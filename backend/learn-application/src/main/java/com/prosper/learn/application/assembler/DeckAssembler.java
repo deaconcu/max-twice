@@ -115,7 +115,7 @@ public class DeckAssembler {
                 if (creator != null) {
                     dto.setCreator(userConverter.toBriefDTO(creator));
                 } else {
-                    log.warn("Cannot find creator with id: {}", deck.getCreatorId());
+                    log.warn("卡片组找不到创建者: creatorId={}", deck.getCreatorId());
                 }
                 return dto;
             })
@@ -173,7 +173,7 @@ public class DeckAssembler {
                 if (creator != null) {
                     dto.setCreator(userConverter.toBriefDTO(creator));
                 } else {
-                    log.warn("Cannot find creator with id: {}", deck.getCreatorId());
+                    log.warn("卡片组找不到创建者: creatorId={}", deck.getCreatorId());
                 }
 
                 // 设置点赞和收藏状态

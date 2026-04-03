@@ -147,7 +147,7 @@ public class MemoryCardDomainService {
 
         deckDataService.incrementCardCountAndSetStateAndVersion(deckId, ContentState.SUBMITTED.value());
 
-        log.info("Created card: {} in deck: {} by user: {}", card.getId(), deckId, userId);
+        log.info("记忆卡片 创建成功: cardId={}，deckId={}，userId={}", card.getId(), deckId, userId);
 
         return cardDataService.getById(card.getId());
     }
@@ -217,7 +217,7 @@ public class MemoryCardDomainService {
         }
         cardDataService.batchUpdateCurrentVersionId(cardsToInsert);
 
-        log.info("Batch created {} cards for deck {} by user {}", cardContents.size(), deckId, userId);
+        log.info("记忆卡片 批量创建成功: count={}，deckId={}，userId={}", cardContents.size(), deckId, userId);
 
         return cardsToInsert;
     }
@@ -264,7 +264,7 @@ public class MemoryCardDomainService {
         card.setUpdatedAt(LocalDateTime.now());
         cardDataService.update(card);
 
-        log.info("Updated card: {} to version: {} by user: {}", cardId, newVersion.getVersion(), userId);
+        log.info("记忆卡片 更新成功: cardId={}，version={}，userId={}", cardId, newVersion.getVersion(), userId);
 
         deckDataService.updateStateAndIncrementVersion(existingCard.getDeckId(), ContentState.SUBMITTED.value());
 
@@ -297,7 +297,7 @@ public class MemoryCardDomainService {
 
         deckDataService.decrementCardCountAndIncrementVersion(card.getDeckId());
 
-        log.info("Deleted card: {} from deck: {} by user: {}", cardId, card.getDeckId(), userId);
+        log.info("记忆卡片 删除成功: cardId={}，deckId={}，userId={}", cardId, card.getDeckId(), userId);
     }
 
     /**
@@ -328,7 +328,7 @@ public class MemoryCardDomainService {
         deck.setUpdatedAt(now);
         deckDataService.update(deck);
 
-        log.info("Batch deleted {} cards from deck: {} by user: {}", cards.size(), deckId, userId);
+        log.info("记忆卡片 批量删除成功: count={}，deckId={}，userId={}", cards.size(), deckId, userId);
     }
 
     /**
@@ -344,8 +344,8 @@ public class MemoryCardDomainService {
         // 删除 SRS 学习状态
         int srsRecordsDeleted = userCardSrsDataService.batchDeleteByUserAndCards(userId, cardIds);
 
-        log.info("Removed {} cards from study for user: {}, deleted {} SRS records",
-            cardIds.size(), userId, srsRecordsDeleted);
+        log.info("记忆卡片 移除学习: userId={}，count={}，删除SRS记录={}",
+            userId, cardIds.size(), srsRecordsDeleted);
     }
 
     // ========== Private 辅助方法 ==========

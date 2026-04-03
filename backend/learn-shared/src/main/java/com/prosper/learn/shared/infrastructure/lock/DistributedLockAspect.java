@@ -47,24 +47,24 @@ public class DistributedLockAspect {
             );
 
             if (!acquired) {
-                log.warn("Failed to acquire lock: {}", lockKey);
+                log.warn("分布式锁 获取失败: lockKey={}", lockKey);
                 throw StatusCode.SYSTEM_ERROR.exception();
             }
 
-            log.debug("Acquired lock: {}", lockKey);
+            log.debug("分布式锁 获取成功: lockKey={}", lockKey);
 
             // 执行业务方法
             return joinPoint.proceed();
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("Thread interrupted while acquiring lock: {}", lockKey, e);
+            log.error("分布式锁 获取时线程中断: lockKey={}", lockKey, e);
             throw StatusCode.SYSTEM_ERROR.exception();
         } finally {
             // 释放锁
             if (lock.isHeldByCurrentThread()) {
                 lock.unlock();
-                log.debug("Released lock: {}", lockKey);
+                log.debug("分布式锁 释放成功: lockKey={}", lockKey);
             }
         }
     }

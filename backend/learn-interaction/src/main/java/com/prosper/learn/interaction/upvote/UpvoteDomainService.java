@@ -3,6 +3,7 @@ package com.prosper.learn.interaction.upvote;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
  * 点赞领域服务
  * 只依赖 interaction 模块，处理点赞的核心业务逻辑
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UpvoteDomainService {
@@ -40,6 +42,8 @@ public class UpvoteDomainService {
         // 场景1：如果已经是同类型点赞，则取消点赞
         if (upvoteDO != null && upvoteDO.getType().equals(type)) {
             upvoteDataService.delete(upvoteDO.getId());
+            log.debug("点赞 取消: userId={}，objectId={}，objectType={}，type={}",
+                userId, objectId, objectType, type);
             return new UpvoteAction(UpvoteActionType.REMOVED, type, null);
         }
 
@@ -51,6 +55,8 @@ public class UpvoteDomainService {
             upvoteDO.setObjectType(objectType);
             upvoteDO.setType(type);
             upvoteDataService.insert(upvoteDO);
+            log.debug("点赞 新增: userId={}，objectId={}，objectType={}，type={}",
+                userId, objectId, objectType, type);
             return new UpvoteAction(UpvoteActionType.ADDED, type, null);
         }
 
@@ -58,6 +64,8 @@ public class UpvoteDomainService {
         Integer oldType = upvoteDO.getType();
         upvoteDO.setType(type);
         upvoteDataService.update(upvoteDO);
+        log.debug("点赞 切换类型: userId={}，objectId={}，objectType={}，oldType={}，newType={}",
+            userId, objectId, objectType, oldType, type);
         return new UpvoteAction(UpvoteActionType.SWITCHED, type, oldType);
     }
 

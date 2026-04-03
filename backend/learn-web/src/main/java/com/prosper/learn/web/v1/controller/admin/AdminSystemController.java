@@ -73,7 +73,7 @@ public class AdminSystemController {
                 return ApiResponse.success(config);
             }
         } catch (Exception e) {
-            log.error("Failed to get system config", e);
+            log.error("系统配置 获取配置失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -133,10 +133,10 @@ public class AdminSystemController {
             systemDataService.setValue(key, value);
 
             systemDomainService.reload();
-            log.info("System config updated successfully for key: {}", key);
+            log.info("系统配置 更新成功: key={}", key);
             return ApiResponse.success("配置更新成功");
         } catch (Exception e) {
-            log.error("Failed to update system config for key: {}", key, e);
+            log.error("系统配置 更新失败: key={}", key, e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -164,10 +164,10 @@ public class AdminSystemController {
 
             systemDataService.deleteConfig(key);
 
-            log.info("System config deleted successfully for key: {}", key);
+            log.info("系统配置 删除成功: key={}", key);
             return ApiResponse.success("配置删除成功");
         } catch (Exception e) {
-            log.error("Failed to delete system config for key: {}", key, e);
+            log.error("系统配置 删除失败: key={}", key, e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -186,7 +186,7 @@ public class AdminSystemController {
             }
             return ApiResponse.success(value);
         } catch (Exception e) {
-            log.error("Failed to get system config for key: {}", key, e);
+            log.error("系统配置 获取配置失败: key={}", key, e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -220,7 +220,7 @@ public class AdminSystemController {
                 return ApiResponse.success("只读模式已关闭");
             }
         } catch (Exception e) {
-            log.error("Failed to set readonly mode", e);
+            log.error("系统配置 只读模式设置失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }

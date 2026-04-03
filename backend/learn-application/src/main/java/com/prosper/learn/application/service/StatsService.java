@@ -147,7 +147,7 @@ public class StatsService {
                     .map(Long::parseLong)
                     .toList();
         } catch (NumberFormatException e) {
-            log.warn("Failed to parse referenced node IDs from content: {}", content, e);
+            log.warn("统计服务 解析引用的节点ID失败: {}", content, e);
             return List.of();
         }
     }

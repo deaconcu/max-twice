@@ -31,7 +31,7 @@ public class AdminSearchController {
         targetId = "0"
     )
     public ApiResponse<String> syncAll() {
-        log.info("Admin triggered full sync");
+        log.info("管理后台 触发全量同步");
         meilisearchService.syncAll();
         return ApiResponse.success("全量同步已开始，请查看日志");
     }
@@ -46,7 +46,7 @@ public class AdminSearchController {
         targetId = "0"
     )
     public ApiResponse<Integer> syncCourses() {
-        log.info("Admin triggered course sync");
+        log.info("管理后台 触发课程同步");
         int count = meilisearchService.syncAllCourses();
         return ApiResponse.success(count);
     }
@@ -61,7 +61,7 @@ public class AdminSearchController {
         targetId = "0"
     )
     public ApiResponse<Integer> syncNodes() {
-        log.info("Admin triggered node sync");
+        log.info("管理后台 触发节点同步");
         int count = meilisearchService.syncAllNodes();
         return ApiResponse.success(count);
     }
@@ -76,7 +76,7 @@ public class AdminSearchController {
         targetId = "0"
     )
     public ApiResponse<Integer> syncUsers() {
-        log.info("Admin triggered user sync");
+        log.info("管理后台 触发用户同步");
         int count = meilisearchService.syncAllUsers();
         return ApiResponse.success(count);
     }
@@ -91,7 +91,7 @@ public class AdminSearchController {
         targetId = "0"
     )
     public ApiResponse<Integer> syncProfessions() {
-        log.info("Admin triggered profession sync");
+        log.info("管理后台 触发职业同步");
         int count = meilisearchService.syncAllProfessions();
         return ApiResponse.success(count);
     }

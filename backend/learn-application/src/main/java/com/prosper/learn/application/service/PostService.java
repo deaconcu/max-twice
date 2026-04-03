@@ -859,7 +859,7 @@ public class PostService {
                     .map(Long::parseLong)
                     .toList();
         } catch (NumberFormatException e) {
-            log.warn("Failed to parse referenced node IDs from content: {}", content, e);
+            log.warn("帖子服务 解析引用的节点ID失败: {}", content, e);
             return List.of();
         }
     }
@@ -883,7 +883,7 @@ public class PostService {
             chapterInfos = objectMapper.readValue(jsonContent,
                     objectMapper.getTypeFactory().constructCollectionType(List.class, ChapterInfo.class));
         } catch (Exception e) {
-            log.error("Failed to parse index post JSON: {}", jsonContent, e);
+            log.error("帖子服务 目录帖子 JSON 解析失败: {}", jsonContent, e);
             throw StatusCode.JSON_PROCESSING_ERROR.exception("解析目录数据失败");
         }
 
@@ -912,7 +912,7 @@ public class PostService {
                 nodeDataService.insert(newNode);
 
                 nodeIds.add(newNode.getId());
-                log.info("Created new node: {} (id: {}) in course: {}", nodeName, newNode.getId(), courseId);
+                log.info("帖子服务 创建新节点: {} (id: {})，课程: {}", nodeName, newNode.getId(), courseId);
             }
         }
 

@@ -340,7 +340,7 @@ public class RoadmapDomainService {
         roadmapDO.setScore(0.0);
 
         roadmapDataService.insert(roadmapDO);
-        log.info("Created roadmap: {} for profession: {} by user: {} with state: {}",
+        log.info("路线图 创建成功: roadmapId={}，professionId={}，userId={}，state={}",
             roadmapDO.getId(), professionId, userId, state);
 
         return roadmapDO.getId();
@@ -360,7 +360,7 @@ public class RoadmapDomainService {
         roadmapDO.setUpdatedAt(LocalDateTime.now());
 
         roadmapDataService.update(roadmapDO);
-        log.info("Updated roadmap: {}", id);
+        log.info("路线图 更新成功: roadmapId={}", id);
     }
 
     /**
@@ -374,7 +374,7 @@ public class RoadmapDomainService {
         if (result == 0) {
             throw StatusCode.ROADMAP_NOT_FOUND.exception();
         }
-        log.info("Deleted roadmap: {}", id);
+        log.info("路线图 删除成功: roadmapId={}", id);
     }
 
     /**
@@ -388,7 +388,7 @@ public class RoadmapDomainService {
         Utils.validateStateTransition(roadmap.getState(), ContentState.PUBLISHED);
 
         roadmapDataService.approve(id);
-        log.info("Roadmap {} approved", id);
+        log.info("路线图 审核通过: roadmapId={}", id);
     }
 
     /**
@@ -402,7 +402,7 @@ public class RoadmapDomainService {
         Utils.validateStateTransition(roadmap.getState(), ContentState.REJECTED);
 
         roadmapDataService.reject(id, reason);
-        log.info("Roadmap {} rejected, reason: {}", id, reason);
+        log.info("路线图 审核拒绝: roadmapId={}，reason={}", id, reason);
     }
 
     /**
@@ -416,7 +416,7 @@ public class RoadmapDomainService {
         Utils.validateStateTransition(roadmap.getState(), ContentState.BANNED);
 
         roadmapDataService.ban(id, reason);
-        log.info("Roadmap {} banned, reason: {}", id, reason);
+        log.info("路线图 封禁: roadmapId={}，reason={}", id, reason);
     }
 
     /**
@@ -430,7 +430,7 @@ public class RoadmapDomainService {
         roadmap.setDescription(description != null ? description : "");
         roadmapDataService.update(roadmap);
 
-        log.info("Updated description for roadmap: {}", id);
+        log.info("路线图 描述更新成功: roadmapId={}", id);
     }
 
     // ========== 内容解析方法 ==========

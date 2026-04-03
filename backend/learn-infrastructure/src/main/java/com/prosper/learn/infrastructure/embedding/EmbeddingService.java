@@ -62,7 +62,7 @@ public class EmbeddingService {
                     EmbeddingResponse.class
             );
 
-            log.info("Embedding API Response: status={}, body={}", response.getStatusCode(), response.getBody());
+            log.info("Embedding API 响应: status={}，body={}", response.getStatusCode(), response.getBody());
 
             if (response.getBody() == null || response.getBody().getData().isEmpty()) {
                 throw new RuntimeException("Empty response from OpenAI");
@@ -74,7 +74,7 @@ public class EmbeddingService {
             return embedding;
 
         } catch (Exception e) {
-            log.error("Failed to generate embedding for text: {}", text.substring(0, Math.min(50, text.length())), e);
+            log.error("Embedding 生成向量失败，文本: {}", text.substring(0, Math.min(50, text.length())), e);
             throw new RuntimeException("Embedding generation failed", e);
         }
     }
@@ -112,7 +112,7 @@ public class EmbeddingService {
                     EmbeddingResponse.class
             );
 
-            log.info("Batch Embedding API Response: status={}, body={}", response.getStatusCode(), response.getBody());
+            log.info("Embedding 批量 API 响应: status={}，body={}", response.getStatusCode(), response.getBody());
 
             if (response.getBody() == null || response.getBody().getData().isEmpty()) {
                 throw new RuntimeException("Empty response from OpenAI");
@@ -127,7 +127,7 @@ public class EmbeddingService {
             return embeddings;
 
         } catch (Exception e) {
-            log.error("Failed to generate embeddings batch (size={})", texts.size(), e);
+            log.error("Embedding 批量生成失败，数量: {}", texts.size(), e);
             throw new RuntimeException("Batch embedding generation failed", e);
         }
     }

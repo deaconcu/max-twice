@@ -30,9 +30,9 @@ public class NodeEmbeddingListener {
     public void onNodeCreated(NodeCreatedEvent event) {
         try {
             generateAndStoreEmbedding(event.getId(), event.getName(), event.getDescription());
-            log.info("Generated embedding for new node: {}", event.getId());
+            log.info("节点向量生成成功: nodeId={}", event.getId());
         } catch (Exception e) {
-            log.error("Failed to generate embedding for node: {}", event.getId(), e);
+            log.error("节点向量生成失败: nodeId={}", event.getId(), e);
             // 失败不影响节点创建，通过补偿机制处理
         }
     }
@@ -45,9 +45,9 @@ public class NodeEmbeddingListener {
     public void onNodeUpdated(NodeUpdatedEvent event) {
         try {
             generateAndStoreEmbedding(event.getId(), event.getName(), event.getDescription());
-            log.info("Regenerated embedding for updated node: {}", event.getId());
+            log.info("节点向量重新生成成功: nodeId={}", event.getId());
         } catch (Exception e) {
-            log.error("Failed to regenerate embedding for node: {}", event.getId(), e);
+            log.error("节点向量重新生成失败: nodeId={}", event.getId(), e);
         }
     }
 
