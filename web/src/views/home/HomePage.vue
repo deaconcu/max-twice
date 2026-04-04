@@ -304,52 +304,145 @@ void homeLoading
 
       <!-- 三步卡片 -->
       <div class="guide-cards">
-        <v-card
-          v-for="link in quickLinks"
-          :key="link.step"
-          class="guide-card"
-          rounded="xl"
-          border
-          hover
-          @click="navigateTo(link.path)"
-        >
+        <!-- 步骤1: 我是谁（有示例角色链接） -->
+        <v-card class="guide-card guide-card-special" rounded="xl" border>
           <v-card-text class="pa-4 pa-sm-5">
-            <div class="d-flex align-center ga-3 ga-sm-4">
-              <!-- 步骤图标 -->
-              <v-avatar
-                :color="link.color"
-                :size="$vuetify.display.mobile ? 44 : 52"
-                rounded="lg"
-                class="flex-shrink-0"
-              >
-                <v-icon :icon="link.icon" color="white" :size="$vuetify.display.mobile ? 22 : 26" />
-              </v-avatar>
-
-              <!-- 文字内容 -->
+            <div class="d-flex align-start ga-3 ga-sm-4">
+              <v-badge content="1" :color="quickLinks[0].color" offset-x="3" offset-y="3">
+                <v-avatar
+                  :color="quickLinks[0].color"
+                  :size="$vuetify.display.mobile ? 44 : 52"
+                  rounded="lg"
+                >
+                  <v-icon :icon="quickLinks[0].icon" color="white" :size="$vuetify.display.mobile ? 22 : 26" />
+                </v-avatar>
+              </v-badge>
               <div class="flex-grow-1">
-                <div class="d-flex align-center ga-2 mb-1">
-                  <span class="text-caption text-medium-emphasis">步骤 {{ link.step }}</span>
-                </div>
                 <h3
                   class="text-subtitle-1 text-sm-h6 font-weight-bold mb-1"
                   :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                 >
-                  {{ link.title }}
+                  {{ quickLinks[0].title }}
+                </h3>
+                <p
+                  class="text-caption text-sm-body-2 mb-2"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+                >
+                  {{ quickLinks[0].description }}
+                </p>
+                <p
+                  class="text-caption text-sm-body-2 ma-0"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+                >
+                  <a
+                    class="text-primary text-decoration-none font-weight-medium guide-link"
+                    @click.stop="navigateTo('/role/1')"
+                  >程序员</a>
+                  <span class="mx-1">·</span>
+                  <a
+                    class="text-primary text-decoration-none font-weight-medium guide-link"
+                    @click.stop="navigateTo('/role/2')"
+                  >父亲</a>
+                  <span class="mx-1">·</span>
+                  <a
+                    class="text-primary text-decoration-none font-weight-medium guide-link"
+                    @click.stop="navigateTo('/role/3')"
+                  >投资者</a>
+                  <span class="mx-1">，或</span>
+                  <a
+                    class="text-primary text-decoration-none font-weight-medium guide-link"
+                    @click.stop="navigateTo('/role')"
+                  >探索全部角色</a>
+                </p>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+
+        <!-- 步骤2: 我要学什么（有示例链接） -->
+        <v-card class="guide-card guide-card-special" rounded="xl" border>
+          <v-card-text class="pa-4 pa-sm-5">
+            <div class="d-flex align-start ga-3 ga-sm-4">
+              <v-badge content="2" :color="quickLinks[1].color" offset-x="3" offset-y="3">
+                <v-avatar
+                  :color="quickLinks[1].color"
+                  :size="$vuetify.display.mobile ? 44 : 52"
+                  rounded="lg"
+                >
+                  <v-icon :icon="quickLinks[1].icon" color="white" :size="$vuetify.display.mobile ? 22 : 26" />
+                </v-avatar>
+              </v-badge>
+              <div class="flex-grow-1">
+                <h3
+                  class="text-subtitle-1 text-sm-h6 font-weight-bold mb-1"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                >
+                  {{ quickLinks[1].title }}
+                </h3>
+                <p
+                  class="text-caption text-sm-body-2 mb-2"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+                >
+                  {{ quickLinks[1].description }}
+                </p>
+                <p
+                  class="text-caption text-sm-body-2 ma-0"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+                >
+                  看看
+                  <a
+                    class="text-primary text-decoration-none font-weight-medium guide-link"
+                    @click.stop="navigateTo('/role/1')"
+                  >前端程序员的成长路线</a>
+                  ，或探索
+                  <a
+                    class="text-primary text-decoration-none font-weight-medium guide-link"
+                    @click.stop="navigateTo('/courses')"
+                  >全部课程</a>
+                </p>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+
+        <!-- 步骤3: 我学会了吗 -->
+        <v-card
+          class="guide-card"
+          rounded="xl"
+          border
+          hover
+          @click="navigateTo(quickLinks[2].path)"
+        >
+          <v-card-text class="pa-4 pa-sm-5">
+            <div class="d-flex align-start ga-3 ga-sm-4">
+              <v-badge content="3" :color="quickLinks[2].color" offset-x="3" offset-y="3">
+                <v-avatar
+                  :color="quickLinks[2].color"
+                  :size="$vuetify.display.mobile ? 44 : 52"
+                  rounded="lg"
+                >
+                  <v-icon :icon="quickLinks[2].icon" color="white" :size="$vuetify.display.mobile ? 22 : 26" />
+                </v-avatar>
+              </v-badge>
+              <div class="flex-grow-1">
+                <h3
+                  class="text-subtitle-1 text-sm-h6 font-weight-bold mb-1"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                >
+                  {{ quickLinks[2].title }}
                 </h3>
                 <p
                   class="text-caption text-sm-body-2 ma-0"
                   :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
                 >
-                  {{ link.description }}
+                  {{ quickLinks[2].description }}
                 </p>
               </div>
-
-              <!-- 箭头 -->
               <v-icon
                 icon="mdi-chevron-right"
                 :size="$vuetify.display.mobile ? 20 : 24"
                 color="on-surface-variant"
-                class="flex-shrink-0"
+                class="flex-shrink-0 align-self-center"
               />
             </div>
           </v-card-text>
@@ -879,6 +972,30 @@ void homeLoading
 .guide-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.guide-card-special {
+  cursor: default;
+}
+
+.guide-card-special:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.guide-link {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.guide-link:hover {
+  opacity: 0.8;
+  text-decoration: underline !important;
+}
+
+/* 步骤角标白色边框 */
+:deep(.guide-card .v-badge__badge) {
+  border: 1px solid rgb(var(--v-theme-surface));
 }
 
 /* 学习路径步骤 - 保留旧样式以防其他地方使用 */
