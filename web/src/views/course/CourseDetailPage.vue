@@ -638,11 +638,6 @@ const handleConfirmCreateDefaultSubCourse = async () => {
   margin-bottom: 24px;
 }
 
-@media (min-width: 1800px) {
-  .page-header-row {
-    margin-left: -60px;
-  }
-}
 
 /* 课程头部卡片 */
 .course-header-card {

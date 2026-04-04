@@ -112,8 +112,9 @@
                     :min-zoom="0.7"
                     :max-zoom="1.2"
                     :default-zoom="1.0"
-                    :zoom-on-scroll="false"
+                    :zoom-on-scroll="true"
                     @node-click="handleNodeClick"
+                    @nodes-initialized="onNodesInitialized"
                   >
                     <Background pattern-color="#bdbdbd" :gap="30" :size="2" variant="dots" />
                     <Controls :show-interactive="false" />
@@ -211,9 +212,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { VueFlow } from '@vue-flow/core'
+import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { Position } from '@vue-flow/core'
@@ -230,6 +231,12 @@ import UserAvatar from '@/components/common/UserAvatar.vue'
 
 const router = useRouter()
 const route = useRoute()
+
+// 使用 useVueFlow 获取节点实际尺寸
+const { getNodes, setNodes, fitView } = useVueFlow()
+
+// 是否已完成基于实际尺寸的布局
+const layoutApplied = ref(false)
 
 // 从路由获取参数
 const roleId = computed(() => {
@@ -395,23 +402,31 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
 }
 
 // 自动布局函数
-const applyAutoLayout = (nodeList: Node[], edgeList: Edge[], direction = 'LR'): Node[] => {
+const applyAutoLayout = (
+  nodeList: Node[],
+  edgeList: Edge[],
+  direction = 'LR',
+  nodeSizes?: Map<string, { width: number; height: number }>
+): Node[] => {
   const dagreGraph = new dagre.graphlib.Graph()
   dagreGraph.setDefaultEdgeLabel(() => ({}))
   dagreGraph.setGraph({
     rankdir: direction,
-    nodesep: 20,     // 上下间距
+    nodesep: 25,     // 上下间距
     ranksep: 150,    // 左右间距
     marginx: 20,
     marginy: 20,
   })
 
-  const nodeWidth = 120
-  const nodeHeight = 40
+  const defaultNodeWidth = 120
+  const defaultNodeHeight = 40
 
   // 添加节点和边到 dagre 图
   nodeList.forEach((node) => {
-    dagreGraph.setNode(node.id.toString(), { width: nodeWidth, height: nodeHeight })
+    const size = nodeSizes?.get(node.id)
+    const width = size?.width || defaultNodeWidth
+    const height = size?.height || defaultNodeHeight
+    dagreGraph.setNode(node.id.toString(), { width, height })
   })
   edgeList.forEach((edge) => {
     dagreGraph.setEdge(edge.source.toString(), edge.target.toString())
@@ -423,11 +438,14 @@ const applyAutoLayout = (nodeList: Node[], edgeList: Edge[], direction = 'LR'): 
   // 更新节点位置
   return nodeList.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id.toString())
+    const size = nodeSizes?.get(node.id)
+    const width = size?.width || defaultNodeWidth
+    const height = size?.height || defaultNodeHeight
     return {
       ...node,
       position: {
-        x: nodeWithPosition.x - nodeWidth / 2,
-        y: nodeWithPosition.y - nodeHeight / 2,
+        x: nodeWithPosition.x - width / 2,
+        y: nodeWithPosition.y - height / 2,
       },
     }
   })
@@ -449,6 +467,44 @@ const flowEdges = computed<Edge[]>(() => {
   const { edges } = parseContent(roadmap.value.content)
   return edges
 })
+
+// 节点初始化完成后，使用实际尺寸重新布局
+const onNodesInitialized = () => {
+  if (layoutApplied.value) return
+
+  // 获取所有节点的实际尺寸
+  const currentNodes = getNodes.value
+  if (currentNodes.length === 0) return
+
+  // 构建尺寸映射
+  const nodeSizes = new Map<string, { width: number; height: number }>()
+  let hasValidDimensions = false
+
+  currentNodes.forEach((node) => {
+    if (node.dimensions?.width && node.dimensions?.height) {
+      nodeSizes.set(node.id, {
+        width: node.dimensions.width,
+        height: node.dimensions.height,
+      })
+      hasValidDimensions = true
+    }
+  })
+
+  // 如果有有效的尺寸数据，重新计算布局
+  if (hasValidDimensions && roadmap.value?.content) {
+    const { nodes, edges } = parseContent(roadmap.value.content)
+    const layoutedNodes = applyAutoLayout(nodes, edges, 'LR', nodeSizes)
+
+    // 更新节点位置
+    setNodes(layoutedNodes)
+    layoutApplied.value = true
+
+    // 重新适配视图
+    nextTick(() => {
+      fitView({ padding: 0.2 })
+    })
+  }
+}
 
 // 投票
 const { execute: toggleUpvote } = useMutation(
