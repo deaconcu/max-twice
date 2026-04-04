@@ -331,9 +331,9 @@ void homeLoading
       <!-- 路线图卡片列表 -->
       <v-row>
         <v-col v-for="role in displayRoles" :key="role.id" cols="12" sm="6" md="4" lg="3">
-          <v-card rounded="lg" border hover class="h-100" @click="openRoadmap(role.roadmapId)">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center ga-3 mb-3">
+          <v-card rounded="xl" hover class="h-100 module-card" @click="openRoadmap(role.roadmapId)">
+            <v-card-text class="pa-4 pa-sm-5">
+              <div class="d-flex align-center ga-3 mb-4">
                 <div class="icon-container flex-shrink-0">
                   <DynamicIcon
                     :icon="role.icon"
@@ -344,7 +344,7 @@ void homeLoading
                 </div>
                 <div class="flex-grow-1" style="min-width: 0">
                   <div
-                    class="text-body-1 font-weight-bold text-truncate"
+                    class="text-subtitle-1 font-weight-bold text-truncate"
                     :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                   >
                     {{ role.name }}
@@ -356,12 +356,14 @@ void homeLoading
               </div>
               <div class="d-flex align-center justify-space-between mb-2">
                 <span class="text-caption text-medium-emphasis">学习进度</span>
-                <span class="text-caption font-weight-bold text-medium-emphasis">{{ role.progress }}%</span>
+                <span class="text-caption font-weight-bold text-primary">{{ role.progress }}%</span>
               </div>
               <v-progress-linear
                 :model-value="role.progress"
                 color="primary"
-                height="6"
+                bg-color="primary"
+                bg-opacity="0.15"
+                height="8"
                 rounded
               />
             </v-card-text>
@@ -371,13 +373,15 @@ void homeLoading
         <!-- 空状态或添加卡片 -->
         <v-col cols="12" sm="6" md="4" lg="3">
           <v-card
-            rounded="lg"
+            rounded="xl"
             class="h-100 empty-placeholder-card"
             @click="navigateTo('/role')"
           >
-            <v-card-text class="pa-4 d-flex align-center justify-center h-100" style="min-height: 120px">
+            <v-card-text class="pa-4 pa-sm-5 d-flex align-center justify-center h-100" style="min-height: 140px">
               <div class="text-center">
-                <v-icon :icon="recentRoles.length === 0 ? 'mdi-map-marker-plus' : 'mdi-plus'" color="grey" size="32" class="mb-2" />
+                <v-avatar color="primary" size="48" class="mb-3" variant="tonal">
+                  <v-icon :icon="recentRoles.length === 0 ? 'mdi-map-marker-plus' : 'mdi-plus'" size="24" />
+                </v-avatar>
                 <div class="text-body-2 text-medium-emphasis">
                   {{ recentRoles.length === 0 ? '添加第一个学习路线' : '添加更多路线' }}
                 </div>
@@ -428,9 +432,9 @@ void homeLoading
       <!-- 课程卡片列表 -->
       <v-row>
         <v-col v-for="course in displayCourses" :key="course.id" cols="12" sm="6" md="4" lg="3">
-          <v-card rounded="lg" border hover class="h-100" @click="openCourse(course.id)">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center ga-3 mb-3">
+          <v-card rounded="xl" hover class="h-100 module-card" @click="openCourse(course.id)">
+            <v-card-text class="pa-4 pa-sm-5">
+              <div class="d-flex align-center ga-3 mb-4">
                 <div class="icon-container flex-shrink-0">
                   <DynamicIcon
                     :icon="course.icon"
@@ -441,7 +445,7 @@ void homeLoading
                 </div>
                 <div class="flex-grow-1" style="min-width: 0">
                   <div
-                    class="text-body-1 font-weight-bold text-truncate"
+                    class="text-subtitle-1 font-weight-bold text-truncate"
                     :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                   >
                     {{ course.name }}
@@ -453,12 +457,14 @@ void homeLoading
               </div>
               <div class="d-flex align-center justify-space-between mb-2">
                 <span class="text-caption text-medium-emphasis">学习进度</span>
-                <span class="text-caption font-weight-bold text-medium-emphasis">{{ course.progress ?? 0 }}%</span>
+                <span class="text-caption font-weight-bold text-primary">{{ course.progress ?? 0 }}%</span>
               </div>
               <v-progress-linear
                 :model-value="course.progress ?? 0"
                 color="primary"
-                height="6"
+                bg-color="primary"
+                bg-opacity="0.15"
+                height="8"
                 rounded
               />
             </v-card-text>
@@ -468,13 +474,15 @@ void homeLoading
         <!-- 空状态或添加卡片 -->
         <v-col cols="12" sm="6" md="4" lg="3">
           <v-card
-            rounded="lg"
+            rounded="xl"
             class="h-100 empty-placeholder-card"
             @click="navigateTo('/courses')"
           >
-            <v-card-text class="pa-4 d-flex align-center justify-center h-100" style="min-height: 120px">
+            <v-card-text class="pa-4 pa-sm-5 d-flex align-center justify-center h-100" style="min-height: 140px">
               <div class="text-center">
-                <v-icon :icon="recentCourses.length === 0 ? 'mdi-book-plus' : 'mdi-plus'" color="grey" size="32" class="mb-2" />
+                <v-avatar color="primary" size="48" class="mb-3" variant="tonal">
+                  <v-icon :icon="recentCourses.length === 0 ? 'mdi-book-plus' : 'mdi-plus'" size="24" />
+                </v-avatar>
                 <div class="text-body-2 text-medium-emphasis">
                   {{ recentCourses.length === 0 ? '开始你的第一门课程' : '添加更多课程' }}
                 </div>
@@ -528,16 +536,10 @@ void homeLoading
       </div>
 
       <!-- 复习进度和卡片组 -->
-      <div class="d-flex flex-wrap ga-3">
+      <div class="d-flex flex-wrap ga-4">
         <!-- 今日进度卡片 -->
-        <v-card rounded="lg" border class="review-progress-card">
-          <v-card-text class="d-flex align-center ga-4 pa-3">
-            <div class="text-center">
-              <div class="text-h5 font-weight-bold text-primary">
-                {{ reviewData.todayCompleted }}/{{ reviewData.todayTotal }}
-              </div>
-              <div class="text-caption text-medium-emphasis">今日进度</div>
-            </div>
+        <v-card rounded="xl" class="review-progress-card module-card">
+          <v-card-text class="d-flex align-center ga-5 pa-4 pa-sm-5">
             <v-progress-circular
               :model-value="
                 reviewData.todayTotal > 0
@@ -545,15 +547,36 @@ void homeLoading
                   : 0
               "
               color="primary"
-              :size="48"
-              :width="5"
+              :size="72"
+              :width="6"
             >
-              <span class="text-caption font-weight-bold">{{
-                reviewData.todayTotal > 0
-                  ? Math.round((reviewData.todayCompleted / reviewData.todayTotal) * 100)
-                  : 0
-              }}%</span>
+              <div class="text-center">
+                <div class="text-h6 font-weight-bold text-primary">
+                  {{ reviewData.todayCompleted }}
+                </div>
+                <div class="text-caption text-medium-emphasis">/{{ reviewData.todayTotal }}</div>
+              </div>
             </v-progress-circular>
+            <div>
+              <div class="text-subtitle-1 font-weight-bold mb-1">今日进度</div>
+              <div class="text-body-2 text-medium-emphasis">
+                已完成 {{
+                  reviewData.todayTotal > 0
+                    ? Math.round((reviewData.todayCompleted / reviewData.todayTotal) * 100)
+                    : 0
+                }}%
+              </div>
+              <v-chip
+                v-if="reviewData.streakDays > 0"
+                color="warning"
+                variant="tonal"
+                size="small"
+                class="mt-2"
+              >
+                <v-icon icon="mdi-fire" size="14" class="mr-1" />
+                连续 {{ reviewData.streakDays }} 天
+              </v-chip>
+            </div>
           </v-card-text>
         </v-card>
 
@@ -561,13 +584,12 @@ void homeLoading
         <v-card
           v-for="course in reviewData.courses"
           :key="course.course.id"
-          rounded="lg"
-          border
+          rounded="xl"
           hover
-          class="review-deck-card"
+          class="review-deck-card module-card"
           @click="navigateTo('/review')"
         >
-          <v-card-text class="pa-3">
+          <v-card-text class="pa-4 pa-sm-5">
             <div class="d-flex align-center ga-3">
               <div class="icon-container-sm flex-shrink-0">
                 <DynamicIcon
@@ -579,7 +601,7 @@ void homeLoading
               </div>
               <div class="flex-grow-1" style="min-width: 0">
                 <div
-                  class="text-body-2 font-weight-bold text-truncate"
+                  class="text-subtitle-2 font-weight-bold text-truncate"
                   :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                 >
                   {{ course.course.name }}
@@ -588,8 +610,8 @@ void homeLoading
                   共 {{ course.cardCount }} 张卡片
                 </div>
               </div>
-              <v-chip size="small" color="primary" variant="tonal" class="flex-shrink-0">
-                {{ course.dueCardCount }}
+              <v-chip size="small" color="primary" variant="flat" class="flex-shrink-0">
+                {{ course.dueCardCount }} 待复习
               </v-chip>
             </div>
           </v-card-text>
@@ -598,24 +620,24 @@ void homeLoading
         <!-- 没有数据时显示占位卡片 -->
         <v-card
           v-if="reviewData.courses.length === 0"
-          rounded="lg"
+          rounded="xl"
           class="review-deck-card empty-placeholder-card"
           @click="navigateTo('/courses')"
         >
-          <v-card-text class="pa-3">
+          <v-card-text class="pa-4 pa-sm-5">
             <div class="d-flex align-center ga-3">
-              <div class="icon-container-sm flex-shrink-0">
-                <v-icon icon="mdi-cards-outline" color="grey" size="20" />
-              </div>
+              <v-avatar color="primary" size="40" variant="tonal">
+                <v-icon icon="mdi-cards-outline" size="20" />
+              </v-avatar>
               <div class="flex-grow-1" style="min-width: 0">
-                <div class="text-body-2 font-weight-bold text-truncate text-medium-emphasis">
+                <div class="text-subtitle-2 font-weight-bold text-truncate">
                   暂无复习卡片
                 </div>
                 <div class="text-caption text-medium-emphasis text-truncate">
                   学习课程后会自动添加
                 </div>
               </div>
-              <v-icon icon="mdi-arrow-right" color="grey" size="16" />
+              <v-icon icon="mdi-arrow-right" color="primary" size="20" />
             </div>
           </v-card-text>
         </v-card>
@@ -724,11 +746,21 @@ void homeLoading
   }
 }
 
+/* 模块卡片样式 */
+.module-card {
+  border: 1px solid rgb(var(--v-theme-outline));
+  transition: all 0.2s ease;
+}
+
+.module-card:hover {
+  border-color: rgb(var(--v-theme-primary));
+}
+
 /* 图标容器 */
 .icon-container {
   width: 48px;
   height: 48px;
-  border: 1px solid rgb(var(--v-theme-outline));
+  background: rgba(var(--v-theme-primary), 0.08);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -739,7 +771,7 @@ void homeLoading
 .icon-container-sm {
   width: 40px;
   height: 40px;
-  border: 1px solid rgb(var(--v-theme-outline));
+  background: rgba(var(--v-theme-primary), 0.08);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -748,14 +780,15 @@ void homeLoading
 
 /* 复习进度卡片 */
 .review-progress-card {
-  flex: 0 0 200px;
+  flex: 0 0 auto;
+  min-width: 240px;
 }
 
 /* 复习卡片组 */
 .review-deck-card {
   flex: 1 1 200px;
   min-width: 200px;
-  max-width: 280px;
+  max-width: 320px;
 }
 
 /* 空数据占位卡片 */
