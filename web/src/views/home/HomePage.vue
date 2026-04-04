@@ -450,142 +450,6 @@ void homeLoading
       </div>
     </div>
 
-    <!-- 复习区域 -->
-    <div class="review-section mb-6 mb-md-10">
-      <div
-        class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 mb-4"
-      >
-        <h2
-          class="text-h6 text-sm-h5 font-weight-bold"
-          :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-        >
-          今日复习
-          <v-chip
-            v-if="stats.reviewCards > 0"
-            color="grey-darken-1"
-            variant="tonal"
-            size="small"
-            class="ml-2"
-          >
-            {{ stats.reviewCards }}
-          </v-chip>
-        </h2>
-        <div class="d-flex align-center ga-4">
-          <div class="d-flex align-center ga-1">
-            <v-icon icon="mdi-fire" color="warning" size="18"></v-icon>
-            <span class="text-body-2 font-weight-medium">连续 {{ reviewData.streakDays }} 天</span>
-          </div>
-          <v-btn
-            variant="tonal"
-            color="success"
-            rounded="lg"
-            size="small"
-            @click="navigateTo('/review')"
-          >
-            开始复习
-            <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
-          </v-btn>
-        </div>
-      </div>
-
-      <!-- 复习进度和卡片组 -->
-      <div class="d-flex flex-wrap ga-3">
-        <!-- 今日进度卡片 -->
-        <v-card rounded="lg" border class="review-progress-card">
-          <v-card-text class="d-flex align-center ga-4 pa-3">
-            <div class="text-center">
-              <div class="text-h5 font-weight-bold text-success">
-                {{ reviewData.todayCompleted }}/{{ reviewData.todayTotal }}
-              </div>
-              <div class="text-caption text-medium-emphasis">今日进度</div>
-            </div>
-            <v-progress-circular
-              :model-value="
-                reviewData.todayTotal > 0
-                  ? (reviewData.todayCompleted / reviewData.todayTotal) * 100
-                  : 0
-              "
-              color="success"
-              :size="48"
-              :width="5"
-            >
-              <span class="text-caption font-weight-bold"
-                >{{
-                  reviewData.todayTotal > 0
-                    ? Math.round((reviewData.todayCompleted / reviewData.todayTotal) * 100)
-                    : 0
-                }}%</span
-              >
-            </v-progress-circular>
-          </v-card-text>
-        </v-card>
-
-        <!-- 待复习课程列表 -->
-        <v-card
-          v-for="course in reviewData.courses"
-          :key="course.course.id"
-          rounded="lg"
-          border
-          hover
-          class="review-deck-card"
-          @click="navigateTo('/review')"
-        >
-          <v-card-text class="pa-3">
-            <div class="d-flex align-center ga-3">
-              <div class="icon-container-sm flex-shrink-0">
-                <DynamicIcon
-                  :icon="course.course.icon"
-                  default-icon="mdi-book-open-variant"
-                  :size="20"
-                  :color="getColorByString(course.course.name)"
-                />
-              </div>
-              <div class="flex-grow-1" style="min-width: 0">
-                <div
-                  class="text-body-2 font-weight-bold mb-1 text-truncate"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                >
-                  {{ course.course.name }}
-                </div>
-                <div class="text-caption text-medium-emphasis text-truncate">
-                  共 {{ course.cardCount }} 张卡片
-                </div>
-              </div>
-              <v-chip size="small" color="success" variant="tonal" class="flex-shrink-0">
-                {{ course.dueCardCount }}
-              </v-chip>
-            </div>
-          </v-card-text>
-        </v-card>
-
-        <!-- 没有数据时显示占位卡片 -->
-        <v-card
-          v-if="reviewData.courses.length === 0"
-          rounded="lg"
-          border
-          class="review-deck-card empty-placeholder-card"
-          @click="navigateTo('/courses')"
-        >
-          <v-card-text class="pa-3">
-            <div class="d-flex align-center ga-3">
-              <div class="icon-container-sm flex-shrink-0 empty-icon-container">
-                <v-icon icon="mdi-cards-outline" color="grey-lighten-1" size="20"></v-icon>
-              </div>
-              <div class="flex-grow-1" style="min-width: 0">
-                <div class="text-body-2 font-weight-bold mb-1 text-truncate text-grey-lighten-1">
-                  暂无复习卡片
-                </div>
-                <div class="text-caption text-grey-lighten-1 text-truncate">
-                  学习课程后会自动添加
-                </div>
-              </div>
-              <v-icon icon="mdi-arrow-right" color="grey-lighten-1" size="16"></v-icon>
-            </div>
-          </v-card-text>
-        </v-card>
-      </div>
-    </div>
-
     <!-- 正在跟踪的职业 -->
     <div class="role-section mb-6 mb-md-10">
       <div
@@ -809,6 +673,142 @@ void homeLoading
           </v-card>
         </v-col>
       </v-row>
+    </div>
+
+    <!-- 今日复习 -->
+    <div class="review-section mb-6 mb-md-10">
+      <div
+        class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 mb-4"
+      >
+        <h2
+          class="text-h6 text-sm-h5 font-weight-bold"
+          :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+        >
+          今日复习
+          <v-chip
+            v-if="stats.reviewCards > 0"
+            color="grey-darken-1"
+            variant="tonal"
+            size="small"
+            class="ml-2"
+          >
+            {{ stats.reviewCards }}
+          </v-chip>
+        </h2>
+        <div class="d-flex align-center ga-4">
+          <div class="d-flex align-center ga-1">
+            <v-icon icon="mdi-fire" color="warning" size="18"></v-icon>
+            <span class="text-body-2 font-weight-medium">连续 {{ reviewData.streakDays }} 天</span>
+          </div>
+          <v-btn
+            variant="tonal"
+            color="success"
+            rounded="lg"
+            size="small"
+            @click="navigateTo('/review')"
+          >
+            开始复习
+            <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
+          </v-btn>
+        </div>
+      </div>
+
+      <!-- 复习进度和卡片组 -->
+      <div class="d-flex flex-wrap ga-3">
+        <!-- 今日进度卡片 -->
+        <v-card rounded="lg" border class="review-progress-card">
+          <v-card-text class="d-flex align-center ga-4 pa-3">
+            <div class="text-center">
+              <div class="text-h5 font-weight-bold text-success">
+                {{ reviewData.todayCompleted }}/{{ reviewData.todayTotal }}
+              </div>
+              <div class="text-caption text-medium-emphasis">今日进度</div>
+            </div>
+            <v-progress-circular
+              :model-value="
+                reviewData.todayTotal > 0
+                  ? (reviewData.todayCompleted / reviewData.todayTotal) * 100
+                  : 0
+              "
+              color="success"
+              :size="48"
+              :width="5"
+            >
+              <span class="text-caption font-weight-bold"
+                >{{
+                  reviewData.todayTotal > 0
+                    ? Math.round((reviewData.todayCompleted / reviewData.todayTotal) * 100)
+                    : 0
+                }}%</span
+              >
+            </v-progress-circular>
+          </v-card-text>
+        </v-card>
+
+        <!-- 待复习课程列表 -->
+        <v-card
+          v-for="course in reviewData.courses"
+          :key="course.course.id"
+          rounded="lg"
+          border
+          hover
+          class="review-deck-card"
+          @click="navigateTo('/review')"
+        >
+          <v-card-text class="pa-3">
+            <div class="d-flex align-center ga-3">
+              <div class="icon-container-sm flex-shrink-0">
+                <DynamicIcon
+                  :icon="course.course.icon"
+                  default-icon="mdi-book-open-variant"
+                  :size="20"
+                  :color="getColorByString(course.course.name)"
+                />
+              </div>
+              <div class="flex-grow-1" style="min-width: 0">
+                <div
+                  class="text-body-2 font-weight-bold mb-1 text-truncate"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                >
+                  {{ course.course.name }}
+                </div>
+                <div class="text-caption text-medium-emphasis text-truncate">
+                  共 {{ course.cardCount }} 张卡片
+                </div>
+              </div>
+              <v-chip size="small" color="success" variant="tonal" class="flex-shrink-0">
+                {{ course.dueCardCount }}
+              </v-chip>
+            </div>
+          </v-card-text>
+        </v-card>
+
+        <!-- 没有数据时显示占位卡片 -->
+        <v-card
+          v-if="reviewData.courses.length === 0"
+          rounded="lg"
+          border
+          class="review-deck-card empty-placeholder-card"
+          @click="navigateTo('/courses')"
+        >
+          <v-card-text class="pa-3">
+            <div class="d-flex align-center ga-3">
+              <div class="icon-container-sm flex-shrink-0 empty-icon-container">
+                <v-icon icon="mdi-cards-outline" color="grey-lighten-1" size="20"></v-icon>
+              </div>
+              <div class="flex-grow-1" style="min-width: 0">
+                <div class="text-body-2 font-weight-bold mb-1 text-truncate text-grey-lighten-1">
+                  暂无复习卡片
+                </div>
+                <div class="text-caption text-grey-lighten-1 text-truncate">
+                  学习课程后会自动添加
+                </div>
+              </div>
+              <v-icon icon="mdi-arrow-right" color="grey-lighten-1" size="16"></v-icon>
+            </div>
+          </v-card-text>
+        </v-card>
+      </div>
     </div>
 
     <!-- 热门区域 -->
