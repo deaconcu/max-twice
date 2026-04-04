@@ -252,45 +252,9 @@ void homeLoading
           </div>
         </div>
 
-        <!-- 右侧：平台数据 + 热力图 -->
-        <div class="d-flex align-center ga-6 flex-shrink-0">
-          <!-- 平台数据 -->
-          <div class="d-none d-md-flex align-center ga-6">
-            <div class="text-center">
-              <div class="text-subtitle-1 font-weight-bold text-primary">
-                {{ platformStats.rolePathCount }}
-              </div>
-              <div class="text-caption text-medium-emphasis">职业方向</div>
-            </div>
-            <div class="text-center">
-              <div class="text-subtitle-1 font-weight-bold text-primary">
-                {{ platformStats.roadmapCount }}
-              </div>
-              <div class="text-caption text-medium-emphasis">学习路线</div>
-            </div>
-            <div class="text-center">
-              <div class="text-subtitle-1 font-weight-bold text-primary">
-                {{ platformStats.courseCount }}
-              </div>
-              <div class="text-caption text-medium-emphasis">门课程</div>
-            </div>
-            <div class="text-center">
-              <div class="text-subtitle-1 font-weight-bold text-primary">
-                {{ platformStats.knowledgeNodeCount.toLocaleString() }}
-              </div>
-              <div class="text-caption text-medium-emphasis">知识节点</div>
-            </div>
-            <div class="text-center">
-              <div class="text-subtitle-1 font-weight-bold text-primary">
-                {{ platformStats.articleCount.toLocaleString() }}
-              </div>
-              <div class="text-caption text-medium-emphasis">篇文章</div>
-            </div>
-          </div>
-          <!-- 热力图 -->
-          <div class="d-none d-lg-block">
-            <ActivityHeatmap :months="12" />
-          </div>
+        <!-- 右侧：热力图 -->
+        <div class="d-none d-lg-flex align-center flex-shrink-0">
+          <ActivityHeatmap :months="12" />
         </div>
       </div>
     </div>
@@ -306,12 +270,17 @@ void homeLoading
             </v-avatar>
           </v-badge>
           <div class="flex-grow-1">
-            <h2
-              class="text-h6 text-md-h5 font-weight-bold"
-              :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-            >
-              {{ quickLinks[0].title }}
-            </h2>
+            <div class="d-flex align-center justify-space-between">
+              <h2
+                class="text-h6 text-md-h5 font-weight-bold"
+                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+              >
+                {{ quickLinks[0].title }}
+              </h2>
+              <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
+                平台已有 <span class="text-primary font-weight-bold">{{ platformStats.rolePathCount }}</span> 个职业方向
+              </span>
+            </div>
             <p class="text-body-2 text-medium-emphasis ma-0 mt-1">
               {{ t('home.guideSubtitle') }}
               <a
@@ -342,10 +311,15 @@ void homeLoading
               >
                 {{ quickLinks[1].title }}
               </h2>
-              <v-btn variant="text" size="small" color="primary" rounded="lg" @click="navigateTo('/role')">
-                查看全部
-                <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
-              </v-btn>
+              <div class="d-flex align-center ga-4">
+                <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
+                  共 <span class="text-primary font-weight-bold">{{ platformStats.roadmapCount }}</span> 条学习路线
+                </span>
+                <v-btn variant="text" size="small" color="primary" rounded="lg" @click="navigateTo('/role')">
+                  查看全部
+                  <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
+                </v-btn>
+              </div>
             </div>
             <p class="text-body-2 text-medium-emphasis ma-0 mt-1">
               {{ quickLinks[1].description }}
@@ -432,10 +406,15 @@ void homeLoading
               >
                 {{ quickLinks[2].title }}
               </h2>
-              <v-btn variant="text" size="small" color="primary" rounded="lg" @click="navigateTo('/courses')">
-                浏览全部
-                <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
-              </v-btn>
+              <div class="d-flex align-center ga-4">
+                <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
+                  共 <span class="text-primary font-weight-bold">{{ platformStats.courseCount }}</span> 门课程，<span class="text-primary font-weight-bold">{{ platformStats.knowledgeNodeCount.toLocaleString() }}</span> 个知识节点，<span class="text-primary font-weight-bold">{{ platformStats.articleCount.toLocaleString() }}</span> 篇文章
+                </span>
+                <v-btn variant="text" size="small" color="primary" rounded="lg" @click="navigateTo('/courses')">
+                  浏览全部
+                  <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
+                </v-btn>
+              </div>
             </div>
             <p
               class="text-body-2 text-medium-emphasis ma-0 mt-1"
