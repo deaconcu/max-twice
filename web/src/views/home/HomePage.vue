@@ -305,11 +305,9 @@ void homeLoading
       <!-- 模块标题 -->
       <div class="section-header mb-4">
         <div class="d-flex align-center ga-4 mb-3">
-          <v-badge content="1" :color="quickLinks[0].color" offset-x="4" offset-y="4">
-            <v-avatar :color="quickLinks[0].color" size="48" rounded="lg">
-              <v-icon :icon="quickLinks[0].icon" color="white" size="26" />
-            </v-avatar>
-          </v-badge>
+          <v-avatar :color="quickLinks[0].color" size="48" rounded="lg">
+            <span class="text-white font-weight-bold text-h6">1</span>
+          </v-avatar>
           <div class="flex-grow-1">
             <div class="d-flex align-center justify-space-between">
               <h2
@@ -392,11 +390,9 @@ void homeLoading
       <!-- 模块标题 -->
       <div class="section-header mb-4">
         <div class="d-flex align-center ga-4 mb-3">
-          <v-badge content="2" :color="quickLinks[1].color" offset-x="4" offset-y="4">
-            <v-avatar :color="quickLinks[1].color" size="48" rounded="lg">
-              <v-icon :icon="quickLinks[1].icon" color="white" size="26" />
-            </v-avatar>
-          </v-badge>
+          <v-avatar :color="quickLinks[1].color" size="48" rounded="lg">
+            <span class="text-white font-weight-bold text-h6">2</span>
+          </v-avatar>
           <div class="flex-grow-1">
             <div class="d-flex align-center justify-space-between">
               <h2
@@ -505,11 +501,9 @@ void homeLoading
       <!-- 模块标题 -->
       <div class="section-header mb-4">
         <div class="d-flex align-center ga-4 mb-3">
-          <v-badge content="3" :color="quickLinks[2].color" offset-x="4" offset-y="4">
-            <v-avatar :color="quickLinks[2].color" size="48" rounded="lg">
-              <v-icon :icon="quickLinks[2].icon" color="white" size="26" />
-            </v-avatar>
-          </v-badge>
+          <v-avatar :color="quickLinks[2].color" size="48" rounded="lg">
+            <span class="text-white font-weight-bold text-h6">3</span>
+          </v-avatar>
           <div class="flex-grow-1">
             <div class="d-flex align-center justify-space-between">
               <h2
@@ -619,11 +613,9 @@ void homeLoading
       <!-- 模块标题 -->
       <div class="section-header mb-4">
         <div class="d-flex align-center ga-4 mb-3">
-          <v-badge content="4" :color="quickLinks[3].color" offset-x="4" offset-y="4">
-            <v-avatar :color="quickLinks[3].color" size="48" rounded="lg">
-              <v-icon :icon="quickLinks[3].icon" color="white" size="26" />
-            </v-avatar>
-          </v-badge>
+          <v-avatar :color="quickLinks[3].color" size="48" rounded="lg">
+            <span class="text-white font-weight-bold text-h6">4</span>
+          </v-avatar>
           <div class="flex-grow-1">
             <div class="d-flex align-center justify-space-between">
               <div class="d-flex align-center ga-3">
@@ -765,9 +757,9 @@ void homeLoading
           <v-btn
             v-for="role in hotProfessions"
             :key="role.id"
-            variant="tonal"
-            color="default"
+            variant="flat"
             rounded="lg"
+            class="hot-item-btn"
             @click="openRole(role.roleId)"
           >
             <DynamicIcon
@@ -798,9 +790,9 @@ void homeLoading
           <v-btn
             v-for="course in hotCourses"
             :key="course.id"
-            variant="tonal"
-            color="default"
+            variant="flat"
             rounded="lg"
+            class="hot-item-btn"
             @click="openCourse(course.id)"
           >
             <DynamicIcon
@@ -928,6 +920,20 @@ void homeLoading
 /* 空状态引导文字 */
 .empty-guide-text {
   line-height: 2;
+}
+
+/* 热门职业/课程按钮 */
+.hot-item-btn {
+  background-color: rgb(var(--v-theme-surface-variant)) !important;
+  text-transform: none !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  padding: 0 16px !important;
+  height: 36px !important;
+}
+
+.hot-item-btn:hover {
+  background-color: rgba(var(--v-theme-primary), 0.08) !important;
 }
 
 /* 响应式调整 */
