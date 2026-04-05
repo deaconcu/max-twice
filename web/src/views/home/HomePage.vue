@@ -371,16 +371,38 @@ void homeLoading
         </div>
       </template>
 
-      <!-- 空状态：新手引导 -->
+      <!-- 空状态：展示推荐角色 -->
       <template v-else>
-        <div class="empty-guide-text">
-          <span class="text-body-2 text-medium-emphasis">试试添加新角色：</span>
-          <template v-for="(profession, index) in beginnerProfessions" :key="profession.id">
-            <a class="text-body-2 link" @click="openRole(profession.id)">{{ profession.name }}</a>
-            <span v-if="index < beginnerProfessions.length - 1" class="text-body-2 text-medium-emphasis">，</span>
-          </template>
-          <span class="text-body-2 text-medium-emphasis"> 或者</span>
-          <a class="text-body-2 link font-weight-medium" @click="navigateTo('/role')">探索更多</a>
+        <div class="d-flex flex-wrap ga-3">
+          <v-chip
+            v-for="profession in beginnerProfessions"
+            :key="profession.id"
+            variant="outlined"
+            size="large"
+            rounded="lg"
+            class="profession-chip profession-chip--placeholder"
+            @click="openRole(profession.id)"
+          >
+            <DynamicIcon
+              :icon="profession.icon"
+              default-icon="mdi-briefcase-variant"
+              :size="18"
+              :color="getColorByString(profession.name)"
+              class="mr-2"
+            />
+            {{ profession.name }}
+          </v-chip>
+          <!-- 探索更多 -->
+          <v-chip
+            variant="outlined"
+            size="large"
+            rounded="lg"
+            class="profession-chip profession-chip--placeholder"
+            @click="navigateTo('/role')"
+          >
+            探索更多
+            <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
+          </v-chip>
         </div>
       </template>
     </div>
@@ -481,18 +503,54 @@ void homeLoading
         </v-row>
       </template>
 
-      <!-- 空状态：新手引导 -->
+      <!-- 空状态：展示推荐路线图 -->
       <template v-else>
-        <div class="empty-guide-text">
-          <span class="text-body-2 text-medium-emphasis">试试添加路线图：</span>
-          <template v-for="(roadmap, index) in beginnerRoadmaps" :key="roadmap.id">
-            <a class="text-body-2 link" @click="openRoadmap(roadmap.id)">{{ roadmap.name }}</a>
-            <span v-if="index < beginnerRoadmaps.length - 1" class="text-body-2 text-medium-emphasis">，</span>
-          </template>
-          <span class="text-body-2 text-medium-emphasis">，或者在</span>
-          <a class="text-body-2 link font-weight-medium" @click="navigateTo('/role')">角色中心</a>
-          <span class="text-body-2 text-medium-emphasis">选择学习你感兴趣的路线</span>
-        </div>
+        <v-row>
+          <v-col v-for="roadmap in beginnerRoadmaps" :key="roadmap.id" cols="12" sm="6" md="4" lg="3">
+            <v-card rounded="xl" hover class="h-100 module-card module-card--placeholder" @click="openRoadmap(roadmap.id)">
+              <v-card-text class="pa-4 pa-sm-5">
+                <div class="d-flex align-center ga-3">
+                  <div class="icon-container flex-shrink-0">
+                    <DynamicIcon
+                      :icon="roadmap.icon"
+                      default-icon="mdi-briefcase-variant"
+                      :size="24"
+                      :color="roadmap.iconColor"
+                    />
+                  </div>
+                  <div class="flex-grow-1" style="min-width: 0">
+                    <div
+                      class="text-subtitle-1 font-weight-bold text-truncate"
+                      :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                    >
+                      {{ roadmap.name }}
+                    </div>
+                    <div class="text-caption text-medium-emphasis">
+                      {{ roadmap.nodeCount }} 个知识节点
+                    </div>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <!-- 探索更多 -->
+          <v-col cols="12" sm="6" md="4" lg="3">
+            <v-card
+              rounded="xl"
+              class="h-100 empty-placeholder-card"
+              @click="navigateTo('/role')"
+            >
+              <v-card-text class="pa-4 pa-sm-5 d-flex align-center justify-center h-100">
+                <div class="d-flex align-center ga-3">
+                  <v-avatar color="primary" size="48" variant="tonal">
+                    <v-icon icon="mdi-compass" size="24" />
+                  </v-avatar>
+                  <div class="text-body-2 text-medium-emphasis">探索更多路线</div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
       </template>
     </div>
 
@@ -594,17 +652,54 @@ void homeLoading
         </v-row>
       </template>
 
-      <!-- 空状态：新手引导 -->
+      <!-- 空状态：展示推荐课程 -->
       <template v-else>
-        <div class="empty-guide-text">
-          <span class="text-body-2 text-medium-emphasis">尝试开始学习课程：</span>
-          <template v-for="(course, index) in beginnerCourses" :key="course.id">
-            <a class="text-body-2 link" @click="openCourse(course.id)">{{ course.name }}</a>
-            <span v-if="index < beginnerCourses.length - 1" class="text-body-2 text-medium-emphasis">，</span>
-          </template>
-          <span class="text-body-2 text-medium-emphasis">，或者</span>
-          <a class="text-body-2 link font-weight-medium" @click="navigateTo('/courses')">浏览更多</a>
-        </div>
+        <v-row>
+          <v-col v-for="course in beginnerCourses" :key="course.id" cols="12" sm="6" md="4" lg="3">
+            <v-card rounded="xl" hover class="h-100 module-card module-card--placeholder" @click="openCourse(course.id)">
+              <v-card-text class="pa-4 pa-sm-5">
+                <div class="d-flex align-center ga-3">
+                  <div class="icon-container flex-shrink-0">
+                    <DynamicIcon
+                      :icon="course.icon"
+                      default-icon="mdi-book-open-variant"
+                      :size="24"
+                      :color="course.iconColor"
+                    />
+                  </div>
+                  <div class="flex-grow-1" style="min-width: 0">
+                    <div
+                      class="text-subtitle-1 font-weight-bold text-truncate"
+                      :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                    >
+                      {{ course.name }}
+                    </div>
+                    <div class="text-caption text-medium-emphasis text-truncate">
+                      点击开始学习
+                    </div>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <!-- 浏览更多 -->
+          <v-col cols="12" sm="6" md="4" lg="3">
+            <v-card
+              rounded="xl"
+              class="h-100 empty-placeholder-card"
+              @click="navigateTo('/courses')"
+            >
+              <v-card-text class="pa-4 pa-sm-5 d-flex align-center justify-center h-100">
+                <div class="d-flex align-center ga-3">
+                  <v-avatar color="primary" size="48" variant="tonal">
+                    <v-icon icon="mdi-compass" size="24" />
+                  </v-avatar>
+                  <div class="text-body-2 text-medium-emphasis">浏览更多课程</div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
       </template>
     </div>
 
@@ -733,12 +828,24 @@ void homeLoading
         </div>
       </template>
 
-      <!-- 空状态：新手引导 -->
+      <!-- 空状态：引导去学习 -->
       <template v-else>
-        <div class="empty-guide-text">
-          <span class="text-body-2 text-medium-emphasis">学习课程时会自动生成记忆卡片，系统会在最佳时机提醒你复习。</span>
-          <a class="text-body-2 link font-weight-medium" @click="navigateTo('/courses')">先去学习课程</a>
-        </div>
+        <v-card
+          rounded="xl"
+          class="module-card module-card--placeholder"
+          style="max-width: 400px"
+          @click="navigateTo('/courses')"
+        >
+          <v-card-text class="pa-5 d-flex align-center ga-4">
+            <v-avatar color="success" size="48" variant="tonal">
+              <v-icon icon="mdi-lightbulb-outline" size="24" />
+            </v-avatar>
+            <div>
+              <div class="text-subtitle-1 font-weight-bold mb-1">还没有复习卡片</div>
+              <div class="text-body-2 text-medium-emphasis">学习课程时会自动生成，点击去学习</div>
+            </div>
+          </v-card-text>
+        </v-card>
       </template>
     </div>
 
@@ -854,6 +961,15 @@ void homeLoading
   border-color: rgb(var(--v-theme-primary));
 }
 
+/* 占位卡片（虚线边框） */
+.module-card--placeholder {
+  border: 1px dashed rgb(var(--v-theme-outline)) !important;
+}
+
+.module-card--placeholder:hover {
+  border-color: rgb(var(--v-theme-primary)) !important;
+}
+
 /* 图标容器 */
 .icon-container {
   width: 48px;
@@ -915,6 +1031,15 @@ void homeLoading
 
 .profession-chip:hover {
   transform: translateY(-1px);
+}
+
+/* 占位标签（虚线边框） */
+.profession-chip--placeholder {
+  border: 1px dashed rgb(var(--v-theme-outline)) !important;
+}
+
+.profession-chip--placeholder:hover {
+  border-color: rgb(var(--v-theme-primary)) !important;
 }
 
 /* 空状态引导文字 */
