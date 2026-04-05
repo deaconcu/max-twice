@@ -456,8 +456,8 @@ public class SystemProperties {
         /**
          * 职业排行榜同步Cron表达式
          */
-        private String professionRankingSyncCron = "0 15 * * * ?";
-        
+        private String roleRankingSyncCron = "0 15 * * * ?";
+
         /**
          * 课程排行榜同步Cron表达式
          */
@@ -471,17 +471,17 @@ public class SystemProperties {
         /**
          * 是否启用职业排行榜定时同步
          */
-        private boolean enableProfessionRankingSync = true;
-        
+        private boolean enableRoleRankingSync = true;
+
         /**
          * 是否启用课程排行榜定时同步
          */
         private boolean enableCourseRankingSync = true;
 
         /**
-         * 是否启用应用启动时初始化
+         * 是否启用应用启动时初始化（职业排行榜）
          */
-        private boolean enableStartupInitialization = true;
+        private boolean enableRoleRankingStartupInit = true;
 
         /**
          * 数据同步批处理大小

@@ -55,10 +55,4 @@ public class BookmarkDomainService {
         return bookmarkDataService.getBookmarkedIds(userId, ids, contentType.value());
     }
 
-    /**
-     * 获取用户某类型的所有收藏ID
-     */
-    public List<Long> getBookmarkedIdsByType(long userId, Enums.ContentType contentType) {
-        return bookmarkDataService.getBookmarkedIdsByType(userId, contentType.value());
-    }
 }

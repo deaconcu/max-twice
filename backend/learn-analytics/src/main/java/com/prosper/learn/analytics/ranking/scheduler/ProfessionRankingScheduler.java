@@ -106,7 +106,7 @@ public class ProfessionRankingScheduler {
      */
     @Scheduled(cron = "0 15 * * * ?")
     public void syncProfessionStats() {
-        if (!systemProperties.getScheduler().isEnableProfessionRankingSync()) {
+        if (!systemProperties.getScheduler().isEnableRoleRankingSync()) {
             return;
         }
         
@@ -139,7 +139,7 @@ public class ProfessionRankingScheduler {
      */
     @Scheduled(initialDelay = 10000, fixedDelay = Long.MAX_VALUE)
     public void initializeProfessionStats() {
-        if (!systemProperties.getScheduler().isEnableStartupInitialization()) {
+        if (!systemProperties.getScheduler().isEnableRoleRankingStartupInit()) {
             return;
         }
         

@@ -2,8 +2,11 @@ package com.prosper.learn.application.dto.response.home;
 
 import com.prosper.learn.application.dto.response.PlatformStatsDTO;
 import com.prosper.learn.application.dto.response.ReviewSummaryDTO;
+import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.course.CourseFullDTO;
+import com.prosper.learn.application.dto.response.profession.ProfessionBriefDTO;
 import com.prosper.learn.application.dto.response.profession.ProfessionDTO;
+import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.dto.response.userlearning.UserLearningDTO;
 import lombok.Data;
 
@@ -27,6 +30,11 @@ public class HomePageDTO {
     private UserLearningStatsDTO userStats;
 
     /**
+     * 收藏的职业列表（最新收藏的在前，最多10个）
+     */
+    private List<ProfessionDTO> bookmarkedProfessions;
+
+    /**
      * 正在学习的职业路线（带进度）
      */
     private List<UserLearningDTO<Object>> learningProfessions;
@@ -42,12 +50,27 @@ public class HomePageDTO {
     private ReviewSummaryDTO reviewSummary;
 
     /**
-     * 推荐职业列表
+     * 热门职业榜单
      */
-    private List<ProfessionDTO> recommendedProfessions;
+    private List<ProfessionDTO> hotProfessions;
 
     /**
-     * 推荐课程列表
+     * 热门课程榜单
      */
-    private List<CourseFullDTO> recommendedCourses;
+    private List<CourseFullDTO> hotCourses;
+
+    /**
+     * 新手推荐职业（从系统配置读取）
+     */
+    private List<ProfessionBriefDTO> beginnerProfessions;
+
+    /**
+     * 新手推荐路线图（从系统配置读取）
+     */
+    private List<RoadmapSummaryDTO> beginnerRoadmaps;
+
+    /**
+     * 新手推荐课程（从系统配置读取）
+     */
+    private List<CourseBriefDTO> beginnerCourses;
 }

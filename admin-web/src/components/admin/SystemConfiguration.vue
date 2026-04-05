@@ -8,19 +8,21 @@ const showSnackbar = inject<(message: string, type?: string) => void>('showSnack
 const systemConfigStore = useSystemConfigStore()
 
 // 配置项类型
-type ConfigKey = 'courseCategories' | 'professionCategories' | 'rejectReasons' | 'banReasons'
+type ConfigKey = 'courseCategories' | 'professionCategories' | 'rejectReasons' | 'banReasons' | 'homepageRecommendations'
 
 // 响应式数据
 const courseCategories = ref<string>('')
 const professionCategories = ref<string>('')
 const rejectReasons = ref<string>('')
 const banReasons = ref<string>('')
+const homepageRecommendations = ref<string>('')
 const frontendUrl = ref<string>('')
 const frontendUrlOriginal = ref<string>('')  // 原始值，用于对比是否修改
 const courseUpdatedAt = ref<string>('')
 const professionUpdatedAt = ref<string>('')
 const rejectReasonsUpdatedAt = ref<string>('')
 const banReasonsUpdatedAt = ref<string>('')
+const homepageRecommendationsUpdatedAt = ref<string>('')
 const frontendUrlUpdatedAt = ref<string>('')
 
 // 对话框状态
@@ -57,6 +59,9 @@ const { loading: loadingConfig } = useFetch({
         } else if (item.key === 'banReasons') {
           banReasons.value = formatted
           banReasonsUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'homepage_recommendations') {
+          homepageRecommendations.value = formatted
+          homepageRecommendationsUpdatedAt.value = item.updatedAt
         } else if (item.key === 'frontendUrl') {
           frontendUrl.value = item.value
           frontendUrlOriginal.value = item.value
@@ -78,12 +83,14 @@ const openDialog = (key: ConfigKey): void => {
     professionCategories: '职业分类',
     rejectReasons: '拒绝理由',
     banReasons: '屏蔽理由',
+    homepageRecommendations: '首页新手推荐',
   }
   const valueMap: Record<ConfigKey, string> = {
     courseCategories: courseCategories.value,
     professionCategories: professionCategories.value,
     rejectReasons: rejectReasons.value,
     banReasons: banReasons.value,
+    homepageRecommendations: homepageRecommendations.value,
   }
   dialogTitle.value = titleMap[key]
   dialogValue.value = valueMap[key]
@@ -144,6 +151,9 @@ const { execute: saveConfig, loading: saving } = useMutation(
             systemConfigStore.setBanReasons(parsed)
           }
         } catch { /* ignore */ }
+      } else if (data.key === 'homepage_recommendations') {
+        homepageRecommendations.value = dialogValue.value
+        homepageRecommendationsUpdatedAt.value = now
       }
       dialog.value = false
     },
@@ -155,7 +165,15 @@ const saveDialogConfig = async (): Promise<void> => {
     showSnackbar?.('JSON 格式无效', 'error')
     return
   }
-  await saveConfig({ key: dialogKey.value, value: dialogValue.value })
+  // 映射前端 key 到后端 key
+  const keyMap: Record<ConfigKey, string> = {
+    courseCategories: 'courseCategories',
+    professionCategories: 'professionCategories',
+    rejectReasons: 'rejectReasons',
+    banReasons: 'banReasons',
+    homepageRecommendations: 'homepage_recommendations',
+  }
+  await saveConfig({ key: keyMap[dialogKey.value], value: dialogValue.value })
 }
 
 // 保存前端 URL
@@ -251,6 +269,20 @@ const saveFrontendUrl = async (): Promise<void> => {
             rounded="lg"
             class="config-item mb-2 px-4"
             @click="openDialog('banReasons')"
+          >
+            <template #append>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
+            </template>
+          </v-list-item>
+
+          <!-- 首页新手推荐 -->
+          <v-list-item
+            prepend-icon="mdi-star-outline"
+            title="首页新手推荐"
+            :subtitle="homepageRecommendationsUpdatedAt ? `上次更新: ${new Date(homepageRecommendationsUpdatedAt).toLocaleString('zh-CN')}` : '首页空状态时显示的推荐职业、路线图、课程'"
+            rounded="lg"
+            class="config-item mb-2 px-4"
+            @click="openDialog('homepageRecommendations')"
           >
             <template #append>
               <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>

@@ -2,6 +2,7 @@ import type { PlatformStats } from './stats'
 import type { Profession } from './profession'
 import type { Course } from './course'
 import type { ReviewSummary } from './memory'
+import type { Roadmap } from './roadmap'
 
 /**
  * 首页相关类型定义
@@ -48,9 +49,13 @@ export interface CourseWithStats extends Course {
 export interface HomePage {
   platformStats: PlatformStats // 平台统计
   userStats: UserLearningStats // 用户学习统计
+  bookmarkedProfessions: Profession[] // 收藏的职业（最新在前，最多10个）
   learningProfessions: UserLearning[] // 正在学习的职业路线
   learningCourses: UserLearning[] // 正在学习的课程
   reviewSummary: ReviewSummary // 复习概览
-  recommendedProfessions: Profession[] // 推荐职业
-  recommendedCourses: CourseWithStats[] // 推荐课程
+  hotProfessions: Profession[] // 热门职业榜单
+  hotCourses: CourseWithStats[] // 热门课程榜单
+  beginnerProfessions: Profession[] // 新手推荐职业
+  beginnerRoadmaps: Roadmap[] // 新手推荐路线图
+  beginnerCourses: Course[] // 新手推荐课程
 }

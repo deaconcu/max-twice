@@ -64,13 +64,6 @@ public class BookmarkDataService {
     }
 
     /**
-     * 获取用户某类型的所有收藏ID
-     */
-    public List<Long> getBookmarkedIdsByType(long userId, int objectType) {
-        return bookmarkMapper.getBookmarkedIdsByType(userId, objectType);
-    }
-
-    /**
      * 检查是否已收藏
      */
     public boolean isBookmarked(long userId, long objectId, int objectType) {

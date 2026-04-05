@@ -39,9 +39,6 @@ public interface BookmarkMapper {
     @Select("SELECT COUNT(*) FROM bookmark WHERE user_id = #{userId} AND object_type = #{objectType}")
     int countByUser(@Param("userId") long userId, @Param("objectType") int objectType);
 
-    @Select("SELECT object_id FROM bookmark WHERE user_id = #{userId} AND object_type = #{objectType}")
-    List<Long> getBookmarkedIdsByType(@Param("userId") long userId, @Param("objectType") int objectType);
-
     @Select("SELECT EXISTS(SELECT 1 FROM bookmark WHERE user_id = #{userId} AND object_id = #{objectId} AND object_type = #{objectType})")
     boolean isBookmarked(@Param("userId") long userId, @Param("objectId") long objectId, @Param("objectType") int objectType);
 }
