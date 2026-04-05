@@ -305,9 +305,7 @@ void homeLoading
       <!-- 模块标题 -->
       <div class="section-header mb-4">
         <div class="d-flex align-center ga-4 mb-3">
-          <v-avatar :color="quickLinks[0].color" size="48" rounded="lg">
-            <span class="text-white font-weight-bold text-h6">1</span>
-          </v-avatar>
+          <span class="module-number module-number--warning">1</span>
           <div class="flex-grow-1">
             <div class="d-flex align-center justify-space-between">
               <h2
@@ -413,9 +411,7 @@ void homeLoading
       <!-- 模块标题 -->
       <div class="section-header mb-4">
         <div class="d-flex align-center ga-4 mb-3">
-          <v-avatar :color="quickLinks[1].color" size="48" rounded="lg">
-            <span class="text-white font-weight-bold text-h6">2</span>
-          </v-avatar>
+          <span class="module-number module-number--primary">2</span>
           <div class="flex-grow-1">
             <div class="d-flex align-center justify-space-between">
               <h2
@@ -568,9 +564,7 @@ void homeLoading
       <!-- 模块标题 -->
       <div class="section-header mb-4">
         <div class="d-flex align-center ga-4 mb-3">
-          <v-avatar :color="quickLinks[2].color" size="48" rounded="lg">
-            <span class="text-white font-weight-bold text-h6">3</span>
-          </v-avatar>
+          <span class="module-number module-number--info">3</span>
           <div class="flex-grow-1">
             <div class="d-flex align-center justify-space-between">
               <h2
@@ -725,9 +719,7 @@ void homeLoading
       <!-- 模块标题 -->
       <div class="section-header mb-4">
         <div class="d-flex align-center ga-4 mb-3">
-          <v-avatar :color="quickLinks[3].color" size="48" rounded="lg">
-            <span class="text-white font-weight-bold text-h6">4</span>
-          </v-avatar>
+          <span class="module-number module-number--success">4</span>
           <div class="flex-grow-1">
             <div class="d-flex align-center justify-space-between">
               <div class="d-flex align-center ga-3">
@@ -870,12 +862,12 @@ void homeLoading
     <v-row class="mb-6 mb-md-10">
       <!-- 左列：热门职业 -->
       <v-col cols="12" md="6">
-        <div class="d-flex align-center justify-space-between mb-4">
+        <div class="d-flex align-baseline ga-5 mb-4">
           <h2 class="text-h6 text-sm-h5 font-weight-bold">热门职业</h2>
-          <v-btn variant="text" size="small" color="primary" @click="navigateTo('/role')">
+          <a class="link text-primary text-caption d-inline-flex align-center" @click="navigateTo('/role')">
             更多
-            <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
-          </v-btn>
+            <v-icon icon="mdi-arrow-right" size="12" class="ml-1" />
+          </a>
         </div>
         <div class="d-flex flex-wrap ga-2">
           <v-btn
@@ -903,12 +895,12 @@ void homeLoading
 
       <!-- 右列：热门课程 -->
       <v-col cols="12" md="6">
-        <div class="d-flex align-center justify-space-between mb-4">
+        <div class="d-flex align-baseline ga-5 mb-4">
           <h2 class="text-h6 text-sm-h5 font-weight-bold">热门课程</h2>
-          <v-btn variant="text" size="small" color="primary" @click="navigateTo('/courses')">
+          <a class="link text-primary text-caption d-inline-flex align-center" @click="navigateTo('/courses')">
             更多
-            <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
-          </v-btn>
+            <v-icon icon="mdi-arrow-right" size="12" class="ml-1" />
+          </a>
         </div>
         <div class="d-flex flex-wrap ga-2">
           <v-btn
@@ -1040,24 +1032,30 @@ void homeLoading
   border-color: rgb(var(--v-theme-primary)) !important;
 }
 
-/* 模块标题区域的角标样式 */
-:deep(.section-header .v-badge__badge) {
-  border: 2px solid rgb(var(--v-theme-surface));
+/* 模块序号 */
+.module-number {
+  font-family: 'Didot', 'Bodoni MT', 'Times New Roman', serif;
+  font-size: 52px;
   font-weight: 700;
-  font-size: 14px;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
+  font-style: italic;
+  flex-shrink: 0;
+  min-width: 28px;
 }
 
-/* 模块标题区域的角标样式 */
-:deep(.section-header .v-badge__badge) {
-  border: 2px solid rgb(var(--v-theme-surface));
-  font-weight: 700;
-  font-size: 14px;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
+.module-number--warning {
+  color: rgba(var(--v-theme-warning), 0.85);
+}
+
+.module-number--primary {
+  color: rgba(var(--v-theme-primary), 0.85);
+}
+
+.module-number--info {
+  color: rgba(var(--v-theme-info), 0.85);
+}
+
+.module-number--success {
+  color: rgba(156, 39, 176, 0.85);
 }
 
 /* 职业标签样式 */
