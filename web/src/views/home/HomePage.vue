@@ -373,7 +373,7 @@ void homeLoading
 
       <!-- 空状态：展示推荐角色 -->
       <template v-else>
-        <div class="d-flex flex-wrap ga-3">
+        <div class="d-flex flex-wrap ga-3 align-center">
           <v-chip
             v-for="profession in beginnerProfessions"
             :key="profession.id"
@@ -391,6 +391,7 @@ void homeLoading
               class="mr-2"
             />
             {{ profession.name }}
+            <v-chip size="x-small" color="grey" variant="tonal" class="ml-2">示例</v-chip>
           </v-chip>
           <!-- 探索更多 -->
           <v-chip
@@ -507,7 +508,15 @@ void homeLoading
       <template v-else>
         <v-row>
           <v-col v-for="roadmap in beginnerRoadmaps" :key="roadmap.id" cols="12" sm="6" md="4" lg="3">
-            <v-card rounded="xl" hover class="h-100 module-card module-card--placeholder" @click="openRoadmap(roadmap.id)">
+            <v-card rounded="xl" hover class="h-100 module-card module-card--placeholder position-relative" @click="openRoadmap(roadmap.id)">
+              <v-chip
+                size="x-small"
+                color="grey"
+                variant="tonal"
+                class="recommend-tag"
+              >
+                示例
+              </v-chip>
               <v-card-text class="pa-4 pa-sm-5">
                 <div class="d-flex align-center ga-3">
                   <div class="icon-container flex-shrink-0">
@@ -523,7 +532,7 @@ void homeLoading
                       class="text-subtitle-1 font-weight-bold text-truncate"
                       :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                     >
-                      {{ roadmap.name }}
+                      {{ roadmap.name }}的学习路径
                     </div>
                     <div class="text-caption text-medium-emphasis">
                       {{ roadmap.nodeCount }} 个知识节点
@@ -656,7 +665,15 @@ void homeLoading
       <template v-else>
         <v-row>
           <v-col v-for="course in beginnerCourses" :key="course.id" cols="12" sm="6" md="4" lg="3">
-            <v-card rounded="xl" hover class="h-100 module-card module-card--placeholder" @click="openCourse(course.id)">
+            <v-card rounded="xl" hover class="h-100 module-card module-card--placeholder position-relative" @click="openCourse(course.id)">
+              <v-chip
+                size="x-small"
+                color="grey"
+                variant="tonal"
+                class="recommend-tag"
+              >
+                示例
+              </v-chip>
               <v-card-text class="pa-4 pa-sm-5">
                 <div class="d-flex align-center ga-3">
                   <div class="icon-container flex-shrink-0">
@@ -963,7 +980,7 @@ void homeLoading
 
 /* 占位卡片（虚线边框） */
 .module-card--placeholder {
-  border: 1px dashed rgb(var(--v-theme-outline)) !important;
+  border: 1px dashed rgba(var(--v-theme-on-surface), 0.25) !important;
 }
 
 .module-card--placeholder:hover {
@@ -990,6 +1007,13 @@ void homeLoading
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 推荐标签 */
+.recommend-tag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 
 /* 复习进度卡片 */
@@ -1020,7 +1044,20 @@ void homeLoading
 :deep(.section-header .v-badge__badge) {
   border: 2px solid rgb(var(--v-theme-surface));
   font-weight: 700;
-  font-size: 12px;
+  font-size: 14px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+}
+
+/* 模块标题区域的角标样式 */
+:deep(.section-header .v-badge__badge) {
+  border: 2px solid rgb(var(--v-theme-surface));
+  font-weight: 700;
+  font-size: 14px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
 }
 
 /* 职业标签样式 */
@@ -1035,7 +1072,7 @@ void homeLoading
 
 /* 占位标签（虚线边框） */
 .profession-chip--placeholder {
-  border: 1px dashed rgb(var(--v-theme-outline)) !important;
+  border: 1px dashed rgba(var(--v-theme-on-surface), 0.25) !important;
 }
 
 .profession-chip--placeholder:hover {
