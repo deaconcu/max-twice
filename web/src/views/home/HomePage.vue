@@ -251,7 +251,7 @@ void homeLoading
 
     <template v-else>
     <!-- 欢迎区域 -->
-    <div class="welcome-section mb-6 mb-md-8">
+    <div class="welcome-section">
       <div
         class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between ga-4 ga-md-6"
       >
@@ -298,6 +298,11 @@ void homeLoading
           <ActivityHeatmap :months="12" />
         </div>
       </div>
+    </div>
+
+    <!-- 学习引导 -->
+    <div class="text-body-1 font-weight-medium text-medium-emphasis mb-6">
+      开始你的学习之旅 ✨
     </div>
 
     <!-- 模块1：我在扮演什么角色 - 收藏的职业 -->
@@ -858,9 +863,8 @@ void homeLoading
       </template>
     </div>
 
-    <!-- 热门区域 -->
+    <!-- 热门区域（暂时隐藏）
     <v-row class="mb-6 mb-md-10">
-      <!-- 左列：热门职业 -->
       <v-col cols="12" md="6">
         <div class="d-flex align-baseline ga-5 mb-4">
           <h2 class="text-h6 text-sm-h5 font-weight-bold">热门职业</h2>
@@ -893,7 +897,6 @@ void homeLoading
         </div>
       </v-col>
 
-      <!-- 右列：热门课程 -->
       <v-col cols="12" md="6">
         <div class="d-flex align-baseline ga-5 mb-4">
           <h2 class="text-h6 text-sm-h5 font-weight-bold">热门课程</h2>
@@ -926,6 +929,7 @@ void homeLoading
         </div>
       </v-col>
     </v-row>
+    -->
     </template>
   </DefaultLayout>
 </template>
@@ -944,7 +948,7 @@ void homeLoading
 /* 欢迎区域 */
 .welcome-section {
   padding-top: 24px;
-  padding-bottom: 32px;
+  padding-bottom: 24px;
 }
 
 @media (max-width: 960px) {
@@ -956,7 +960,7 @@ void homeLoading
 
 @media (min-width: 960px) {
   .welcome-section {
-    padding-bottom: 48px;
+    padding-bottom: 24px;
   }
 }
 

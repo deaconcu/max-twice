@@ -324,7 +324,7 @@ cloudflare:
     # 访问密钥
     secret-access-key: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY:your-secret-access-key}
     # 存储桶名称
-    bucket-name: ${CLOUDFLARE_R2_BUCKET_NAME:maxtwice-images}
+    bucket-name: ${CLOUDFLARE_R2_BUCKET_NAME:max-twice-images}
     # 公开域名
     public-domain: ${CLOUDFLARE_R2_PUBLIC_DOMAIN:https://images.maxtwice.com}
 
@@ -351,6 +351,7 @@ cloudflare:
 logging:
   level:
     com.prosper.learn: INFO
+    com.prosper.learn.infrastructure.image: DEBUG  # R2 上传日志
     com.prosper.learn.persistence.mapper: DEBUG  # MyBatis Mapper SQL日志
     org.springframework.web: DEBUG
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG

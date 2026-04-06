@@ -410,11 +410,14 @@ const handleAvatarUpload = async (event: Event) => {
     // 调用接口：上传图片 + 更新数据库，返回头像地址
     const avatarUrl = await uploadAvatar(file)
 
-    // 通知父组件更新 profileUser
-    if (avatarUrl) {
-      emit('updateAvatar', avatarUrl)
+    // 如果返回 null，说明上传失败
+    if (!avatarUrl) {
+      showSnackbar?.('头像上传失败', 'error')
+      return
     }
 
+    // 通知父组件更新 profileUser
+    emit('updateAvatar', avatarUrl)
     showSnackbar?.('头像更新成功', 'success')
   } catch (error: any) {
     console.error('头像上传失败:', error)
