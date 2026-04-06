@@ -251,54 +251,83 @@
           title="分隔线"
           @click="editor.chain().focus().setHorizontalRule().run()"
         />
+        <v-menu location="bottom" offset="4">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              variant="text"
+              size="small"
+              icon="mdi-table"
+              title="表格"
+            />
+          </template>
+          <v-card rounded="lg" class="table-menu" width="180">
+            <div class="table-menu-items py-1">
+              <div
+                class="table-menu-item"
+                @click="editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()"
+              >
+                <v-icon icon="mdi-table-plus" size="18" class="table-menu-icon" />
+                <span>插入表格</span>
+              </div>
+              <v-divider class="my-1" />
+              <div
+                class="table-menu-item"
+                :class="{ 'table-menu-item--disabled': !editor.can().addRowAfter() }"
+                @click="editor.can().addRowAfter() && editor.chain().focus().addRowAfter().run()"
+              >
+                <v-icon icon="mdi-table-row-plus-after" size="18" class="table-menu-icon" />
+                <span>在下方插入行</span>
+              </div>
+              <div
+                class="table-menu-item"
+                :class="{ 'table-menu-item--disabled': !editor.can().addColumnAfter() }"
+                @click="editor.can().addColumnAfter() && editor.chain().focus().addColumnAfter().run()"
+              >
+                <v-icon icon="mdi-table-column-plus-after" size="18" class="table-menu-icon" />
+                <span>在右侧插入列</span>
+              </div>
+              <v-divider class="my-1" />
+              <div
+                class="table-menu-item"
+                :class="{ 'table-menu-item--disabled': !editor.can().deleteRow() }"
+                @click="editor.can().deleteRow() && editor.chain().focus().deleteRow().run()"
+              >
+                <v-icon icon="mdi-table-row-remove" size="18" class="table-menu-icon" />
+                <span>删除当前行</span>
+              </div>
+              <div
+                class="table-menu-item"
+                :class="{ 'table-menu-item--disabled': !editor.can().deleteColumn() }"
+                @click="editor.can().deleteColumn() && editor.chain().focus().deleteColumn().run()"
+              >
+                <v-icon icon="mdi-table-column-remove" size="18" class="table-menu-icon" />
+                <span>删除当前列</span>
+              </div>
+              <div
+                class="table-menu-item"
+                :class="{ 'table-menu-item--disabled': !editor.can().deleteTable() }"
+                @click="editor.can().deleteTable() && editor.chain().focus().deleteTable().run()"
+              >
+                <v-icon icon="mdi-table-remove" size="18" class="table-menu-icon" />
+                <span>删除表格</span>
+              </div>
+            </div>
+          </v-card>
+        </v-menu>
         <v-btn
           variant="text"
           size="small"
-          icon="mdi-table"
-          title="插入表格"
-          @click="
-            editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-          "
+          icon="mdi-math-integral"
+          title="数学公式"
+          @click="openMathDialog"
         />
         <v-btn
-          :disabled="!editor.can().addRowAfter()"
           variant="text"
           size="small"
-          icon="mdi-table-row-plus-after"
-          title="在下方插入行"
-          @click="editor.chain().focus().addRowAfter().run()"
-        />
-        <v-btn
-          :disabled="!editor.can().addColumnAfter()"
-          variant="text"
-          size="small"
-          icon="mdi-table-column-plus-after"
-          title="在右侧插入列"
-          @click="editor.chain().focus().addColumnAfter().run()"
-        />
-        <v-btn
-          :disabled="!editor.can().deleteRow()"
-          variant="text"
-          size="small"
-          icon="mdi-table-row-remove"
-          title="删除当前行"
-          @click="editor.chain().focus().deleteRow().run()"
-        />
-        <v-btn
-          :disabled="!editor.can().deleteColumn()"
-          variant="text"
-          size="small"
-          icon="mdi-table-column-remove"
-          title="删除当前列"
-          @click="editor.chain().focus().deleteColumn().run()"
-        />
-        <v-btn
-          :disabled="!editor.can().deleteTable()"
-          variant="text"
-          size="small"
-          icon="mdi-table-remove"
-          title="删除表格"
-          @click="editor.chain().focus().deleteTable().run()"
+          icon="mdi-chart-timeline-variant"
+          title="Mermaid 图表"
+          @click="openMermaidDialog"
         />
       </div>
     </div>
@@ -401,11 +430,131 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- 数学公式对话框 -->
+    <v-dialog v-model="mathDialog" max-width="600">
+      <v-card rounded="xl">
+        <v-card-title class="d-flex align-center justify-space-between pa-4">
+          <span class="text-h6">{{ mathEditMode ? '编辑' : '插入' }}数学公式</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="mathDialog = false" />
+        </v-card-title>
+
+        <v-card-text class="pa-4">
+          <div class="text-caption text-grey mb-3">
+            使用 LaTeX 语法编写公式
+          </div>
+
+          <v-radio-group v-model="mathDisplayMode" inline class="mb-3">
+            <v-radio label="行内公式" :value="false" />
+            <v-radio label="块级公式" :value="true" />
+          </v-radio-group>
+
+          <v-textarea
+            v-model="mathFormula"
+            label="LaTeX 公式"
+            :placeholder="mathDisplayMode ? 'E = mc^2' : 'x^2 + y^2 = r^2'"
+            variant="outlined"
+            density="comfortable"
+            rows="3"
+            hide-details
+            class="math-input"
+          />
+
+          <div class="text-caption text-grey mt-3">
+            <strong>示例：</strong>
+            <code class="mx-1">x^2</code> 上标，
+            <code class="mx-1">x_i</code> 下标，
+            <code class="mx-1">\frac{a}{b}</code> 分数，
+            <code class="mx-1">\sqrt{x}</code> 根号
+          </div>
+        </v-card-text>
+
+        <v-card-actions class="pa-4">
+          <v-btn
+            v-if="mathEditMode"
+            variant="tonal"
+            color="error"
+            @click="deleteMath"
+          >
+            删除
+          </v-btn>
+          <v-spacer />
+          <v-btn variant="tonal" color="grey" @click="mathDialog = false">取消</v-btn>
+          <v-btn
+            color="primary"
+            variant="tonal"
+            :disabled="!mathFormula.trim()"
+            @click="saveMath"
+          >
+            {{ mathEditMode ? '保存' : '插入' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Mermaid 图表对话框 -->
+    <v-dialog v-model="mermaidDialog" max-width="700">
+      <v-card rounded="xl">
+        <v-card-title class="d-flex align-center justify-space-between pa-4">
+          <span class="text-h6">{{ mermaidEditMode ? '编辑' : '插入' }} Mermaid 图表</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="mermaidDialog = false" />
+        </v-card-title>
+
+        <v-card-text class="pa-4">
+          <div class="text-caption text-grey mb-3">
+            使用 Mermaid 语法创建流程图、时序图等
+          </div>
+
+          <v-textarea
+            v-model="mermaidCode"
+            label="Mermaid 代码"
+            placeholder="graph TD
+    A[开始] --> B{判断}
+    B -->|是| C[执行]
+    B -->|否| D[结束]"
+            variant="outlined"
+            density="comfortable"
+            rows="8"
+            hide-details
+            class="mermaid-input"
+          />
+
+          <div class="text-caption text-grey mt-3">
+            <strong>常用图表类型：</strong>
+            <code class="mx-1">graph TD</code> 流程图，
+            <code class="mx-1">sequenceDiagram</code> 时序图，
+            <code class="mx-1">classDiagram</code> 类图，
+            <code class="mx-1">pie</code> 饼图
+          </div>
+        </v-card-text>
+
+        <v-card-actions class="pa-4">
+          <v-btn
+            v-if="mermaidEditMode"
+            variant="tonal"
+            color="error"
+            @click="deleteMermaid"
+          >
+            删除
+          </v-btn>
+          <v-spacer />
+          <v-btn variant="tonal" color="grey" @click="mermaidDialog = false">取消</v-btn>
+          <v-btn
+            color="primary"
+            variant="tonal"
+            :disabled="!mermaidCode.trim()"
+            @click="saveMermaid"
+          >
+            {{ mermaidEditMode ? '保存' : '插入' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onBeforeUnmount, inject } from 'vue'
+import { ref, watch, computed, onBeforeUnmount, onMounted, inject } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import { useI18n } from '@/composables/useI18n'
 import { useMutation } from '@/composables/useMutation'
@@ -469,6 +618,23 @@ const linkUrl = ref('')
 // 图片对话框
 const imageDialog = ref(false)
 const imageUrl = ref('')
+
+// 数学公式对话框
+const mathDialog = ref(false)
+const mathFormula = ref('')
+const mathDisplayMode = ref(true) // true: 块级, false: 行内
+
+// Mermaid 图表对话框
+const mermaidDialog = ref(false)
+const mermaidCode = ref('')
+
+// 编辑模式（用于区分新建和编辑）
+const mathEditMode = ref(false)
+const mermaidEditMode = ref(false)
+let mathUpdateAttributes: ((attrs: Record<string, unknown>) => void) | null = null
+let mathDeleteNode: (() => void) | null = null
+let mermaidUpdateAttributes: ((attrs: Record<string, unknown>) => void) | null = null
+let mermaidDeleteNode: (() => void) | null = null
 
 // 字数统计
 const wordCount = computed(() => {
@@ -565,6 +731,99 @@ const setImage = () => {
 }
 
 /**
+ * 打开数学公式对话框
+ */
+const openMathDialog = () => {
+  mathFormula.value = ''
+  mathDisplayMode.value = true
+  mathEditMode.value = false
+  mathUpdateAttributes = null
+  mathDeleteNode = null
+  mathDialog.value = true
+}
+
+/**
+ * 保存数学公式（插入或更新）
+ */
+const saveMath = () => {
+  if (!mathFormula.value.trim()) {
+    mathDialog.value = false
+    return
+  }
+
+  if (mathEditMode.value && mathUpdateAttributes) {
+    // 编辑模式：更新已有节点
+    mathUpdateAttributes({
+      formula: mathFormula.value.trim(),
+      displayMode: mathDisplayMode.value,
+    })
+  } else {
+    // 新建模式：插入新节点
+    ;(editor.value?.commands as any).insertMath({
+      formula: mathFormula.value.trim(),
+      displayMode: mathDisplayMode.value,
+    })
+  }
+
+  mathDialog.value = false
+}
+
+/**
+ * 删除数学公式
+ */
+const deleteMath = () => {
+  if (mathEditMode.value && mathDeleteNode) {
+    mathDeleteNode()
+  }
+  mathDialog.value = false
+}
+
+/**
+ * 打开 Mermaid 对话框
+ */
+const openMermaidDialog = () => {
+  mermaidCode.value = ''
+  mermaidEditMode.value = false
+  mermaidUpdateAttributes = null
+  mermaidDeleteNode = null
+  mermaidDialog.value = true
+}
+
+/**
+ * 保存 Mermaid 图表（插入或更新）
+ */
+const saveMermaid = () => {
+  if (!mermaidCode.value.trim()) {
+    mermaidDialog.value = false
+    return
+  }
+
+  if (mermaidEditMode.value && mermaidUpdateAttributes) {
+    // 编辑模式：更新已有节点
+    mermaidUpdateAttributes({
+      code: mermaidCode.value.trim(),
+    })
+  } else {
+    // 新建模式：插入新节点
+    ;(editor.value?.commands as any).insertMermaid({
+      code: mermaidCode.value.trim(),
+    })
+  }
+
+  mermaidDialog.value = false
+}
+
+/**
+ * 删除 Mermaid 图表
+ */
+const deleteMermaid = () => {
+  if (mermaidEditMode.value && mermaidDeleteNode) {
+    mermaidDeleteNode()
+  }
+  mermaidDialog.value = false
+}
+
+/**
  * 触发文件上传
  */
 const triggerFileUpload = () => {
@@ -616,10 +875,49 @@ const handleFileUpload = async (event: Event) => {
 }
 
 /**
+ * 处理双击编辑数学公式
+ */
+const handleEditMath = (event: Event) => {
+  const customEvent = event as CustomEvent
+  const { formula, displayMode, updateAttributes, deleteNode } = customEvent.detail
+
+  mathFormula.value = formula || ''
+  mathDisplayMode.value = displayMode ?? true
+  mathEditMode.value = true
+  mathUpdateAttributes = updateAttributes
+  mathDeleteNode = deleteNode
+  mathDialog.value = true
+}
+
+/**
+ * 处理双击编辑 Mermaid 图表
+ */
+const handleEditMermaid = (event: Event) => {
+  const customEvent = event as CustomEvent
+  const { code, updateAttributes, deleteNode } = customEvent.detail
+
+  mermaidCode.value = code || ''
+  mermaidEditMode.value = true
+  mermaidUpdateAttributes = updateAttributes
+  mermaidDeleteNode = deleteNode
+  mermaidDialog.value = true
+}
+
+/**
+ * 组件挂载时添加事件监听
+ */
+onMounted(() => {
+  window.addEventListener('tiptap-edit-math', handleEditMath)
+  window.addEventListener('tiptap-edit-mermaid', handleEditMermaid)
+})
+
+/**
  * 组件卸载时销毁编辑器
  */
 onBeforeUnmount(() => {
   editor.value?.destroy()
+  window.removeEventListener('tiptap-edit-math', handleEditMath)
+  window.removeEventListener('tiptap-edit-mermaid', handleEditMermaid)
 })
 
 /**
@@ -893,5 +1191,119 @@ defineExpose({
   gap: 8px;
   flex-wrap: wrap;
   padding: 0 12px;
+}
+
+/* 表格下拉菜单 */
+.table-menu {
+  border: 1px solid rgb(var(--v-theme-border));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.table-menu-items {
+  padding: 0;
+}
+
+.table-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  font-size: 13px;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.table-menu-item:hover {
+  background-color: rgb(var(--v-theme-surface-variant));
+}
+
+.table-menu-item--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.table-menu-icon {
+  margin-right: 10px;
+  color: rgb(var(--v-theme-on-surface-variant));
+}
+
+/* 数学公式和 Mermaid 输入框 */
+.math-input :deep(.v-field__input),
+.mermaid-input :deep(.v-field__input) {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+  font-size: 14px !important;
+}
+
+/* 数学公式节点样式 */
+.editor-content :deep(.math-node) {
+  display: inline-block;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.editor-content :deep(.math-block) {
+  display: block;
+  text-align: center;
+  padding: 8px;
+  margin: 4px 0;
+}
+
+.editor-content :deep(.math-inline) {
+  padding: 2px 4px;
+}
+
+.editor-content :deep(.math-selected) {
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
+  outline: 1px solid rgba(var(--v-theme-on-surface), 0.15);
+}
+
+.editor-content :deep(.math-placeholder) {
+  color: rgb(var(--v-theme-on-surface-variant));
+  font-style: italic;
+}
+
+.editor-content :deep(.math-error) {
+  color: rgb(var(--v-theme-error));
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+}
+
+/* Mermaid 节点样式 */
+.editor-content :deep(.mermaid-node) {
+  display: block;
+  padding: 16px;
+  margin: 16px 0;
+  background-color: rgb(var(--v-theme-surface-variant));
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.editor-content :deep(.mermaid-node svg) {
+  max-width: 100%;
+  height: auto;
+}
+
+.editor-content :deep(.mermaid-selected) {
+  outline: 1px solid rgba(var(--v-theme-on-surface), 0.15);
+}
+
+.editor-content :deep(.mermaid-placeholder) {
+  color: rgb(var(--v-theme-on-surface-variant));
+  font-style: italic;
+  padding: 32px;
+}
+
+.editor-content :deep(.mermaid-error) {
+  color: rgb(var(--v-theme-error));
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  text-align: left;
+  white-space: pre-wrap;
+  background-color: rgba(var(--v-theme-error), 0.1);
+  padding: 12px;
+  border-radius: 4px;
 }
 </style>
