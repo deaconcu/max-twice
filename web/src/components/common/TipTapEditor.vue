@@ -10,6 +10,7 @@
           variant="text"
           size="small"
           icon="mdi-undo"
+          title="撤销"
           @click="editor.chain().focus().undo().run()"
         />
         <v-btn
@@ -17,9 +18,10 @@
           variant="text"
           size="small"
           icon="mdi-redo"
+          title="重做"
           @click="editor.chain().focus().redo().run()"
         />
-        <v-btn variant="text" size="small" icon="mdi-eraser" @click="clearFormatting" />
+        <v-btn variant="text" size="small" icon="mdi-eraser" title="清除格式" @click="clearFormatting" />
 
         <v-divider vertical class="mx-2" />
 
@@ -29,6 +31,7 @@
           variant="text"
           size="small"
           icon="mdi-format-bold"
+          title="粗体"
           @click="editor.chain().focus().toggleBold().run()"
         />
         <v-btn
@@ -36,6 +39,7 @@
           variant="text"
           size="small"
           icon="mdi-format-italic"
+          title="斜体"
           @click="editor.chain().focus().toggleItalic().run()"
         />
         <v-btn
@@ -43,6 +47,7 @@
           variant="text"
           size="small"
           icon="mdi-format-underline"
+          title="下划线"
           @click="editor.chain().focus().toggleUnderline().run()"
         />
         <v-btn
@@ -50,6 +55,7 @@
           variant="text"
           size="small"
           icon="mdi-format-strikethrough"
+          title="删除线"
           @click="editor.chain().focus().toggleStrike().run()"
         />
         <v-btn
@@ -57,6 +63,7 @@
           variant="text"
           size="small"
           icon="mdi-marker"
+          title="高亮"
           @click="editor.chain().focus().toggleHighlight().run()"
         />
 
@@ -84,6 +91,7 @@
           :color="editor.isActive('heading', { level: 1 }) ? 'primary' : undefined"
           variant="text"
           size="small"
+          title="一级标题"
           @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
         >
           H1
@@ -92,6 +100,7 @@
           :color="editor.isActive('heading', { level: 2 }) ? 'primary' : undefined"
           variant="text"
           size="small"
+          title="二级标题"
           @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
         >
           H2
@@ -100,6 +109,7 @@
           :color="editor.isActive('heading', { level: 3 }) ? 'primary' : undefined"
           variant="text"
           size="small"
+          title="三级标题"
           @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
         >
           H3
@@ -113,6 +123,7 @@
           variant="text"
           size="small"
           icon="mdi-format-subscript"
+          title="下标"
           @click="editor.chain().focus().toggleSubscript().run()"
         />
         <v-btn
@@ -120,6 +131,7 @@
           variant="text"
           size="small"
           icon="mdi-format-superscript"
+          title="上标"
           @click="editor.chain().focus().toggleSuperscript().run()"
         />
       </div>
@@ -132,6 +144,7 @@
           variant="text"
           size="small"
           icon="mdi-format-align-left"
+          title="左对齐"
           @click="editor.chain().focus().setTextAlign('left').run()"
         />
         <v-btn
@@ -139,6 +152,7 @@
           variant="text"
           size="small"
           icon="mdi-format-align-center"
+          title="居中对齐"
           @click="editor.chain().focus().setTextAlign('center').run()"
         />
         <v-btn
@@ -146,6 +160,7 @@
           variant="text"
           size="small"
           icon="mdi-format-align-right"
+          title="右对齐"
           @click="editor.chain().focus().setTextAlign('right').run()"
         />
         <v-btn
@@ -153,6 +168,7 @@
           variant="text"
           size="small"
           icon="mdi-format-align-justify"
+          title="两端对齐"
           @click="editor.chain().focus().setTextAlign('justify').run()"
         />
 
@@ -164,6 +180,7 @@
           variant="text"
           size="small"
           icon="mdi-format-list-bulleted"
+          title="无序列表"
           @click="editor.chain().focus().toggleBulletList().run()"
         />
         <v-btn
@@ -171,6 +188,7 @@
           variant="text"
           size="small"
           icon="mdi-format-list-numbered"
+          title="有序列表"
           @click="editor.chain().focus().toggleOrderedList().run()"
         />
         <v-btn
@@ -178,6 +196,7 @@
           variant="text"
           size="small"
           icon="mdi-format-indent-increase"
+          title="增加缩进"
           @click="editor.chain().focus().sinkListItem('listItem').run()"
         />
         <v-btn
@@ -185,6 +204,7 @@
           variant="text"
           size="small"
           icon="mdi-format-indent-decrease"
+          title="减少缩进"
           @click="editor.chain().focus().liftListItem('listItem').run()"
         />
 
@@ -196,15 +216,16 @@
           variant="text"
           size="small"
           icon="mdi-link"
+          title="插入链接"
           @click="toggleLink"
         />
-        <v-btn variant="text" size="small" icon="mdi-image" @click="addImage" />
-        <v-btn variant="text" size="small" icon="mdi-upload" title="上传图片" @click="triggerFileUpload" />
+        <v-btn variant="text" size="small" icon="mdi-image" title="插入图片" @click="addImage" />
         <v-btn
           :color="editor.isActive('code') ? 'primary' : undefined"
           variant="text"
           size="small"
           icon="mdi-code-tags"
+          title="行内代码"
           @click="editor.chain().focus().toggleCode().run()"
         />
         <v-btn
@@ -212,6 +233,7 @@
           variant="text"
           size="small"
           icon="mdi-code-braces"
+          title="代码块"
           @click="editor.chain().focus().toggleCodeBlock().run()"
         />
         <v-btn
@@ -219,21 +241,64 @@
           variant="text"
           size="small"
           icon="mdi-format-quote-close"
+          title="引用"
           @click="editor.chain().focus().toggleBlockquote().run()"
         />
         <v-btn
           variant="text"
           size="small"
           icon="mdi-minus"
+          title="分隔线"
           @click="editor.chain().focus().setHorizontalRule().run()"
         />
         <v-btn
           variant="text"
           size="small"
           icon="mdi-table"
+          title="插入表格"
           @click="
             editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
           "
+        />
+        <v-btn
+          :disabled="!editor.can().addRowAfter()"
+          variant="text"
+          size="small"
+          icon="mdi-table-row-plus-after"
+          title="在下方插入行"
+          @click="editor.chain().focus().addRowAfter().run()"
+        />
+        <v-btn
+          :disabled="!editor.can().addColumnAfter()"
+          variant="text"
+          size="small"
+          icon="mdi-table-column-plus-after"
+          title="在右侧插入列"
+          @click="editor.chain().focus().addColumnAfter().run()"
+        />
+        <v-btn
+          :disabled="!editor.can().deleteRow()"
+          variant="text"
+          size="small"
+          icon="mdi-table-row-remove"
+          title="删除当前行"
+          @click="editor.chain().focus().deleteRow().run()"
+        />
+        <v-btn
+          :disabled="!editor.can().deleteColumn()"
+          variant="text"
+          size="small"
+          icon="mdi-table-column-remove"
+          title="删除当前列"
+          @click="editor.chain().focus().deleteColumn().run()"
+        />
+        <v-btn
+          :disabled="!editor.can().deleteTable()"
+          variant="text"
+          size="small"
+          icon="mdi-table-remove"
+          title="删除表格"
+          @click="editor.chain().focus().deleteTable().run()"
         />
       </div>
     </div>
@@ -532,16 +597,15 @@ const handleFileUpload = async (event: Event) => {
     // 上传图片
     const response = await uploadImage(file)
 
-    // response 已经是 ImageUploadResponse 对象，不需要 .data
-    if (response && response.fileUrl) {
-      const fileUrl = response.fileUrl
-
-      // 插入图片到编辑器
-      editor.value?.chain().focus().setImage({ src: fileUrl }).run()
-
-      showSnackbar?.('图片上传成功', 'success')
-      imageDialog.value = false
+    // 如果返回 null，说明上传失败
+    if (!response || !response.fileUrl) {
+      showSnackbar?.('图片上传失败', 'error')
+      return
     }
+
+    // 插入图片到编辑器
+    editor.value?.chain().focus().setImage({ src: response.fileUrl }).run()
+    imageDialog.value = false
   } catch (error: any) {
     console.error('图片上传失败:', error)
     showSnackbar?.(error.message || '图片上传失败', 'error')
