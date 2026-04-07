@@ -7,6 +7,7 @@ export default {
 <script setup lang="ts">
 import { ref, watch, computed, onActivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import { useAuthStore } from '@/stores/modules/auth'
 import { useUserStore } from '@/stores/modules/user'
 import { useFetch } from '@/composables/useFetch'
@@ -26,6 +27,8 @@ import ArticlesTab from '@/components/profile/ArticlesTab.vue'
 import MemoryDecksTab from '@/components/profile/MemoryDecksTab.vue'
 import RoadmapsTab from '@/components/profile/RoadmapsTab.vue'
 import BookmarksTab from '@/components/profile/BookmarksTab.vue'
+
+const { t } = useI18n()
 
 interface Props {
   id: string
@@ -233,7 +236,7 @@ const handleNavigate = (tab: string, mode: string) => {
                     @click="currentMode = 'settings'"
                   >
                     <v-icon icon="mdi-pencil" size="14" class="mr-1" />
-                    编辑资料
+                    {{ t('profile.editProfile') }}
                   </v-btn>
                 </div>
 
@@ -242,13 +245,13 @@ const handleNavigate = (tab: string, mode: string) => {
                   {{ userInfo.bio }}
                 </p>
                 <p v-else-if="isOwnProfile" class="text-body-2 text-grey mb-3">
-                  点击编辑资料添加个人简介
+                  {{ t('profile.addBioHint') }}
                 </p>
 
                 <!-- 加入时间 -->
                 <div class="text-caption text-grey-darken-1">
                   <v-icon icon="mdi-calendar" size="14" class="mr-1" />
-                  加入于 {{ userInfo.joinDate }}
+                  {{ t('profile.joinedAt', { date: userInfo.joinDate }) }}
                 </div>
               </div>
             </div>
@@ -273,24 +276,24 @@ const handleNavigate = (tab: string, mode: string) => {
               @click="activeTab = 'overview'; currentMode = 'learner'"
             >
               <v-icon icon="mdi-view-dashboard-outline" size="18" class="mr-2" />
-              概览
+              {{ t('profile.nav.overview') }}
             </div>
 
             <!-- 学习分组 -->
-            <div class="nav-group-title mt-4">学习</div>
+            <div class="nav-group-title mt-4">{{ t('profile.nav.learning') }}</div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'roles' }"
               @click="activeTab = 'roles'; currentMode = 'learner'"
             >
-              学习的职业路线
+              {{ t('profile.nav.learningRoles') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'courses-learning' }"
               @click="activeTab = 'courses-learning'; currentMode = 'learner'"
             >
-              学习的课程
+              {{ t('profile.nav.learningCourses') }}
             </div>
             <div
               v-if="isOwnProfile"
@@ -298,64 +301,64 @@ const handleNavigate = (tab: string, mode: string) => {
               :class="{ 'nav-item-active': activeTab === 'bookmarks' }"
               @click="activeTab = 'bookmarks'; currentMode = 'learner'"
             >
-              我的收藏
+              {{ t('profile.nav.myBookmarks') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'people' }"
               @click="activeTab = 'people'; currentMode = 'learner'"
             >
-              关注的人
+              {{ t('profile.nav.following') }}
             </div>
 
             <!-- 创作分组 -->
-            <div class="nav-group-title mt-4">创作</div>
+            <div class="nav-group-title mt-4">{{ t('profile.nav.creation') }}</div>
             <div
               v-if="isOwnProfile"
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'stats' }"
               @click="activeTab = 'stats'; currentMode = 'creator'"
             >
-              创作统计
+              {{ t('profile.nav.creatorStats') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'articles' }"
               @click="activeTab = 'articles'; currentMode = 'creator'"
             >
-              创建的文章
+              {{ t('profile.nav.createdArticles') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'catalogs' }"
               @click="activeTab = 'catalogs'; currentMode = 'creator'"
             >
-              创建的目录
+              {{ t('profile.nav.createdCatalogs') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'roadmaps' }"
               @click="activeTab = 'roadmaps'; currentMode = 'creator'"
             >
-              创建的路线图
+              {{ t('profile.nav.createdRoadmaps') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'decks' }"
               @click="activeTab = 'decks'; currentMode = 'creator'"
             >
-              创建的卡片组
+              {{ t('profile.nav.createdDecks') }}
             </div>
 
             <!-- 设置 -->
-            <div v-if="isOwnProfile" class="nav-group-title mt-4">设置</div>
+            <div v-if="isOwnProfile" class="nav-group-title mt-4">{{ t('profile.nav.settings') }}</div>
             <div
               v-if="isOwnProfile"
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'info' }"
               @click="activeTab = 'info'; currentMode = 'settings'"
             >
-              个人信息
+              {{ t('profile.nav.personalInfo') }}
             </div>
           </div>
         </v-col>
@@ -372,7 +375,7 @@ const handleNavigate = (tab: string, mode: string) => {
               class="primary-mode-btn"
               @click="activeTab = 'overview'; currentMode = 'learner'"
             >
-              概览
+              {{ t('profile.nav.overview') }}
             </v-btn>
             <v-btn
               :color="currentMode === 'learner' && activeTab !== 'overview' ? 'primary' : undefined"
@@ -382,7 +385,7 @@ const handleNavigate = (tab: string, mode: string) => {
               class="primary-mode-btn"
               @click="activeTab = 'roles'; currentMode = 'learner'"
             >
-              学习
+              {{ t('profile.nav.learning') }}
             </v-btn>
             <v-btn
               :color="currentMode === 'creator' ? 'primary' : undefined"
@@ -392,7 +395,7 @@ const handleNavigate = (tab: string, mode: string) => {
               class="primary-mode-btn"
               @click="activeTab = isOwnProfile ? 'stats' : 'articles'; currentMode = 'creator'"
             >
-              创作
+              {{ t('profile.nav.creation') }}
             </v-btn>
             <v-btn
               v-if="isOwnProfile"
@@ -403,7 +406,7 @@ const handleNavigate = (tab: string, mode: string) => {
               class="primary-mode-btn"
               @click="activeTab = 'info'; currentMode = 'settings'"
             >
-              设置
+              {{ t('profile.nav.settings') }}
             </v-btn>
           </div>
 
@@ -417,10 +420,10 @@ const handleNavigate = (tab: string, mode: string) => {
             density="compact"
             show-arrows
           >
-            <v-tab value="roles">职业</v-tab>
-            <v-tab value="courses-learning">课程</v-tab>
-            <v-tab v-if="isOwnProfile" value="bookmarks">收藏</v-tab>
-            <v-tab value="people">好友</v-tab>
+            <v-tab value="roles">{{ t('profile.nav.roles') }}</v-tab>
+            <v-tab value="courses-learning">{{ t('profile.nav.courses') }}</v-tab>
+            <v-tab v-if="isOwnProfile" value="bookmarks">{{ t('profile.nav.bookmarks') }}</v-tab>
+            <v-tab value="people">{{ t('profile.nav.friends') }}</v-tab>
           </v-tabs>
           <v-tabs
             v-else-if="currentMode === 'creator'"
@@ -431,11 +434,11 @@ const handleNavigate = (tab: string, mode: string) => {
             density="compact"
             show-arrows
           >
-            <v-tab v-if="isOwnProfile" value="stats">统计</v-tab>
-            <v-tab value="articles">文章</v-tab>
-            <v-tab value="catalogs">目录</v-tab>
-            <v-tab value="roadmaps">路线图</v-tab>
-            <v-tab value="decks">卡片组</v-tab>
+            <v-tab v-if="isOwnProfile" value="stats">{{ t('profile.nav.stats') }}</v-tab>
+            <v-tab value="articles">{{ t('profile.nav.articles') }}</v-tab>
+            <v-tab value="catalogs">{{ t('profile.nav.catalogs') }}</v-tab>
+            <v-tab value="roadmaps">{{ t('profile.nav.roadmaps') }}</v-tab>
+            <v-tab value="decks">{{ t('profile.nav.decks') }}</v-tab>
           </v-tabs>
         </v-col>
 

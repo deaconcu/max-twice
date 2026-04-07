@@ -6,7 +6,7 @@
       <v-row align="center" justify="center">
         <!-- Left side - Website Introduction -->
         <v-col cols="12" md="5" class="intro-section d-none d-md-flex">
-          <IntroSection :items="RIGHTS_DECLARATION" />
+          <IntroSection />
         </v-col>
 
         <!-- Right side - Login Form -->
@@ -136,7 +136,6 @@ import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useAuth } from '@/composables/useAuth'
 import { useEmailRules, useValidationRules, useMaxLength } from '@/composables/useValidation'
-import { RIGHTS_DECLARATION } from '@/constants/site'
 import { HEADER_HEIGHT } from '@/constants/layout'
 import { BUSINESS_ERROR } from '@/constants/errorCode'
 import SimpleHeader from '@/components/layout/SimpleHeader.vue'

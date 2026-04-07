@@ -6,10 +6,13 @@ export default {
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 import { statsApi } from '@/api'
 import { useFetch } from '@/composables'
 import { useUserStore } from '@/stores/modules/user'
 import type { HeatmapData } from '@/types/stats'
+
+const { t, locale } = useI18n()
 
 interface Props {
   userId?: number // 用户ID，不传则使用当前登录用户
@@ -163,12 +166,13 @@ const weeklyData = computed(() => {
 const monthLabels = computed(() => {
   const labels: { month: string; index: number }[] = []
   let lastMonth = ''
+  const dateLocale = locale.value === 'zh' ? 'zh-CN' : 'en-US'
 
   weeklyData.value.forEach((week, weekIndex) => {
     const firstValidDay = week.find((d) => d.date)
     if (firstValidDay && firstValidDay.date) {
       const date = new Date(firstValidDay.date)
-      const month = date.toLocaleDateString('zh-CN', { month: 'short' })
+      const month = date.toLocaleDateString(dateLocale, { month: 'short' })
       if (month !== lastMonth) {
         // 如果该列第一天不是1号，说明1号在上一列
         const dayOfMonth = date.getDate()
@@ -201,7 +205,8 @@ const getColorLevel = (day: DayData): string => {
 const formatDate = (dateStr: string): string => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN', {
+  const dateLocale = locale.value === 'zh' ? 'zh-CN' : 'en-US'
+  return date.toLocaleDateString(dateLocale, {
     month: 'long',
     day: 'numeric',
     weekday: 'long',
@@ -210,16 +215,16 @@ const formatDate = (dateStr: string): string => {
 
 // 格式化活跃值显示
 const formatValue = (day: DayData): string => {
-  if (!day.hasData) return '尚未加入'
+  if (!day.hasData) return t('profile.heatmap.notJoined')
   const parts: string[] = []
   if (day.completedNodes > 0 || day.cancelCompletedNodes > 0) {
     const net = day.completedNodes - day.cancelCompletedNodes
-    parts.push(`共完成 ${net} 个节点（完成 ${day.completedNodes}，取消 ${day.cancelCompletedNodes}）`)
+    parts.push(t('profile.heatmap.completedNodes', { net, completed: day.completedNodes, cancelled: day.cancelCompletedNodes }))
   }
   if (day.reviewedCards > 0) {
-    parts.push(`复习 ${day.reviewedCards} 张卡片`)
+    parts.push(t('profile.heatmap.reviewedCards', { count: day.reviewedCards }))
   }
-  return parts.length > 0 ? parts.join('，') : '无活动'
+  return parts.length > 0 ? parts.join(locale.value === 'zh' ? '，' : ', ') : t('profile.heatmap.noActivity')
 }
 </script>
 
@@ -242,11 +247,11 @@ const formatValue = (day: DayData): string => {
       <!-- 星期标签 -->
       <div class="weekday-labels">
         <span class="weekday-label"></span>
-        <span class="weekday-label">一</span>
+        <span class="weekday-label">{{ t('profile.heatmap.mon') }}</span>
         <span class="weekday-label"></span>
-        <span class="weekday-label">三</span>
+        <span class="weekday-label">{{ t('profile.heatmap.wed') }}</span>
         <span class="weekday-label"></span>
-        <span class="weekday-label">五</span>
+        <span class="weekday-label">{{ t('profile.heatmap.fri') }}</span>
         <span class="weekday-label"></span>
       </div>
 
@@ -278,21 +283,18 @@ const formatValue = (day: DayData): string => {
     <!-- 图例 -->
     <div class="heatmap-footer">
       <div class="heatmap-summary">
-        <span class="text-caption text-grey"
-          >过去一年：完成
-          <strong class="text-grey-darken-2">{{ totalCompletedNodes }}</strong> 个节点，复习
-          <strong class="text-grey-darken-2">{{ totalReviewedCards.toLocaleString() }}</strong>
-          张卡片</span
-        >
+        <span class="text-caption text-grey">
+          {{ t('profile.heatmap.yearSummary', { nodes: totalCompletedNodes, cards: totalReviewedCards.toLocaleString() }) }}
+        </span>
       </div>
       <div class="heatmap-legend">
-        <span class="legend-text">少</span>
+        <span class="legend-text">{{ t('profile.heatmap.less') }}</span>
         <div class="legend-cell level-0" />
         <div class="legend-cell level-1" />
         <div class="legend-cell level-2" />
         <div class="legend-cell level-3" />
         <div class="legend-cell level-4" />
-        <span class="legend-text">多</span>
+        <span class="legend-text">{{ t('profile.heatmap.more') }}</span>
       </div>
     </div>
   </div>

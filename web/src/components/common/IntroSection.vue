@@ -1,171 +1,98 @@
 <template>
   <div class="intro-content">
-    <h2 class="section-title">{{ title }}</h2>
+    <!-- 主标语 -->
+    <h1 class="main-slogan">
+      人生没有说明书，<br />
+      我们一起写一本。
+    </h1>
 
-    <div class="rights-carousel">
-      <transition name="slide-fade" mode="out-in">
-        <div :key="currentIndex" class="right-item">
-          <span class="right-number">{{ currentIndex + 1 }}.</span>
-          <span class="right-text">{{ items[currentIndex] }}</span>
-        </div>
-      </transition>
-      <div class="carousel-dots">
-        <span
-          v-for="(_, index) in items"
-          :key="index"
-          class="dot"
-          :class="{ active: index === currentIndex }"
-          @click="currentIndex = index"
-        ></span>
-      </div>
+    <!-- 品牌解释 -->
+    <div class="brand-explain">
+      <span class="brand-name">TwiceMax</span>
+      <span class="brand-meaning">= Twice（两遍）+ Max（最多）</span>
     </div>
 
-    <h2 class="section-title">{{ missionTitle }}</h2>
-
-    <p class="mission-text">
-      {{ missionIntro }}<span class="mission-quote">{{ missionQuote }}</span>
+    <p class="brand-desc">
+      我们的目标：让每个知识点，最多看两遍就能搞懂。
     </p>
+
+    <!-- 特点列表 -->
+    <div class="features">
+      <div class="feature-item">
+        <v-icon size="20" color="primary" class="feature-icon">mdi-account-group</v-icon>
+        <span>从角色出发，系统化学习路径</span>
+      </div>
+      <div class="feature-item">
+        <v-icon size="20" color="primary" class="feature-icon">mdi-file-document-outline</v-icon>
+        <span>社区精选文章，知识点精炼易懂</span>
+      </div>
+      <div class="feature-item">
+        <v-icon size="20" color="primary" class="feature-icon">mdi-card-multiple-outline</v-icon>
+        <span>间隔复习卡片，科学记忆不遗忘</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-
-interface Props {
-  title?: string
-  items: readonly string[]
-  missionTitle?: string
-  missionIntro?: string
-  missionQuote?: string
-  autoPlay?: boolean
-  interval?: number
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  title: '我们想和您一起，争取如下权利',
-  missionTitle: 'TwiceMax 的含义',
-  missionIntro: '我们想和您一起，努力做到：',
-  missionQuote: '"这里的任何一个知识节点，都能只看两遍就懂"',
-  autoPlay: true,
-  interval: 3000,
-})
-
-const currentIndex = ref(0)
-let intervalId: number | null = null
-
-onMounted(() => {
-  if (props.autoPlay && props.items.length > 1) {
-    intervalId = window.setInterval(() => {
-      currentIndex.value = (currentIndex.value + 1) % props.items.length
-    }, props.interval)
-  }
-})
-
-onUnmounted(() => {
-  if (intervalId) {
-    clearInterval(intervalId)
-  }
-})
+// 简化版，不需要 props 和轮播逻辑
 </script>
 
 <style scoped>
 .intro-content {
-  max-width: 560px;
+  max-width: 480px;
   margin: 0 auto;
 }
 
-/* Section Title */
-.section-title {
-  font-size: 1.5rem;
+/* 主标语 */
+.main-slogan {
+  font-size: 2rem;
   font-weight: 700;
+  line-height: 1.4;
   color: rgb(var(--v-theme-on-surface));
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
-/* Rights Carousel */
-.rights-carousel {
-  margin-bottom: 56px;
-  min-height: 120px;
+/* 品牌解释 */
+.brand-explain {
+  margin-bottom: 8px;
 }
 
-.right-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  line-height: 1.7;
-  padding: 20px 0;
-}
-
-.right-number {
+.brand-name {
+  font-size: 1.25rem;
+  font-weight: 700;
   color: rgb(var(--v-theme-primary));
-  font-weight: 600;
-  flex-shrink: 0;
-  min-width: 28px;
-  font-size: 1.1rem;
 }
 
-.right-text {
-  color: rgb(var(--v-theme-on-surface));
-  font-size: 1.05rem;
-}
-
-/* Carousel Dots */
-.carousel-dots {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin-top: 24px;
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: rgba(var(--v-theme-on-surface), 0.2);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.dot:hover {
-  background-color: rgba(var(--v-theme-on-surface), 0.4);
-}
-
-.dot.active {
-  width: 24px;
-  border-radius: 4px;
-  background-color: rgb(var(--v-theme-primary));
-}
-
-/* Slide Fade Transition */
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.5s ease;
-}
-
-.slide-fade-enter-from {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-.slide-fade-leave-to {
-  opacity: 0;
-  transform: translateX(-20px);
-}
-
-/* Mission Text */
-.mission-text {
-  margin-top: 0;
-  color: rgb(var(--v-theme-on-surface));
+.brand-meaning {
   font-size: 1rem;
-  line-height: 1.8;
-  font-weight: 400;
+  color: rgb(var(--v-theme-on-surface-variant));
+  margin-left: 8px;
 }
 
-/* Mission Quote */
-.mission-quote {
-  color: rgb(var(--v-theme-primary));
-  font-size: 1.5rem;
-  font-weight: 600;
-  font-family: Georgia, serif;
+.brand-desc {
+  font-size: 1rem;
+  color: rgb(var(--v-theme-on-surface));
+  line-height: 1.6;
+  margin-bottom: 40px;
+}
+
+/* 特点列表 */
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+  color: rgb(var(--v-theme-on-surface-variant));
+}
+
+.feature-icon {
+  flex-shrink: 0;
 }
 </style>

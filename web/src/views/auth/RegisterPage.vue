@@ -6,7 +6,7 @@
       <v-row align="center" justify="center">
         <!-- Left side - Website Introduction -->
         <v-col cols="12" md="5" class="intro-section d-none d-md-flex">
-          <IntroSection :items="RIGHTS_DECLARATION" />
+          <IntroSection />
         </v-col>
 
         <!-- Right side - Register Form -->
@@ -150,7 +150,6 @@ import {
   useMaxLength,
   confirmPasswordRule,
 } from '@/composables/useValidation'
-import { RIGHTS_DECLARATION } from '@/constants/site'
 import { HEADER_HEIGHT } from '@/constants/layout'
 import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 import IntroSection from '@/components/common/IntroSection.vue'
