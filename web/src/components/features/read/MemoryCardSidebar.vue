@@ -3,7 +3,7 @@
     <!-- 模块头部 -->
     <div class="sidebar-header">
       <v-icon icon="mdi-cards-outline" size="18" class="mr-2"></v-icon>
-      <span class="sidebar-title">本文的记忆卡片</span>
+      <span class="sidebar-title">{{ t('memoryCardSidebar.title') }}</span>
       <v-tooltip location="bottom" max-width="280">
         <template #activator="{ props: tooltipProps }">
           <v-icon
@@ -15,12 +15,12 @@
             style="cursor: help"
           ></v-icon>
         </template>
-        <span>基于本文内容创建的记忆卡片组，帮助你提取和巩固文章中的知识点。你也可以创建自己的卡片组分享给其他学习者。</span>
+        <span>{{ t('memoryCardSidebar.tooltip') }}</span>
       </v-tooltip>
       <v-spacer></v-spacer>
 
       <!-- 刷新按钮 -->
-      <v-tooltip text="刷新" location="top">
+      <v-tooltip :text="t('common.refresh')" location="top">
         <template #activator="{ props: tooltipProps }">
           <v-btn
             v-bind="tooltipProps"
@@ -45,7 +45,7 @@
         prepend-icon="mdi-plus"
         @click="emit('createDeck')"
       >
-        创建
+        {{ t('common.create') }}
       </v-btn>
     </div>
 
@@ -54,7 +54,7 @@
       <div class="d-flex align-center justify-space-between">
         <!-- 左侧：筛选选项 -->
         <div class="d-flex gap-1">
-          <v-tooltip text="全部" location="top">
+          <v-tooltip :text="t('common.all')" location="top">
             <template #activator="{ props: tooltipProps }">
               <v-btn
                 v-bind="tooltipProps"
@@ -67,7 +67,7 @@
               />
             </template>
           </v-tooltip>
-          <v-tooltip text="只看本文作者" location="top">
+          <v-tooltip :text="t('memoryCardSidebar.authorOnly')" location="top">
             <template #activator="{ props: tooltipProps }">
               <v-btn
                 v-bind="tooltipProps"
@@ -80,7 +80,7 @@
               />
             </template>
           </v-tooltip>
-          <v-tooltip text="我提交的" location="top">
+          <v-tooltip :text="t('memoryCardSidebar.mySubmitted')" location="top">
             <template #activator="{ props: tooltipProps }">
               <v-btn
                 v-bind="tooltipProps"
@@ -97,7 +97,7 @@
 
         <!-- 右侧：排序选项 -->
         <div class="d-flex gap-1">
-          <v-tooltip text="热度排序" location="top">
+          <v-tooltip :text="t('memoryCardSidebar.sortByHot')" location="top">
             <template #activator="{ props: tooltipProps }">
               <v-btn
                 v-bind="tooltipProps"
@@ -110,7 +110,7 @@
               />
             </template>
           </v-tooltip>
-          <v-tooltip text="时间排序" location="top">
+          <v-tooltip :text="t('memoryCardSidebar.sortByTime')" location="top">
             <template #activator="{ props: tooltipProps }">
               <v-btn
                 v-bind="tooltipProps"
@@ -138,10 +138,10 @@
       <!-- 空状态 -->
       <div v-if="decks.length === 0 && !loading" class="text-center pa-6">
         <v-icon icon="mdi-cards-outline" size="48" color="grey-lighten-2" class="mb-3"></v-icon>
-        <h4 class="text-body-1 font-weight-medium text-grey-darken-2 mb-2">暂无卡片组</h4>
-        <p class="text-body-2 text-grey-darken-1 mb-4">基于本文创建记忆卡片，帮助巩固知识点</p>
+        <h4 class="text-body-1 font-weight-medium text-grey-darken-2 mb-2">{{ t('memoryCardSidebar.noDecks') }}</h4>
+        <p class="text-body-2 text-grey-darken-1 mb-4">{{ t('memoryCardSidebar.noDecksHint') }}</p>
         <v-btn color="primary" variant="tonal" rounded="lg" size="small" @click="emit('createDeck')">
-          创建卡片组
+          {{ t('memoryCardSidebar.createDeck') }}
         </v-btn>
       </div>
 
@@ -159,14 +159,14 @@
               <!-- 用户 + 时间 -->
               <div class="d-flex align-center mb-2">
                 <UserAvatar
-                  :name="deck.creator?.name || '匿名用户'"
+                  :name="deck.creator?.name || t('common.anonymous')"
                   :avatar-url="deck.creator?.avatar"
                   size="16"
                   rounded="md"
                   class="mr-2 flex-shrink-0"
                 />
                 <span class="text-body-2 font-weight-medium text-grey-darken-3">
-                  {{ deck.creator?.name || '匿名用户' }}
+                  {{ deck.creator?.name || t('common.anonymous') }}
                 </span>
                 <span v-if="deck.updatedAt" class="text-caption text-grey mx-1">·</span>
                 <span v-if="deck.updatedAt" class="text-caption text-grey">
@@ -218,11 +218,11 @@
             <div class="d-flex flex-row align-center justify-center" style="gap: 12px">
               <div class="text-center">
                 <div class="text-body-1 font-weight-bold text-grey-darken-2">{{ deck.cardCount || 0 }}</div>
-                <div class="text-caption text-no-wrap text-grey">卡片</div>
+                <div class="text-caption text-no-wrap text-grey">{{ t('memoryCard.cards') }}</div>
               </div>
               <div v-if="deck.studyingCardCount && deck.studyingCardCount > 0" class="text-center">
                 <div class="text-body-1 font-weight-bold text-success">{{ deck.studyingCardCount }}</div>
-                <div class="text-caption text-no-wrap text-grey">学习中</div>
+                <div class="text-caption text-no-wrap text-grey">{{ t('memoryCard.studying') }}</div>
               </div>
             </div>
           </div>
@@ -231,7 +231,7 @@
 
       <!-- 加载更多 -->
       <div v-if="hasMore && !loading" class="text-center pa-4">
-        <v-btn variant="text" color="primary" @click="loadMore">加载更多</v-btn>
+        <v-btn variant="text" color="primary" @click="loadMore">{{ t('common.loadMore') }}</v-btn>
       </div>
 
       <!-- 加载状态 -->
@@ -250,6 +250,9 @@ import { useUserStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/format'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck } from '@/types/memory'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface Props {
   postId: number
@@ -415,15 +418,15 @@ const switchToMyDecks = () => {
 const getStateText = (state: number) => {
   switch (state) {
     case 1:
-      return '审核中'
+      return t('common.stateReviewing')
     case 2:
-      return '已通过'
+      return t('common.stateApproved')
     case 3:
-      return '已拒绝'
+      return t('common.stateRejected')
     case 4:
-      return '已屏蔽'
+      return t('common.stateBanned')
     default:
-      return '未知'
+      return t('common.stateUnknown')
   }
 }
 

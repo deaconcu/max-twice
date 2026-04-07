@@ -192,7 +192,7 @@ const quickLinks = computed(() => [
   {
     step: 1,
     title: '我在扮演什么角色',
-    description: '每个人都在扮演多种角色：程序员、父亲、投资者、跑者...收藏你想扮演的角色，开启系统化学习',
+    description: '程序员、父亲、投资者、跑者...收藏你想扮演好的角色',
     icon: 'mdi-account-question',
     color: 'warning',
     path: '/role',
@@ -200,7 +200,7 @@ const quickLinks = computed(() => [
   {
     step: 2,
     title: '我要学什么',
-    description: '学习路线是由社区用户创建的课程组合，帮助你系统地掌握某个职业所需的技能',
+    description: '每个角色有多条学习路径，选择适合你的',
     icon: 'mdi-map-marker-path',
     color: 'primary',
     path: '/role',
@@ -208,7 +208,7 @@ const quickLinks = computed(() => [
   {
     step: 3,
     title: '我在学什么',
-    description: '每门课程包含多个知识节点和文章，帮助你深入理解某个领域',
+    description: '每条路径包含多门课程，深入学习每个知识点',
     icon: 'mdi-book-open-page-variant',
     color: 'info',
     path: '/courses',
@@ -216,7 +216,7 @@ const quickLinks = computed(() => [
   {
     step: 4,
     title: '我学会了吗',
-    description: '复习系统基于艾宾浩斯遗忘曲线，在最佳时机提醒你复习，学习课程时会自动生成记忆卡片',
+    description: '学习时自动生成记忆卡片，科学复习不遗忘',
     icon: 'mdi-check-decagram',
     color: 'success',
     path: '/review',

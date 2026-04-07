@@ -304,6 +304,49 @@ const renderTipTapMermaidNodes = async (root: HTMLElement) => {
   )
 }
 
+// 渲染 TipTap 视频节点 (data-type="video-block")
+const renderTipTapVideoNodes = (root: HTMLElement) => {
+  const videoNodes = root.querySelectorAll<HTMLElement>('div[data-type="video-block"]')
+  videoNodes.forEach((node) => {
+    if (node.dataset.processed === 'true') return
+
+    const platform = node.getAttribute('data-platform')
+    const embedUrl = node.getAttribute('data-embed-url')
+
+    if (!embedUrl) return
+
+    // 创建视频容器
+    const wrapper = document.createElement('div')
+    wrapper.className = 'video-wrapper'
+
+    if (platform === 'video') {
+      // 直接视频链接，使用 video 标签
+      const video = document.createElement('video')
+      video.src = embedUrl
+      video.controls = true
+      video.className = 'video-player'
+      wrapper.appendChild(video)
+    } else {
+      // 平台视频，使用 iframe
+      const iframe = document.createElement('iframe')
+      iframe.src = embedUrl
+      iframe.className = 'video-iframe'
+      iframe.setAttribute('frameborder', '0')
+      iframe.setAttribute('allowfullscreen', 'true')
+      iframe.setAttribute(
+        'allow',
+        'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
+      )
+      wrapper.appendChild(iframe)
+    }
+
+    node.innerHTML = ''
+    node.appendChild(wrapper)
+    node.classList.add('video-node')
+    node.dataset.processed = 'true'
+  })
+}
+
 // 渲染数学公式
 const renderMath = () => {
   if (!contentRef.value) return
@@ -329,6 +372,7 @@ const applyEnhancements = async () => {
   if (!contentRef.value) return
 
   renderMath()
+  renderTipTapVideoNodes(contentRef.value)
   await renderTipTapMermaidNodes(contentRef.value)
   await renderMermaidDiagrams(contentRef.value)
   updateOverflowState()
@@ -1020,6 +1064,31 @@ watch(
   color: #dc3545;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   font-size: 14px;
+}
+
+/* 视频节点样式 */
+.article-content :deep(.video-node) {
+  display: block;
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #f5f5f5;
+}
+
+.article-content :deep(.video-wrapper) {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 宽高比 */
+}
+
+.article-content :deep(.video-iframe),
+.article-content :deep(.video-player) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 
 /* 移动端：限制公式宽度 */

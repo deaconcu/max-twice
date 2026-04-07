@@ -5,7 +5,7 @@
         <v-card-title class="d-flex align-center justify-space-between pa-0">
           <div class="d-flex align-center">
             <v-icon size="small" class="px-4" icon="mdi-account"></v-icon>
-            <span class="ps-2 font-weight-medium">{{ isEditMode ? '编辑文章' : '创建文章' }}</span>
+            <span class="ps-2 font-weight-medium">{{ isEditMode ? t('addArticle.editArticle') : t('addArticle.createArticle') }}</span>
           </div>
           <v-btn icon="mdi-close" variant="text" size="small" @click="handleCancel"></v-btn>
         </v-card-title>
@@ -15,24 +15,24 @@
           ref="editorRef"
           :model-value="getCurrentArticle?.preview || ''"
           :editable="true"
-          placeholder="在这里编写您的文章内容..."
+          :placeholder="t('tiptap.placeholder')"
           @update:model-value="updateContentLength"
         />
       </div>
       <div class="px-4 pb-4 pt-4 action-bottom">
         <div class="d-flex align-center justify-space-between">
           <div class="d-flex align-center gap-2">
-            <span class="text-caption text-grey">{{ contentLength }} 字符</span>
+            <span class="text-caption text-grey">{{ contentLength }} {{ t('addArticle.characters') }}</span>
             <span v-if="contentLength < MIN_LENGTH" class="text-caption text-warning">
-              （还需 {{ MIN_LENGTH - contentLength }} 字符才能发布）
+              （{{ t('addArticle.needMore', { n: MIN_LENGTH - contentLength }) }}）
             </span>
             <span v-else-if="contentLength > MAX_LENGTH" class="text-caption text-error">
-              （超出 {{ contentLength - MAX_LENGTH }} 字符）
+              （{{ t('addArticle.exceeded', { n: contentLength - MAX_LENGTH }) }}）
             </span>
           </div>
           <div class="d-flex gap-2">
             <v-btn variant="text" @click="handleCancel">
-              取消
+              {{ t('common.cancel') }}
             </v-btn>
             <!-- 创建模式 或 编辑草稿模式 -->
             <template v-if="!isEditMode || getCurrentArticle?.state === ContentState.DRAFT">
@@ -43,7 +43,7 @@
                 :disabled="!isDraftValid"
                 @click="handleSave"
               >
-                保存草稿
+                {{ t('addArticle.saveDraft') }}
               </v-btn>
               <v-btn
                 color="primary"
@@ -52,7 +52,7 @@
                 :disabled="!isFormValid"
                 @click="handlePublish"
               >
-                发布文章
+                {{ t('addArticle.publish') }}
               </v-btn>
             </template>
             <!-- 编辑模式 - 如果不是草稿，只显示"保存" -->
@@ -63,7 +63,7 @@
               :loading="savingDraft"
               @click="handleSave"
             >
-              保存
+              {{ t('addArticle.save') }}
             </v-btn>
           </div>
         </div>
@@ -78,6 +78,9 @@ import TipTapEditor from '@/components/common/TipTapEditor.vue'
 import { ContentState, PostType } from '@/enums'
 import { postApi } from '@/api'
 import { useMutation } from '@/composables/useMutation'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
@@ -148,7 +151,7 @@ const { execute: executeCreate, loading: creating } = useMutation(
   (data: { nodeId: number; content: string; type: number; state: number }) =>
     postApi.createPost(data),
   {
-    successMessage: '操作成功',
+    successMessage: t('posting.operationSuccess'),
     onSuccess: (result, payload) => {
       const isDraft = payload.state === ContentState.DRAFT
       if (isDraft) {
@@ -171,7 +174,7 @@ const { execute: executeUpdate, loading: updating } = useMutation(
   (data: { id: number; content: string; state?: number }) =>
     postApi.updatePost(data.id, { content: data.content, state: data.state }),
   {
-    successMessage: '操作成功',
+    successMessage: t('posting.operationSuccess'),
     onSuccess: (result, payload) => {
       console.log('executeUpdate onSuccess', { result, payload })
       const isPublishing = payload.state === ContentState.SUBMITTED
@@ -221,11 +224,11 @@ const handleSave = async () => {
 
     // 创建模式
     if (!props.nodeId) {
-      showSnackbar?.('缺少节点ID', 'error')
+      showSnackbar?.(t('addArticle.missingNodeId'), 'error')
       return
     }
     if (!isDraftValid.value) {
-      showSnackbar?.('内容不能为空', 'warning')
+      showSnackbar?.(t('addArticle.contentEmpty'), 'warning')
       return
     }
 
@@ -251,7 +254,7 @@ const handlePublish = async () => {
   const article = getCurrentArticle.value
 
   if (!isFormValid.value) {
-    showSnackbar?.(`文章内容需要在 ${MIN_LENGTH} 到 ${MAX_LENGTH} 字符之间`, 'warning')
+    showSnackbar?.(t('addArticle.contentLengthError', { min: MIN_LENGTH, max: MAX_LENGTH }), 'warning')
     return
   }
 
@@ -269,7 +272,7 @@ const handlePublish = async () => {
 
     // 创建模式
     if (!props.nodeId) {
-      showSnackbar?.('缺少节点ID', 'error')
+      showSnackbar?.(t('addArticle.missingNodeId'), 'error')
       return
     }
 

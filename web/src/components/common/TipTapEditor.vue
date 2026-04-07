@@ -21,7 +21,13 @@
           title="重做"
           @click="editor.chain().focus().redo().run()"
         />
-        <v-btn variant="text" size="small" icon="mdi-eraser" title="清除格式" @click="clearFormatting" />
+        <v-btn
+          variant="text"
+          size="small"
+          icon="mdi-eraser"
+          title="清除格式"
+          @click="clearFormatting"
+        />
 
         <v-divider vertical class="mx-2" />
 
@@ -253,19 +259,19 @@
         />
         <v-menu location="bottom" offset="4">
           <template #activator="{ props }">
-            <v-btn
-              v-bind="props"
-              variant="text"
-              size="small"
-              icon="mdi-table"
-              title="表格"
-            />
+            <v-btn v-bind="props" variant="text" size="small" icon="mdi-table" title="表格" />
           </template>
           <v-card rounded="lg" class="table-menu" width="180">
             <div class="table-menu-items py-1">
               <div
                 class="table-menu-item"
-                @click="editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()"
+                @click="
+                  editor
+                    .chain()
+                    .focus()
+                    .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+                    .run()
+                "
               >
                 <v-icon icon="mdi-table-plus" size="18" class="table-menu-icon" />
                 <span>插入表格</span>
@@ -282,7 +288,9 @@
               <div
                 class="table-menu-item"
                 :class="{ 'table-menu-item--disabled': !editor.can().addColumnAfter() }"
-                @click="editor.can().addColumnAfter() && editor.chain().focus().addColumnAfter().run()"
+                @click="
+                  editor.can().addColumnAfter() && editor.chain().focus().addColumnAfter().run()
+                "
               >
                 <v-icon icon="mdi-table-column-plus-after" size="18" class="table-menu-icon" />
                 <span>在右侧插入列</span>
@@ -315,6 +323,13 @@
             </div>
           </v-card>
         </v-menu>
+        <v-btn
+          variant="text"
+          size="small"
+          icon="mdi-video"
+          title="插入视频"
+          @click="openVideoDialog"
+        />
         <v-btn
           variant="text"
           size="small"
@@ -418,13 +433,10 @@
 
         <v-card-actions class="pa-4">
           <v-spacer />
-          <v-btn variant="tonal" color="grey" @click="imageDialog = false">{{ t('common.cancel') }}</v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            :disabled="!imageUrl.trim()"
-            @click="setImage"
-          >
+          <v-btn variant="tonal" color="grey" @click="imageDialog = false">{{
+            t('common.cancel')
+          }}</v-btn>
+          <v-btn color="primary" variant="tonal" :disabled="!imageUrl.trim()" @click="setImage">
             {{ t('editor.insert') }}
           </v-btn>
         </v-card-actions>
@@ -435,23 +447,25 @@
     <v-dialog v-model="mathDialog" max-width="600">
       <v-card rounded="xl">
         <v-card-title class="d-flex align-center justify-space-between pa-4">
-          <span class="text-h6">{{ mathEditMode ? '编辑' : '插入' }}数学公式</span>
+          <span class="text-h6">{{
+            mathEditMode ? t('editor.editMath') : t('editor.insertMath')
+          }}</span>
           <v-btn icon="mdi-close" variant="text" size="small" @click="mathDialog = false" />
         </v-card-title>
 
         <v-card-text class="pa-4">
           <div class="text-caption text-grey mb-3">
-            使用 LaTeX 语法编写公式
+            {{ t('editor.mathHint') }}
           </div>
 
           <v-radio-group v-model="mathDisplayMode" inline class="mb-3">
-            <v-radio label="行内公式" :value="false" />
-            <v-radio label="块级公式" :value="true" />
+            <v-radio :label="t('editor.inlineMath')" :value="false" />
+            <v-radio :label="t('editor.blockMath')" :value="true" />
           </v-radio-group>
 
           <v-textarea
             v-model="mathFormula"
-            label="LaTeX 公式"
+            :label="t('editor.latexFormula')"
             :placeholder="mathDisplayMode ? 'E = mc^2' : 'x^2 + y^2 = r^2'"
             variant="outlined"
             density="comfortable"
@@ -461,32 +475,24 @@
           />
 
           <div class="text-caption text-grey mt-3">
-            <strong>示例：</strong>
-            <code class="mx-1">x^2</code> 上标，
-            <code class="mx-1">x_i</code> 下标，
-            <code class="mx-1">\frac{a}{b}</code> 分数，
-            <code class="mx-1">\sqrt{x}</code> 根号
+            <strong>{{ t('editor.mathExample') }}</strong>
+            <code class="mx-1">x^2</code> {{ t('editor.mathSuperscript') }}，
+            <code class="mx-1">x_i</code> {{ t('editor.mathSubscript') }}，
+            <code class="mx-1">\frac{a}{b}</code> {{ t('editor.mathFraction') }}，
+            <code class="mx-1">\sqrt{x}</code> {{ t('editor.mathSqrt') }}
           </div>
         </v-card-text>
 
         <v-card-actions class="pa-4">
-          <v-btn
-            v-if="mathEditMode"
-            variant="tonal"
-            color="error"
-            @click="deleteMath"
-          >
-            删除
+          <v-btn v-if="mathEditMode" variant="tonal" color="error" @click="deleteMath">
+            {{ t('common.delete') }}
           </v-btn>
           <v-spacer />
-          <v-btn variant="tonal" color="grey" @click="mathDialog = false">取消</v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            :disabled="!mathFormula.trim()"
-            @click="saveMath"
-          >
-            {{ mathEditMode ? '保存' : '插入' }}
+          <v-btn variant="tonal" color="grey" @click="mathDialog = false">{{
+            t('common.cancel')
+          }}</v-btn>
+          <v-btn color="primary" variant="tonal" :disabled="!mathFormula.trim()" @click="saveMath">
+            {{ mathEditMode ? t('common.save') : t('editor.insert') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -496,22 +502,24 @@
     <v-dialog v-model="mermaidDialog" max-width="700">
       <v-card rounded="xl">
         <v-card-title class="d-flex align-center justify-space-between pa-4">
-          <span class="text-h6">{{ mermaidEditMode ? '编辑' : '插入' }} Mermaid 图表</span>
+          <span class="text-h6">{{
+            mermaidEditMode ? t('editor.editMermaid') : t('editor.insertMermaid')
+          }}</span>
           <v-btn icon="mdi-close" variant="text" size="small" @click="mermaidDialog = false" />
         </v-card-title>
 
         <v-card-text class="pa-4">
           <div class="text-caption text-grey mb-3">
-            使用 Mermaid 语法创建流程图、时序图等
+            {{ t('editor.mermaidHint') }}
           </div>
 
           <v-textarea
             v-model="mermaidCode"
-            label="Mermaid 代码"
+            :label="t('editor.mermaidCode')"
             placeholder="graph TD
-    A[开始] --> B{判断}
-    B -->|是| C[执行]
-    B -->|否| D[结束]"
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Execute]
+    B -->|No| D[End]"
             variant="outlined"
             density="comfortable"
             rows="8"
@@ -520,32 +528,72 @@
           />
 
           <div class="text-caption text-grey mt-3">
-            <strong>常用图表类型：</strong>
-            <code class="mx-1">graph TD</code> 流程图，
-            <code class="mx-1">sequenceDiagram</code> 时序图，
-            <code class="mx-1">classDiagram</code> 类图，
-            <code class="mx-1">pie</code> 饼图
+            <strong>{{ t('editor.mermaidTypes') }}</strong>
+            <code class="mx-1">graph TD</code> {{ t('editor.mermaidFlowchart') }}，
+            <code class="mx-1">sequenceDiagram</code> {{ t('editor.mermaidSequence') }}，
+            <code class="mx-1">classDiagram</code> {{ t('editor.mermaidClass') }}，
+            <code class="mx-1">pie</code> {{ t('editor.mermaidPie') }}
           </div>
         </v-card-text>
 
         <v-card-actions class="pa-4">
-          <v-btn
-            v-if="mermaidEditMode"
-            variant="tonal"
-            color="error"
-            @click="deleteMermaid"
-          >
-            删除
+          <v-btn v-if="mermaidEditMode" variant="tonal" color="error" @click="deleteMermaid">
+            {{ t('common.delete') }}
           </v-btn>
           <v-spacer />
-          <v-btn variant="tonal" color="grey" @click="mermaidDialog = false">取消</v-btn>
+          <v-btn variant="tonal" color="grey" @click="mermaidDialog = false">{{
+            t('common.cancel')
+          }}</v-btn>
           <v-btn
             color="primary"
             variant="tonal"
             :disabled="!mermaidCode.trim()"
             @click="saveMermaid"
           >
-            {{ mermaidEditMode ? '保存' : '插入' }}
+            {{ mermaidEditMode ? t('common.save') : t('editor.insert') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- 视频插入对话框 -->
+    <v-dialog v-model="videoDialog" max-width="500">
+      <v-card rounded="xl">
+        <v-card-title class="d-flex align-center justify-space-between pa-4">
+          <span class="text-h6">{{ t('editor.insertVideo') }}</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="videoDialog = false" />
+        </v-card-title>
+
+        <v-card-text class="pa-4">
+          <v-text-field
+            v-model="videoUrl"
+            :label="t('editor.videoUrl')"
+            :placeholder="t('editor.videoUrlPlaceholder')"
+            :error-messages="videoUrlError"
+            variant="outlined"
+            density="comfortable"
+            autofocus
+            @keyup.enter="insertVideo"
+            @input="videoUrlError = ''"
+          >
+            <template #prepend-inner>
+              <v-icon icon="mdi-link-variant" size="20" color="grey" />
+            </template>
+          </v-text-field>
+
+          <div class="text-caption text-grey mt-2">
+            <strong>{{ t('editor.supportedPlatforms') }}</strong>
+            <div class="mt-1">YouTube、Bilibili、Vimeo、{{ t('editor.directVideoLink') }}</div>
+          </div>
+        </v-card-text>
+
+        <v-card-actions class="pa-4">
+          <v-spacer />
+          <v-btn variant="tonal" color="grey" @click="videoDialog = false">{{
+            t('common.cancel')
+          }}</v-btn>
+          <v-btn color="primary" variant="tonal" :disabled="!videoUrl.trim()" @click="insertVideo">
+            {{ t('editor.insert') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -559,6 +607,7 @@ import { useEditor, EditorContent } from '@tiptap/vue-3'
 import { useI18n } from '@/composables/useI18n'
 import { useMutation } from '@/composables/useMutation'
 import { getTipTapExtensions } from '@/config/tiptap'
+import { parseVideoUrl } from '@/config/tiptap-video'
 import { imageApi } from '@/api'
 
 interface Props {
@@ -627,6 +676,11 @@ const mathDisplayMode = ref(true) // true: 块级, false: 行内
 // Mermaid 图表对话框
 const mermaidDialog = ref(false)
 const mermaidCode = ref('')
+
+// 视频对话框
+const videoDialog = ref(false)
+const videoUrl = ref('')
+const videoUrlError = ref('')
 
 // 编辑模式（用于区分新建和编辑）
 const mathEditMode = ref(false)
@@ -824,6 +878,38 @@ const deleteMermaid = () => {
 }
 
 /**
+ * 打开视频对话框
+ */
+const openVideoDialog = () => {
+  videoUrl.value = ''
+  videoUrlError.value = ''
+  videoDialog.value = true
+}
+
+/**
+ * 插入视频
+ */
+const insertVideo = () => {
+  if (!videoUrl.value.trim()) {
+    videoDialog.value = false
+    return
+  }
+
+  // 验证 URL 是否能被解析
+  const parsed = parseVideoUrl(videoUrl.value)
+  if (!parsed) {
+    videoUrlError.value = t('editor.videoUrlInvalid')
+    return
+  }
+
+  editor.value?.commands.insertVideo({
+    src: videoUrl.value.trim(),
+  })
+
+  videoDialog.value = false
+}
+
+/**
  * 触发文件上传
  */
 const triggerFileUpload = () => {
@@ -842,13 +928,13 @@ const handleFileUpload = async (event: Event) => {
   // 验证文件类型
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
   if (!allowedTypes.includes(file.type)) {
-    showSnackbar?.('只支持 JPG、PNG、WebP 格式的图片', 'error')
+    showSnackbar?.(t('editor.imageTypeError'), 'error')
     return
   }
 
   // 验证文件大小 (5MB)
   if (file.size > 5 * 1024 * 1024) {
-    showSnackbar?.('图片大小不能超过 5MB', 'error')
+    showSnackbar?.(t('editor.imageSizeError'), 'error')
     return
   }
 
@@ -857,17 +943,17 @@ const handleFileUpload = async (event: Event) => {
     const response = await uploadImage(file)
 
     // 如果返回 null，说明上传失败
-    if (!response || !response.fileUrl) {
-      showSnackbar?.('图片上传失败', 'error')
+    if (!response?.fileUrl) {
+      showSnackbar?.(t('editor.imageUploadFailed'), 'error')
       return
     }
 
     // 插入图片到编辑器
     editor.value?.chain().focus().setImage({ src: response.fileUrl }).run()
     imageDialog.value = false
-  } catch (error: any) {
-    console.error('图片上传失败:', error)
-    showSnackbar?.(error.message || '图片上传失败', 'error')
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : t('editor.imageUploadFailed')
+    showSnackbar?.(errorMessage, 'error')
   } finally {
     // 清空 input
     if (target) target.value = ''
@@ -924,7 +1010,7 @@ onBeforeUnmount(() => {
  * 暴露给父组件的方法和属性
  */
 defineExpose({
-  editor
+  editor,
 })
 </script>
 
@@ -1305,5 +1391,34 @@ defineExpose({
   background-color: rgba(var(--v-theme-error), 0.1);
   padding: 12px;
   border-radius: 4px;
+}
+
+/* 视频节点样式 */
+.editor-content :deep(.video-node) {
+  display: block;
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: rgb(var(--v-theme-surface-variant));
+}
+
+.editor-content :deep(.video-selected) {
+  outline: 2px solid rgb(var(--v-theme-primary));
+}
+
+.editor-content :deep(.video-wrapper) {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 宽高比 */
+}
+
+.editor-content :deep(.video-iframe),
+.editor-content :deep(.video-player) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 </style>

@@ -13,7 +13,7 @@
           :color="statusTab === 'learning' ? 'primary' : 'default'"
           @click="statusTab = 'learning'"
         >
-          正在学习
+          {{ t('user.profile.learningTab') }}
         </v-btn>
         <v-btn
           variant="text"
@@ -22,7 +22,7 @@
           :color="statusTab === 'completed' ? 'primary' : 'default'"
           @click="statusTab = 'completed'"
         >
-          已完成
+          {{ t('user.profile.completedTab') }}
         </v-btn>
       </div>
     </div>
@@ -68,12 +68,12 @@
                   {{ course.title }}
                 </div>
                 <div class="text-caption text-medium-emphasis">
-                  {{ course.totalLessons }} 个知识节点
+                  {{ course.totalLessons }} {{ t('rightSidebar.knowledgeNodes') }}
                 </div>
               </div>
             </div>
             <div class="d-flex align-center justify-space-between mb-2">
-              <span class="text-caption text-medium-emphasis">学习进度</span>
+              <span class="text-caption text-medium-emphasis">{{ t('user.profile.progress') }}</span>
               <span class="text-caption font-weight-bold text-grey">
                 {{ course.progress }}%
               </span>
@@ -98,17 +98,17 @@
         class="mb-3 mb-md-4"
       />
       <p class="text-body-2 text-md-body-1 text-grey-darken-2">
-        {{ statusTab === 'learning' ? '暂无正在学习的课程' : '暂无已完成的课程' }}
+        {{ statusTab === 'learning' ? t('user.profile.noLearningCourses') : t('user.profile.noCompletedCourses') }}
       </p>
-      <p class="text-caption text-md-body-2 text-grey">开始学习新课程，掌握新技能</p>
+      <p class="text-caption text-md-body-2 text-grey">{{ t('learning.browseCoursesDesc') }}</p>
     </div>
 
     <!-- 删除确认对话框 -->
     <ConfirmDialog
       v-model="showDeleteDialog"
-      title="确认取消学习"
-      message="确定要取消学习该课程吗？此操作无法撤销。"
-      confirm-text="确认取消"
+      :title="t('common.confirm')"
+      :message="t('learning.exitCourseConfirm')"
+      :confirm-text="t('common.confirm')"
       @confirm="confirmDelete"
     />
   </div>
@@ -119,12 +119,14 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
+import { useI18n } from '@/composables/useI18n'
 import { progressApi } from '@/api'
 import { getColorByString } from '@/utils/color'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import DynamicIcon from '@/components/common/DynamicIcon.vue'
 
+const { t } = useI18n()
 const router = useRouter()
 
 // Tab 状态
@@ -154,7 +156,7 @@ watch(statusTab, () => {
 const { execute: deleteProgress } = useMutation(
   (courseId: number) => progressApi.deleteCourseProgress(courseId),
   {
-    successMessage: '已取消学习该课程',
+    successMessage: t('user.profile.courseUnlearned'),
     onSuccess: () => {
       fetchCourses()
     },
@@ -171,7 +173,7 @@ const courses = computed(() => {
     // 后端返回的是万分位（0-10000），转换为百分比（0-100）
     const progress = userLearning.progressPercent ? userLearning.progressPercent / 100 : 0
 
-    const title = course?.name || '未知课程'
+    const title = course?.name || t('user.profile.unknownCourse')
     const totalLessons = course?.nodeCount || 0
     const completedLessons = Math.round((totalLessons * progress) / 100)
 

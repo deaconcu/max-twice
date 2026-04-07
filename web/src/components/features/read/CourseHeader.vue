@@ -2,6 +2,9 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getColorByString } from '@/utils/color'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface Props {
   parentCourseInfo?: any
@@ -60,7 +63,7 @@ const toggleSubscribe = () => {
       <v-icon :icon="courseIcon" size="35" :color="courseColor"></v-icon>
       <div class="course-info">
         <span class="course-name" @click="goToCourse">{{ parentCourseInfo?.name || currentCourse?.name }}</span>
-        <span class="course-meta">{{ currentCourse?.learnerCount?.toLocaleString() || 0 }} 人在学</span>
+        <span class="course-meta">{{ t('course.learnersCount', { count: currentCourse?.learnerCount?.toLocaleString() || 0 }) }}</span>
       </div>
       <v-btn
         variant="text"
@@ -72,7 +75,7 @@ const toggleSubscribe = () => {
           :icon="parentCourseInfo?.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
           :color="parentCourseInfo?.bookmarked ? 'amber-darken-2' : 'grey-lighten-1'"
         ></v-icon>
-        <v-tooltip activator="parent" location="bottom">{{ parentCourseInfo?.bookmarked ? '取消收藏' : '收藏' }}</v-tooltip>
+        <v-tooltip activator="parent" location="bottom">{{ parentCourseInfo?.bookmarked ? t('common.unbookmark') : t('common.bookmark') }}</v-tooltip>
       </v-btn>
       <v-btn
         v-if="!isLearning"
@@ -83,10 +86,10 @@ const toggleSubscribe = () => {
         class="text-none"
         @click.stop="toggleLearning"
       >
-        学习
+        {{ t('course.learn') }}
       </v-btn>
       <div v-else class="progress-area" @click.stop="toggleLearning">
-        <v-tooltip location="bottom" text="点击退出学习">
+        <v-tooltip location="bottom" :text="t('course.clickToExit')">
           <template #activator="{ props }">
             <div class="progress-ring" v-bind="props">
               <svg viewBox="0 0 36 36">

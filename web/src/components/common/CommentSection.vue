@@ -4,9 +4,12 @@ import { commentApi } from '@/api'
 import { upvoteApi } from '@/api'
 import { useFetch, useMutation } from '@/composables'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
+import { useI18n } from '@/composables/useI18n'
 import { ObjectType, VoteType } from '@/enums'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import { useUserStore } from '@/stores/modules/user'
+
+const { t } = useI18n()
 
 interface Props {
   postId?: number
@@ -300,7 +303,7 @@ const loadSubComments = async (comment: any) => {
 const { execute: submitComment, loading: submitting } = useMutation(
   () => commentApi.createComment(props.postId, props.objectType, null, null, newComment.value),
   {
-    successMessage: '评论发表成功',
+    successMessage: t('comment.submitSuccess'),
     onSuccess: (result) => {
       newComment.value = ''
       // 直接插入新评论到列表顶部，不重新加载
@@ -326,7 +329,7 @@ const { execute: submitReply, loading: replying } = useMutation(
     )
   },
   {
-    successMessage: '回复发表成功',
+    successMessage: t('comment.replySuccess'),
     onSuccess: (result) => {
       replyContent.value = ''
       // 使用parentCommentId找到父评论
@@ -381,7 +384,7 @@ const replyToSubComment = (parentCommentIdParam: number, subComment: any) => {
   activeReplyId.value = subComment.id // 用于控制输入框显示在子评论下方
   parentCommentId.value = parentCommentIdParam // 用于API提交，父评论ID
   replyToUserId.value = subComment.creatorId || null
-  replyToUserName.value = subComment.creator?.name || '匿名用户'
+  replyToUserName.value = subComment.creator?.name || t('comment.anonymousUser')
   replyContent.value = ''
 }
 
@@ -491,7 +494,7 @@ onBeforeUnmount(() => {
         @mousedown.prevent="handleSubmitComment"
       >
         <v-icon icon="mdi-send" size="18" class="mr-1"></v-icon>
-        发表评论
+        {{ t('comment.postComment') }}
       </v-btn>
     </div>
 
@@ -503,7 +506,7 @@ onBeforeUnmount(() => {
     <!-- 空状态 -->
     <div v-else-if="comments.length === 0" class="text-center py-8">
       <v-icon icon="mdi-comment-outline" size="48" color="grey-lighten-2" class="mb-2"></v-icon>
-      <p class="text-body-2 text-grey">暂无评论，快来发表第一条评论吧！</p>
+      <p class="text-body-2 text-grey">{{ t('comment.noCommentsHint') }}</p>
     </div>
 
     <!-- 评论列表 -->
@@ -518,7 +521,7 @@ onBeforeUnmount(() => {
             prepend-icon="mdi-arrow-up"
             @click="$emit('viewAllComments')"
           >
-            查看全部评论
+            {{ t('comment.viewAllComments') }}
           </v-chip>
         </div>
         <div class="ellipsis-row">
@@ -535,7 +538,7 @@ onBeforeUnmount(() => {
         <div class="comment-content" :class="{ 'highlighted': highlightedCommentId === comment.id }">
           <div class="d-flex">
           <UserAvatar
-            :name="comment.creator?.name || '匿名用户'"
+            :name="comment.creator?.name || t('comment.anonymousUser')"
             :avatar-url="comment.creator?.avatar"
             size="30"
             rounded="lg"
@@ -544,7 +547,7 @@ onBeforeUnmount(() => {
           <div class="flex-grow-1">
             <div class="d-flex align-center mb-2">
               <span class="text-body-2 font-weight-medium text-grey-darken-3">
-                {{ comment.creator?.name || '匿名用户' }}
+                {{ comment.creator?.name || t('comment.anonymousUser') }}
               </span>
               <span class="text-caption text-grey mx-2">·</span>
               <span class="text-caption text-grey">
@@ -575,7 +578,7 @@ onBeforeUnmount(() => {
                 @click="toggleReply(comment.id)"
               >
                 <v-icon icon="mdi-comment-outline" size="16" class="mr-1"></v-icon>
-                回复
+                {{ t('comment.reply') }}
               </v-btn>
             </div>
 
@@ -583,7 +586,7 @@ onBeforeUnmount(() => {
             <div v-if="activeReplyId === comment.id && replyToUserId === null" class="mt-2 mb-3">
               <v-textarea
                 v-model="replyContent"
-                placeholder="写下你的回复..."
+                :placeholder="t('comment.replyPlaceholder')"
                 variant="outlined"
                 density="comfortable"
                 rounded="lg"
@@ -604,7 +607,7 @@ onBeforeUnmount(() => {
                   class="mr-2"
                   @click="toggleReply(comment.id)"
                 >
-                  取消
+                  {{ t('common.cancel') }}
                 </v-btn>
                 <v-btn
                   size="small"
@@ -614,7 +617,7 @@ onBeforeUnmount(() => {
                   :loading="replying"
                   @mousedown.prevent="handleSubmitReply(comment.id)"
                 >
-                  发表回复
+                  {{ t('comment.postReply') }}
                 </v-btn>
               </div>
             </div>
@@ -639,7 +642,7 @@ onBeforeUnmount(() => {
               >
                 <div class="d-flex">
                   <UserAvatar
-                    :name="subComment.creator?.name || '匿名用户'"
+                    :name="subComment.creator?.name || t('comment.anonymousUser')"
                     :avatar-url="subComment.creator?.avatar"
                     size="24"
                     rounded="lg"
@@ -648,7 +651,7 @@ onBeforeUnmount(() => {
                   <div class="flex-grow-1">
                     <div class="d-flex align-center mb-2">
                       <span class="text-body-2 font-weight-medium text-grey-darken-3">
-                        {{ subComment.creator?.name || '匿名用户' }}
+                        {{ subComment.creator?.name || t('comment.anonymousUser') }}
                       </span>
                       <span class="text-caption text-grey mx-2">·</span>
                       <span class="text-caption text-grey">
@@ -680,7 +683,7 @@ onBeforeUnmount(() => {
                         @click="replyToSubComment(comment.id, subComment)"
                       >
                         <v-icon icon="mdi-comment-outline" size="16" class="mr-1"></v-icon>
-                        回复
+                        {{ t('comment.reply') }}
                       </v-btn>
                     </div>
 
@@ -688,7 +691,7 @@ onBeforeUnmount(() => {
                     <div v-if="activeReplyId === subComment.id" class="mt-2">
                       <v-textarea
                         v-model="replyContent"
-                        :placeholder="`回复 @${subComment.creator?.name || '匿名用户'}...`"
+                        :placeholder="t('comment.replyToPlaceholder', { name: subComment.creator?.name || t('comment.anonymousUser') })"
                         variant="outlined"
                         density="comfortable"
                         rounded="lg"
@@ -709,7 +712,7 @@ onBeforeUnmount(() => {
                           class="mr-2"
                           @click="cancelReply"
                         >
-                          取消
+                          {{ t('common.cancel') }}
                         </v-btn>
                         <v-btn
                           size="small"
@@ -719,7 +722,7 @@ onBeforeUnmount(() => {
                           :loading="replying"
                           @mousedown.prevent="handleSubmitReply(comment.id)"
                         >
-                          发表回复
+                          {{ t('comment.postReply') }}
                         </v-btn>
                       </div>
                     </div>
@@ -736,7 +739,7 @@ onBeforeUnmount(() => {
                 class="mt-0"
                 @click="loadSubComments(comment)"
               >
-                查看更多回复 ({{ comment.replyCount - (comment.children?.length || 0) }})
+                {{ t('comment.viewMoreReplies') }} ({{ comment.replyCount - (comment.children?.length || 0) }})
               </v-btn>
             </div>
       </div>

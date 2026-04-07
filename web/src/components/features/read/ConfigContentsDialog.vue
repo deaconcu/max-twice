@@ -4,7 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import draggable from 'vuedraggable'
 import { tocApi } from '@/api'
 import { useMutation } from '@/composables'
+import { useI18n } from '@/composables/useI18n'
 
+const { t } = useI18n()
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const route = useRoute()
@@ -35,7 +37,7 @@ watch(
 const { execute: submitUpdate, loading: submitting } = useMutation(
   () => tocApi.updateUserNodeToc(props.nodeId, list.value.join(',')),
   {
-    successMessage: '目录更新成功',
+    successMessage: t('posting.operationSuccess'),
     onSuccess: () => {
       console.log('[ConfigContentsDialog] onSuccess 开始')
       console.log('[ConfigContentsDialog] route.query.path:', route.query.path)
@@ -111,7 +113,7 @@ const resetList = () => {
       <v-card-title class="pa-4 d-flex align-center justify-space-between">
         <div class="d-flex align-center">
           <v-icon icon="mdi-file-cog-outline" color="primary" class="mr-2"></v-icon>
-          <span class="text-h6 font-weight-bold">修改目录</span>
+          <span class="text-h6 font-weight-bold">{{ t('configContents.modifyContents') }}</span>
         </div>
         <v-btn icon="mdi-close" variant="text" size="small" @click="dialog = false"></v-btn>
       </v-card-title>
@@ -119,7 +121,7 @@ const resetList = () => {
       <v-card-text class="pa-0">
         <v-sheet height="400px" class="overflow-auto">
           <div class="px-6 py-3 bg-grey-lighten-5">
-            <div class="text-body-2 text-grey-darken-2">拖动调整顺序，添加新目录或复制现有目录</div>
+            <div class="text-body-2 text-grey-darken-2">{{ t('configContents.subtitle') }}</div>
           </div>
 
           <div class="px-6 py-4">
@@ -131,10 +133,10 @@ const resetList = () => {
                   </div>
 
                   <div class="flex-grow-1">
-                    <span v-if="element > 0" class="text-body-1">目录 {{ element }}</span>
-                    <span v-if="element === 0" class="text-body-1 text-error">新目录</span>
+                    <span v-if="element > 0" class="text-body-1">{{ t('configContents.contentItem', { number: element }) }}</span>
+                    <span v-if="element === 0" class="text-body-1 text-error">{{ t('configContents.newContent') }}</span>
                     <span v-if="element < 0" class="text-body-1 text-error">
-                      目录 {{ -element }} 的副本
+                      {{ t('configContents.copyOfContent', { number: -element }) }}
                     </span>
                   </div>
 
@@ -147,7 +149,7 @@ const resetList = () => {
                       prepend-icon="mdi-content-copy"
                       @click="copyItem(index, element)"
                     >
-                      复制
+                      {{ t('common.copy') }}
                     </v-btn>
                     <v-btn
                       variant="text"
@@ -156,7 +158,7 @@ const resetList = () => {
                       prepend-icon="mdi-close"
                       @click="removeItem(index)"
                     >
-                      删除
+                      {{ t('common.delete') }}
                     </v-btn>
                   </div>
                 </div>
@@ -169,15 +171,15 @@ const resetList = () => {
       <v-card-actions class="pa-4 d-flex justify-space-between">
         <div class="d-flex" style="gap: 8px">
           <v-btn variant="text" color="primary" prepend-icon="mdi-plus" @click="addItem">
-            添加新目录
+            {{ t('configContents.addContent') }}
           </v-btn>
           <v-btn variant="text" color="primary" prepend-icon="mdi-refresh" @click="resetList">
-            重置
+            {{ t('common.reset') }}
           </v-btn>
         </div>
         <div class="d-flex" style="gap: 8px">
-          <v-btn variant="text" color="grey-darken-2" @click="dialog = false">取消</v-btn>
-          <v-btn color="primary" variant="flat" :loading="submitting" @click="submit"> 确定 </v-btn>
+          <v-btn variant="text" color="grey-darken-2" @click="dialog = false">{{ t('common.cancel') }}</v-btn>
+          <v-btn color="primary" variant="flat" :loading="submitting" @click="submit"> {{ t('common.confirm') }} </v-btn>
         </div>
       </v-card-actions>
     </v-card>

@@ -3,6 +3,9 @@ import { ref, inject } from 'vue'
 import { userApi } from '@/api/modules/user'
 import { messageApi } from '@/api/modules/message'
 import { useMutation } from '@/composables/useMutation'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface Props {
   nodeId?: number
@@ -37,12 +40,12 @@ const handleSearch = async () => {
       searchResultInfo.value = ''
     } else {
       searchResults.value = []
-      searchResultInfo.value = '未找到用户'
+      searchResultInfo.value = t('invite.noUser')
     }
   } catch (error) {
-    console.error('搜索用户失败:', error)
+    console.error('Search user failed:', error)
     searchResults.value = []
-    searchResultInfo.value = '搜索失败，请重试'
+    searchResultInfo.value = t('error.operationFailed')
   } finally {
     loading.value = false
   }
@@ -52,7 +55,7 @@ const handleSearch = async () => {
 const { execute: executeInvite } = useMutation(
   (userId: number) => messageApi.inviteUser(userId, props.nodeId),
   {
-    successMessage: '邀请成功',
+    successMessage: t('invite.operationSuccess'),
     onSuccess: (_, userId) => {
       invitedUserIds.value.add(userId)
     },
@@ -86,7 +89,7 @@ const closeDialog = () => {
       <v-card-title class="pa-4 d-flex align-center justify-space-between">
         <div class="d-flex align-center">
           <v-icon icon="mdi-account-plus-outline" color="primary" class="mr-2"></v-icon>
-          <span class="text-h6 font-weight-bold">邀请回答</span>
+          <span class="text-h6 font-weight-bold">{{ t('invite.inviteToAnswer') }}</span>
         </div>
         <v-btn icon="mdi-close" variant="text" size="small" @click="closeDialog"></v-btn>
       </v-card-title>
@@ -96,7 +99,7 @@ const closeDialog = () => {
         <!-- 搜索框 -->
         <v-text-field
           v-model="searchKeyword"
-          label="搜索用户名"
+          :label="t('invite.inputUsername')"
           variant="outlined"
           density="comfortable"
           hide-details
@@ -134,7 +137,7 @@ const closeDialog = () => {
               :disabled="isInvited(user.id)"
               @click="handleInvite(user)"
             >
-              {{ isInvited(user.id) ? '已邀请' : '邀请' }}
+              {{ isInvited(user.id) ? t('course.subscribed') : t('invite.invite') }}
             </v-btn>
           </div>
         </div>
@@ -152,7 +155,7 @@ const closeDialog = () => {
           v-if="searchResults.length === 0 && !searchResultInfo"
           class="text-body-2 text-grey-darken-1 text-center py-8"
         >
-          请输入用户名进行搜索
+          {{ t('invite.inputUsername') }}
         </div>
       </v-card-text>
     </v-card>

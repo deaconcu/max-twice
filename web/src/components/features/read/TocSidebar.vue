@@ -13,7 +13,7 @@
             class="me-0 px-3 text-body-2 text-md-body-1 text-medium-emphasis"
             style="font-weight: 600"
           >
-            目录
+            {{ t('toc.title') }}
           </v-chip>
           <div
             v-for="(item, index) in toc"
@@ -79,6 +79,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import TreeNode from '@/components/common/TreeNode.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface Props {
   toc?: any[]

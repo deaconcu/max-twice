@@ -11,7 +11,7 @@
           :color="statusFilter === 'all' ? 'primary' : 'default'"
           @click="statusFilter = 'all'"
         >
-          全部
+          {{ t('user.profile.all') }}
         </v-btn>
         <v-btn
           variant="text"
@@ -20,7 +20,7 @@
           :color="statusFilter === 'draft' ? 'primary' : 'default'"
           @click="statusFilter = 'draft'"
         >
-          草稿
+          {{ t('user.profile.draft') }}
         </v-btn>
         <v-btn
           variant="text"
@@ -29,14 +29,14 @@
           :color="statusFilter === 'published' ? 'primary' : 'default'"
           @click="statusFilter = 'published'"
         >
-          已发布
+          {{ t('user.profile.published') }}
         </v-btn>
       </div>
 
       <!-- 右侧：搜索框 -->
       <v-text-field
         v-model="searchQuery"
-        placeholder="搜索目录..."
+        :placeholder="t('user.profile.searchPlaceholder')"
         prepend-inner-icon="mdi-magnify"
         variant="outlined"
         density="compact"
@@ -84,7 +84,7 @@
                     variant="tonal"
                     class="flex-shrink-0 ml-2"
                   >
-                    草稿
+                    {{ t('user.profile.draft') }}
                   </v-chip>
                   <v-chip
                     v-else-if="catalog.state === 1"
@@ -93,7 +93,7 @@
                     variant="tonal"
                     class="flex-shrink-0 ml-2"
                   >
-                    待审核
+                    {{ t('admin.pending') }}
                   </v-chip>
                   <v-chip
                     v-else-if="catalog.state === 2"
@@ -102,7 +102,7 @@
                     variant="tonal"
                     class="flex-shrink-0 ml-2"
                   >
-                    已发布
+                    {{ t('user.profile.published') }}
                   </v-chip>
                   <v-chip
                     v-else-if="catalog.state === 3"
@@ -111,7 +111,7 @@
                     variant="tonal"
                     class="flex-shrink-0 ml-2"
                   >
-                    已拒绝
+                    {{ t('admin.rejected') }}
                   </v-chip>
                   <v-chip
                     v-else-if="catalog.state === 4"
@@ -120,7 +120,7 @@
                     variant="tonal"
                     class="flex-shrink-0 ml-2"
                   >
-                    已屏蔽
+                    {{ t('admin.banned') }}
                   </v-chip>
                 </div>
 
@@ -146,9 +146,9 @@
                 <!-- 底部：统计信息 + 操作按钮 -->
                 <div class="d-flex align-center justify-space-between">
                   <div class="d-flex align-center text-caption text-grey" style="gap: 12px">
-                    <span>{{ catalog.commentCount }} 评论</span>
-                    <span>{{ catalog.deckCount }} 卡片</span>
-                    <span>{{ catalog.contentNodes.length }} 章节</span>
+                    <span>{{ catalog.commentCount }} {{ t('notification.comment') }}</span>
+                    <span>{{ catalog.deckCount }} {{ t('review.cards') }}</span>
+                    <span>{{ catalog.contentNodes.length }} {{ t('learning.nodes') }}</span>
                     <span class="d-none d-sm-inline">{{ formatDate(catalog.createdAt) }}</span>
                   </div>
                   <div class="d-flex align-center">
@@ -181,7 +181,7 @@
 
           <template #empty>
             <div v-if="!searchQuery" class="text-center py-4">
-              <p class="text-body-2 text-grey">已加载所有数据</p>
+              <p class="text-body-2 text-grey">{{ t('postingList.reachedEnd') }}</p>
             </div>
           </template>
         </v-infinite-scroll>
@@ -195,19 +195,19 @@
             class="mb-3 mb-md-4"
           />
           <p class="text-body-2 text-md-body-1 text-grey-darken-2">
-            {{ searchQuery ? '未找到匹配的目录' : '暂无创建的目录' }}
+            {{ searchQuery ? t('user.profile.noCatalogsFound') : t('user.profile.noCatalogsCreated') }}
           </p>
           <p class="text-caption text-md-body-2 text-grey">
-            {{ searchQuery ? '尝试使用其他关键词搜索' : '创建目录来组织您的学习内容' }}
+            {{ searchQuery ? t('user.profile.tryOtherKeywords') : t('user.profile.createCatalogHint') }}
           </p>
         </div>
 
         <!-- 删除确认对话框 -->
         <ConfirmDialog
           v-model="showDeleteDialog"
-          title="确认删除"
-          message="确定要删除该目录吗？此操作不可恢复。"
-          confirm-text="确认删除"
+          :title="t('common.confirm')"
+          :message="t('common.delete') + '?'"
+          :confirm-text="t('common.confirm')"
           @confirm="confirmDelete"
         />
 
@@ -227,6 +227,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
+import { useI18n } from '@/composables/useI18n'
 import { userApi, postApi } from '@/api'
 import { PostType } from '@/enums'
 import { parseContentNodes } from '@/utils/postUtils'
@@ -234,6 +235,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import NodeSelectorDialog from '@/components/features/read/NodeSelectorDialog.vue'
 
+const { t, locale } = useI18n()
 const router = useRouter()
 
 // 搜索关键词
@@ -275,7 +277,7 @@ const {
 
 // 删除帖子
 const { execute: deletePost } = useMutation((postId: number) => postApi.deletePost(postId), {
-  successMessage: '已删除该目录',
+  successMessage: t('user.profile.catalogDeleted'),
   onSuccess: () => {
     // 从列表中移除已删除的项
     posts.value = posts.value.filter((p) => p.id !== postToDelete.value)
@@ -379,7 +381,7 @@ const confirmDelete = async () => {
 // 格式化日期
 const formatDate = (date: string) => {
   if (!date) return ''
-  return new Date(date).toLocaleDateString('zh-CN')
+  return new Date(date).toLocaleDateString(locale.value === 'zh' ? 'zh-CN' : 'en-US')
 }
 
 // 适配 v-infinite-scroll 的回调接口

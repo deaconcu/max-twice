@@ -50,7 +50,7 @@
                   </v-chip>
                 </div>
                 <div class="text-body-2 text-medium-emphasis text-truncate">
-                  {{ roadmap.nodeCount }} 个节点
+                  {{ roadmap.nodeCount }} {{ t('roadmap.nodes') }}
                 </div>
               </div>
             </div>
@@ -79,7 +79,7 @@
                   size="small"
                   @click.stop="goToRoadmapDetail(roadmap.id)"
                 >
-                  查看
+                  {{ t('home.viewAll') }}
                 </v-btn>
                 <v-btn
                   v-if="isOwnProfile"
@@ -88,7 +88,7 @@
                   size="small"
                   @click.stop="editRoadmap(roadmap.id, roadmap.professionId)"
                 >
-                  编辑
+                  {{ t('common.edit') }}
                 </v-btn>
               </div>
             </div>
@@ -104,7 +104,7 @@
           :loading="loading"
           @click="loadMoreRoadmaps({ done: () => {} })"
         >
-          加载更多
+          {{ t('common.loadMore') }}
         </v-btn>
       </div>
     </div>
@@ -117,16 +117,16 @@
         color="grey-lighten-2"
         class="mb-3 mb-md-4"
       />
-      <p class="text-body-2 text-md-body-1 text-grey-darken-2">暂无创建的路线图</p>
-      <p class="text-caption text-md-body-2 text-grey">创建学习路线图，规划职业发展路径</p>
+      <p class="text-body-2 text-md-body-1 text-grey-darken-2">{{ t('learning.noRoadmaps') }}</p>
+      <p class="text-caption text-md-body-2 text-grey">{{ t('roadmap.systematicLearning') }}</p>
     </div>
 
     <!-- 删除确认对话框 -->
     <ConfirmDialog
       v-model="showDeleteDialog"
-      title="确认删除"
-      message="确定要删除该路线图吗？此操作不可恢复。"
-      confirm-text="确认删除"
+      :title="t('common.confirm')"
+      :message="t('common.delete') + '?'"
+      :confirm-text="t('common.confirm')"
       @confirm="confirmDelete"
     />
   </div>
@@ -137,9 +137,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
+import { useI18n } from '@/composables/useI18n'
 import { userApi } from '@/api'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+
+const { t } = useI18n()
 
 interface Props {
   userId?: number | null
@@ -202,7 +205,7 @@ const roadmapToDelete = ref<number | null>(null)
 const { execute: deleteRoadmapAction } = useMutation(
   (roadmapId: number) => userApi.deleteRoadmap(roadmapId),
   {
-    successMessage: '已删除该路线图',
+    successMessage: t('user.profile.roadmapDeleted'),
     onSuccess: () => {
       // 刷新列表
       roadmapsData.value = []
@@ -218,9 +221,9 @@ const roadmaps = computed(() => {
   return roadmapsData.value.map((roadmap) => ({
     id: roadmap.id,
     professionId: roadmap.profession?.id || roadmap.professionId,
-    name: roadmap.profession?.name || '未知职业',
-    profession: roadmap.profession?.name || '未知职业',
-    description: roadmap.description || '暂无描述',
+    name: roadmap.profession?.name || t('user.profile.unknownProfession'),
+    profession: roadmap.profession?.name || t('user.profile.unknownProfession'),
+    description: roadmap.description || t('hotRanking.noDescription'),
     usageCount: roadmap.learnerCount || 0,
     starCount: roadmap.likeCount || 0,
     nodeCount: roadmap.nodeCount || 0,
@@ -249,13 +252,13 @@ const getStatusColor = (status: string) => {
 // 获取状态文本
 const getStatusText = (status: string) => {
   const texts: Record<string, string> = {
-    draft: '草稿',
-    submitted: '审核中',
-    published: '已发布',
-    rejected: '已拒绝',
-    banned: '已封禁',
+    draft: t('user.profile.draft'),
+    submitted: t('admin.pending'),
+    published: t('user.profile.published'),
+    rejected: t('admin.rejected'),
+    banned: t('admin.banned'),
   }
-  return texts[status] || '未知'
+  return texts[status] || t('user.profile.unknown')
 }
 
 // 跳转到路线图详情

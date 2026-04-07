@@ -10,8 +10,10 @@ import { useRouter } from 'vue-router'
 import { bookmarkApi, type ContentType, type Bookmark } from '@/api/modules/bookmark'
 import { getColorByString } from '@/utils/color'
 import { formatRelativeTime } from '@/utils/format'
+import { useI18n } from '@/composables/useI18n'
 import DynamicIcon from '@/components/common/DynamicIcon.vue'
 
+const { t } = useI18n()
 const router = useRouter()
 
 // 当前激活的标签
@@ -115,7 +117,7 @@ async function handleUnbookmark(item: Bookmark) {
       (b) => b.id !== item.id
     )
   } catch (error) {
-    console.error('取消收藏失败:', error)
+    console.error('unfavorite error:', error)
   }
 }
 
@@ -153,8 +155,8 @@ function getIcon(item: Bookmark): string | null {
 // 获取名称
 function getName(item: Bookmark): string {
   const obj = item.object as Record<string, unknown>
-  if (!obj) return '未知'
-  return (obj.name as string) || (obj.professionName as string) || '未知'
+  if (!obj) return t('user.profile.unknown')
+  return (obj.name as string) || (obj.professionName as string) || t('user.profile.unknown')
 }
 
 // 获取图标颜色
@@ -173,9 +175,9 @@ function getPostNodeName(item: Bookmark): string | null {
 // 获取文章类型标签（文章/目录）
 function getPostTypeLabel(item: Bookmark): string {
   const obj = item.object as Record<string, unknown>
-  if (!obj) return '文章'
+  if (!obj) return t('user.profile.article')
   // type: 1 = 目录, 2 = 文章
-  return obj.type === 1 ? '目录' : '文章'
+  return obj.type === 1 ? t('user.profile.myContents') : t('user.profile.article')
 }
 
 // 获取文章图标（目录/文章显示不同图标）
@@ -195,11 +197,11 @@ function getPostIconColor(): string {
   <div class="bookmarks-tab">
     <!-- 二级标签 -->
     <v-tabs v-model="activeType" color="primary" class="mb-6">
-      <v-tab value="profession">职业</v-tab>
-      <v-tab value="roadmap">路线图</v-tab>
-      <v-tab value="course">课程</v-tab>
-      <v-tab value="post">文章</v-tab>
-      <v-tab value="memory_card_deck">卡片组</v-tab>
+      <v-tab value="profession">{{ t('nav.role') }}</v-tab>
+      <v-tab value="roadmap">{{ t('nav.roadmap') }}</v-tab>
+      <v-tab value="course">{{ t('nav.courses') }}</v-tab>
+      <v-tab value="post">{{ t('user.profile.article') }}</v-tab>
+      <v-tab value="memory_card_deck">{{ t('user.profile.myMemoryDecks') }}</v-tab>
     </v-tabs>
 
     <!-- 加载状态 -->
@@ -210,7 +212,7 @@ function getPostIconColor(): string {
     <!-- 空状态 -->
     <div v-else-if="currentItems.length === 0" class="text-center py-12">
       <v-icon icon="mdi-bookmark-outline" size="64" color="grey" class="mb-4" />
-      <p class="text-body-1 text-grey">暂无收藏</p>
+      <p class="text-body-1 text-grey">{{ t('common.noCards') }}</p>
     </div>
 
     <!-- 收藏列表 -->
@@ -302,7 +304,7 @@ function getPostIconColor(): string {
                     class="text-caption text-medium-emphasis text-truncate"
                     style="flex: 1; min-width: 0"
                   >
-                    {{ (item.object as Record<string, unknown>).nodeCount }} 个知识节点
+                    {{ (item.object as Record<string, unknown>).nodeCount }} {{ t('rightSidebar.knowledgeNodes') }}
                   </span>
                   <span v-else style="flex: 1"></span>
                   <span class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(item.createdAt) }}</span>
@@ -355,7 +357,7 @@ function getPostIconColor(): string {
                     class="text-caption text-medium-emphasis text-truncate"
                     style="flex: 1; min-width: 0"
                   >
-                    {{ (item.object as Record<string, unknown>).nodeCount }} 个知识节点
+                    {{ (item.object as Record<string, unknown>).nodeCount }} {{ t('rightSidebar.knowledgeNodes') }}
                   </span>
                   <span v-else style="flex: 1"></span>
                   <span class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(item.createdAt) }}</span>
@@ -400,7 +402,7 @@ function getPostIconColor(): string {
                   class="text-body-1 font-weight-bold text-truncate"
                   :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                 >
-                  {{ getPostNodeName(item) || '未知节点' }}
+                  {{ getPostNodeName(item) || t('user.profile.unknownNode') }}
                 </div>
                 <div class="d-flex align-center justify-space-between">
                   <span class="text-caption text-medium-emphasis">{{ getPostTypeLabel(item) }}</span>
@@ -441,7 +443,7 @@ function getPostIconColor(): string {
                   class="text-body-1 font-weight-bold text-truncate"
                   :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                 >
-                  {{ (item.object as Record<string, unknown>)?.name || '未知卡片组' }}
+                  {{ (item.object as Record<string, unknown>)?.name || t('user.profile.unknown') }}
                 </div>
                 <div class="d-flex align-center justify-space-between">
                   <span
@@ -449,7 +451,7 @@ function getPostIconColor(): string {
                     class="text-caption text-medium-emphasis text-truncate"
                     style="flex: 1; min-width: 0"
                   >
-                    {{ (item.object as Record<string, unknown>).cardCount }} 张卡片
+                    {{ (item.object as Record<string, unknown>).cardCount }} {{ t('review.cards') }}
                   </span>
                   <span v-else style="flex: 1"></span>
                   <span class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(item.createdAt) }}</span>
@@ -463,7 +465,7 @@ function getPostIconColor(): string {
       <!-- 加载更多 -->
       <div v-if="hasMore[activeType]" class="text-center mt-6">
         <v-btn :loading="loadingMore" variant="outlined" rounded="lg" @click="loadMore">
-          加载更多
+          {{ t('common.loadMore') }}
         </v-btn>
       </div>
     </div>

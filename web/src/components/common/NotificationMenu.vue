@@ -156,34 +156,34 @@ const getMessageIcon = (message: Message): { icon: string; color: string } => {
 const getMessageTitle = (message: Message): string => {
   const type = message.type
 
-  if (type === MessageType.FOLLOW) return '新增关注'
-  if (type === MessageType.UPVOTE) return '收到点赞'
-  if (type === MessageType.NODE_COMMENT) return '节点评论'
-  if (type === MessageType.POST_COMMENT) return '帖子评论'
-  if (type === MessageType.ROADMAP_COMMENT) return '路线图评论'
-  if (type === MessageType.REPLY_NODE_COMMENT) return '评论回复'
-  if (type === MessageType.REPLY_POSTING_COMMENT) return '评论回复'
-  if (type === MessageType.REPLY_ROADMAP_COMMENT) return '评论回复'
-  if (type === MessageType.INVITE) return '邀请通知'
+  if (type === MessageType.FOLLOW) return t('notification.newFollow')
+  if (type === MessageType.UPVOTE) return t('notification.receivedUpvote')
+  if (type === MessageType.NODE_COMMENT) return t('notification.nodeComment')
+  if (type === MessageType.POST_COMMENT) return t('notification.postComment')
+  if (type === MessageType.ROADMAP_COMMENT) return t('notification.roadmapComment')
+  if (type === MessageType.REPLY_NODE_COMMENT) return t('notification.commentReply')
+  if (type === MessageType.REPLY_POSTING_COMMENT) return t('notification.commentReply')
+  if (type === MessageType.REPLY_ROADMAP_COMMENT) return t('notification.commentReply')
+  if (type === MessageType.INVITE) return t('notification.inviteNotice')
 
-  if (type === MessageType.COURSE_APPROVED) return '课程审核通过'
-  if (type === MessageType.PROFESSION_APPROVED) return '职业审核通过'
-  if (type === MessageType.COURSE_REJECTED) return '课程审核未通过'
-  if (type === MessageType.COURSE_BANNED) return '课程已被封禁'
-  if (type === MessageType.POST_REJECTED) return '帖子审核未通过'
-  if (type === MessageType.POST_BANNED) return '帖子已被封禁'
-  if (type === MessageType.COMMENT_REJECTED) return '评论审核未通过'
-  if (type === MessageType.COMMENT_BANNED) return '评论已被封禁'
-  if (type === MessageType.PROFESSION_REJECTED) return '职业审核未通过'
-  if (type === MessageType.PROFESSION_BANNED) return '职业已被封禁'
-  if (type === MessageType.ROADMAP_REJECTED) return '路线图审核未通过'
-  if (type === MessageType.ROADMAP_BANNED) return '路线图已被封禁'
-  if (type === MessageType.MEMORY_DECK_REJECTED) return '卡片组审核未通过'
-  if (type === MessageType.MEMORY_DECK_BANNED) return '卡片组已被封禁'
-  if (type === MessageType.NODE_REJECTED) return '节点审核未通过'
-  if (type === MessageType.NODE_BANNED) return '节点已被封禁'
+  if (type === MessageType.COURSE_APPROVED) return t('notification.courseApproved')
+  if (type === MessageType.PROFESSION_APPROVED) return t('notification.professionApproved')
+  if (type === MessageType.COURSE_REJECTED) return t('notification.courseRejected')
+  if (type === MessageType.COURSE_BANNED) return t('notification.courseBanned')
+  if (type === MessageType.POST_REJECTED) return t('notification.postRejected')
+  if (type === MessageType.POST_BANNED) return t('notification.postBanned')
+  if (type === MessageType.COMMENT_REJECTED) return t('notification.commentRejected')
+  if (type === MessageType.COMMENT_BANNED) return t('notification.commentBanned')
+  if (type === MessageType.PROFESSION_REJECTED) return t('notification.professionRejected')
+  if (type === MessageType.PROFESSION_BANNED) return t('notification.professionBanned')
+  if (type === MessageType.ROADMAP_REJECTED) return t('notification.roadmapRejected')
+  if (type === MessageType.ROADMAP_BANNED) return t('notification.roadmapBanned')
+  if (type === MessageType.MEMORY_DECK_REJECTED) return t('notification.deckRejected')
+  if (type === MessageType.MEMORY_DECK_BANNED) return t('notification.deckBanned')
+  if (type === MessageType.NODE_REJECTED) return t('notification.nodeRejected')
+  if (type === MessageType.NODE_BANNED) return t('notification.nodeBanned')
 
-  return '系统通知'
+  return t('notification.systemNotice')
 }
 
 // 格式化消息内容
@@ -192,11 +192,11 @@ const getMessageContent = (message: Message): string => {
     const data = message.content ? JSON.parse(message.content) : {}
     const type = message.type
     // 优先使用 JSON 中的名称，然后使用 sender.name，最后使用默认值
-    const senderName = data.commenterName || data.voterName || data.inviterName || message.sender?.name || '用户'
+    const senderName = data.commenterName || data.voterName || data.inviterName || message.sender?.name || t('notification.user')
 
     // 互动消息
     if (type === MessageType.FOLLOW) {
-      return `${senderName} 关注了你`
+      return t('notification.followedYou', { name: senderName })
     }
 
     if (type === MessageType.UPVOTE) {
@@ -204,140 +204,135 @@ const getMessageContent = (message: Message): string => {
 
       if (contentType === 'roadmap') {
         // 路线图点赞
-        const voterName = data.voterName || '用户'
-        const professionName = data.professionName || '职业'
-        return `${voterName} 点赞了你的${professionName}路线图`
+        const voterName = data.voterName || t('notification.user')
+        const professionName = data.professionName || t('notification.profession')
+        return t('notification.upvotedRoadmap', { name: voterName, profession: professionName })
       }
 
       // 原有逻辑：帖子和评论
       const objectType = data.objectType
       const voteType = data.voteType
-      const nodeName = data.nodeName || '节点'
+      const nodeName = data.nodeName || t('notification.node')
 
       if (objectType === 1) {
         // POST
         if (voteType === 1) {
           // TWICE
-          return `${senderName} 认为您在目录《${nodeName}》的文章能被两次读懂`
+          return t('notification.twiceArticle', { name: senderName, node: nodeName })
         } else if (voteType === 2) {
           // HELPFUL
-          return `${senderName} 认为您在目录《${nodeName}》的文章有帮助`
+          return t('notification.helpfulArticle', { name: senderName, node: nodeName })
         }
       } else if (objectType === 2) {
         // COMMENT
-        return `${senderName} 点赞了您在目录《${nodeName}》下的评论`
+        return t('notification.upvotedComment', { name: senderName, node: nodeName })
       }
-      return `${senderName} 赞了你的内容`
+      return t('notification.upvotedContent', { name: senderName })
     }
 
     if (type === MessageType.INVITE) {
-      const nodeName = data.nodeName || '节点'
-      return `${senderName} 邀请您给目录《${nodeName}》添加文章`
+      const nodeName = data.nodeName || t('notification.node')
+      return t('notification.invitedToNode', { name: senderName, node: nodeName })
     }
 
     if (type === MessageType.NODE_COMMENT) {
-      const nodeName = data.nodeName || '节点'
-      return `${senderName} 评论了您创建的目录《${nodeName}》`
+      const nodeName = data.nodeName || t('notification.node')
+      return t('notification.commentedOnNode', { name: senderName, node: nodeName })
     }
 
     if (type === MessageType.POST_COMMENT) {
-      const nodeName = data.nodeName || '节点'
-      return `${senderName} 评论了您在目录《${nodeName}》下的文章`
+      const nodeName = data.nodeName || t('notification.node')
+      return t('notification.commentedOnPost', { name: senderName, node: nodeName })
     }
 
     if (type === MessageType.REPLY_NODE_COMMENT) {
-      const nodeName = data.nodeName || '节点'
-      return `${senderName} 回复了您在目录《${nodeName}》下的评论`
+      const nodeName = data.nodeName || t('notification.node')
+      return t('notification.repliedNodeComment', { name: senderName, node: nodeName })
     }
 
     if (type === MessageType.REPLY_POSTING_COMMENT) {
-      const nodeName = data.nodeName || '节点'
-      return `${senderName} 回复了您在目录《${nodeName}》的文章下的评论`
+      const nodeName = data.nodeName || t('notification.node')
+      return t('notification.repliedPostComment', { name: senderName, node: nodeName })
     }
 
     if (type === MessageType.REPLY_ROADMAP_COMMENT) {
-      const professionName = data.professionName || '路线图'
-      return `${senderName} 回复了您在路线图《${professionName}》下的评论`
+      const professionName = data.professionName || t('notification.roadmap')
+      return t('notification.repliedRoadmapComment', { name: senderName, profession: professionName })
     }
 
     if (type === MessageType.ROADMAP_COMMENT) {
-      const professionName = data.professionName || '路线图'
-      return `${senderName} 评论了您创建的路线图《${professionName}》`
+      const professionName = data.professionName || t('notification.roadmap')
+      return t('notification.commentedOnRoadmap', { name: senderName, profession: professionName })
     }
 
     // 审核消息
     if (type === MessageType.COURSE_APPROVED) {
-      return `您提交的课程《${data.courseName || ''}》审核通过！`
+      return t('notification.courseApprovedContent', { name: data.courseName || '' })
     }
     if (type === MessageType.PROFESSION_APPROVED) {
-      return `您提交的职业《${data.professionName || ''}》审核通过！`
+      return t('notification.professionApprovedContent', { name: data.professionName || '' })
     }
 
     if (type === MessageType.COURSE_REJECTED) {
-      return `您提交的课程《${data.courseName || ''}》审核未通过。原因：${data.reason || ''}`
+      return t('notification.courseRejectedContent', { name: data.courseName || '', reason: data.reason || '' })
     }
     if (type === MessageType.COURSE_BANNED) {
-      return `您提交的课程《${data.courseName || ''}》已被封禁。原因：${data.reason || ''}`
+      return t('notification.courseBannedContent', { name: data.courseName || '', reason: data.reason || '' })
     }
 
     if (type === MessageType.POST_REJECTED) {
-      const courseName = data.courseName || ''
       const nodeName = data.nodeName || ''
-      const postPreview = data.postPreview || '帖子'
-      return `您在《${courseName} - ${nodeName}》下的帖子"${postPreview}"审核未通过。原因：${data.reason || ''}`
+      return t('notification.postRejectedContent', { node: nodeName, reason: data.reason || '' })
     }
     if (type === MessageType.POST_BANNED) {
-      const courseName = data.courseName || ''
       const nodeName = data.nodeName || ''
-      const postPreview = data.postPreview || '帖子'
-      return `您在《${courseName} - ${nodeName}》下的帖子"${postPreview}"已被封禁。原因：${data.reason || ''}`
+      return t('notification.postBannedContent', { node: nodeName, reason: data.reason || '' })
     }
 
     if (type === MessageType.COMMENT_REJECTED) {
       const objectTypeName = getObjectTypeName(data.objectType)
       const objectTitle = data.objectTitle || ''
-      const commentPreview = data.commentPreview || '评论'
-      return `您在${objectTypeName}《${objectTitle}》下的评论"${commentPreview}"审核未通过。原因：${data.reason || ''}`
+      const commentPreview = data.commentPreview || t('notification.comment')
+      return t('notification.commentRejectedContent', { type: objectTypeName, title: objectTitle, preview: commentPreview, reason: data.reason || '' })
     }
     if (type === MessageType.COMMENT_BANNED) {
       const objectTypeName = getObjectTypeName(data.objectType)
       const objectTitle = data.objectTitle || ''
-      const commentPreview = data.commentPreview || '评论'
-      return `您在${objectTypeName}《${objectTitle}》下的评论"${commentPreview}"已被封禁。原因：${data.reason || ''}`
+      const commentPreview = data.commentPreview || t('notification.comment')
+      return t('notification.commentBannedContent', { type: objectTypeName, title: objectTitle, preview: commentPreview, reason: data.reason || '' })
     }
 
     if (type === MessageType.PROFESSION_REJECTED) {
-      return `您提交的职业《${data.professionName || ''}》审核未通过。原因：${data.reason || ''}`
+      return t('notification.professionRejectedContent', { name: data.professionName || '', reason: data.reason || '' })
     }
     if (type === MessageType.PROFESSION_BANNED) {
-      return `您提交的职业《${data.professionName || ''}》已被封禁。原因：${data.reason || ''}`
+      return t('notification.professionBannedContent', { name: data.professionName || '', reason: data.reason || '' })
     }
 
     if (type === MessageType.ROADMAP_REJECTED) {
-      return `您为职业《${data.professionName || ''}》提交的路线图审核未通过。原因：${data.reason || ''}`
+      return t('notification.roadmapRejectedContent', { profession: data.professionName || '', reason: data.reason || '' })
     }
     if (type === MessageType.ROADMAP_BANNED) {
-      return `您为职业《${data.professionName || ''}》提交的路线图已被封禁。原因：${data.reason || ''}`
+      return t('notification.roadmapBannedContent', { profession: data.professionName || '', reason: data.reason || '' })
     }
 
     if (type === MessageType.MEMORY_DECK_REJECTED) {
-      return `您为帖子《${data.postTitle || ''}》创建的卡片组审核未通过。原因：${data.reason || ''}`
+      return t('notification.deckRejectedContent', { node: data.postTitle || '', reason: data.reason || '' })
     }
     if (type === MessageType.MEMORY_DECK_BANNED) {
-      return `您为帖子《${data.postTitle || ''}》创建的卡片组已被封禁。原因：${data.reason || ''}`
+      return t('notification.deckBannedContent', { node: data.postTitle || '', reason: data.reason || '' })
     }
 
     if (type === MessageType.NODE_REJECTED) {
-      return `您在课程《${data.courseName || ''}》中创建的节点《${data.nodeName || ''}》审核未通过。原因：${data.reason || ''}`
+      return t('notification.nodeRejectedContent', { name: data.nodeName || '', reason: data.reason || '' })
     }
     if (type === MessageType.NODE_BANNED) {
-      return `您在课程《${data.courseName || ''}》中创建的节点《${data.nodeName || ''}》已被封禁。原因：${data.reason || ''}`
+      return t('notification.nodeBannedContent', { name: data.nodeName || '', reason: data.reason || '' })
     }
 
-    return message.content || '新消息'
+    return message.content || t('notification.systemNotice')
   } catch (error) {
-    console.error('解析消息内容失败:', error)
-    return message.content || '新消息'
+    return message.content || t('notification.systemNotice')
   }
 }
 
@@ -345,19 +340,19 @@ const getMessageContent = (message: Message): string => {
 const getObjectTypeName = (objectType: number): string => {
   switch (objectType) {
     case 1:
-      return '帖子'
+      return t('notification.objectTypePost')
     case 2:
-      return '评论'
+      return t('notification.comment')
     case 3:
-      return '节点'
+      return t('notification.objectTypeNode')
     case 4:
-      return '课程'
+      return t('notification.objectTypeCourse')
     case 5:
-      return '职业'
+      return t('notification.profession')
     case 6:
-      return '路线图'
+      return t('notification.objectTypeRoadmap')
     default:
-      return '内容'
+      return t('notification.content')
   }
 }
 
@@ -373,10 +368,10 @@ const formatTime = (timeStr?: string): string => {
   const hours = Math.floor(diff / 3600000)
   const days = Math.floor(diff / 86400000)
 
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes}分钟前`
-  if (hours < 24) return `${hours}小时前`
-  if (days < 7) return `${days}天前`
+  if (minutes < 1) return t('notification.justNow')
+  if (minutes < 60) return t('notification.minutesAgo', { n: minutes })
+  if (hours < 24) return t('notification.hoursAgo', { n: hours })
+  if (days < 7) return t('notification.daysAgo', { n: days })
 
   return timeStr.split(' ')[0] || timeStr
 }
@@ -677,9 +672,9 @@ defineExpose({
       <!-- 筛选按钮 -->
       <div class="filter-bar">
         <v-chip-group v-model="filterCategory" mandatory>
-          <v-chip value="all" size="small" variant="flat">全部</v-chip>
-          <v-chip value="interaction" size="small" variant="flat">互动</v-chip>
-          <v-chip value="system" size="small" variant="flat">系统</v-chip>
+          <v-chip value="all" size="small" variant="flat">{{ t('notification.all') }}</v-chip>
+          <v-chip value="interaction" size="small" variant="flat">{{ t('notification.interaction') }}</v-chip>
+          <v-chip value="system" size="small" variant="flat">{{ t('notification.system') }}</v-chip>
         </v-chip-group>
         <v-btn
           icon
@@ -713,7 +708,7 @@ defineExpose({
             <div class="flex-grow-1">
               <div class="d-flex align-center mb-1">
                 <div class="notification-title">{{ getMessageTitle(message) }}</div>
-                <v-chip v-if="message.isNew" size="x-small" color="error" class="ml-2">NEW</v-chip>
+                <v-chip v-if="message.isNew" size="x-small" color="error" class="ml-2">{{ t('notification.new') }}</v-chip>
               </div>
               <div class="notification-content">{{ getMessageContent(message) }}</div>
               <div class="notification-time">{{ formatTime(message.createdAt) }}</div>
@@ -725,7 +720,7 @@ defineExpose({
         <!-- 空状态 -->
         <div v-if="!loading && filteredMessages.length === 0" class="empty-state">
           <v-icon size="48" color="grey-lighten-2">mdi-bell-outline</v-icon>
-          <p class="text-grey-darken-1 mt-2">暂无消息</p>
+          <p class="text-grey-darken-1 mt-2">{{ t('notification.noMessages') }}</p>
         </div>
 
         <!-- 加载中 -->

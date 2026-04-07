@@ -6,8 +6,8 @@
     >
       <div></div>
       <div class="text-caption text-grey">
-        <span class="font-weight-bold text-primary">{{ stats.following }}</span> 关注 ·
-        <span class="font-weight-bold text-success">{{ stats.followers }}</span> 粉丝
+        <span class="font-weight-bold text-primary">{{ stats.following }}</span> {{ t('user.profile.following') }} ·
+        <span class="font-weight-bold text-success">{{ stats.followers }}</span> {{ t('user.profile.followers') }}
       </div>
     </div>
 
@@ -64,15 +64,15 @@
         color="grey-lighten-2"
         class="mb-3 mb-md-4"
       />
-      <p class="text-body-2 text-md-body-1 text-grey-darken-2">暂无关注的人</p>
-      <p class="text-caption text-md-body-2 text-grey">关注优秀的创作者，获取精彩内容</p>
+      <p class="text-body-2 text-md-body-1 text-grey-darken-2">{{ t('rightSidebar.noLearningRoles') }}</p>
+      <p class="text-caption text-md-body-2 text-grey">{{ t('user.profile.shareExperience') }}</p>
     </div>
 
     <ConfirmDialog
       v-model="showUnfollowDialog"
-      title="确认取消关注"
-      message="确定要取消关注该用户吗？"
-      confirm-text="确认取消"
+      :title="t('common.confirm')"
+      :message="t('userCard.unfollow') + '?'"
+      :confirm-text="t('common.confirm')"
       @confirm="confirmUnfollow"
     />
   </div>
@@ -83,12 +83,14 @@ import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/modules/user'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
+import { useI18n } from '@/composables/useI18n'
 import { followApi } from '@/api'
 import { formatRelativeTime } from '@/utils/format'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 
 // 获取关注的用户列表
@@ -110,7 +112,7 @@ const {
 const { execute: unfollowAction } = useMutation(
   (followeeId: number) => followApi.unfollow(followeeId),
   {
-    successMessage: '已取消关注该用户',
+    successMessage: t('user.profile.unfollowSuccess'),
     onSuccess: () => {
       fetchFollowees()
     },
@@ -130,8 +132,8 @@ const formattedUsers = computed(() => {
   return followingUsers.value.map((user) => {
     return {
       id: user.id,
-      name: user.name || '未知用户',
-      bio: user.biography || '暂无简介',
+      name: user.name || t('user.profile.unknownUser'),
+      bio: user.biography || t('user.profile.noBio'),
       avatar: user.avatar || '',
       followedAt: user.createdAt || '', // 关注时间
     }

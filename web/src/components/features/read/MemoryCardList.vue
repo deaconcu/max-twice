@@ -3,10 +3,10 @@
     <!-- 空状态 -->
     <div v-if="decks.length === 0 && !loading" class="text-center pa-12">
       <v-icon icon="mdi-cards-outline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
-      <h4 class="text-h6 font-weight-medium text-grey-darken-2 mb-2">暂无记忆卡片组</h4>
-      <p class="text-body-2 text-grey-darken-1 mb-4">还没有人为这个节点创建记忆卡片组</p>
+      <h4 class="text-h6 font-weight-medium text-grey-darken-2 mb-2">{{ t('memoryCard.noDecks') }}</h4>
+      <p class="text-body-2 text-grey-darken-1 mb-4">{{ t('memoryCard.noDecksHint') }}</p>
       <v-btn color="primary" variant="tonal" rounded="lg" prepend-icon="mdi-plus" @click="emit('createDeck')">
-        创建第一个卡片组
+        {{ t('memoryCard.createFirstDeck') }}
       </v-btn>
     </div>
 
@@ -25,14 +25,14 @@
             <!-- 用户 + 时间 -->
             <div class="d-flex align-center mb-3">
               <UserAvatar
-                :name="deck.creator?.name || '匿名用户'"
+                :name="deck.creator?.name || t('common.anonymous')"
                 :avatar-url="deck.creator?.avatar"
                 size="18"
                 rounded="md"
                 class="mr-2 flex-shrink-0"
               />
               <span class="text-body-2 font-weight-medium text-grey-darken-3">
-                {{ deck.creator?.name || '匿名用户' }}
+                {{ deck.creator?.name || t('common.anonymous') }}
               </span>
               <span v-if="deck.updatedAt" class="text-caption text-grey mx-1">·</span>
               <span v-if="deck.updatedAt" class="text-caption text-grey">
@@ -41,7 +41,7 @@
             </div>
             <!-- 简介 -->
             <div class="text-body-1 text-grey-darken-1 deck-desc mb-3">
-              {{ deck.description || '暂无描述' }}
+              {{ deck.description || t('common.noDescription') }}
             </div>
             <!-- 点赞 + 收藏 -->
             <div class="d-flex align-center">
@@ -74,11 +74,11 @@
           <div class="d-flex flex-row align-center justify-center" style="gap: 16px">
             <div class="text-center">
               <div class="text-h6 font-weight-bold text-grey-darken-2">{{ deck.cardCount || 0 }}</div>
-              <div class="text-caption text-no-wrap text-grey">卡片</div>
+              <div class="text-caption text-no-wrap text-grey">{{ t('memoryCard.cards') }}</div>
             </div>
             <div v-if="deck.studyingCardCount && deck.studyingCardCount > 0" class="text-center">
               <div class="text-h6 font-weight-bold text-success">{{ deck.studyingCardCount }}</div>
-              <div class="text-caption text-no-wrap text-grey">学习中</div>
+              <div class="text-caption text-no-wrap text-grey">{{ t('memoryCard.studying') }}</div>
             </div>
           </div>
         </div>
@@ -93,7 +93,7 @@
     <!-- 加载状态 -->
     <div v-if="loading && decks.length === 0" class="text-center pa-12">
       <v-progress-circular indeterminate color="primary" size="40"></v-progress-circular>
-      <p class="text-body-1 text-grey-darken-1 mt-4">加载中...</p>
+      <p class="text-body-1 text-grey-darken-1 mt-4">{{ t('common.loading') }}</p>
     </div>
   </div>
 </template>
@@ -106,6 +106,9 @@ import { useUserStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/format'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck } from '@/types/memory'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface Props {
   nodeId: number
@@ -218,15 +221,15 @@ const viewDeckDetail = (deck: MemoryCardDeck) => {
 const getStateText = (state: number) => {
   switch (state) {
     case 1:
-      return '审核中'
+      return t('common.stateReviewing')
     case 2:
-      return '已通过'
+      return t('common.stateApproved')
     case 3:
-      return '已拒绝'
+      return t('common.stateRejected')
     case 4:
-      return '已屏蔽'
+      return t('common.stateBanned')
     default:
-      return '未知'
+      return t('common.stateUnknown')
   }
 }
 

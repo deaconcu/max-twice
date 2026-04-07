@@ -4,7 +4,10 @@ import { useRoute } from 'vue-router'
 import draggable from 'vuedraggable'
 import { postApi } from '@/api'
 import { useMutation } from '@/composables/useMutation'
+import { useI18n } from '@/composables/useI18n'
 import { PostType } from '@/enums'
+
+const { t } = useI18n()
 
 interface Props {
   nodeId?: number
@@ -104,7 +107,7 @@ const { execute: executeSubmit, loading: submitting } = useMutation(
   },
   {
     onSuccess: () => {
-      showSnackbar?.('目录添加成功', 'success')
+      showSnackbar?.(t('addContents.title') + ' ' + t('common.success'), 'success')
       dialog.value = false
       emit('load-data', [])
 
@@ -114,8 +117,8 @@ const { execute: executeSubmit, loading: submitting } = useMutation(
       catalogDescription.value = ''
     },
     onError: (error) => {
-      console.error('添加目录失败:', error)
-      showSnackbar?.('添加目录失败', 'error')
+      console.error('Add catalog failed:', error)
+      showSnackbar?.(t('error.operationFailed'), 'error')
     },
   }
 )
@@ -123,12 +126,12 @@ const { execute: executeSubmit, loading: submitting } = useMutation(
 // 提交目录
 const submitCatalog = async () => {
   if (catalogItems.value.length < 2) {
-    showSnackbar?.('目录至少需要2个子目录', 'warning')
+    showSnackbar?.(t('validation.roadmap.emptyRoadmap'), 'warning')
     return
   }
 
   if (!props.nodeId) {
-    showSnackbar?.('缺少节点ID', 'error')
+    showSnackbar?.(t('addArticle.missingNodeId'), 'error')
     return
   }
 
@@ -143,7 +146,7 @@ const submitCatalog = async () => {
       <v-card-title class="pa-4 d-flex align-center justify-space-between border-b">
         <div class="d-flex align-center">
           <v-icon icon="mdi-format-list-group-plus" color="primary" class="mr-2"></v-icon>
-          <span class="text-h6 font-weight-bold">添加目录</span>
+          <span class="text-h6 font-weight-bold">{{ t('postingList.addContent') }}</span>
         </div>
         <v-btn icon="mdi-close" variant="text" size="small" @click="dialog = false"></v-btn>
       </v-card-title>
@@ -154,9 +157,9 @@ const submitCatalog = async () => {
         <v-col cols="6" class="pa-3 border-e">
           <v-card-text class="pa-4">
             <v-tabs v-model="createTab" density="compact" color="primary">
-              <v-tab value="one" class="text-body-2">创建节点</v-tab>
-              <v-tab value="two" class="text-body-2">选择现有</v-tab>
-              <v-tab value="three" class="text-body-2">我的节点</v-tab>
+              <v-tab value="one" class="text-body-2">{{ t('addContents.createNode') }}</v-tab>
+              <v-tab value="two" class="text-body-2">{{ t('addContents.selectExisting') }}</v-tab>
+              <v-tab value="three" class="text-body-2">{{ t('addContents.myNodes') }}</v-tab>
             </v-tabs>
 
             <v-tabs-window v-model="createTab" class="mt-6">
@@ -164,7 +167,7 @@ const submitCatalog = async () => {
               <v-tabs-window-item value="one">
                 <v-text-field
                   v-model="catalogName"
-                  label="节点名称"
+                  :label="t('addContents.nodeName')"
                   variant="outlined"
                   density="comfortable"
                   hide-details
@@ -173,7 +176,7 @@ const submitCatalog = async () => {
 
                 <v-textarea
                   v-model="catalogDescription"
-                  label="节点描述（必填）"
+                  :label="t('addContents.nodeDescription')"
                   variant="outlined"
                   density="comfortable"
                   rows="3"
@@ -190,7 +193,7 @@ const submitCatalog = async () => {
                     @click="addCatalogItem"
                   >
                     <v-icon icon="mdi-plus" size="18" class="mr-1"></v-icon>
-                    添加
+                    {{ t('addContents.submit') }}
                   </v-btn>
 
                   <v-btn
@@ -201,19 +204,19 @@ const submitCatalog = async () => {
                     class="ms-4"
                     @click="generateWithAI"
                   >
-                    AI 生成
+                    {{ t('addContents.aiGenerate') }}
                   </v-btn>
                 </div>
               </v-tabs-window-item>
 
               <!-- Tab 2: 选择现有 -->
               <v-tabs-window-item value="two">
-                <div class="text-body-2 text-grey pa-4 text-center">功能开发中...</div>
+                <div class="text-body-2 text-grey pa-4 text-center">{{ t('systemOperations.cacheManagement.inDevelopment') }}</div>
               </v-tabs-window-item>
 
               <!-- Tab 3: 我的节点 -->
               <v-tabs-window-item value="three">
-                <div class="text-body-2 text-grey pa-4 text-center">功能开发中...</div>
+                <div class="text-body-2 text-grey pa-4 text-center">{{ t('systemOperations.cacheManagement.inDevelopment') }}</div>
               </v-tabs-window-item>
             </v-tabs-window>
           </v-card-text>
@@ -223,7 +226,7 @@ const submitCatalog = async () => {
         <v-col cols="6" class="pa-3">
           <div class="preview-container pa-4">
             <div class="text-body-2 font-weight-medium text-grey-darken-3 mb-3">
-              目录预览 ({{ catalogItems.length }})
+              {{ t('systemConfiguration.fullConfigPreview') }} ({{ catalogItems.length }})
             </div>
 
             <!-- 可拖拽列表 -->
@@ -268,7 +271,7 @@ const submitCatalog = async () => {
 
               <!-- 空状态 -->
               <div v-if="catalogItems.length === 0" class="text-body-2 text-grey text-center py-8">
-                暂无目录项，请在左侧添加
+                {{ t('postingList.reachedEnd') }}
               </div>
             </div>
           </div>
@@ -284,7 +287,7 @@ const submitCatalog = async () => {
           class="px-4"
           @click="dialog = false"
         >
-          取消
+          {{ t('common.cancel') }}
         </v-btn>
         <v-btn
           variant="flat"
@@ -294,7 +297,7 @@ const submitCatalog = async () => {
           :disabled="catalogItems.length < 2"
           @click="submitCatalog"
         >
-          确认添加
+          {{ t('addContents.confirm') }}
         </v-btn>
       </v-card-actions>
     </v-card>

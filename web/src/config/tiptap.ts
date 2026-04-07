@@ -22,6 +22,7 @@ import { TableCell } from '@tiptap/extension-table-cell'
 import { createLowlight } from 'lowlight'
 import { MathBlock } from './tiptap-math'
 import { MermaidBlock } from './tiptap-mermaid'
+import { VideoBlock } from './tiptap-video'
 
 // 导入常用语言的语法高亮
 import javascript from 'highlight.js/lib/languages/javascript'
@@ -134,6 +135,9 @@ export function getTipTapExtensions(placeholder = '请在这里输入内容...')
 
     // Mermaid 图表
     MermaidBlock,
+
+    // 视频
+    VideoBlock,
   ]
 }
 

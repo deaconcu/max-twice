@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface Props {
   selectedText?: string
@@ -20,7 +23,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 // 状态
-const userQuestion = ref('请解释引用内容')
+const userQuestion = ref('')
 const isExpanded = ref(true)
 const isQuoteExpanded = ref(false)
 const copySuccess = ref(false)
@@ -40,17 +43,17 @@ const aiEngines = [
 const buildContent = () => {
   let content = ''
   if (props.nodeTitle) {
-    content += `【主题】${props.nodeTitle}\n`
+    content += `【${t('aiAssistant.topic')}】${props.nodeTitle}\n`
     if (props.nodeDescription) {
       content += `${props.nodeDescription}\n`
     }
     content += '\n'
   }
   if (props.selectedText) {
-    content += `【引用内容】\n${props.selectedText}\n\n`
+    content += `【${t('aiAssistant.quotedContent')}】\n${props.selectedText}\n\n`
   }
   if (userQuestion.value) {
-    content += `【我的问题】\n${userQuestion.value}`
+    content += `【${t('aiAssistant.myQuestion')}】\n${userQuestion.value}`
   }
   return content.trim()
 }
@@ -98,7 +101,7 @@ const clearQuote = () => {
   <div class="ai-assistant-section">
     <div class="sidebar-header">
       <v-icon icon="mdi-chat-question-outline" size="18" class="mr-2"></v-icon>
-      <span class="sidebar-title">不懂就问</span>
+      <span class="sidebar-title">{{ t('aiAssistant.title') }}</span>
       <v-spacer></v-spacer>
       <v-btn
         :icon="isExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
@@ -120,8 +123,8 @@ const clearQuote = () => {
           >
             <div class="d-flex align-center text-caption text-grey-darken-1">
               <v-icon icon="mdi-format-quote-close" size="14" class="mr-1"></v-icon>
-              <span>已引用内容</span>
-              <span class="text-grey ml-1">({{ selectedText.length }}字)</span>
+              <span>{{ t('aiAssistant.quoted') }}</span>
+              <span class="text-grey ml-1">({{ t('aiAssistant.charCount', { count: selectedText.length }) }})</span>
             </div>
             <div class="d-flex align-center">
               <v-btn
@@ -151,13 +154,14 @@ const clearQuote = () => {
         <!-- 未选中时的提示 -->
         <div v-else class="d-flex align-center text-body-2 text-grey-darken-2 mb-3">
           <v-icon icon="mdi-cursor-text" size="16" class="mr-1"></v-icon>
-          在文章中选中您不太理解的内容
+          {{ t('aiAssistant.selectHint') }}
         </div>
 
         <!-- 问题输入框 -->
         <v-textarea
           v-model="userQuestion"
-          label="输入您的问题"
+          :label="t('aiAssistant.inputQuestion')"
+          :placeholder="t('aiAssistant.defaultQuestion')"
           variant="outlined"
           density="compact"
           rows="2"
@@ -174,7 +178,7 @@ const clearQuote = () => {
             :class="{ 'text-success': copySuccess }"
             @click.prevent="copyOnly"
           >
-            {{ copySuccess ? '已复制' : '复制内容' }}
+            {{ copySuccess ? t('common.copied') : t('aiAssistant.copyContent') }}
           </a>
           <a
             v-for="e in aiEngines"

@@ -52,7 +52,7 @@
             <!-- 卡片数和原文 -->
             <div class="d-flex align-center justify-space-between mb-3">
               <span class="text-body-2 text-medium-emphasis">
-                {{ deck.cardCount }} 张卡片
+                {{ deck.cardCount }} {{ t('review.cards') }}
               </span>
               <v-btn
                 v-if="deck.postId"
@@ -62,7 +62,7 @@
                 class="px-1"
                 @click.stop="goToPost(deck.postId)"
               >
-                查看原文
+                {{ t('admin.viewOriginal') }}
               </v-btn>
             </div>
 
@@ -73,7 +73,7 @@
                 {{ formatDate(deck.createdAt) }}
               </div>
               <v-chip size="small" color="success" variant="tonal">
-                就绪
+                {{ t('review.readyToReview') }}
               </v-chip>
             </div>
           </v-card-text>
@@ -89,8 +89,8 @@
             color="grey-lighten-2"
             class="mb-3 mb-md-4"
           />
-          <p class="text-body-2 text-md-body-1 text-grey-darken-2">暂无卡片组</p>
-          <p class="text-caption text-md-body-2 text-grey">创建记忆卡片,高效复习知识点</p>
+          <p class="text-body-2 text-md-body-1 text-grey-darken-2">{{ t('review.noCards') }}</p>
+          <p class="text-caption text-md-body-2 text-grey">{{ t('review.description') }}</p>
           <v-btn
             color="primary"
             variant="outlined"
@@ -100,16 +100,16 @@
             to="/memory-review"
           >
             <v-icon icon="mdi-brain" :size="$vuetify.display.mobile ? 16 : 18" class="mr-2" />
-            前往复习中心
+            {{ t('review.title') }}
           </v-btn>
         </div>
 
         <!-- 删除确认对话框 -->
         <ConfirmDialog
           v-model="showDeleteDialog"
-          title="确认删除"
-          message="确定要删除该卡片组吗？此操作不可恢复。"
-          confirm-text="确认删除"
+          :title="t('common.confirm')"
+          :message="t('common.delete') + '?'"
+          :confirm-text="t('common.confirm')"
           @confirm="confirmDelete"
         />
 
@@ -122,11 +122,14 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
+import { useI18n } from '@/composables/useI18n'
 import { useUserStore } from '@/stores/modules/user'
 import { memoryApi } from '@/api'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import DeckDetailDialog from '@/components/features/read/DeckDetailDialog.vue'
+
+const { t, locale } = useI18n()
 
 interface Props {
   userId?: number | null
@@ -166,7 +169,7 @@ const {
 const { execute: removeDeck } = useMutation(
   (deckId: number) => memoryApi.deleteDeck(deckId),
   {
-    successMessage: '已删除该卡片组',
+    successMessage: t('user.profile.deckDeleted'),
     onSuccess: () => {
       fetchUserDecks()
     },
@@ -180,8 +183,8 @@ const decks = computed(() => {
   return userDecksData.value.items.map((deck) => ({
     id: deck.id, // 使用真实的deck ID
     // 主要显示信息：课程和节点为主角
-    courseName: deck.course?.name || '未知课程',
-    nodeName: deck.node?.name || '未知节点',
+    courseName: deck.course?.name || t('user.profile.unknownCourse'),
+    nodeName: deck.node?.name || t('user.profile.unknownNode'),
     cardCount: deck.cardCount || 0,
     createdAt: deck.createdAt || null,
     courseId: deck.courseId,
@@ -208,7 +211,7 @@ const selectedDeck = ref<any>(null)
 // 格式化日期
 const formatDate = (date: string | null) => {
   if (!date) return ''
-  return new Date(date).toLocaleDateString('zh-CN')
+  return new Date(date).toLocaleDateString(locale.value === 'zh' ? 'zh-CN' : 'en-US')
 }
 
 // 跳转到复习页面
@@ -226,7 +229,7 @@ const openDeckDetail = (deck: any) => {
     cardCount: deck.cardCount,
     creator: {
       id: userStore.currentUser?.id || 0,
-      name: userStore.currentUser?.name || '当前用户',
+      name: userStore.currentUser?.name || t('user.profile.currentUser'),
       avatar: userStore.currentUser?.avatar || undefined,
     },
     upvoteCount: 0,

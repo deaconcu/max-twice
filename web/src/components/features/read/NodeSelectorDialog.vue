@@ -6,6 +6,9 @@ import { postApi } from '@/api/modules/post'
 import { useMutation } from '@/composables/useMutation'
 import { PostType } from '@/enums'
 import type { Node } from '@/types/node'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface Props {
   courseId?: number
@@ -86,7 +89,7 @@ const { execute: executeSaveDraft, loading: savingDraft } = useMutation(
   },
   {
     onSuccess: (response) => {
-      showSnackbar?.('草稿保存成功', 'success')
+      showSnackbar?.(t('nodeSelector.draftSaved'), 'success')
 
       // 如果是创建模式，保存返回的草稿信息，转为编辑模式
       if (!isEditMode.value && response.data) {
@@ -97,7 +100,7 @@ const { execute: executeSaveDraft, loading: savingDraft } = useMutation(
     },
     onError: (error) => {
       console.error('保存草稿失败:', error)
-      showSnackbar?.('保存草稿失败', 'error')
+      showSnackbar?.(t('nodeSelector.draftSaveFailed'), 'error')
     },
   }
 )
@@ -126,7 +129,7 @@ const { execute: executeSubmit, loading: submitting } = useMutation(
   },
   {
     onSuccess: () => {
-      showSnackbar?.(isEditMode.value ? '目录已提交审核' : '目录提交成功', 'success')
+      showSnackbar?.(isEditMode.value ? t('nodeSelector.submitUpdated') : t('nodeSelector.submitSuccess'), 'success')
 
       // 只有编辑模式（从个人页进入）才需要刷新列表
       // 创建模式（从 read 页进入）不需要刷新
@@ -138,7 +141,7 @@ const { execute: executeSubmit, loading: submitting } = useMutation(
     },
     onError: (error) => {
       console.error('提交目录失败:', error)
-      showSnackbar?.('提交目录失败', 'error')
+      showSnackbar?.(t('nodeSelector.submitFailed'), 'error')
     },
   }
 )
@@ -214,14 +217,14 @@ const addNewNode = async () => {
       const response = await postApi.checkDuplicateNode(props.courseId, newNode.value.name)
       if (response.data === true) {
         showSnackbar?.(
-          `课程中已存在名为"${newNode.value.name}"的节点，请使用已有节点或修改名称`,
+          `${t('nodeSelector.nodeExists', { name: newNode.value.name })}`,
           'error'
         )
         return
       }
     } catch (error) {
       console.error('检查节点重名失败', error)
-      showSnackbar?.('检查节点重名失败，请稍后重试', 'error')
+      showSnackbar?.(t('nodeSelector.checkDuplicateFailed'), 'error')
       return
     }
   }
@@ -281,7 +284,7 @@ defineExpose({ open })
       <v-card-title class="pa-4 d-flex align-center justify-space-between border-b">
         <div class="d-flex align-center">
           <v-icon icon="mdi-format-list-group-plus" color="primary" class="mr-2" />
-          <span class="text-h6 font-weight-bold">{{ isEditMode ? '编辑目录草稿' : '添加目录' }}</span>
+          <span class="text-h6 font-weight-bold">{{ isEditMode ? t('nodeSelector.editDraft') : t('nodeSelector.addCatalog') }}</span>
         </div>
         <v-btn icon="mdi-close" variant="text" size="small" @click="close" />
       </v-card-title>
@@ -293,31 +296,31 @@ defineExpose({ open })
             <div class="search-panel">
               <div class="search-header">
                 <div class="text-body-2 text-grey mb-3">
-                  输入节点名称和描述，先搜索已存在的节点，没有合适的再创建新节点
+                  {{ t('nodeSelector.hint') }}
                 </div>
 
                 <!-- 节点名称 -->
                 <v-text-field
                   v-model="newNode.name"
-                  label="节点名称"
-                  placeholder="请输入节点名称（2-50字）"
+                  :label="t('nodeSelector.nodeName')"
+                  :placeholder="t('nodeSelector.nodeNamePlaceholder')"
                   variant="outlined"
                   density="comfortable"
                   counter="50"
-                  :hint="`已输入 ${newNode.name.length} 字`"
+                  :hint="t('nodeSelector.inputCount', { count: newNode.name.length })"
                   class="mb-3"
                 />
 
                 <!-- 节点描述 -->
                 <v-textarea
                   v-model="newNode.description"
-                  label="节点描述"
-                  placeholder="请输入节点描述（至少20字）"
+                  :label="t('nodeSelector.nodeDesc')"
+                  :placeholder="t('nodeSelector.nodeDescPlaceholder')"
                   variant="outlined"
                   density="comfortable"
                   rows="3"
                   counter="500"
-                  :hint="`已输入 ${newNode.description.length} 字，至少需要 20 字`"
+                  :hint="t('nodeSelector.descCount', { count: newNode.description.length })"
                   class="mb-3"
                 />
 
@@ -330,7 +333,7 @@ defineExpose({ open })
                     @click="handleSearch"
                   >
                     <v-icon start>mdi-magnify</v-icon>
-                    搜索已存在节点
+                    {{ t('nodeSelector.searchExisting') }}
                   </v-btn>
 
                   <!-- 创建新节点按钮 - 只在有搜索结果时显示 -->
@@ -341,7 +344,7 @@ defineExpose({ open })
                     @click="addNewNode"
                   >
                     <v-icon start>mdi-plus</v-icon>
-                    创建新节点
+                    {{ t('nodeSelector.createNew') }}
                   </v-btn>
                 </div>
               </div>
@@ -353,7 +356,7 @@ defineExpose({ open })
 
                 <div v-else-if="hasSearched && searchResults.length > 0">
                   <div class="text-body-2 text-grey-darken-1 font-weight-medium mb-2 mt-4">
-                    找到 {{ searchResults.length }} 个相似节点
+                    {{ t('nodeSelector.foundNodes', { count: searchResults.length }) }}
                   </div>
                   <v-card
                     v-for="node in searchResults"
@@ -369,7 +372,7 @@ defineExpose({ open })
                           <div class="d-flex align-center mb-1">
                             <span class="text-body-1 font-weight-medium">{{ node.name }}</span>
                             <v-chip size="x-small" color="success" variant="tonal" class="ml-2">
-                              已验证
+                              {{ t('nodeSelector.verified') }}
                             </v-chip>
                             <v-chip
                               v-if="node.similarityScore !== undefined"
@@ -378,7 +381,7 @@ defineExpose({ open })
                               variant="tonal"
                               class="ml-2"
                             >
-                              相似度：{{ Math.round(node.similarityScore * 100) }}%
+                              {{ t('nodeSelector.similarity', { score: Math.round(node.similarityScore * 100) }) }}
                             </v-chip>
                             <v-chip
                               v-if="node.nodeReferenceCount !== undefined && node.nodeReferenceCount > 0"
@@ -387,7 +390,7 @@ defineExpose({ open })
                               variant="tonal"
                               class="ml-2"
                             >
-                              引用{{ node.nodeReferenceCount }}次
+                              {{ t('nodeSelector.refCount', { count: node.nodeReferenceCount }) }}
                             </v-chip>
                           </div>
                           <div class="text-caption text-grey">{{ node.description }}</div>
@@ -400,7 +403,7 @@ defineExpose({ open })
                           class="ml-3"
                           @click.stop="addNode(node, $event)"
                         >
-                          添加
+                          {{ t('common.add') }}
                         </v-btn>
                         <v-btn
                           v-else
@@ -410,7 +413,7 @@ defineExpose({ open })
                           class="ml-3"
                           disabled
                         >
-                          已添加
+                          {{ t('nodeSelector.added') }}
                         </v-btn>
                       </div>
                     </v-card-text>
@@ -422,7 +425,7 @@ defineExpose({ open })
                   class="text-center py-6"
                 >
                   <v-icon icon="mdi-file-search-outline" size="48" color="grey-lighten-1" class="mb-2" />
-                  <p class="text-body-2 text-grey">没有找到相似的节点，点击上方"创建新节点"按钮添加</p>
+                  <p class="text-body-2 text-grey">{{ t('nodeSelector.noResults') }}</p>
                 </div>
               </div>
             </div>
@@ -431,7 +434,7 @@ defineExpose({ open })
           <!-- 右侧：目录预览 -->
           <div v-if="selectedNodes.length > 0" class="right-panel">
             <div class="panel-header-simple">
-              目录预览 ({{ selectedNodes.length }})
+              {{ t('nodeSelector.preview', { count: selectedNodes.length }) }}
             </div>
 
             <div class="catalog-list">
@@ -471,7 +474,7 @@ defineExpose({ open })
 
       <v-card-actions class="pa-4 border-t d-flex ga-3">
         <v-spacer />
-        <v-btn variant="tonal" color="grey" class="px-6" @click="close">取消</v-btn>
+        <v-btn variant="tonal" color="grey" class="px-6" @click="close">{{ t('common.cancel') }}</v-btn>
         <v-btn
           variant="tonal"
           color="grey-darken-1"
@@ -481,7 +484,7 @@ defineExpose({ open })
           @click="executeSaveDraft"
         >
           <v-icon start>mdi-content-save-outline</v-icon>
-          保存草稿
+          {{ t('nodeSelector.saveDraft') }}
         </v-btn>
         <v-btn
           variant="tonal"
@@ -492,7 +495,7 @@ defineExpose({ open })
           @click="executeSubmit"
         >
           <v-icon start>mdi-send</v-icon>
-          提交审核{{ selectedNodes.length < 2 ? ' (至少2个)' : '' }}
+          {{ selectedNodes.length < 2 ? t('nodeSelector.submitWithMin') : t('nodeSelector.submit') }}
         </v-btn>
       </v-card-actions>
     </v-card>
