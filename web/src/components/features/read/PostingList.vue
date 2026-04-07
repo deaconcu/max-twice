@@ -11,6 +11,9 @@ import InviteUserDialog from './InviteUserDialog.vue'
 import { ObjectType } from '@/enums'
 import type { MemoryCardDeck } from '@/types/memory'
 import type { Node } from '@/types/node'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface Props {
   data: any
@@ -137,15 +140,15 @@ const canCompleteNode = () => {
 const completeButtonTooltip = () => {
   if (!props.data?.node) return ''
 
-  if (props.data.node.isCompleted) return '点击取消完成'
+  if (props.data.node.isCompleted) return t('postingList.clickToUncomplete')
 
   const hasChildren = props.currNode && Object.keys(props.currNode).some(k => k !== '^' && k !== '+')
 
   if (hasChildren && !props.data.node.canComplete) {
-    return '请先完成该目录下的所有节点'
+    return t('postingList.completeChildrenFirst')
   }
 
-  return '标记节点为已完成'
+  return t('postingList.markAsCompleted')
 }
 </script>
 
@@ -185,7 +188,7 @@ const completeButtonTooltip = () => {
                   <v-icon icon="mdi-link-variant" size="small" color="grey-darken-1" class="mr-1"></v-icon>
                   {{ data.node.nodeReferenceCount }}
                   <v-tooltip activator="parent" location="top">
-                    被引用次数：{{ data.node.nodeReferenceCount }}
+                    {{ t('postingList.refCount', { count: data.node.nodeReferenceCount }) }}
                   </v-tooltip>
                 </div>
                 <!-- 完成学习按钮 -->
@@ -204,7 +207,7 @@ const completeButtonTooltip = () => {
                       class="font-weight-medium"
                       :class="data.node?.isCompleted ? 'text-grey-darken-2' : 'text-white'"
                     >
-                      {{ data.node?.isCompleted ? '已完成' : '完成学习' }}
+                      {{ data.node?.isCompleted ? t('postingList.completed') : t('postingList.completeStudy') }}
                     </span>
                   </v-btn>
                   <v-tooltip activator="parent" location="bottom">
@@ -226,11 +229,11 @@ const completeButtonTooltip = () => {
               <v-tabs v-model="tab" density="compact" color="primary">
                 <v-tab value="list" class="px-3" @click="switchTab('list')">
                   <v-icon icon="mdi-list-box-outline" size="16" class="mr-2"></v-icon>
-                  <span class="font-weight-medium text-grey-darken-3">文章列表</span>
+                  <span class="font-weight-medium text-grey-darken-3">{{ t('postingList.articleList') }}</span>
                 </v-tab>
                 <v-tab value="memoryCards" class="px-3" @click="switchTab('memoryCards')">
                   <v-icon icon="mdi-cards-outline" size="16" class="mr-2"></v-icon>
-                  <span class="font-weight-medium text-grey-darken-3">记忆卡片</span>
+                  <span class="font-weight-medium text-grey-darken-3">{{ t('postingList.memoryCards') }}</span>
                 </v-tab>
               </v-tabs>
             </div>
@@ -249,7 +252,7 @@ const completeButtonTooltip = () => {
                   @click="nodeSelectorDialog?.open()"
                 >
                   <v-icon icon="mdi-format-list-group-plus" size="16" :class="$vuetify.display.mdAndUp ? 'mr-1' : ''"></v-icon>
-                  <span v-if="$vuetify.display.mdAndUp" class="font-weight-medium text-grey-darken-3">添加目录</span>
+                  <span v-if="$vuetify.display.mdAndUp" class="font-weight-medium text-grey-darken-3">{{ t('postingList.addCatalog') }}</span>
                 </v-btn>
 
                 <!-- 添加文章按钮：桌面端显示文字，移动端只显示图标 -->
@@ -262,7 +265,7 @@ const completeButtonTooltip = () => {
                   @click="showAddArticleDialog = true"
                 >
                   <v-icon icon="mdi-note-plus-outline" size="16" :class="$vuetify.display.mdAndUp ? 'mr-1' : ''"></v-icon>
-                  <span v-if="$vuetify.display.mdAndUp" class="font-weight-medium text-grey-darken-3">添加文章</span>
+                  <span v-if="$vuetify.display.mdAndUp" class="font-weight-medium text-grey-darken-3">{{ t('postingList.addArticle') }}</span>
                 </v-btn>
 
                 <!-- 桌面端（md及以上）：显示更多按钮 -->
@@ -279,13 +282,13 @@ const completeButtonTooltip = () => {
                           <template #prepend>
                             <v-icon icon="mdi-account-plus-outline" size="18"></v-icon>
                           </template>
-                          <v-list-item-title>邀请回答</v-list-item-title>
+                          <v-list-item-title>{{ t('postingList.inviteAnswer') }}</v-list-item-title>
                         </v-list-item>
                         <v-list-item @click="showFavoritePosts = true">
                           <template #prepend>
                             <v-icon icon="mdi-star-outline" size="18"></v-icon>
                           </template>
-                          <v-list-item-title>收藏的文章</v-list-item-title>
+                          <v-list-item-title>{{ t('postingList.favoritePosts') }}</v-list-item-title>
                         </v-list-item>
                       </v-list>
                     </v-card>
@@ -306,13 +309,13 @@ const completeButtonTooltip = () => {
                           <template v-slot:prepend>
                             <v-icon icon="mdi-account-plus-outline" size="18"></v-icon>
                           </template>
-                          <v-list-item-title>邀请回答</v-list-item-title>
+                          <v-list-item-title>{{ t('postingList.inviteAnswer') }}</v-list-item-title>
                         </v-list-item>
                         <v-list-item @click="showFavoritePosts = true">
                           <template v-slot:prepend>
                             <v-icon icon="mdi-star-outline" size="18"></v-icon>
                           </template>
-                          <v-list-item-title>收藏的文章</v-list-item-title>
+                          <v-list-item-title>{{ t('postingList.favoritePosts') }}</v-list-item-title>
                         </v-list-item>
                       </v-list>
                     </v-card>
@@ -332,7 +335,7 @@ const completeButtonTooltip = () => {
                   @click="showCreateDeckDialog = true"
                 >
                   <v-icon icon="mdi-plus" size="16" :class="$vuetify.display.mdAndUp ? 'mr-1' : ''"></v-icon>
-                  <span v-if="$vuetify.display.mdAndUp" class="font-weight-medium text-grey-darken-3">新增卡片组</span>
+                  <span v-if="$vuetify.display.mdAndUp" class="font-weight-medium text-grey-darken-3">{{ t('postingList.newDeck') }}</span>
                 </v-btn>
 
                 <!-- 桌面端（md及以上）：显示更多按钮 -->
@@ -349,7 +352,7 @@ const completeButtonTooltip = () => {
                           <template v-slot:prepend>
                             <v-icon icon="mdi-star-outline" size="18"></v-icon>
                           </template>
-                          <v-list-item-title>收藏的卡片组</v-list-item-title>
+                          <v-list-item-title>{{ t('postingList.favoriteDecks') }}</v-list-item-title>
                         </v-list-item>
                       </v-list>
                     </v-card>
@@ -370,7 +373,7 @@ const completeButtonTooltip = () => {
                           <template v-slot:prepend>
                             <v-icon icon="mdi-star-outline" size="18"></v-icon>
                           </template>
-                          <v-list-item-title>收藏的卡片组</v-list-item-title>
+                          <v-list-item-title>{{ t('postingList.favoriteDecks') }}</v-list-item-title>
                         </v-list-item>
                       </v-list>
                     </v-card>
@@ -414,12 +417,12 @@ const completeButtonTooltip = () => {
                     color="primary"
                     size="32"
                   ></v-progress-circular>
-                  <p class="text-body-2 text-grey mt-4">加载中...</p>
+                  <p class="text-body-2 text-grey mt-4">{{ t('common.loading') }}</p>
                 </div>
                 <!-- 已到底 -->
                 <div v-else-if="!hasMore" class="text-grey">
                   <v-icon icon="mdi-check-circle-outline" size="20" class="mr-1"></v-icon>
-                  <span class="text-body-2">已经到底了</span>
+                  <span class="text-body-2">{{ t('postingList.reachedEnd') }}</span>
                 </div>
               </div>
             </div>
@@ -427,8 +430,8 @@ const completeButtonTooltip = () => {
             <!-- 空状态 -->
             <div v-if="!data.otherPostings || data.otherPostings.length === 0" class="text-center pa-12">
               <v-icon icon="mdi-text-box-outline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
-              <h4 class="text-h6 font-weight-medium text-grey-darken-2 mb-2">暂无文章</h4>
-              <p class="text-body-2 text-grey-darken-1 mb-4">还没有人为这个节点创建文章</p>
+              <h4 class="text-h6 font-weight-medium text-grey-darken-2 mb-2">{{ t('postingList.noArticles') }}</h4>
+              <p class="text-body-2 text-grey-darken-1 mb-4">{{ t('postingList.noArticlesHint') }}</p>
               <div class="d-flex justify-center">
                 <v-btn
                   color="primary"
@@ -438,7 +441,7 @@ const completeButtonTooltip = () => {
                   class="mr-4"
                   @click="nodeSelectorDialog?.open()"
                 >
-                  添加目录
+                  {{ t('postingList.addCatalog') }}
                 </v-btn>
                 <v-btn
                   color="primary"
@@ -447,7 +450,7 @@ const completeButtonTooltip = () => {
                   prepend-icon="mdi-note-plus-outline"
                   @click="showAddArticleDialog = true"
                 >
-                  添加文章
+                  {{ t('postingList.addArticle') }}
                 </v-btn>
               </div>
             </div>
@@ -484,14 +487,14 @@ const completeButtonTooltip = () => {
           <v-card rounded="xl">
             <v-card-title class="pa-4">
               <div class="d-flex align-center justify-space-between">
-                <span>收藏的文章</span>
+                <span>{{ t('postingList.favoritePosts') }}</span>
                 <v-btn icon="mdi-close" variant="text" size="small" @click="showFavoritePosts = false"></v-btn>
               </div>
             </v-card-title>
             <v-card-text class="pa-4">
               <div class="text-center py-8">
                 <v-icon icon="mdi-note-text-outline" size="64" color="grey-lighten-2"></v-icon>
-                <p class="text-body-1 text-grey-darken-1 mt-4">收藏功能开发中...</p>
+                <p class="text-body-1 text-grey-darken-1 mt-4">{{ t('common.inDevelopment') }}</p>
               </div>
             </v-card-text>
           </v-card>
@@ -502,14 +505,14 @@ const completeButtonTooltip = () => {
           <v-card rounded="xl">
             <v-card-title class="pa-4">
               <div class="d-flex align-center justify-space-between">
-                <span>收藏的卡片组</span>
+                <span>{{ t('postingList.favoriteDecks') }}</span>
                 <v-btn icon="mdi-close" variant="text" size="small" @click="showFavoriteDecks = false"></v-btn>
               </div>
             </v-card-title>
             <v-card-text class="pa-4">
               <div class="text-center py-8">
                 <v-icon icon="mdi-cards-outline" size="64" color="grey-lighten-2"></v-icon>
-                <p class="text-body-1 text-grey-darken-1 mt-4">收藏功能开发中...</p>
+                <p class="text-body-1 text-grey-darken-1 mt-4">{{ t('common.inDevelopment') }}</p>
               </div>
             </v-card-text>
           </v-card>
@@ -531,20 +534,20 @@ const completeButtonTooltip = () => {
         <div class="guide-section">
           <div class="sidebar-header">
             <v-icon icon="mdi-lightbulb-outline" size="18" color="amber-darken-2" class="mr-2"></v-icon>
-            <span class="sidebar-title">使用提示</span>
+            <span class="sidebar-title">{{ t('postingList.tips') }}</span>
           </div>
           <div class="guide-list">
             <div class="guide-item">
               <v-icon icon="mdi-thumb-up" size="14" color="primary"></v-icon>
-              <span>点赞优质文章，帮助更多人发现好内容</span>
+              <span>{{ t('postingList.tip1') }}</span>
             </div>
             <div class="guide-item">
               <v-icon icon="mdi-sort-descending" size="14" color="success"></v-icon>
-              <span>文章按点赞数排序，最受欢迎的排在前面</span>
+              <span>{{ t('postingList.tip2') }}</span>
             </div>
             <div class="guide-item">
               <v-icon icon="mdi-alert-circle-outline" size="14" color="warning"></v-icon>
-              <span>内容由社区贡献，仅供参考，请以教材为准</span>
+              <span>{{ t('postingList.tip3') }}</span>
             </div>
           </div>
         </div>
@@ -552,7 +555,7 @@ const completeButtonTooltip = () => {
         <!-- 讨论区 -->
         <div class="sidebar-header">
           <v-icon icon="mdi-comment-outline" size="18" class="mr-2"></v-icon>
-          <span class="sidebar-title">讨论</span>
+          <span class="sidebar-title">{{ t('postingList.discussion') }}</span>
           <span class="comment-count">{{ data.node?.commentCount || 0 }}</span>
         </div>
         <div class="sidebar-content">

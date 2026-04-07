@@ -170,7 +170,10 @@ const monthLabels = computed(() => {
       const date = new Date(firstValidDay.date)
       const month = date.toLocaleDateString('zh-CN', { month: 'short' })
       if (month !== lastMonth) {
-        labels.push({ month, index: weekIndex })
+        // 如果该列第一天不是1号，说明1号在上一列
+        const dayOfMonth = date.getDate()
+        const adjustedIndex = dayOfMonth === 1 ? weekIndex : weekIndex - 1
+        labels.push({ month, index: Math.max(0, adjustedIndex) })
         lastMonth = month
       }
     }
@@ -228,7 +231,7 @@ const formatValue = (day: DayData): string => {
         v-for="label in monthLabels"
         :key="label.index"
         class="month-label"
-        :style="{ left: `${label.index * 13 + 20}px` }"
+        :style="{ left: `${label.index * 13}px` }"
       >
         {{ label.month }}
       </span>

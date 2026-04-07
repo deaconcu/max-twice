@@ -17,7 +17,7 @@
             class="mr-2 flex-shrink-0"
           ></v-icon>
           <h2 class="text-subtitle-1 font-weight-bold text-grey-darken-3 flex-shrink-0">
-            {{ deck.node?.name || '卡片组详情' }}
+            {{ deck.node?.name || t('deckDetail.title') }}
           </h2>
 
           <v-spacer />
@@ -30,10 +30,10 @@
             class="header-tabs flex-shrink-0"
           >
             <v-tab value="all" size="small">
-              当前卡片组 ({{ deckDetail?.cardCount || deck.cardCount || 0 }})
+              {{ t('deckDetail.tabAll') }} ({{ deckDetail?.cardCount || deck.cardCount || 0 }})
             </v-tab>
             <v-tab value="study" size="small">
-              我复习的卡片 ({{ studyCards.length }})
+              {{ t('deckDetail.tabStudy') }} ({{ studyCards.length }})
             </v-tab>
           </v-tabs>
 
@@ -72,10 +72,10 @@
         closable
       >
         <span>
-          该节点的卡片已添加到课程「{{ otherCourseName }}」的复习计划中，<a
+          {{ t('deckDetail.otherCourseAlert', { name: otherCourseName }) }}<a
             href="javascript:void(0)"
             @click="moveToCurrentCourse"
-          >移动到当前课程？</a>
+          >{{ t('deckDetail.moveToCurrent') }}</a>
         </span>
       </v-alert>
 
@@ -96,9 +96,9 @@
                       class="text-grey-darken-1"
                       @click.stop
                     >
-                      {{ deck.creator?.name || '匿名用户' }}
+                      {{ deck.creator?.name || t('common.anonymous') }}
                     </router-link>
-                    <span v-else>{{ deck.creator?.name || '匿名用户' }}</span>
+                    <span v-else>{{ deck.creator?.name || t('common.anonymous') }}</span>
                     <span v-if="deck.updatedAt" class="ml-2">{{
                       formatRelativeTime(deck.updatedAt)
                     }}</span>
@@ -117,7 +117,7 @@
                     rounded="lg"
                     @click="showOnlyNotLearned = !showOnlyNotLearned"
                   >
-                    {{ showOnlyNotLearned ? '查看全部' : `只看未学习 (${addedDiffs.length})` }}
+                    {{ showOnlyNotLearned ? t('deckDetail.filterShowAll') : t('deckDetail.filterShowNotLearned', { count: addedDiffs.length }) }}
                   </v-btn>
                   <v-btn
                     variant="text"
@@ -130,7 +130,7 @@
                   >
                     {{ deck.likeCount || 0 }}
                   </v-btn>
-                  <v-tooltip text="添加卡片" location="top">
+                  <v-tooltip :text="t('deckDetail.addCard')" location="top">
                     <template #activator="{ props: tooltipProps }">
                       <v-btn
                         v-if="isOwnDeck"
@@ -150,7 +150,7 @@
               <!-- 加载状态 -->
               <div v-if="loading" class="text-center pa-8">
                 <v-progress-circular indeterminate color="primary" size="40"></v-progress-circular>
-                <p class="text-body-1 text-grey-darken-1 mt-4">加载中...</p>
+                <p class="text-body-1 text-grey-darken-1 mt-4">{{ t('common.loading') }}</p>
               </div>
 
               <!-- 卡片列表 -->
@@ -171,7 +171,7 @@
                         <!-- 问题 -->
                         <div class="question-section mb-3">
                           <div class="d-flex align-center">
-                            <span class="text-caption text-primary mr-2 flex-shrink-0">问题</span>
+                            <span class="text-caption text-primary mr-2 flex-shrink-0">{{ t('deckDetail.question') }}</span>
                             <span class="text-body-1" v-html="renderMathText(card.front)"></span>
                           </div>
                         </div>
@@ -179,7 +179,7 @@
                         <!-- 答案 -->
                         <div class="answer-section">
                           <div class="d-flex align-center">
-                            <span class="text-caption text-success mr-2 flex-shrink-0">答案</span>
+                            <span class="text-caption text-success mr-2 flex-shrink-0">{{ t('deckDetail.answer') }}</span>
                             <span class="text-body-1" v-html="renderMathText(card.back)"></span>
                           </div>
                         </div>
@@ -189,7 +189,7 @@
                       <div class="d-flex flex-column align-end justify-space-between" style="align-self: stretch">
                         <!-- 操作按钮 -->
                         <div class="d-flex align-center">
-                          <v-tooltip text="预览" location="top">
+                          <v-tooltip :text="t('deckDetail.preview')" location="top">
                             <template #activator="{ props: tooltipProps }">
                               <v-btn
                                 v-bind="tooltipProps"
@@ -204,7 +204,7 @@
 
                           <!-- 如果是当前用户的卡片组，显示编辑和删除按钮 -->
                           <template v-if="isOwnDeck">
-                            <v-tooltip text="添加到学习" location="top">
+                            <v-tooltip :text="t('deckDetail.addToStudy')" location="top">
                               <template #activator="{ props: tooltipProps }">
                                 <v-btn
                                   v-if="!isCardStudying(card.id)"
@@ -227,7 +227,7 @@
                               disabled
                             ></v-btn>
 
-                            <v-tooltip text="编辑" location="top">
+                            <v-tooltip :text="t('common.edit')" location="top">
                               <template #activator="{ props: tooltipProps }">
                                 <v-btn
                                   v-bind="tooltipProps"
@@ -240,7 +240,7 @@
                               </template>
                             </v-tooltip>
 
-                            <v-tooltip text="删除" location="top">
+                            <v-tooltip :text="t('common.delete')" location="top">
                               <template #activator="{ props: tooltipProps }">
                                 <v-btn
                                   v-bind="tooltipProps"
@@ -256,7 +256,7 @@
 
                           <!-- 如果不是当前用户的卡片组，显示学习按钮 -->
                           <template v-else>
-                            <v-tooltip text="添加到学习" location="top">
+                            <v-tooltip :text="t('deckDetail.addToStudy')" location="top">
                               <template #activator="{ props: tooltipProps }">
                                 <v-btn
                                   v-if="!isCardStudying(card.id)"
@@ -282,7 +282,7 @@
                         </div>
 
                         <!-- 状态标签 -->
-                        <v-tooltip text="该卡片尚未加入您的学习计划" location="top">
+                        <v-tooltip :text="t('deckDetail.notStudiedTooltip')" location="top">
                           <template #activator="{ props: tooltipProps }">
                             <v-chip
                               v-if="!isCardStudying(card.id)"
@@ -291,7 +291,7 @@
                               color="warning"
                               variant="flat"
                             >
-                              未学习
+                              {{ t('deckDetail.notStudied') }}
                             </v-chip>
                           </template>
                         </v-tooltip>
@@ -309,8 +309,8 @@
                   color="grey-lighten-2"
                   class="mb-4"
                 ></v-icon>
-                <h4 class="text-h6 text-grey-darken-1 mb-2">暂无卡片</h4>
-                <p class="text-body-2 text-grey-darken-1">该卡片组还没有添加任何卡片</p>
+                <h4 class="text-h6 text-grey-darken-1 mb-2">{{ t('deckDetail.noCards') }}</h4>
+                <p class="text-body-2 text-grey-darken-1">{{ t('deckDetail.noCardsHint') }}</p>
                 <v-btn
                   v-if="isOwnDeck"
                   color="primary"
@@ -320,7 +320,7 @@
                   class="mt-4"
                   @click="createNewCard"
                 >
-                  添加第一张卡片
+                  {{ t('deckDetail.addFirstCard') }}
                 </v-btn>
               </div>
 
@@ -332,8 +332,8 @@
                   color="grey-lighten-2"
                   class="mb-4"
                 ></v-icon>
-                <h4 class="text-h6 text-grey-darken-1 mb-2">加载失败</h4>
-                <p class="text-body-2 text-grey-darken-1">请检查网络连接后重试</p>
+                <h4 class="text-h6 text-grey-darken-1 mb-2">{{ t('deckDetail.loadFailed') }}</h4>
+                <p class="text-body-2 text-grey-darken-1">{{ t('deckDetail.loadFailedHint') }}</p>
               </div>
             </v-window-item>
 
@@ -341,7 +341,7 @@
             <v-window-item value="study">
               <div v-if="loading" class="text-center pa-8">
                 <v-progress-circular indeterminate color="primary" size="40"></v-progress-circular>
-                <p class="text-body-1 text-grey-darken-1 mt-4">加载中...</p>
+                <p class="text-body-1 text-grey-darken-1 mt-4">{{ t('common.loading') }}</p>
               </div>
 
               <div v-else-if="studyCards.length === 0" class="text-center pa-8">
@@ -351,8 +351,8 @@
                   color="grey-lighten-2"
                   class="mb-4"
                 ></v-icon>
-                <h4 class="text-h6 text-grey-darken-1 mb-2">暂无学习卡片</h4>
-                <p class="text-body-2 text-grey-darken-1">您还没有开始学习此卡片组中的任何卡片</p>
+                <h4 class="text-h6 text-grey-darken-1 mb-2">{{ t('deckDetail.noStudyCards') }}</h4>
+                <p class="text-body-2 text-grey-darken-1">{{ t('deckDetail.noStudyCardsHint') }}</p>
               </div>
 
               <div v-else>
@@ -368,7 +368,7 @@
                     rounded="lg"
                     @click="showOnlyCurrentDeck = !showOnlyCurrentDeck"
                   >
-                    {{ showOnlyCurrentDeck ? '查看全部' : '只看当前卡片组的卡片' }}
+                    {{ showOnlyCurrentDeck ? t('deckDetail.filterShowAll') : t('deckDetail.filterShowCurrentDeck') }}
                   </v-btn>
                 </div>
 
@@ -389,7 +389,7 @@
                         <!-- 问题 -->
                         <div class="question-section mb-3">
                           <div class="d-flex align-center">
-                            <span class="text-caption text-primary mr-2 flex-shrink-0">问题</span>
+                            <span class="text-caption text-primary mr-2 flex-shrink-0">{{ t('deckDetail.question') }}</span>
                             <span class="text-body-1" v-html="renderMathText(card.front)"></span>
                           </div>
                         </div>
@@ -397,7 +397,7 @@
                         <!-- 答案 -->
                         <div class="answer-section">
                           <div class="d-flex align-center">
-                            <span class="text-caption text-success mr-2 flex-shrink-0">答案</span>
+                            <span class="text-caption text-success mr-2 flex-shrink-0">{{ t('deckDetail.answer') }}</span>
                             <span class="text-body-1" v-html="renderMathText(card.back)"></span>
                           </div>
                         </div>
@@ -409,11 +409,11 @@
                           style="gap: 8px"
                         >
                           <span v-if="card.srsState.repetitions >= 3" class="text-success"
-                            >已掌握</span
+                            >{{ t('deckDetail.mastered') }}</span
                           >
-                          <span v-else>学习{{ card.srsState.repetitions }}次</span>
+                          <span v-else>{{ t('deckDetail.studiedTimes', { count: card.srsState.repetitions }) }}</span>
                           <span
-                            >下次复习：{{
+                            >{{ t('deckDetail.nextReview') }}{{
                               new Date(card.srsState.reviewDueAt).toLocaleDateString()
                             }}</span
                           >
@@ -425,7 +425,7 @@
                         <!-- 操作按钮 -->
                         <div class="d-flex align-center">
                           <!-- 有更新时显示同步按钮 -->
-                          <v-tooltip v-if="card.hasUpdate" text="同步更新" location="top">
+                          <v-tooltip v-if="card.hasUpdate" :text="t('deckDetail.syncUpdate')" location="top">
                             <template #activator="{ props: tooltipProps }">
                               <v-btn
                                 v-bind="tooltipProps"
@@ -438,7 +438,7 @@
                             </template>
                           </v-tooltip>
 
-                          <v-tooltip text="预览" location="top">
+                          <v-tooltip :text="t('deckDetail.preview')" location="top">
                             <template #activator="{ props: tooltipProps }">
                               <v-btn
                                 v-bind="tooltipProps"
@@ -451,7 +451,7 @@
                             </template>
                           </v-tooltip>
 
-                          <v-tooltip text="移除学习" location="top">
+                          <v-tooltip :text="t('deckDetail.removeStudy')" location="top">
                             <template #activator="{ props: tooltipProps }">
                               <v-btn
                                 v-bind="tooltipProps"
@@ -471,7 +471,7 @@
                           class="d-flex flex-wrap justify-end"
                           style="gap: 4px"
                         >
-                          <v-tooltip text="卡片内容有更新，点击同步按钮可更新到最新版本" location="top">
+                          <v-tooltip :text="t('deckDetail.hasUpdateTooltip')" location="top">
                             <template #activator="{ props: tooltipProps }">
                               <v-chip
                                 v-if="card.hasUpdate"
@@ -480,11 +480,11 @@
                                 color="warning"
                                 variant="flat"
                               >
-                                有更新
+                                {{ t('deckDetail.hasUpdate') }}
                               </v-chip>
                             </template>
                           </v-tooltip>
-                          <v-tooltip text="该卡片已从原卡片组中删除" location="top">
+                          <v-tooltip :text="t('deckDetail.cardDeletedTooltip')" location="top">
                             <template #activator="{ props: tooltipProps }">
                               <v-chip
                                 v-if="card.isDeleted"
@@ -493,11 +493,11 @@
                                 color="error"
                                 variant="flat"
                               >
-                                卡片已删除
+                                {{ t('deckDetail.cardDeleted') }}
                               </v-chip>
                             </template>
                           </v-tooltip>
-                          <v-tooltip text="该卡片来自其他卡片组，非当前卡片组的内容" location="top">
+                          <v-tooltip :text="t('deckDetail.fromOtherDeckTooltip')" location="top">
                             <template #activator="{ props: tooltipProps }">
                               <v-chip
                                 v-if="card.isFromOtherDeck"
@@ -506,7 +506,7 @@
                                 color="grey"
                                 variant="flat"
                               >
-                                来自其他卡片组
+                                {{ t('deckDetail.fromOtherDeck') }}
                               </v-chip>
                             </template>
                           </v-tooltip>
@@ -531,7 +531,7 @@
         <!-- 我复习的卡片 tab 的一键操作按钮 -->
         <div v-if="currentTab === 'study' && hasAnyChanges" class="d-flex align-center" style="gap: 12px">
           <v-tooltip
-            text="将学习列表完全同步为当前卡片组，包括添加新卡片、更新已修改卡片、移除已删除卡片，同时清除来自其他卡片组的卡片"
+            :text="t('deckDetail.fullSyncTooltip')"
             location="top"
           >
             <template #activator="{ props: tooltipProps }">
@@ -543,12 +543,12 @@
                 prepend-icon="mdi-sync"
                 @click="fullSyncToDeck"
               >
-                完全同步为当前卡片组
+                {{ t('deckDetail.fullSyncBtn') }}
               </v-btn>
             </template>
           </v-tooltip>
           <v-tooltip
-            text="同步当前卡片组的变更（添加新卡片、更新已修改卡片、移除已删除卡片），保留来自其他卡片组的卡片"
+            :text="t('deckDetail.syncUpdatesTooltip')"
             location="top"
           >
             <template #activator="{ props: tooltipProps }">
@@ -561,7 +561,7 @@
                 prepend-icon="mdi-update"
                 @click="syncUpdatesOnly"
               >
-                同步卡片组更新 ({{ syncTotalCount }})
+                {{ t('deckDetail.syncUpdatesBtn', { count: syncTotalCount }) }}
               </v-btn>
             </template>
           </v-tooltip>
@@ -569,7 +569,7 @@
 
         <!-- 当前卡片组 tab 有未学习卡片时的一键添加按钮 -->
         <div v-else-if="currentTab === 'all' && addedDiffs.length > 0" class="d-flex align-center" style="gap: 12px">
-          <v-tooltip text="将所有未学习的卡片添加到您的学习计划" location="top">
+          <v-tooltip :text="t('deckDetail.addAllNewTooltip')" location="top">
             <template #activator="{ props: tooltipProps }">
               <v-btn
                 v-bind="tooltipProps"
@@ -579,7 +579,7 @@
                 prepend-icon="mdi-plus"
                 @click="addAllNewCards"
               >
-                全部添加学习 ({{ addedDiffs.length }})
+                {{ t('deckDetail.addAllNewBtn', { count: addedDiffs.length }) }}
               </v-btn>
             </template>
           </v-tooltip>
@@ -588,8 +588,8 @@
         <!-- 当前卡片组 tab 的提示信息 -->
         <div v-else-if="currentTab === 'all'" class="text-body-2 text-grey-darken-1 d-flex align-center">
           <v-icon icon="mdi-information" size="16" class="mr-1"></v-icon>
-          <span v-if="studyCards.length === 0">点击"学习卡片组"将所有卡片加入您的学习计划</span>
-          <span v-else>已学习该卡片组的所有卡片</span>
+          <span v-if="studyCards.length === 0">{{ t('deckDetail.studyHintEmpty') }}</span>
+          <span v-else>{{ t('deckDetail.studyHintAllLearned') }}</span>
         </div>
 
         <!-- 其他情况的空占位 -->
@@ -603,7 +603,7 @@
       <v-card v-if="selectedCard" rounded="xl" elevation="0">
         <div class="preview-header px-4 py-2 border-b">
           <div class="d-flex align-center justify-space-between">
-            <h3 class="text-subtitle-1 font-weight-bold text-grey-darken-3">卡片预览</h3>
+            <h3 class="text-subtitle-1 font-weight-bold text-grey-darken-3">{{ t('deckDetail.cardPreviewTitle') }}</h3>
             <v-btn
               icon="mdi-close"
               variant="text"
@@ -624,7 +624,7 @@
                   <v-icon icon="mdi-help-circle" color="primary" size="32"></v-icon>
                 </div>
                 <div class="text-center">
-                  <h4 class="text-h6 font-weight-bold text-primary mb-4">问题</h4>
+                  <h4 class="text-h6 font-weight-bold text-primary mb-4">{{ t('deckDetail.question') }}</h4>
                   <p
                     class="text-h6 text-grey-darken-3"
                     v-html="renderMathText(selectedCard.front)"
@@ -633,7 +633,7 @@
                 <div class="text-center mt-6">
                   <v-chip size="small" color="primary" variant="outlined">
                     <v-icon icon="mdi-gesture-tap" size="16" class="mr-1"></v-icon>
-                    点击翻转查看答案
+                    {{ t('deckDetail.flipToAnswer') }}
                   </v-chip>
                 </div>
               </div>
@@ -644,7 +644,7 @@
                   <v-icon icon="mdi-lightbulb" color="success" size="32"></v-icon>
                 </div>
                 <div class="text-center">
-                  <h4 class="text-h6 font-weight-bold text-success mb-4">答案</h4>
+                  <h4 class="text-h6 font-weight-bold text-success mb-4">{{ t('deckDetail.answer') }}</h4>
                   <p
                     class="text-h6 text-grey-darken-3"
                     v-html="renderMathText(selectedCard.back)"
@@ -653,7 +653,7 @@
                 <div class="text-center mt-6">
                   <v-chip size="small" color="success" variant="outlined">
                     <v-icon icon="mdi-gesture-tap" size="16" class="mr-1"></v-icon>
-                    点击翻转查看问题
+                    {{ t('deckDetail.flipToQuestion') }}
                   </v-chip>
                 </div>
               </div>
@@ -669,7 +669,7 @@
         <div class="px-4 py-2 border-b">
           <div class="d-flex align-center justify-space-between">
             <h3 class="text-subtitle-1 font-weight-bold text-grey-darken-3">
-              {{ editingCard ? '编辑卡片' : '新建卡片' }}
+              {{ editingCard ? t('deckDetail.editCard') : t('deckDetail.newCard') }}
             </h3>
             <v-btn
               icon="mdi-close"
@@ -684,12 +684,12 @@
         <v-card-text class="pa-6">
           <v-form v-model="editCardFormValid">
             <div class="mb-6">
-              <label class="text-caption text-primary mb-2 d-block"> 问题 (卡片正面) </label>
+              <label class="text-caption text-primary mb-2 d-block"> {{ t('deckDetail.questionLabel') }} </label>
               <v-textarea
                 v-model="editCardFront"
                 variant="outlined"
                 rounded="lg"
-                placeholder="请输入问题内容..."
+                :placeholder="t('deckDetail.questionPlaceholder')"
                 rows="3"
                 :rules="frontRules"
                 :counter="frontMaxLength"
@@ -697,12 +697,12 @@
             </div>
 
             <div class="mb-4">
-              <label class="text-caption text-success mb-2 d-block"> 答案 (卡片背面) </label>
+              <label class="text-caption text-success mb-2 d-block"> {{ t('deckDetail.answerLabel') }} </label>
               <v-textarea
                 v-model="editCardBack"
                 variant="outlined"
                 rounded="lg"
-                placeholder="请输入答案内容..."
+                :placeholder="t('deckDetail.answerPlaceholder')"
                 rows="4"
                 :rules="backRules"
                 :counter="backMaxLength"
@@ -713,7 +713,7 @@
 
         <v-card-actions class="pa-6 pt-0">
           <v-spacer></v-spacer>
-          <v-btn variant="text" rounded="lg" @click="showEditDialog = false">取消</v-btn>
+          <v-btn variant="text" rounded="lg" @click="showEditDialog = false">{{ t('common.cancel') }}</v-btn>
           <v-btn
             color="primary"
             variant="flat"
@@ -722,7 +722,7 @@
             :disabled="!editCardFormValid || !editCardFront.trim() || !editCardBack.trim()"
             @click="saveCard"
           >
-            {{ editingCard ? '保存修改' : '创建卡片' }}
+            {{ editingCard ? t('deckDetail.saveCard') : t('deckDetail.createCard') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -733,7 +733,7 @@
       <v-card rounded="xl" elevation="0">
         <div class="px-4 py-2 border-b">
           <div class="d-flex align-center justify-space-between">
-            <h3 class="text-subtitle-1 font-weight-bold text-grey-darken-3">移除学习</h3>
+            <h3 class="text-subtitle-1 font-weight-bold text-grey-darken-3">{{ t('deckDetail.removeStudyTitle') }}</h3>
             <v-btn
               icon="mdi-close"
               variant="text"
@@ -745,12 +745,12 @@
         </div>
 
         <v-card-text class="pa-6">
-          <p class="text-body-1 text-grey-darken-2">确定要将此卡片从复习计划中完全移除吗？</p>
+          <p class="text-body-1 text-grey-darken-2">{{ t('deckDetail.removeStudyConfirm') }}</p>
         </v-card-text>
 
         <v-card-actions class="pa-6 pt-0">
           <v-spacer></v-spacer>
-          <v-btn variant="text" rounded="lg" @click="showRemoveConfirmDialog = false">取消</v-btn>
+          <v-btn variant="text" rounded="lg" @click="showRemoveConfirmDialog = false">{{ t('common.cancel') }}</v-btn>
           <v-btn
             color="error"
             variant="flat"
@@ -758,7 +758,7 @@
             :loading="removingFromStudy"
             @click="removeFromStudy"
           >
-            确认移除
+            {{ t('deckDetail.removeStudyBtn') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -777,6 +777,9 @@ import { useUserStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/format'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck } from '@/types/memory'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface Props {
   deck: MemoryCardDeck | null
@@ -1049,7 +1052,7 @@ const otherCourseName = computed(() => {
   if (!hasCardsInOtherCourse.value) return ''
   // 假设同一节点的卡片都在同一个课程
   const firstCard = cardsInOtherCourse.value[0]
-  return firstCard?.srsState?.course?.name || '其他课程'
+  return firstCard?.srsState?.course?.name || t('deckDetail.otherCourseName')
 })
 
 // 需要同步的总数量（有更新 + 已被删除 + 未学习）

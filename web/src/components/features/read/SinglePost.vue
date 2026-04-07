@@ -18,6 +18,9 @@ import type { UpvoteStatusResponse } from '@/types/upvote'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import ImageViewer from '@/components/common/ImageViewer.vue'
 import ChartViewer from '@/components/common/ChartViewer.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface NodeInfo {
   id: number
@@ -447,7 +450,7 @@ const { execute: executeModifyContents } = useMutation(
       action: data.action,
     }),
   {
-    successMessage: '操作成功',
+    successMessage: '',
     onSuccess: (_, data) => {
       if (data.action === 1 || data.action === 2) {
         emit('load-data', ['contents', 'chosenPosting'])
@@ -520,14 +523,14 @@ watch(
     <!-- 作者信息 -->
     <v-row class="mx-0 my-2 py-1 d-flex align-center">
       <UserAvatar
-        :name="posting.creator?.name || '匿名用户'"
+        :name="posting.creator?.name || t('common.anonymous')"
         :avatar-url="posting.creator?.avatar"
         size="24"
         rounded="circle"
       />
       <div class="pl-3 d-flex align-center">
         <span class="text-body-2 font-weight-medium text-grey-darken-3">
-          {{ posting.creator?.name || '匿名用户' }}
+          {{ posting.creator?.name || t('common.anonymous') }}
         </span>
         <span class="text-caption text-grey mx-2">·</span>
         <span class="text-body-2 text-grey-darken-2">
@@ -586,7 +589,7 @@ watch(
             <!-- 溢出提示（替代原来的"查看完整内容"按钮） -->
             <div v-if="isOverflow" class="overflow-hint">
               <v-icon icon="mdi-chevron-down" size="16" class="mr-1"></v-icon>
-              点击查看完整内容
+              {{ t('userPosting.viewFullText') }}
             </div>
           </div>
         </router-link>
@@ -629,7 +632,7 @@ watch(
                 : 'font-weight-medium text-grey-darken-2'
             "
           >
-            赞同
+            {{ t('userPosting.agree') }}
           </span>
           <v-chip
             v-if="posting.likeCount > 0"
@@ -667,7 +670,7 @@ watch(
                   : 'font-weight-medium text-grey-darken-2'
               "
             >
-              两遍秒懂
+              {{ t('userPosting.understandTwice') }}
             </span>
             <span
               v-if="posting.twiceCount > 0"
@@ -707,7 +710,7 @@ watch(
                   : 'font-weight-medium text-grey-darken-2'
               "
             >
-              有用
+              {{ t('userPosting.helpful') }}
             </span>
             <span
               v-if="posting.likeCount > 0"
@@ -768,8 +771,8 @@ watch(
           >
             {{
               currNode && currNode['+'] && currNode['+'] === posting.id
-                ? '取消设置为目录'
-                : '设置为目录'
+                ? t('posting.cancelSetAsCatalog')
+                : t('posting.setAsCatalog')
             }}
           </span>
         </v-btn>
@@ -823,7 +826,7 @@ watch(
             </span>
           </v-btn>
         </template>
-        <span>查看详情页以浏览和添加记忆卡片组</span>
+        <span>{{ t('posting.viewMemoryCardsHint') }}</span>
       </v-tooltip>
 
       <!-- 收藏按钮 -->
@@ -840,7 +843,7 @@ watch(
             @click="handleToggleBookmark"
           />
         </template>
-        {{ posting.bookmarked ? '取消收藏' : '收藏文章' }}
+        {{ posting.bookmarked ? t('common.unbookmark') : t('posting.bookmarkArticle') }}
       </v-tooltip>
     </v-row>
 

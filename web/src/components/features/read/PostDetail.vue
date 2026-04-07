@@ -14,6 +14,9 @@ import type { MemoryCardDeck } from '@/types/memory'
 import { useFetch } from '@/composables/useFetch'
 import { ObjectType } from '@/enums'
 import { convertVoteType } from '@/utils/postUtils'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface Props {
   // 是否显示节点标题（在 ContentReadPage 中可能不需要）
@@ -108,7 +111,7 @@ const {
   onError: () => {
     router.replace({
       path: '/error/404',
-      state: { message: '您访问的内容不存在或已被删除' },
+      state: { message: t('common.notFound') },
     })
   },
 })
@@ -292,7 +295,7 @@ defineExpose({
               class="mr-2"
               :size="$vuetify.display.mobile ? 20 : 24"
             />
-            <span class="text-h6 font-weight-bold">答疑助手</span>
+            <span class="text-h6 font-weight-bold">{{ t('postDetail.aiAssistant') }}</span>
           </div>
           <v-btn
             icon="mdi-close"
@@ -326,7 +329,7 @@ defineExpose({
               class="mr-2"
               :size="$vuetify.display.mobile ? 18 : 20"
             />
-            <span class="text-h6 text-md-h5 font-weight-bold">记忆卡片组</span>
+            <span class="text-h6 text-md-h5 font-weight-bold">{{ t('postDetail.memoryDecks') }}</span>
           </div>
           <div class="d-flex align-center" style="gap: 8px">
             <v-btn
@@ -338,7 +341,7 @@ defineExpose({
               class="text-caption text-md-body-2"
               @click="handleCreateDeck"
             >
-              创建
+              {{ t('common.create') }}
             </v-btn>
             <v-btn
               icon="mdi-close"
@@ -375,7 +378,7 @@ defineExpose({
         @click="assistantSheetOpen = true"
       >
         <v-icon :size="$vuetify.display.mobile ? 20 : 24">mdi-robot-excited</v-icon>
-        <v-tooltip activator="parent" location="left">答疑助手</v-tooltip>
+        <v-tooltip activator="parent" location="left">{{ t('postDetail.aiAssistant') }}</v-tooltip>
       </v-btn>
 
       <!-- 记忆卡片按钮 -->
@@ -387,7 +390,7 @@ defineExpose({
         @click="memorySheetOpen = true"
       >
         <v-icon :size="$vuetify.display.mobile ? 20 : 24">mdi-cards</v-icon>
-        <v-tooltip activator="parent" location="left">记忆卡片</v-tooltip>
+        <v-tooltip activator="parent" location="left">{{ t('postDetail.memoryDecks') }}</v-tooltip>
       </v-btn>
     </div>
   </div>
