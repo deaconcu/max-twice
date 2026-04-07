@@ -10,7 +10,7 @@ import { HEADER_HEIGHT } from '@/constants/layout'
         <v-col cols="auto">
           <div class="d-flex align-center" style="cursor: pointer" @click="$router.push('/home')">
             <div class="logo-icon">
-              <v-icon size="28" color="primary">mdi-reddit</v-icon>
+              <v-icon size="28" color="primary">mdi-infinity</v-icon>
             </div>
             <h2 class="logo-text ml-2">MaxTwice</h2>
           </div>

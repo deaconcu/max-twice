@@ -278,7 +278,7 @@ const {
   defaultValue: null,
   onError: () => {
     // 获取失败时跳转到 404 页面
-    router.replace({ path: '/error/404', state: { message: '路线图不存在或已被删除' } })
+    router.replace({ path: '/error/404', state: { message: t('roadmapDetail.notFound') } })
   },
 })
 

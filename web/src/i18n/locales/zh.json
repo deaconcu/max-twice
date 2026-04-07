@@ -924,7 +924,8 @@
     "copyPath": "复制路径",
     "currentRole": "当前职业",
     "courseLabel": "[课程]",
-    "nodeLabel": "[节点]"
+    "nodeLabel": "[节点]",
+    "notFound": "路线图不存在或已被删除"
   },
   "roleDetail": {
     "bookmark": "收藏职业",
@@ -1454,7 +1455,49 @@
     "videoUrlPlaceholder": "粘贴 YouTube、Bilibili、Vimeo 链接或视频文件地址",
     "videoUrlInvalid": "无法识别的视频链接，请输入有效的视频地址",
     "supportedPlatforms": "支持的平台：",
-    "directVideoLink": "直接视频链接 (mp4, webm)"
+    "directVideoLink": "直接视频链接 (mp4, webm)",
+    "toolbar": {
+      "undo": "撤销",
+      "redo": "重做",
+      "clearFormat": "清除格式",
+      "bold": "粗体",
+      "italic": "斜体",
+      "underline": "下划线",
+      "strikethrough": "删除线",
+      "highlight": "高亮",
+      "textColor": "文本颜色",
+      "heading1": "一级标题",
+      "heading2": "二级标题",
+      "heading3": "三级标题",
+      "subscript": "下标",
+      "superscript": "上标",
+      "alignLeft": "左对齐",
+      "alignCenter": "居中对齐",
+      "alignRight": "右对齐",
+      "alignJustify": "两端对齐",
+      "bulletList": "无序列表",
+      "orderedList": "有序列表",
+      "increaseIndent": "增加缩进",
+      "decreaseIndent": "减少缩进",
+      "insertLink": "插入链接",
+      "insertImage": "插入图片",
+      "inlineCode": "行内代码",
+      "codeBlock": "代码块",
+      "blockquote": "引用",
+      "horizontalRule": "分隔线",
+      "table": "表格",
+      "insertVideo": "插入视频",
+      "mathFormula": "数学公式",
+      "mermaidChart": "Mermaid 图表"
+    },
+    "tableMenu": {
+      "insertTable": "插入表格",
+      "insertRowAfter": "在下方插入行",
+      "insertColumnAfter": "在右侧插入列",
+      "deleteRow": "删除当前行",
+      "deleteColumn": "删除当前列",
+      "deleteTable": "删除表格"
+    }
   },
   "userCard": {
     "loading": "加载中...",

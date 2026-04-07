@@ -12,16 +12,14 @@
         <!-- Right side - Login Form -->
         <v-col cols="12" md="5" sm="8" class="d-flex justify-center">
           <div class="login-card-wrapper">
-            <v-card class="login-card" border rounded="lg">
+            <v-card class="login-card" rounded="xl" elevation="0">
               <!-- Logo Section -->
-              <v-card-text class="text-center pa-8">
-                <div class="logo-circle">
-                  <v-icon size="48" color="primary">mdi-infinity</v-icon>
-                </div>
-                <h2 class="text-h5 font-weight-bold mt-4 mb-2">
+              <v-card-text class="text-center pt-10 pb-2 px-8">
+                <v-icon size="40" color="primary" class="mb-4">mdi-infinity</v-icon>
+                <h2 class="text-h4 font-weight-bold mb-2">
                   {{ t('user.login.title') }}
                 </h2>
-                <p class="text-body-2 text-medium-emphasis">{{ t('user.login.welcome') }}</p>
+                <p class="text-body-2 text-medium-emphasis">{{ t('user.login.subtitle') }}</p>
               </v-card-text>
 
               <!-- Login Form -->
@@ -316,28 +314,20 @@ const goToRegister = () => {
 
 .login-card {
   background-color: rgb(var(--v-theme-surface));
-  border: 1px solid rgb(var(--v-theme-border));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
 }
 
 .logo-circle {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgb(var(--v-theme-surface-variant));
-  border: 2px solid rgb(var(--v-theme-border));
-  border-radius: 50%;
+  display: none;
 }
 
 /* 表单圆角 */
 .v-text-field :deep(.v-field) {
-  border-radius: 20px;
+  border-radius: 12px;
 }
 
 .v-btn {
-  border-radius: 20px;
+  border-radius: 12px;
 }
 
 a:hover {

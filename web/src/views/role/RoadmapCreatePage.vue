@@ -755,7 +755,7 @@ const addCourseNode = (course: Course) => {
   nodes.value.push({
     id: nodeId, // 使用 rootNodeId
     type: 'default',
-    data: { label: `[课程] ${course.name}` }, // 课程前面加文字标识
+    data: { label: `${t('roadmapDetail.courseLabel')} ${course.name}` }, // 课程前面加文字标识
     position: { x, y },
     sourcePosition: Position.Right,
     targetPosition: Position.Left,
@@ -808,7 +808,7 @@ const addNode = (node: SearchResultItem) => {
   nodes.value.push({
     id: nodeId,
     type: 'default',
-    data: { label: `[节点] ${node.name}` }, // 节点前面加文字标识
+    data: { label: `${t('roadmapDetail.nodeLabel')} ${node.name}` }, // 节点前面加文字标识
     position: { x, y },
     sourcePosition: Position.Right,
     targetPosition: Position.Left,
