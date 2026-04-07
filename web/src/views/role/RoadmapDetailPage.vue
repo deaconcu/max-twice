@@ -45,7 +45,7 @@
                       size="18"
                       class="mr-1"
                     />
-                    {{ roadmap.learning ? '正在学习' : '开始学习' }}
+                    {{ roadmap.learning ? t('roadmapCard.learning') : t('roadmapCard.startLearning') }}
                   </v-btn>
 
                   <!-- 分隔线 -->
@@ -78,7 +78,7 @@
                         @click="handleToggleBookmark"
                       />
                     </template>
-                    {{ roadmap.bookmarked ? '取消收藏' : '收藏路线图' }}
+                    {{ roadmap.bookmarked ? t('roadmapDetail.unbookmark') : t('roadmapDetail.bookmark') }}
                   </v-tooltip>
                 </div>
               </div>
@@ -87,7 +87,7 @@
             <!-- 流程图 -->
             <v-card border rounded="xl" class="flow-card">
               <v-card-title class="pa-3 pa-sm-4 d-flex align-center justify-space-between">
-                <span class="text-body-1 font-weight-bold ps-2">学习路线图</span>
+                <span class="text-body-1 font-weight-bold ps-2">{{ t('roadmapDetail.learningPath') }}</span>
                 <v-btn
                   color="grey-darken-2"
                   variant="outlined"
@@ -96,8 +96,8 @@
                   @click="handleCopy"
                 >
                   <v-icon icon="mdi-content-copy" size="18" class="mr-1" />
-                  <span class="d-none d-sm-inline">复制路径</span>
-                  <span class="d-sm-none">复制</span>
+                  <span class="d-none d-sm-inline">{{ t('roadmapDetail.copyPath') }}</span>
+                  <span class="d-sm-none">{{ t('common.copy') }}</span>
                 </v-btn>
               </v-card-title>
               <v-card-text class="pa-0">
@@ -141,14 +141,14 @@
                         class="mr-2"
                       >
                         <v-icon icon="mdi-pin" size="14" class="mr-1" />
-                        置顶
+                        {{ t('roadmapCard.pin') }}
                       </v-chip>
                     </div>
 
                     <!-- 创建者信息 -->
                     <div class="d-flex align-center mb-3">
                       <UserAvatar
-                        :name="roadmap.creator?.name || '匿名用户'"
+                        :name="roadmap.creator?.name || t('common.anonymous')"
                         :avatar-url="roadmap.creator?.avatar"
                         size="24"
                         rounded="lg"
@@ -174,20 +174,20 @@
                         <v-icon icon="mdi-account-group" size="18" color="grey" class="mr-2" />
                         <span class="text-body-2 text-grey-darken-2">
                           {{ roadmap.learnerCount ?? 0 }}
-                          <span class="d-none d-sm-inline">人学习</span>
+                          <span class="d-none d-sm-inline">{{ t('roadmapCard.learners') }}</span>
                         </span>
                       </div>
                       <div class="d-flex align-center d-none d-sm-flex">
                         <v-icon icon="mdi-comment-outline" size="18" color="grey" class="mr-2" />
                         <span class="text-body-2 text-grey-darken-2">
-                          {{ roadmap.commentCount ?? 0 }} 评论
+                          {{ roadmap.commentCount ?? 0 }} {{ t('roleDetail.comments') }}
                         </span>
                       </div>
                       <div class="d-flex align-center">
                         <v-icon icon="mdi-graph-outline" size="18" color="grey" class="mr-2" />
                         <span class="text-body-2 text-grey-darken-2">
                           {{ roadmap.nodeCount }}
-                          <span class="d-none d-sm-inline">个</span>节点
+                          <span class="d-none d-sm-inline">{{ t('roleDetail.nodeCountUnit') }}</span>{{ t('roadmap.nodes') }}
                         </span>
                       </div>
                     </div>
@@ -228,6 +228,9 @@ import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import CommentSection from '@/components/common/CommentSection.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const route = useRoute()
@@ -297,7 +300,7 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
           id: nodeId,
           type: 'default',
           data: {
-            label: roadmap.value?.profession?.name || '当前职业',
+        label: roadmap.value?.profession?.name || t('roadmapDetail.currentRole'),
             ...node.data,
           },
           position: node.position || { x: 0, y: 0 },
@@ -328,9 +331,9 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
 
       // 添加类型标识
       if (isCourseRoot) {
-        displayLabel = `[课程] ${displayLabel}`
+        displayLabel = `${t('roadmapDetail.courseLabel')} ${displayLabel}`
       } else {
-        displayLabel = `[节点] ${displayLabel}`
+        displayLabel = `${t('roadmapDetail.nodeLabel')} ${displayLabel}`
       }
 
       // 添加进度百分比
@@ -527,14 +530,14 @@ const handleVote = async (): Promise<void> => {
 
 // 开始学习路线图的 mutation
 const { execute: startRoadmapMutation } = useMutation(progressApi.startRoadmap, {
-  successMessage: '已开始学习',
-  showToast: true,
+  successMessage: '',
+  showToast: false,
 })
 
 // 取消学习路线图的 mutation
 const { execute: cancelRoadmapMutation } = useMutation(progressApi.cancelRoadmap, {
-  successMessage: '已取消学习',
-  showToast: true,
+  successMessage: '',
+  showToast: false,
 })
 
 // 开始学习
@@ -589,10 +592,10 @@ const getTimeDisplay = (date: string): string => {
   const created = new Date(date)
   const days = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))
 
-  if (days === 0) return '今天'
-  if (days === 1) return '昨天'
-  if (days < 7) return `${days}天前`
-  if (days < 30) return `${Math.floor(days / 7)}周前`
+  if (days === 0) return t('roleDetail.today')
+  if (days === 1) return t('roleDetail.yesterday')
+  if (days < 7) return t('roleDetail.daysAgo', { days })
+  if (days < 30) return t('roleDetail.weeksAgo', { weeks: Math.floor(days / 7) })
   return date
 }
 

@@ -62,7 +62,7 @@
                     @click="handleToggleBookmark"
                   />
                 </template>
-                {{ role.bookmarked ? '取消收藏' : '收藏职业' }}
+                {{ role.bookmarked ? t('roleDetail.unbookmark') : t('roleDetail.bookmark') }}
               </v-tooltip>
               <v-btn
                 color="primary"
@@ -72,7 +72,7 @@
                 @click="handleCreateRoadmap"
               >
                 <v-icon icon="mdi-plus" size="20" class="mr-1" />
-                创建路径
+                {{ t('roleDetail.createRoadmap') }}
               </v-btn>
             </div>
           </div>
@@ -99,11 +99,11 @@
                 >
                   <v-btn value="all" :size="$vuetify.display.mobile ? 'small' : 'default'">
                     <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1" />
-                    <span class="d-none d-sm-inline">全部</span>
+                    <span class="d-none d-sm-inline">{{ t('roleDetail.filterAll') }}</span>
                   </v-btn>
                   <v-btn value="learning" :size="$vuetify.display.mobile ? 'small' : 'default'">
                     <v-icon icon="mdi-school" size="16" class="mr-1" />
-                    <span class="d-none d-sm-inline">学习中</span>
+                    <span class="d-none d-sm-inline">{{ t('roleDetail.filterLearning') }}</span>
                   </v-btn>
                 </v-btn-toggle>
 
@@ -130,9 +130,9 @@
             <div v-else-if="filteredRoadmaps.length === 0" class="text-center py-12">
               <v-card border rounded="xl" class="pa-12 empty-state">
                 <v-icon icon="mdi-map-marker-path" size="80" color="grey-lighten-1" class="mb-4" />
-                <h3 class="text-h6 text-grey-darken-2 mb-2">暂无学习路径</h3>
+                <h3 class="text-h6 text-grey-darken-2 mb-2">{{ t('roleDetail.noRoadmaps') }}</h3>
                 <p class="text-body-2 text-grey mb-4">
-                  {{ filterStatus === 'all' ? '还没有人创建学习路径' : '该筛选条件下暂无路径' }}
+                  {{ filterStatus === 'all' ? t('roleDetail.noRoadmapsHint') : t('roleDetail.noFilteredRoadmaps') }}
                 </p>
                 <v-btn
                   v-if="filterStatus === 'all'"
@@ -142,7 +142,7 @@
                   @click="handleCreateRoadmap"
                 >
                   <v-icon icon="mdi-plus" size="20" class="mr-1" />
-                  创建第一条路径
+                  {{ t('roleDetail.createFirst') }}
                 </v-btn>
               </v-card>
             </div>
@@ -187,19 +187,13 @@
                       <div class="content-area flex-grow-1" @click="handleGoToRoadmap(roadmap)">
                     <!-- 标签 -->
                     <div class="d-flex align-center mb-2">
-                      <v-chip
-                        v-if="roadmap.pinned"
-                        color="warning"
-                        size="x-small"
-                        variant="flat"
-                        class="mr-2"
-                      >
+                      <v-chip v-if="roadmap.pinned" color="warning" size="x-small" variant="flat" class="mr-2">
                         <v-icon icon="mdi-pin" size="12" class="mr-1" />
-                        置顶
+                        {{ t('roadmapCard.pin') }}
                       </v-chip>
                       <v-chip v-if="roadmap.learning" color="success" size="x-small" variant="flat">
                         <v-icon icon="mdi-school" size="12" class="mr-1" />
-                        学习中
+                        {{ t('roadmapCard.learning') }}
                       </v-chip>
                     </div>
 
@@ -218,27 +212,27 @@
                       <div class="d-flex align-center">
                         <v-icon icon="mdi-account" size="16" color="grey" class="mr-2" />
                         <span class="text-caption text-grey-darken-2">
-                          {{ roadmap.creator?.name || '未知用户' }}
+                        {{ roadmap.creator?.name || t('roadmapCard.unknownUser') }}
                         </span>
                       </div>
                       <div class="d-flex align-center">
                         <v-icon icon="mdi-account-group" size="16" color="grey" class="mr-2" />
                         <span class="text-caption text-grey-darken-2">
                           {{ roadmap.learnerCount ?? 0 }}
-                          <span class="d-none d-sm-inline">人学习</span>
+                          <span class="d-none d-sm-inline">{{ t('roadmapCard.learners') }}</span>
                         </span>
                       </div>
                       <div class="d-flex align-center d-none d-sm-flex">
                         <v-icon icon="mdi-comment-outline" size="16" color="grey" class="mr-2" />
                         <span class="text-caption text-grey-darken-2">
-                          {{ roadmap.commentCount ?? 0 }} 评论
+                          {{ roadmap.commentCount ?? 0 }} {{ t('roleDetail.comments') }}
                         </span>
                       </div>
                       <div class="d-flex align-center">
                         <v-icon icon="mdi-circle-medium" size="16" color="grey" class="mr-2" />
                         <span class="text-caption text-grey-darken-2">
                           {{ roadmap.nodeCount }}
-                          <span class="d-none d-sm-inline">个</span>节点
+                          <span class="d-none d-sm-inline">{{ t('roleDetail.nodeCountUnit') }}</span>{{ t('roadmap.nodes') }}
                         </span>
                       </div>
                       <div class="d-flex align-center d-none d-md-flex">
@@ -274,7 +268,7 @@
                         size="16"
                         class="mr-1"
                       />
-                      {{ roadmap.learning ? '正在学习' : '开始学习' }}
+                      {{ roadmap.learning ? t('roadmapCard.learning') : t('roadmapCard.startLearning') }}
                     </v-btn>
                     <v-btn
                       color="grey-darken-2"
@@ -284,7 +278,7 @@
                       @click="handleCopy(roadmap)"
                     >
                       <v-icon icon="mdi-content-copy" size="16" class="mr-1" />
-                      复制
+                      {{ t('roadmapCard.copyToEditor') }}
                     </v-btn>
                   </div>
                 </div>
@@ -296,7 +290,7 @@
               <!-- 自定义底部提示 -->
               <template #empty>
                 <div class="text-center py-10">
-                  <p class="text-body-2 text-grey">已经到底了</p>
+                  <p class="text-body-2 text-grey">{{ t('common.reachedEnd') }}</p>
                 </div>
               </template>
             </v-infinite-scroll>
@@ -308,7 +302,7 @@
               <v-card-title class="py-6 px-0 pb-4">
                 <div class="d-flex align-center">
                   <v-icon icon="mdi-information" color="primary" class="mr-2" />
-                  <span class="text-h6 font-weight-bold">学习路径说明</span>
+                  <span class="text-h6 font-weight-bold">{{ t('roleDetail.sidebarTitle') }}</span>
                 </div>
               </v-card-title>
 
@@ -317,10 +311,10 @@
                 <div class="info-section mb-5">
                   <h3 class="text-subtitle-1 font-weight-bold text-grey-darken-4 mb-2">
                     <v-icon icon="mdi-map-marker-path" size="18" color="primary" class="mr-1" />
-                    什么是学习路径？
+                    {{ t('roleDetail.whatIsRoadmap') }}
                   </h3>
                   <p class="text-body-2 text-grey-darken-2">
-                    学习路径是由社区成员创建的结构化学习计划，帮助你系统地掌握某个职业所需的技能和知识。
+                    {{ t('roleDetail.whatIsRoadmapDesc') }}
                   </p>
                 </div>
 
@@ -330,58 +324,34 @@
                 <div class="info-section mb-5">
                   <h3 class="text-subtitle-1 font-weight-bold text-grey-darken-4 mb-3">
                     <v-icon icon="mdi-lightbulb" size="18" color="warning" class="mr-1" />
-                    如何使用？
+                    {{ t('roleDetail.howToUse') }}
                   </h3>
                   <div class="d-flex align-start mb-2">
-                    <v-icon
-                      icon="mdi-numeric-1-circle"
-                      size="20"
-                      color="primary"
-                      class="mr-2 mt-1"
-                    />
+                    <v-icon icon="mdi-numeric-1-circle" size="20" color="primary" class="mr-2 mt-1" />
                     <div>
-                      <p class="text-body-2 font-weight-medium text-grey-darken-3">浏览和筛选</p>
-                      <p class="text-caption text-grey-darken-1">
-                        使用筛选和搜索功能找到适合你的路径
-                      </p>
+                      <p class="text-body-2 font-weight-medium text-grey-darken-3">{{ t('roleDetail.howToStep1') }}</p>
+                      <p class="text-caption text-grey-darken-1">{{ t('roleDetail.howToStep1Desc') }}</p>
                     </div>
                   </div>
                   <div class="d-flex align-start mb-2">
-                    <v-icon
-                      icon="mdi-numeric-2-circle"
-                      size="20"
-                      color="primary"
-                      class="mr-2 mt-1"
-                    />
+                    <v-icon icon="mdi-numeric-2-circle" size="20" color="primary" class="mr-2 mt-1" />
                     <div>
-                      <p class="text-body-2 font-weight-medium text-grey-darken-3">开始学习</p>
-                      <p class="text-caption text-grey-darken-1">点击"开始学习"追踪你的学习进度</p>
+                      <p class="text-body-2 font-weight-medium text-grey-darken-3">{{ t('roleDetail.howToStep2') }}</p>
+                      <p class="text-caption text-grey-darken-1">{{ t('roleDetail.howToStep2Desc') }}</p>
                     </div>
                   </div>
                   <div class="d-flex align-start mb-2">
-                    <v-icon
-                      icon="mdi-numeric-3-circle"
-                      size="20"
-                      color="primary"
-                      class="mr-2 mt-1"
-                    />
+                    <v-icon icon="mdi-numeric-3-circle" size="20" color="primary" class="mr-2 mt-1" />
                     <div>
-                      <p class="text-body-2 font-weight-medium text-grey-darken-3">查看详情</p>
-                      <p class="text-caption text-grey-darken-1">
-                        点击路径卡片查看完整的学习路线图
-                      </p>
+                      <p class="text-body-2 font-weight-medium text-grey-darken-3">{{ t('roleDetail.howToStep3') }}</p>
+                      <p class="text-caption text-grey-darken-1">{{ t('roleDetail.howToStep3Desc') }}</p>
                     </div>
                   </div>
                   <div class="d-flex align-start">
-                    <v-icon
-                      icon="mdi-numeric-4-circle"
-                      size="20"
-                      color="primary"
-                      class="mr-2 mt-1"
-                    />
+                    <v-icon icon="mdi-numeric-4-circle" size="20" color="primary" class="mr-2 mt-1" />
                     <div>
-                      <p class="text-body-2 font-weight-medium text-grey-darken-3">参与互动</p>
-                      <p class="text-caption text-grey-darken-1">点赞优质路径，评论分享学习经验</p>
+                      <p class="text-body-2 font-weight-medium text-grey-darken-3">{{ t('roleDetail.howToStep4') }}</p>
+                      <p class="text-caption text-grey-darken-1">{{ t('roleDetail.howToStep4Desc') }}</p>
                     </div>
                   </div>
                 </div>
@@ -392,20 +362,14 @@
                 <div class="info-section">
                   <h3 class="text-subtitle-1 font-weight-bold text-grey-darken-4 mb-2">
                     <v-icon icon="mdi-plus-circle" size="18" color="success" class="mr-1" />
-                    创建你的路径
+                    {{ t('roleDetail.createYourRoadmap') }}
                   </h3>
                   <p class="text-body-2 text-grey-darken-2 mb-3">
-                    你可以创建自己的学习路径，或者复制现有路径进行个性化修改。
+                    {{ t('roleDetail.createYourRoadmapDesc') }}
                   </p>
-                  <v-btn
-                    color="primary"
-                    variant="flat"
-                    block
-                    rounded="lg"
-                    @click="handleCreateRoadmap"
-                  >
+                  <v-btn color="primary" variant="flat" block rounded="lg" @click="handleCreateRoadmap">
                     <v-icon icon="mdi-plus" size="18" class="mr-1" />
-                    创建新路径
+                    {{ t('roleDetail.createNew') }}
                   </v-btn>
                 </div>
               </v-card-text>
@@ -430,6 +394,9 @@ import type { Profession } from '@/types/profession'
 import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const route = useRoute()
@@ -461,12 +428,12 @@ const filterStatus = ref<string>('all')
 const sortBy = ref<string>('score')
 
 // 排序选项
-const sortOptions = [
-  { title: '最新发布', value: 'latest' },
-  { title: '综合排序', value: 'score' },
-]
+const sortOptions = computed(() => [
+  { title: t('roleDetail.sortLatest'), value: 'latest' },
+  { title: t('roleDetail.sortScore'), value: 'score' },
+])
 
-const error = computed(() => (fetchError.value ? '加载职业信息失败' : null))
+const error = computed(() => (fetchError.value ? t('roleDetail.loadFailed') : null))
 
 // 使用无限滚动加载路线图
 const {
@@ -581,10 +548,10 @@ const getTimeDisplay = (date: string): string => {
   const created = new Date(date)
   const days = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))
 
-  if (days === 0) return '今天'
-  if (days === 1) return '昨天'
-  if (days < 7) return `${days}天前`
-  if (days < 30) return `${Math.floor(days / 7)}周前`
+  if (days === 0) return t('roleDetail.today')
+  if (days === 1) return t('roleDetail.yesterday')
+  if (days < 7) return t('roleDetail.daysAgo', { days })
+  if (days < 30) return t('roleDetail.weeksAgo', { weeks: Math.floor(days / 7) })
   return date
 }
 
@@ -641,14 +608,14 @@ const handleVote = async (
 
 // 开始学习路线图的 mutation
 const { execute: startRoadmapMutation } = useMutation(progressApi.startRoadmap, {
-  successMessage: '已开始学习',
-  showToast: true,
+  successMessage: '',
+  showToast: false,
 })
 
 // 取消学习路线图的 mutation
 const { execute: cancelRoadmapMutation } = useMutation(progressApi.cancelRoadmap, {
-  successMessage: '已取消学习',
-  showToast: true,
+  successMessage: '',
+  showToast: false,
 })
 
 // 开始学习

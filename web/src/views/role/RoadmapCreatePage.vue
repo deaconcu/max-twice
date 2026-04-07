@@ -19,10 +19,10 @@
             </v-avatar>
             <div style="min-width: 0">
               <h1 class="text-h6 text-md-h5 font-weight-bold text-grey-darken-4 text-truncate">
-                {{ isEditMode ? '编辑学习路径' : (copyId ? '复制学习路径' : '创建学习路径') }}
+                {{ isEditMode ? t('roadmapCreate.editTitle') : (copyId ? t('roadmapCreate.copyTitle') : t('roadmapCreate.createTitle')) }}
               </h1>
               <p class="text-caption text-sm-body-2 text-grey-darken-2 text-truncate">
-                {{ isEditMode ? '修改' : '为' }} {{ roleName }} {{ isEditMode ? '的学习路径' : '创建新的学习路径' }}
+                {{ isEditMode ? t('roadmapCreate.subtitleEdit', { name: roleName }) : t('roadmapCreate.subtitleCreate', { name: roleName }) }}
               </p>
             </div>
           </div>
@@ -40,9 +40,9 @@
               class="pa-3 pa-sm-4 d-flex flex-row align-center justify-space-between ga-2 ga-sm-3"
             >
               <div class="d-flex align-center">
-                <span class="text-h6 font-weight-bold me-4">路径编辑器</span>
+                <span class="text-h6 font-weight-bold me-4">{{ t('roadmapCreate.editorTitle') }}</span>
                 <v-chip v-if="nodes.length > 1" size="small" color="primary" variant="tonal">
-                  {{ nodes.length - 1 }} 个节点
+                  {{ nodes.length - 1 }} {{ t('roadmapCreate.nodeCount') }}
                 </v-chip>
               </div>
               <div class="d-flex flex-wrap align-center gap-2">
@@ -58,7 +58,7 @@
                     :size="$vuetify.display.mobile ? 16 : 18"
                     class="mr-1"
                   />
-                  <span class="d-none d-sm-inline">删除选中</span>
+                  <span class="d-none d-sm-inline">{{ t('roadmapCreate.deleteSelected') }}</span>
                 </v-btn>
                 <v-btn
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
@@ -72,7 +72,7 @@
                     :size="$vuetify.display.mobile ? 16 : 18"
                     class="mr-1"
                   />
-                  <span class="d-none d-sm-inline">重置画布</span>
+                  <span class="d-none d-sm-inline">{{ t('roadmapCreate.reset') }}</span>
                 </v-btn>
                 <v-btn
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
@@ -86,7 +86,7 @@
                     :size="$vuetify.display.mobile ? 16 : 18"
                     class="mr-1"
                   />
-                  <span class="d-none d-sm-inline">自动布局</span>
+                  <span class="d-none d-sm-inline">{{ t('roadmapCreate.autoLayout') }}</span>
                 </v-btn>
                 <v-btn
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
@@ -100,7 +100,7 @@
                     :size="$vuetify.display.mobile ? 16 : 18"
                     class="mr-1"
                   />
-                  <span class="d-none d-sm-inline">保存</span>
+                  <span class="d-none d-sm-inline">{{ t('roadmapCreate.saveWithDescription') }}</span>
                 </v-btn>
                 <v-divider vertical class="mx-2 toolbar-divider" />
                 <v-btn
@@ -115,7 +115,7 @@
                     :size="$vuetify.display.mobile ? 16 : 18"
                     class="mr-1"
                   />
-                  <span class="d-none d-sm-inline">我创建的路线图</span>
+                  <span class="d-none d-sm-inline">{{ t('roadmapCreate.myRoadmaps') }}</span>
                 </v-btn>
               </div>
             </v-card-title>
@@ -156,7 +156,7 @@
               <div v-if="savedDraftDescription" class="draft-description-section mb-4">
                 <div class="d-flex align-start justify-space-between">
                   <div class="flex-1" style="min-width: 0">
-                    <div class="text-caption text-grey-darken-1 mb-1">路径描述</div>
+                    <div class="text-caption text-grey-darken-1 mb-1">{{ t('roadmapCreate.draftDescription') }}</div>
                     <div class="text-body-2 font-weight-medium text-grey-darken-3 draft-description-text">
                       {{ savedDraftDescription }}
                     </div>
@@ -179,11 +179,11 @@
               <v-tabs v-model="searchTab" color="primary" density="compact" class="mb-3">
                 <v-tab value="course">
                   <v-icon icon="mdi-book-multiple" size="18" class="mr-1" />
-                  添加课程
+                  {{ t('roadmapCreate.addCourse') }}
                 </v-tab>
                 <v-tab value="node">
                   <v-icon icon="mdi-file-tree-outline" size="18" class="mr-1" />
-                  添加节点
+                  {{ t('roadmapCreate.addNode') }}
                 </v-tab>
               </v-tabs>
 
@@ -191,20 +191,20 @@
               <div v-show="searchTab === 'course'">
                 <!-- 标题和统计 -->
                 <div class="d-flex align-center justify-space-between mb-3">
-                  <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">搜索课程</span>
+                  <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">{{ t('roadmapCreate.searchCourses') }}</span>
                   <a
                     href="/courses"
                     target="_blank"
                     class="text-caption text-primary text-decoration-none"
                   >
-                    查看全部
+                    {{ t('common.viewAll') }}
                   </a>
                 </div>
 
                 <!-- 搜索框 -->
                 <v-text-field
                   v-model="searchText"
-                  placeholder="搜索课程名称..."
+                  :placeholder="t('roadmapCreate.searchCoursesPlaceholder')"
                   variant="outlined"
                   density="comfortable"
                   hide-details
@@ -224,7 +224,7 @@
                 <!-- 加载状态 -->
                 <div v-if="coursesLoading" class="text-center py-8">
                   <v-progress-circular indeterminate color="primary" size="40" width="3" />
-                  <p class="text-body-2 text-grey-darken-1 mt-3">搜索中...</p>
+                  <p class="text-body-2 text-grey-darken-1 mt-3">{{ t('common.loading') }}</p>
                 </div>
 
                 <!-- 空状态 -->
@@ -232,8 +232,8 @@
                   <div class="empty-icon-wrapper mb-3">
                     <v-icon icon="mdi-magnify" size="56" color="grey-lighten-1" />
                   </div>
-                  <p class="text-body-2 text-grey-darken-1 mb-1">开始搜索课程</p>
-                  <p class="text-caption text-grey">输入课程名称进行搜索</p>
+                  <p class="text-body-2 text-grey-darken-1 mb-1">{{ t('roadmapCreate.searchCoursesHint') }}</p>
+                  <p class="text-caption text-grey">{{ t('roadmapCreate.searchCoursesSubHint') }}</p>
                 </div>
 
                 <!-- 课程列表 -->
@@ -256,7 +256,7 @@
                           <div class="text-caption text-grey-lighten-1 mb-2">
                             {{ categoryStore.getCourseFullCategoryText(course.mainCategory, course.subCategory) }}
                           </div>
-                          <div class="text-caption">{{ course.description || '暂无简介' }}</div>
+                          <div class="text-caption">{{ course.description || t('common.noDescription') }}</div>
                         </div>
                       </v-tooltip>
                       <v-btn
@@ -273,7 +273,7 @@
                   </div>
                   <div v-else class="text-center py-6">
                     <v-icon icon="mdi-book-off-outline" size="48" color="grey-lighten-1" class="mb-2" />
-                    <p class="text-body-2 text-grey">未找到相关课程</p>
+                    <p class="text-body-2 text-grey">{{ t('roadmapCreate.noCoursesFound') }}</p>
                   </div>
                 </div>
               </div>
@@ -282,13 +282,13 @@
               <div v-show="searchTab === 'node'">
                 <!-- 标题 -->
                 <div class="mb-3">
-                  <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">搜索节点</span>
+                  <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">{{ t('roadmapCreate.searchNodes') }}</span>
                 </div>
 
                 <!-- 搜索框 -->
                 <v-text-field
                   v-model="nodeSearchText"
-                  placeholder="搜索节点名称..."
+                  :placeholder="t('roadmapCreate.searchNodesPlaceholder')"
                   variant="outlined"
                   density="comfortable"
                   hide-details
@@ -308,7 +308,7 @@
                 <!-- 加载状态 -->
                 <div v-if="nodesLoading" class="text-center py-8">
                   <v-progress-circular indeterminate color="success" size="40" width="3" />
-                  <p class="text-body-2 text-grey-darken-1 mt-3">搜索中...</p>
+                  <p class="text-body-2 text-grey-darken-1 mt-3">{{ t('common.loading') }}</p>
                 </div>
 
                 <!-- 空状态 -->
@@ -316,8 +316,8 @@
                   <div class="empty-icon-wrapper mb-3">
                     <v-icon icon="mdi-magnify" size="56" color="grey-lighten-1" />
                   </div>
-                  <p class="text-body-2 text-grey-darken-1 mb-1">开始搜索节点</p>
-                  <p class="text-caption text-grey">输入节点名称进行搜索</p>
+                  <p class="text-body-2 text-grey-darken-1 mb-1">{{ t('roadmapCreate.searchNodesHint') }}</p>
+                  <p class="text-caption text-grey">{{ t('roadmapCreate.searchNodesSubHint') }}</p>
                 </div>
 
                 <!-- 节点列表 -->
@@ -336,16 +336,16 @@
                               {{ node.name }}
                             </div>
                             <div v-if="node.courseName" class="text-caption text-grey ps-6">
-                              来自《{{ node.courseName }}》
+                              {{ t('roadmapCreate.fromCourse', { name: node.courseName }) }}
                             </div>
                           </div>
                         </template>
                         <div class="tooltip-content pa-1">
                           <div class="text-subtitle-2 mb-1">{{ node.name }}</div>
                           <div v-if="node.courseName" class="text-caption text-success mb-2">
-                            来自《{{ node.courseName }}》
+                            {{ t('roadmapCreate.fromCourse', { name: node.courseName }) }}
                           </div>
-                          <div class="text-caption">{{ node.description || '暂无描述' }}</div>
+                          <div class="text-caption">{{ node.description || t('common.noDescription') }}</div>
                         </div>
                       </v-tooltip>
                       <v-btn
@@ -362,7 +362,7 @@
                   </div>
                   <div v-else class="text-center py-6">
                     <v-icon icon="mdi-file-document-off-outline" size="48" color="grey-lighten-1" class="mb-2" />
-                    <p class="text-body-2 text-grey">未找到相关节点</p>
+                    <p class="text-body-2 text-grey">{{ t('roadmapCreate.noNodesFound') }}</p>
                   </div>
                 </div>
               </div>
@@ -371,14 +371,14 @@
               <div class="tips-section">
                 <div class="tips-header">
                   <v-icon icon="mdi-information-outline" size="16" class="mr-1" color="grey-darken-1" />
-                  <span class="text-caption text-grey-darken-1">操作指南</span>
+                  <span class="text-caption text-grey-darken-1">{{ t('roadmapCreate.operationGuide') }}</span>
                 </div>
                 <div class="tips-list-simple">
-                  <div class="tip-simple">点击课程/节点添加到画布</div>
-                  <div class="tip-simple">拖动节点调整位置</div>
-                  <div class="tip-simple">连接节点设计路径</div>
-                  <div class="tip-simple">按住 Shift 可多选节点</div>
-                  <div class="tip-simple">选中后可删除节点</div>
+                  <div class="tip-simple">{{ t('roadmapCreate.tip1') }}</div>
+                  <div class="tip-simple">{{ t('roadmapCreate.tip2') }}</div>
+                  <div class="tip-simple">{{ t('roadmapCreate.tip3') }}</div>
+                  <div class="tip-simple">{{ t('roadmapCreate.tip4') }}</div>
+                  <div class="tip-simple">{{ t('roadmapCreate.tip5') }}</div>
                 </div>
               </div>
             </v-card-text>
@@ -401,14 +401,14 @@
         <v-card-title class="pa-6">
           <div class="d-flex align-center">
             <v-icon icon="mdi-content-save" color="primary" size="32" class="mr-3" />
-            <span class="text-h6 font-weight-bold">保存学习路径</span>
+            <span class="text-h6 font-weight-bold">{{ t('roadmapCreate.saveTitle') }}</span>
           </div>
         </v-card-title>
         <v-card-text class="px-6 pb-0">
           <v-textarea
             v-model="roadmapDescription"
-            label="路径描述 *"
-            placeholder="例如: Vue 3 + TypeScript 全栈开发路线"
+            :label="t('roadmapCreate.descriptionLabel')"
+            :placeholder="t('roadmapCreate.descriptionPlaceholder')"
             :rules="roadmapDescriptionRules"
             :counter="roadmapDescriptionMaxLength"
             variant="outlined"
@@ -416,7 +416,7 @@
             required
             rows="4"
             auto-grow
-            hint="请输入简洁明了的路径描述"
+            :hint="t('roadmapCreate.descriptionHint')"
             persistent-hint
           />
 
@@ -428,7 +428,7 @@
             density="compact"
             class="mt-4"
           >
-            检测到 {{ isolatedNodesCount }} 个未连接的节点。保存并发布时会自动删除这些节点。
+            {{ t('roadmapCreate.isolatedNodesWarning', { count: isolatedNodesCount }) }}
           </v-alert>
         </v-card-text>
         <v-card-actions class="px-6 pb-6 pt-4">
@@ -442,7 +442,7 @@
             :loading="saving && saveType === 'draft'"
             @click="saveRoadmap('draft')"
           >
-            保存为草稿
+            {{ t('roadmapCreate.saveAsDraft') }}
           </v-btn>
           <v-btn
             color="primary"
@@ -452,7 +452,7 @@
             :loading="saving && saveType === 'publish'"
             @click="saveRoadmap('publish')"
           >
-            保存并发布
+            {{ t('roadmapCreate.saveAndPublish') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -495,6 +495,9 @@ import { roadmapApi } from '@/api/modules/roadmap'
 import { searchApi } from '@/api/modules/search'
 import type { Course } from '@/types/course'
 import type { SearchResultItem } from '@/api/modules/search'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const route = useRoute()
@@ -576,8 +579,8 @@ const confirmDialogVisible = ref(false)
 const confirmDialogConfig = ref({
   title: '',
   message: '',
-  confirmText: '确认',
-  cancelText: '取消',
+  confirmText: t('common.confirm'),
+  cancelText: t('common.cancel'),
   confirmColor: 'error',
   icon: 'mdi-alert-circle-outline',
   iconColor: 'error-lighten-4',
@@ -603,11 +606,11 @@ const searchCourses = async () => {
     if (response.code === 200) {
       availableCourses.value = response.data
     } else {
-      showSnackbar('搜索课程失败', 'error')
+      showSnackbar(t('roadmapCreate.messages.searchCoursesFailed'), 'error')
     }
   } catch (error) {
     console.error('搜索课程失败:', error)
-    showSnackbar('搜索课程失败', 'error')
+    showSnackbar(t('roadmapCreate.messages.searchCoursesFailed'), 'error')
   } finally {
     coursesLoading.value = false
   }
@@ -636,7 +639,7 @@ const {
   defaultValue: [],
   onError: (error) => {
     console.error('搜索节点失败:', error)
-    showSnackbar('搜索节点失败', 'error')
+    showSnackbar(t('roadmapCreate.messages.searchNodesFailed'), 'error')
   },
 })
 
@@ -742,7 +745,7 @@ const addCourseNode = (course: Course) => {
 
   // 检查是否已存在
   if (nodes.value.find((n) => n.id === nodeId)) {
-    showSnackbar('该课程已添加', 'warning')
+    showSnackbar(t('roadmapCreate.messages.courseAlreadyAdded'), 'warning')
     return
   }
 
@@ -795,7 +798,7 @@ const addNode = (node: SearchResultItem) => {
 
   // 检查是否已存在
   if (nodes.value.find((n) => n.id === nodeId)) {
-    showSnackbar('该节点已添加', 'warning')
+    showSnackbar(t('roadmapCreate.messages.nodeAlreadyAdded'), 'warning')
     return
   }
 
@@ -833,19 +836,19 @@ const deleteSelectedNodes = () => {
   const totalSelected = selectedNodes.length + selectedEdges.length
 
   if (totalSelected === 0) {
-    showSnackbar('请先选中要删除的节点或连接线 (根节点不能删除)', 'warning')
+    showSnackbar(t('roadmapCreate.messages.noSelectionToDelete'), 'warning')
     return
   }
 
   const itemsText = []
-  if (selectedNodes.length > 0) itemsText.push(`${selectedNodes.length} 个节点`)
-  if (selectedEdges.length > 0) itemsText.push(`${selectedEdges.length} 条连接线`)
+  if (selectedNodes.length > 0) itemsText.push(t('roadmapCreate.messages.nodeCount', { count: selectedNodes.length }))
+  if (selectedEdges.length > 0) itemsText.push(t('roadmapCreate.messages.edgeCount', { count: selectedEdges.length }))
 
   confirmDialogConfig.value = {
-    title: '删除确认',
-    message: `确定要删除 ${itemsText.join('和')} 吗？此操作不可撤销。`,
-    confirmText: '删除',
-    cancelText: '取消',
+    title: t('roadmapCreate.messages.deleteConfirmTitle'),
+    message: t('roadmapCreate.messages.deleteConfirmMsg', { items: itemsText.join(t('roadmapCreate.messages.and')) }),
+    confirmText: t('common.delete'),
+    cancelText: t('common.cancel'),
     confirmColor: 'error',
     icon: 'mdi-delete-outline',
     iconColor: 'error-lighten-4',
@@ -861,7 +864,7 @@ const deleteSelectedNodes = () => {
         (e) => !selectedEdgeIds.has(e.id) && !selectedNodeIds.has(e.source) && !selectedNodeIds.has(e.target)
       )
 
-      showSnackbar(`已删除 ${itemsText.join('和')}`, 'success')
+      showSnackbar(t('roadmapCreate.messages.deleted', { items: itemsText.join(t('roadmapCreate.messages.and')) }), 'success')
     },
   }
   confirmDialogVisible.value = true
@@ -875,7 +878,7 @@ const onConnect = (connection: Connection) => {
   // 检查该源节点是否已经有出口连接
   const hasSourceConnection = edges.value.find((e) => e.source === connection.source)
   if (hasSourceConnection) {
-    showSnackbar('每个节点的出口只能连接一条线', 'warning')
+    showSnackbar(t('roadmapCreate.messages.singleConnectionOnly'), 'warning')
     return
   }
 
@@ -928,7 +931,7 @@ const onEdgesChange = (changes: any[]) => {
 // 显示保存对话框
 const showSave = () => {
   if (nodes.value.length <= 1) {
-    showSnackbar('请至少添加一个学习节点', 'warning')
+    showSnackbar(t('roadmapCreate.messages.addNodesFirst'), 'warning')
     return
   }
   showSaveDialog.value = true
@@ -937,13 +940,13 @@ const showSave = () => {
 // 保存路径
 const saveRoadmap = async (type: 'draft' | 'publish') => {
   if (!roadmapDescription.value.trim()) {
-    showSnackbar('请输入路径描述', 'warning')
+    showSnackbar(t('roadmapCreate.messages.enterDescription'), 'warning')
     return
   }
 
   // 验证至少有一个课程节点（除了根节点）
   if (nodes.value.length <= 1) {
-    showSnackbar('请至少添加一个课程节点', 'warning')
+    showSnackbar(t('roadmapCreate.messages.addNodesFirst'), 'warning')
     return
   }
 
@@ -992,14 +995,14 @@ const saveRoadmap = async (type: 'draft' | 'publish') => {
 
       // 检查是否有有效节点
       if (nodeArray.length === 0) {
-        showSnackbar('请添加课程并连接它们', 'warning')
+        showSnackbar(t('roadmapCreate.messages.connectCourses'), 'warning')
         return
       }
 
       // 验证树结构：边数 = 节点数 - 1
       if (edgeArray.length !== nodeArray.length - 1) {
         showSnackbar(
-          `路径结构不正确：${nodeArray.length} 个节点需要 ${nodeArray.length - 1} 条连接线，当前有 ${edgeArray.length} 条`,
+          t('roadmapCreate.messages.invalidTreeStructure', { nodes: nodeArray.length, edges: edgeArray.length, expectedEdges: nodeArray.length - 1 }),
           'error'
         )
         return
@@ -1043,7 +1046,7 @@ const saveRoadmap = async (type: 'draft' | 'publish') => {
     }
 
     if (response.code === 200) {
-      const message = type === 'draft' ? '草稿保存成功' : '路径发布成功'
+      const message = type === 'draft' ? t('roadmapCreate.messages.draftSaved') : t('roadmapCreate.messages.published')
       showSnackbar(message, 'success')
       showSaveDialog.value = false
 
@@ -1058,11 +1061,11 @@ const saveRoadmap = async (type: 'draft' | 'publish') => {
         router.back()
       }
     } else {
-      showSnackbar(response.message || '保存失败', 'error')
+      showSnackbar(response.message || t('roadmapCreate.messages.saveFailed'), 'error')
     }
   } catch (error) {
     console.error('保存路径失败:', error)
-    showSnackbar('保存失败，请稍后重试', 'error')
+    showSnackbar(t('roadmapCreate.messages.saveFailedRetry'), 'error')
   } finally {
     saving.value = false
     saveType.value = ''
@@ -1073,7 +1076,7 @@ const saveRoadmap = async (type: 'draft' | 'publish') => {
 const applyAutoLayout = (showMessage = false) => {
   if (nodes.value.length <= 1) {
     if (showMessage) {
-      showSnackbar('请至少添加一个节点才能使用自动布局', 'warning')
+      showSnackbar(t('roadmapCreate.messages.needNodesForLayout'), 'warning')
     }
     return
   }
@@ -1175,17 +1178,17 @@ const applyAutoLayout = (showMessage = false) => {
   }, 50)
 
   if (showMessage) {
-    showSnackbar('自动布局完成', 'success')
+    showSnackbar(t('roadmapCreate.messages.autoLayoutDone'), 'success')
   }
 }
 
 // 重置
 const resetAll = () => {
   confirmDialogConfig.value = {
-    title: '重置画布',
-    message: '确定要重置吗？此操作会删除所有节点和路径，不可撤销。',
-    confirmText: '重置',
-    cancelText: '取消',
+    title: t('roadmapCreate.messages.resetTitle'),
+    message: t('roadmapCreate.messages.resetConfirm'),
+    confirmText: t('common.reset'),
+    cancelText: t('common.cancel'),
     confirmColor: 'warning',
     icon: 'mdi-refresh',
     iconColor: 'warning-lighten-4',
@@ -1204,7 +1207,7 @@ const resetAll = () => {
       ]
       edges.value = []
       roadmapDescription.value = ''
-      showSnackbar('已重置所有内容', 'success')
+      showSnackbar(t('roadmapCreate.messages.resetSuccess'), 'success')
     },
   }
   confirmDialogVisible.value = true
@@ -1304,7 +1307,7 @@ watch(roadmapData, (newData) => {
       }
     } catch (parseError) {
       console.error('解析路线图内容失败:', parseError)
-      showSnackbar('加载路线图数据失败', 'error')
+      showSnackbar(t('roadmapCreate.messages.loadFailed'), 'error')
     }
   }
 })

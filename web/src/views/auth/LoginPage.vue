@@ -16,7 +16,7 @@
               <!-- Logo Section -->
               <v-card-text class="text-center pa-8">
                 <div class="logo-circle">
-                  <v-icon size="48" color="primary">mdi-reddit</v-icon>
+                  <v-icon size="48" color="primary">mdi-infinity</v-icon>
                 </div>
                 <h2 class="text-h5 font-weight-bold mt-4 mb-2">
                   {{ t('user.login.title') }}
