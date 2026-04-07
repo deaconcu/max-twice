@@ -534,7 +534,7 @@ const roadmapDescription = ref('')
 const savedDraftDescription = ref('') // 已保存的草稿描述
 const draftRoadmapId = ref<number | null>(null) // 草稿路线图ID
 const roadmapState = ref<number | null>(null) // 路线图状态：0=草稿，1=审核中，2=已发布
-const roleName = ref('前端工程师') // TODO: 从 API 获取
+const roleName = ref('') // TODO: 从 API 获取
 
 // Tab 切换状态
 const searchTab = ref<'course' | 'node'>('course')
@@ -1289,7 +1289,7 @@ watch(roadmapData, (newData) => {
             return {
               id: node.id.toString(),
               type: 'default',
-              data: { label: node.name || `课程 ${node.id}` },
+              data: { label: node.name || `${t('roadmapDetail.courseLabel')} ${node.id}` },
               position: { x: 0, y: 0 },
               sourcePosition: Position.Right,
               targetPosition: Position.Left,
@@ -1318,7 +1318,7 @@ watch(copyRoadmapData, (newData) => {
     console.log('加载的复制路线图数据:', newData)
 
     // 设置描述（添加"副本"标识）
-    roadmapDescription.value = `${newData.description || '未命名路线图'} (副本)`
+    roadmapDescription.value = `${newData.description || t('roadmapCreate.unnamedRoadmap')} ${t('roadmapCreate.copySuffix')}`
 
     // 解析 content 并设置节点和边
     try {
@@ -1351,7 +1351,7 @@ watch(copyRoadmapData, (newData) => {
             return {
               id: newId,
               type: 'default',
-              data: { label: node.name || `课程 ${node.id}` },
+              data: { label: node.name || `${t('roadmapDetail.courseLabel')} ${node.id}` },
               position: { x: 0, y: 0 },
               sourcePosition: Position.Right,
               targetPosition: Position.Left,
@@ -1382,7 +1382,7 @@ watch(copyRoadmapData, (newData) => {
       }
     } catch (parseError) {
       console.error('解析复制路线图内容失败:', parseError)
-      showSnackbar('加载路线图数据失败', 'error')
+      showSnackbar(t('roadmapCreate.messages.loadFailed'), 'error')
     }
   }
 })

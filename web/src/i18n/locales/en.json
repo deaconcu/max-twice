@@ -80,7 +80,54 @@
     "learners": " learners",
     "completed": "Completed",
     "started": "Started learning",
-    "achieved": "Achieved"
+    "achieved": "Achieved",
+    "unknownRole": "Unknown Role",
+    "unknownCourse": "Unknown Course",
+    "consecutiveDays": "{days} days streak",
+    "startJourney": "Start your learning journey ✨",
+    "platformRoles": "{count} role directions available",
+    "exploreRoles": "Explore Roles",
+    "viewMore": "View More",
+    "example": "Example",
+    "exploreMore": "Explore More",
+    "totalRoadmaps": "{count} learning paths",
+    "knowledgeNodes": "{count} knowledge nodes",
+    "learningProgress": "Learning Progress",
+    "addMoreRoadmaps": "Add More Paths",
+    "roleRoadmap": "{name}'s Learning Path",
+    "exploreMoreRoadmaps": "Explore More Paths",
+    "platformCourses": "{courses} courses, {nodes} knowledge nodes, {articles} articles",
+    "browseAll": "Browse All",
+    "clickToViewDetails": "Click to view details",
+    "addMoreCourses": "Add More Courses",
+    "clickToStartLearning": "Click to start learning",
+    "browseMoreCourses": "Browse More Courses",
+    "cardsToReview": "{count} cards to review",
+    "startReview": "Start Review",
+    "todayProgress": "Today's Progress",
+    "completedPercent": "{percent}% completed",
+    "totalCards": "{count} cards total",
+    "toReview": "To Review",
+    "noReviewCards": "No review cards yet",
+    "noReviewCardsHint": "Cards will be generated when you learn, click to start",
+    "quickLinks": {
+      "step1": {
+        "title": "What role am I playing",
+        "description": "Developer, father, investor, runner... Bookmark the roles you want to master"
+      },
+      "step2": {
+        "title": "What should I learn",
+        "description": "Each role has multiple learning paths, choose the one that fits you"
+      },
+      "step3": {
+        "title": "What am I learning",
+        "description": "Each path contains multiple courses, dive deep into every knowledge point"
+      },
+      "step4": {
+        "title": "Did I master it",
+        "description": "Memory cards are auto-generated while learning, review scientifically"
+      }
+    }
   },
   "common": {
     "login": "Login",
@@ -387,7 +434,44 @@
       "searchPlaceholder": "Search...",
       "unfavoriteError": "Failed to unfavorite",
       "learningTab": "Learning",
-      "completedTab": "Completed"
+      "completedTab": "Completed",
+      "userInfo": {
+        "avatar": "Avatar",
+        "avatarHint": "Supports JPG, PNG, WebP formats, max 5MB",
+        "name": "Name",
+        "bio": "Bio",
+        "bioPlaceholder": "Tell us about yourself...",
+        "bioNotSet": "Not set",
+        "email": "Email",
+        "timezone": "Timezone",
+        "joinDate": "Joined",
+        "modify": "Edit",
+        "saveSuccess": "Profile saved successfully!",
+        "avatarTypeError": "Only JPG, PNG, WebP formats are supported",
+        "avatarSizeError": "Image size cannot exceed 5MB",
+        "avatarUploadFailed": "Avatar upload failed",
+        "avatarUpdateSuccess": "Avatar updated successfully"
+      },
+      "creatorStats": {
+        "overview": "Creator Statistics Overview",
+        "viewCount": "Views",
+        "twiceCount": "Twice Understood",
+        "likeCount": "Helpful",
+        "commentCount": "Comments",
+        "last7days": "Last 7 Days",
+        "last30days": "Last 30 Days",
+        "last180days": "Last 6 Months",
+        "last365days": "Last Year",
+        "custom": "Custom",
+        "days7": "7 Days",
+        "days30": "30 Days",
+        "days180": "6 Months",
+        "days365": "1 Year",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "date": "Date",
+        "pleaseLogin": "Please login first"
+      }
     }
   },
   "course": {
@@ -860,7 +944,9 @@
       "needNodesForLayout": "Please add nodes before using auto layout",
       "autoLayoutDone": "Auto layout applied",
       "loadFailed": "Failed to load roadmap data"
-    }
+    },
+    "unnamedRoadmap": "Unnamed Roadmap",
+    "copySuffix": "(Copy)"
   },
   "roadmapDetail": {
     "learningPath": "Learning Roadmap",
@@ -1403,7 +1489,50 @@
     "videoUrlPlaceholder": "Paste YouTube, Bilibili, Vimeo link or direct video URL",
     "videoUrlInvalid": "Unrecognized video link, please enter a valid video URL",
     "supportedPlatforms": "Supported platforms:",
-    "directVideoLink": "Direct video link (mp4, webm)"
+    "directVideoLink": "Direct video link (mp4, webm)",
+    "toolbar": {
+      "undo": "Undo",
+      "redo": "Redo",
+      "clearFormat": "Clear Formatting",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "strikethrough": "Strikethrough",
+      "highlight": "Highlight",
+      "textColor": "Text Color",
+      "heading1": "Heading 1",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3",
+      "subscript": "Subscript",
+      "superscript": "Superscript",
+      "alignLeft": "Align Left",
+      "alignCenter": "Align Center",
+      "alignRight": "Align Right",
+      "alignJustify": "Justify",
+      "bulletList": "Bullet List",
+      "orderedList": "Ordered List",
+      "increaseIndent": "Increase Indent",
+      "decreaseIndent": "Decrease Indent",
+      "insertLink": "Insert Link",
+      "insertImage": "Insert Image",
+      "inlineCode": "Inline Code",
+      "codeBlock": "Code Block",
+      "blockquote": "Blockquote",
+      "horizontalRule": "Horizontal Rule",
+      "table": "Table",
+      "insertVideo": "Insert Video",
+      "mathFormula": "Math Formula",
+      "mermaidChart": "Mermaid Chart"
+    },
+    "tableMenu": {
+      "insertTable": "Insert Table",
+      "insertRowAfter": "Insert Row Below",
+      "insertColumnAfter": "Insert Column Right",
+      "deleteRow": "Delete Row",
+      "deleteColumn": "Delete Column",
+      "deleteTable": "Delete Table"
+    },
+    "placeholder": "Enter your content here..."
   },
   "userCard": {
     "loading": "Loading...",

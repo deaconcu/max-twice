@@ -12,7 +12,7 @@ import { HEADER_HEIGHT } from '@/constants/layout'
             <div class="logo-icon">
               <v-icon size="28" color="primary">mdi-infinity</v-icon>
             </div>
-            <h2 class="logo-text ml-2">MaxTwice</h2>
+            <h2 class="logo-text ml-2">TwiceMax</h2>
           </div>
         </v-col>
       </v-row>
@@ -44,7 +44,7 @@ import { HEADER_HEIGHT } from '@/constants/layout'
 }
 
 .logo-text {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: rgb(var(--v-theme-on-surface));
   letter-spacing: -0.02em;

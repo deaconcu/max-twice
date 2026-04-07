@@ -80,7 +80,54 @@
     "learners": "人学习",
     "completed": "完成了",
     "started": "开始学习",
-    "achieved": "获得成就"
+    "achieved": "获得成就",
+    "unknownRole": "未知职业",
+    "unknownCourse": "未知课程",
+    "consecutiveDays": "连续 {days} 天",
+    "startJourney": "开始你的学习之旅 ✨",
+    "platformRoles": "平台已有 {count} 个职业方向",
+    "exploreRoles": "探索职业",
+    "viewMore": "查看更多",
+    "example": "示例",
+    "exploreMore": "探索更多",
+    "totalRoadmaps": "共 {count} 条学习路线",
+    "knowledgeNodes": "{count} 个知识节点",
+    "learningProgress": "学习进度",
+    "addMoreRoadmaps": "添加更多路线",
+    "roleRoadmap": "{name}的学习路径",
+    "exploreMoreRoadmaps": "探索更多路线",
+    "platformCourses": "共 {courses} 门课程，{nodes} 个知识节点，{articles} 篇文章",
+    "browseAll": "浏览全部",
+    "clickToViewDetails": "点击查看详情",
+    "addMoreCourses": "添加更多课程",
+    "clickToStartLearning": "点击开始学习",
+    "browseMoreCourses": "浏览更多课程",
+    "cardsToReview": "{count} 张待复习",
+    "startReview": "开始复习",
+    "todayProgress": "今日进度",
+    "completedPercent": "已完成 {percent}%",
+    "totalCards": "共 {count} 张卡片",
+    "toReview": "待复习",
+    "noReviewCards": "还没有复习卡片",
+    "noReviewCardsHint": "学习课程时会自动生成，点击去学习",
+    "quickLinks": {
+      "step1": {
+        "title": "我在扮演什么角色",
+        "description": "程序员、父亲、投资者、跑者...收藏你想扮演好的角色"
+      },
+      "step2": {
+        "title": "我要学什么",
+        "description": "每个角色有多条学习路径，选择适合你的"
+      },
+      "step3": {
+        "title": "我在学什么",
+        "description": "每条路径包含多门课程，深入学习每个知识点"
+      },
+      "step4": {
+        "title": "我学会了吗",
+        "description": "学习时自动生成记忆卡片，科学复习不遗忘"
+      }
+    }
   },
   "common": {
     "login": "登录",
@@ -435,7 +482,44 @@
       "searchPlaceholder": "搜索...",
       "unfavoriteError": "取消收藏失败",
       "learningTab": "学习中",
-      "completedTab": "已完成"
+      "completedTab": "已完成",
+      "userInfo": {
+        "avatar": "头像",
+        "avatarHint": "支持 JPG、PNG、WebP 格式，最大 5MB",
+        "name": "姓名",
+        "bio": "个人简介",
+        "bioPlaceholder": "简单介绍一下自己...",
+        "bioNotSet": "暂未设置",
+        "email": "邮箱",
+        "timezone": "时区",
+        "joinDate": "加入日期",
+        "modify": "修改",
+        "saveSuccess": "个人信息已成功保存！",
+        "avatarTypeError": "只支持 JPG、PNG、WebP 格式的图片",
+        "avatarSizeError": "图片大小不能超过 5MB",
+        "avatarUploadFailed": "头像上传失败",
+        "avatarUpdateSuccess": "头像更新成功"
+      },
+      "creatorStats": {
+        "overview": "创作数据总览",
+        "viewCount": "阅读量",
+        "twiceCount": "两遍秒懂",
+        "likeCount": "有用",
+        "commentCount": "评论",
+        "last7days": "最近7天",
+        "last30days": "最近30天",
+        "last180days": "最近半年",
+        "last365days": "最近一年",
+        "custom": "自定义",
+        "days7": "7天",
+        "days30": "30天",
+        "days180": "半年",
+        "days365": "一年",
+        "today": "今天",
+        "yesterday": "昨天",
+        "date": "日期",
+        "pleaseLogin": "请先登录"
+      }
     }
   },
   "course": {
@@ -911,7 +995,9 @@
       "needNodesForLayout": "请先添加节点再使用自动布局",
       "autoLayoutDone": "自动布局完成",
       "loadFailed": "加载路线图数据失败"
-    }
+    },
+    "unnamedRoadmap": "未命名路线图",
+    "copySuffix": "(副本)"
   },
   "roadmapDetail": {
     "learningPath": "学习路线图",
@@ -1497,7 +1583,8 @@
       "deleteRow": "删除当前行",
       "deleteColumn": "删除当前列",
       "deleteTable": "删除表格"
-    }
+    },
+    "placeholder": "请在这里输入内容..."
   },
   "userCard": {
     "loading": "加载中...",

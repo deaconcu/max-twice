@@ -10,7 +10,7 @@
           variant="text"
           size="small"
           icon="mdi-undo"
-          title="撤销"
+          :title="t('editor.toolbar.undo')"
           @click="editor.chain().focus().undo().run()"
         />
         <v-btn
@@ -18,14 +18,14 @@
           variant="text"
           size="small"
           icon="mdi-redo"
-          title="重做"
+          :title="t('editor.toolbar.redo')"
           @click="editor.chain().focus().redo().run()"
         />
         <v-btn
           variant="text"
           size="small"
           icon="mdi-eraser"
-          title="清除格式"
+          :title="t('editor.toolbar.clearFormat')"
           @click="clearFormatting"
         />
 
@@ -37,7 +37,7 @@
           variant="text"
           size="small"
           icon="mdi-format-bold"
-          title="粗体"
+          :title="t('editor.toolbar.bold')"
           @click="editor.chain().focus().toggleBold().run()"
         />
         <v-btn
@@ -45,7 +45,7 @@
           variant="text"
           size="small"
           icon="mdi-format-italic"
-          title="斜体"
+          :title="t('editor.toolbar.italic')"
           @click="editor.chain().focus().toggleItalic().run()"
         />
         <v-btn
@@ -53,7 +53,7 @@
           variant="text"
           size="small"
           icon="mdi-format-underline"
-          title="下划线"
+          :title="t('editor.toolbar.underline')"
           @click="editor.chain().focus().toggleUnderline().run()"
         />
         <v-btn
@@ -61,7 +61,7 @@
           variant="text"
           size="small"
           icon="mdi-format-strikethrough"
-          title="删除线"
+          :title="t('editor.toolbar.strikethrough')"
           @click="editor.chain().focus().toggleStrike().run()"
         />
         <v-btn
@@ -69,7 +69,7 @@
           variant="text"
           size="small"
           icon="mdi-marker"
-          title="高亮"
+          :title="t('editor.toolbar.highlight')"
           @click="editor.chain().focus().toggleHighlight().run()"
         />
 
@@ -80,7 +80,7 @@
           type="color"
           :value="editor.getAttributes('textStyle').color || '#000000'"
           class="color-input"
-          title="文本颜色"
+          :title="t('editor.toolbar.textColor')"
           @input="
             editor
               .chain()
@@ -97,7 +97,7 @@
           :color="editor.isActive('heading', { level: 1 }) ? 'primary' : undefined"
           variant="text"
           size="small"
-          title="一级标题"
+          :title="t('editor.toolbar.heading1')"
           @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
         >
           H1
@@ -106,7 +106,7 @@
           :color="editor.isActive('heading', { level: 2 }) ? 'primary' : undefined"
           variant="text"
           size="small"
-          title="二级标题"
+          :title="t('editor.toolbar.heading2')"
           @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
         >
           H2
@@ -115,7 +115,7 @@
           :color="editor.isActive('heading', { level: 3 }) ? 'primary' : undefined"
           variant="text"
           size="small"
-          title="三级标题"
+          :title="t('editor.toolbar.heading3')"
           @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
         >
           H3
@@ -129,7 +129,7 @@
           variant="text"
           size="small"
           icon="mdi-format-subscript"
-          title="下标"
+          :title="t('editor.toolbar.subscript')"
           @click="editor.chain().focus().toggleSubscript().run()"
         />
         <v-btn
@@ -137,7 +137,7 @@
           variant="text"
           size="small"
           icon="mdi-format-superscript"
-          title="上标"
+          :title="t('editor.toolbar.superscript')"
           @click="editor.chain().focus().toggleSuperscript().run()"
         />
       </div>
@@ -150,7 +150,7 @@
           variant="text"
           size="small"
           icon="mdi-format-align-left"
-          title="左对齐"
+          :title="t('editor.toolbar.alignLeft')"
           @click="editor.chain().focus().setTextAlign('left').run()"
         />
         <v-btn
@@ -158,7 +158,7 @@
           variant="text"
           size="small"
           icon="mdi-format-align-center"
-          title="居中对齐"
+          :title="t('editor.toolbar.alignCenter')"
           @click="editor.chain().focus().setTextAlign('center').run()"
         />
         <v-btn
@@ -166,7 +166,7 @@
           variant="text"
           size="small"
           icon="mdi-format-align-right"
-          title="右对齐"
+          :title="t('editor.toolbar.alignRight')"
           @click="editor.chain().focus().setTextAlign('right').run()"
         />
         <v-btn
@@ -174,7 +174,7 @@
           variant="text"
           size="small"
           icon="mdi-format-align-justify"
-          title="两端对齐"
+          :title="t('editor.toolbar.alignJustify')"
           @click="editor.chain().focus().setTextAlign('justify').run()"
         />
 
@@ -186,7 +186,7 @@
           variant="text"
           size="small"
           icon="mdi-format-list-bulleted"
-          title="无序列表"
+          :title="t('editor.toolbar.bulletList')"
           @click="editor.chain().focus().toggleBulletList().run()"
         />
         <v-btn
@@ -194,7 +194,7 @@
           variant="text"
           size="small"
           icon="mdi-format-list-numbered"
-          title="有序列表"
+          :title="t('editor.toolbar.orderedList')"
           @click="editor.chain().focus().toggleOrderedList().run()"
         />
         <v-btn
@@ -202,7 +202,7 @@
           variant="text"
           size="small"
           icon="mdi-format-indent-increase"
-          title="增加缩进"
+          :title="t('editor.toolbar.increaseIndent')"
           @click="editor.chain().focus().sinkListItem('listItem').run()"
         />
         <v-btn
@@ -210,7 +210,7 @@
           variant="text"
           size="small"
           icon="mdi-format-indent-decrease"
-          title="减少缩进"
+          :title="t('editor.toolbar.decreaseIndent')"
           @click="editor.chain().focus().liftListItem('listItem').run()"
         />
 
@@ -222,16 +222,16 @@
           variant="text"
           size="small"
           icon="mdi-link"
-          title="插入链接"
+          :title="t('editor.toolbar.insertLink')"
           @click="toggleLink"
         />
-        <v-btn variant="text" size="small" icon="mdi-image" title="插入图片" @click="addImage" />
+        <v-btn variant="text" size="small" icon="mdi-image" :title="t('editor.toolbar.insertImage')" @click="addImage" />
         <v-btn
           :color="editor.isActive('code') ? 'primary' : undefined"
           variant="text"
           size="small"
           icon="mdi-code-tags"
-          title="行内代码"
+          :title="t('editor.toolbar.inlineCode')"
           @click="editor.chain().focus().toggleCode().run()"
         />
         <v-btn
@@ -239,7 +239,7 @@
           variant="text"
           size="small"
           icon="mdi-code-braces"
-          title="代码块"
+          :title="t('editor.toolbar.codeBlock')"
           @click="editor.chain().focus().toggleCodeBlock().run()"
         />
         <v-btn
@@ -247,19 +247,19 @@
           variant="text"
           size="small"
           icon="mdi-format-quote-close"
-          title="引用"
+          :title="t('editor.toolbar.blockquote')"
           @click="editor.chain().focus().toggleBlockquote().run()"
         />
         <v-btn
           variant="text"
           size="small"
           icon="mdi-minus"
-          title="分隔线"
+          :title="t('editor.toolbar.horizontalRule')"
           @click="editor.chain().focus().setHorizontalRule().run()"
         />
         <v-menu location="bottom" offset="4">
           <template #activator="{ props }">
-            <v-btn v-bind="props" variant="text" size="small" icon="mdi-table" title="表格" />
+            <v-btn v-bind="props" variant="text" size="small" icon="mdi-table" :title="t('editor.toolbar.table')" />
           </template>
           <v-card rounded="lg" class="table-menu" width="180">
             <div class="table-menu-items py-1">
@@ -274,7 +274,7 @@
                 "
               >
                 <v-icon icon="mdi-table-plus" size="18" class="table-menu-icon" />
-                <span>插入表格</span>
+                <span>{{ t('editor.tableMenu.insertTable') }}</span>
               </div>
               <v-divider class="my-1" />
               <div
@@ -283,7 +283,7 @@
                 @click="editor.can().addRowAfter() && editor.chain().focus().addRowAfter().run()"
               >
                 <v-icon icon="mdi-table-row-plus-after" size="18" class="table-menu-icon" />
-                <span>在下方插入行</span>
+                <span>{{ t('editor.tableMenu.insertRowAfter') }}</span>
               </div>
               <div
                 class="table-menu-item"
@@ -293,7 +293,7 @@
                 "
               >
                 <v-icon icon="mdi-table-column-plus-after" size="18" class="table-menu-icon" />
-                <span>在右侧插入列</span>
+                <span>{{ t('editor.tableMenu.insertColumnAfter') }}</span>
               </div>
               <v-divider class="my-1" />
               <div
@@ -302,7 +302,7 @@
                 @click="editor.can().deleteRow() && editor.chain().focus().deleteRow().run()"
               >
                 <v-icon icon="mdi-table-row-remove" size="18" class="table-menu-icon" />
-                <span>删除当前行</span>
+                <span>{{ t('editor.tableMenu.deleteRow') }}</span>
               </div>
               <div
                 class="table-menu-item"
@@ -310,7 +310,7 @@
                 @click="editor.can().deleteColumn() && editor.chain().focus().deleteColumn().run()"
               >
                 <v-icon icon="mdi-table-column-remove" size="18" class="table-menu-icon" />
-                <span>删除当前列</span>
+                <span>{{ t('editor.tableMenu.deleteColumn') }}</span>
               </div>
               <div
                 class="table-menu-item"
@@ -318,7 +318,7 @@
                 @click="editor.can().deleteTable() && editor.chain().focus().deleteTable().run()"
               >
                 <v-icon icon="mdi-table-remove" size="18" class="table-menu-icon" />
-                <span>删除表格</span>
+                <span>{{ t('editor.tableMenu.deleteTable') }}</span>
               </div>
             </div>
           </v-card>
@@ -327,21 +327,21 @@
           variant="text"
           size="small"
           icon="mdi-video"
-          title="插入视频"
+          :title="t('editor.toolbar.insertVideo')"
           @click="openVideoDialog"
         />
         <v-btn
           variant="text"
           size="small"
           icon="mdi-math-integral"
-          title="数学公式"
+          :title="t('editor.toolbar.mathFormula')"
           @click="openMathDialog"
         />
         <v-btn
           variant="text"
           size="small"
           icon="mdi-chart-timeline-variant"
-          title="Mermaid 图表"
+          :title="t('editor.toolbar.mermaidChart')"
           @click="openMermaidDialog"
         />
       </div>

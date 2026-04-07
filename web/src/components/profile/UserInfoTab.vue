@@ -7,7 +7,7 @@
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
                 <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
-                  >头像</span
+                  >{{ t('profile.userInfo.avatar') }}</span
                 >
               </div>
               <div class="flex-grow-1 d-flex flex-column align-start">
@@ -38,7 +38,7 @@
                   />
                 </div>
                 <p class="text-caption text-grey mt-2 text-center text-sm-start">
-                  支持 JPG、PNG、WebP 格式，最大 5MB
+                  {{ t('profile.userInfo.avatarHint') }}
                 </p>
               </div>
             </div>
@@ -49,7 +49,7 @@
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
                 <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
-                  >姓名</span
+                  >{{ t('profile.userInfo.name') }}</span
                 >
               </div>
               <div class="flex-grow-1">
@@ -69,7 +69,7 @@
                     @click="displayModifyName = true"
                   >
                     <v-icon icon="mdi-pencil" size="16" class="mr-1" />
-                    修改
+                    {{ t('profile.userInfo.modify') }}
                   </v-btn>
                 </div>
                 <div v-else>
@@ -92,7 +92,7 @@
                       @click="onModifyName"
                     >
                       <v-icon icon="mdi-check" size="16" class="mr-1" />
-                      确定
+                      {{ t('common.confirm') }}
                     </v-btn>
                     <v-btn
                       variant="text"
@@ -101,7 +101,7 @@
                       rounded="lg"
                       @click="displayModifyName = false"
                     >
-                      取消
+                      {{ t('common.cancel') }}
                     </v-btn>
                   </div>
                 </div>
@@ -114,7 +114,7 @@
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
                 <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
-                  >个人简介</span
+                  >{{ t('profile.userInfo.bio') }}</span
                 >
               </div>
               <div class="flex-grow-1">
@@ -123,7 +123,7 @@
                   class="d-flex flex-column flex-sm-row align-start align-sm-center"
                 >
                   <span class="text-body-2 text-md-body-1 text-grey-darken-3 mb-2 mb-sm-0">{{
-                    localUserInfo.bio || '暂未设置'
+                    localUserInfo.bio || t('profile.userInfo.bioNotSet')
                   }}</span>
                   <v-btn
                     variant="text"
@@ -134,7 +134,7 @@
                     @click="displayModifyBio = true"
                   >
                     <v-icon icon="mdi-pencil" size="16" class="mr-1" />
-                    修改
+                    {{ t('profile.userInfo.modify') }}
                   </v-btn>
                 </div>
                 <div v-else>
@@ -144,7 +144,7 @@
                     variant="outlined"
                     rounded="lg"
                     rows="3"
-                    placeholder="简单介绍一下自己..."
+                    :placeholder="t('profile.userInfo.bioPlaceholder')"
                     :rules="biographyRules"
                     :counter="biographyMaxLength"
                     style="max-width: 500px"
@@ -158,7 +158,7 @@
                       @click="onModifyBio"
                     >
                       <v-icon icon="mdi-check" size="16" class="mr-1" />
-                      确定
+                      {{ t('common.confirm') }}
                     </v-btn>
                     <v-btn
                       variant="text"
@@ -167,7 +167,7 @@
                       rounded="lg"
                       @click="displayModifyBio = false"
                     >
-                      取消
+                      {{ t('common.cancel') }}
                     </v-btn>
                   </div>
                 </div>
@@ -180,7 +180,7 @@
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
                 <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
-                  >邮箱</span
+                  >{{ t('profile.userInfo.email') }}</span
                 >
               </div>
               <div class="flex-grow-1">
@@ -194,7 +194,7 @@
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
                 <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
-                  >时区</span
+                  >{{ t('profile.userInfo.timezone') }}</span
                 >
               </div>
               <div class="flex-grow-1">
@@ -214,7 +214,7 @@
                     @click="displayModifyTimezone = true"
                   >
                     <v-icon icon="mdi-pencil" size="16" class="mr-1" />
-                    修改
+                    {{ t('profile.userInfo.modify') }}
                   </v-btn>
                 </div>
                 <div v-else>
@@ -238,7 +238,7 @@
                       @click="onModifyTimezone"
                     >
                       <v-icon icon="mdi-check" size="16" class="mr-1" />
-                      确定
+                      {{ t('common.confirm') }}
                     </v-btn>
                     <v-btn
                       variant="text"
@@ -247,7 +247,7 @@
                       rounded="lg"
                       @click="displayModifyTimezone = false"
                     >
-                      取消
+                      {{ t('common.cancel') }}
                     </v-btn>
                   </div>
                 </div>
@@ -260,7 +260,7 @@
             <div class="d-flex flex-column flex-sm-row align-start">
               <div class="label-section mb-2 mb-sm-0">
                 <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
-                  >加入日期</span
+                  >{{ t('profile.userInfo.joinDate') }}</span
                 >
               </div>
               <div class="flex-grow-1">
@@ -282,17 +282,20 @@
           closable
           @click:close="showSuccessAlert = false"
         >
-          个人信息已成功保存！
+          {{ t('profile.userInfo.saveSuccess') }}
         </v-alert>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, inject } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 import { useMutation } from '@/composables/useMutation'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { userApi } from '@/api'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+
+const { t } = useI18n()
 
 // 注入全局 showSnackbar
 const showSnackbar = inject<(message: string, type: string) => void>('showSnackbar')
@@ -396,13 +399,13 @@ const handleAvatarUpload = async (event: Event) => {
   // 验证文件类型
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
   if (!allowedTypes.includes(file.type)) {
-    showSnackbar?.('只支持 JPG、PNG、WebP 格式的图片', 'error')
+    showSnackbar?.(t('profile.userInfo.avatarTypeError'), 'error')
     return
   }
 
   // 验证文件大小 (5MB)
   if (file.size > 5 * 1024 * 1024) {
-    showSnackbar?.('图片大小不能超过 5MB', 'error')
+    showSnackbar?.(t('profile.userInfo.avatarSizeError'), 'error')
     return
   }
 
@@ -412,16 +415,16 @@ const handleAvatarUpload = async (event: Event) => {
 
     // 如果返回 null，说明上传失败
     if (!avatarUrl) {
-      showSnackbar?.('头像上传失败', 'error')
+      showSnackbar?.(t('profile.userInfo.avatarUploadFailed'), 'error')
       return
     }
 
     // 通知父组件更新 profileUser
     emit('updateAvatar', avatarUrl)
-    showSnackbar?.('头像更新成功', 'success')
+    showSnackbar?.(t('profile.userInfo.avatarUpdateSuccess'), 'success')
   } catch (error: any) {
-    console.error('头像上传失败:', error)
-    showSnackbar?.(error.message || '头像上传失败', 'error')
+    console.error('Avatar upload failed:', error)
+    showSnackbar?.(error.message || t('profile.userInfo.avatarUploadFailed'), 'error')
   } finally {
     // 清空 input，允许重复选择同一文件
     if (target) target.value = ''
@@ -433,7 +436,7 @@ const { execute: updateUser, loading: updating } = useMutation(
   (data: { name: string; biography: string; avatar?: string; timezone?: string }) =>
     userApi.updateCurrentUser(data.name, data.biography, data.avatar, data.timezone),
   {
-    successMessage: '个人信息已成功保存！',
+    successMessage: '',
     showToast: false, // 我们使用自定义的 alert
     onSuccess: () => {
       showSuccessAlert.value = true

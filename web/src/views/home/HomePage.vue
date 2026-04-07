@@ -86,7 +86,7 @@ const recentRoles = computed(() => {
     const roadmap = item.object as
       | { id: number; professionName: string; professionIcon?: string; nodeCount?: number }
       | undefined
-    const name = roadmap?.professionName ?? '未知职业'
+    const name = roadmap?.professionName ?? t('home.unknownRole')
     return {
       id: item.id,
       roadmapId: item.objectId,
@@ -106,7 +106,7 @@ const recentCourses = computed(() => {
       | { id: number; name: string; description?: string; icon?: string }
       | undefined
     const courseId = course?.id ?? item.objectId
-    const name = course?.name ?? '未知课程'
+    const name = course?.name ?? t('home.unknownCourse')
     return {
       id: courseId,
       name,
@@ -148,7 +148,7 @@ const beginnerProfessions = computed(() => {
 const beginnerRoadmaps = computed(() => {
   return homeData.value.beginnerRoadmaps.map((item) => ({
     id: item.id,
-    name: item.profession?.name ?? '未知职业',
+    name: item.profession?.name ?? t('home.unknownRole'),
     icon: item.profession?.icon ?? 'mdi-briefcase-variant',
     iconColor: getColorByString(item.profession?.name ?? ''),
     nodeCount: item.nodeCount ?? 0,
@@ -191,32 +191,32 @@ const displayCourses = computed(() => {
 const quickLinks = computed(() => [
   {
     step: 1,
-    title: '我在扮演什么角色',
-    description: '程序员、父亲、投资者、跑者...收藏你想扮演好的角色',
+    title: t('home.quickLinks.step1.title'),
+    description: t('home.quickLinks.step1.description'),
     icon: 'mdi-account-question',
     color: 'warning',
     path: '/role',
   },
   {
     step: 2,
-    title: '我要学什么',
-    description: '每个角色有多条学习路径，选择适合你的',
+    title: t('home.quickLinks.step2.title'),
+    description: t('home.quickLinks.step2.description'),
     icon: 'mdi-map-marker-path',
     color: 'primary',
     path: '/role',
   },
   {
     step: 3,
-    title: '我在学什么',
-    description: '每条路径包含多门课程，深入学习每个知识点',
+    title: t('home.quickLinks.step3.title'),
+    description: t('home.quickLinks.step3.description'),
     icon: 'mdi-book-open-page-variant',
     color: 'info',
     path: '/courses',
   },
   {
     step: 4,
-    title: '我学会了吗',
-    description: '学习时自动生成记忆卡片，科学复习不遗忘',
+    title: t('home.quickLinks.step4.title'),
+    description: t('home.quickLinks.step4.description'),
     icon: 'mdi-check-decagram',
     color: 'success',
     path: '/review',
@@ -281,7 +281,7 @@ void homeLoading
                 class="flex-shrink-0"
               >
                 <v-icon icon="mdi-fire" size="14" class="mr-1" />
-                连续 {{ stats.learningDays }} 天
+                {{ t('home.consecutiveDays', { days: stats.learningDays }) }}
               </v-chip>
             </div>
             <p
@@ -302,7 +302,7 @@ void homeLoading
 
     <!-- 学习引导 -->
     <div class="text-body-1 font-weight-medium text-medium-emphasis mb-6">
-      开始你的学习之旅 ✨
+      {{ t('home.startJourney') }}
     </div>
 
     <!-- 模块1：我在扮演什么角色 - 收藏的职业 -->
@@ -321,10 +321,10 @@ void homeLoading
               </h2>
               <div class="d-flex align-center ga-4">
                 <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
-                  平台已有 <span class="text-primary font-weight-bold">{{ platformStats.rolePathCount }}</span> 个职业方向
+                  {{ t('home.platformRoles', { count: platformStats.rolePathCount }) }}
                 </span>
                 <v-btn variant="text" size="small" color="primary" rounded="lg" @click="navigateTo('/role')">
-                  探索职业
+                  {{ t('home.exploreRoles') }}
                   <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
                 </v-btn>
               </div>
@@ -368,7 +368,7 @@ void homeLoading
             class="profession-chip"
             @click="navigateTo('/profile/bookmarks?type=profession')"
           >
-            查看更多
+            {{ t('home.viewMore') }}
             <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
           </v-chip>
         </div>
@@ -394,7 +394,7 @@ void homeLoading
               class="mr-2"
             />
             {{ profession.name }}
-            <v-chip size="x-small" color="grey" variant="tonal" class="ml-2">示例</v-chip>
+            <v-chip size="x-small" color="grey" variant="tonal" class="ml-2">{{ t('home.example') }}</v-chip>
           </v-chip>
           <!-- 探索更多 -->
           <v-chip
@@ -404,7 +404,7 @@ void homeLoading
             class="profession-chip profession-chip--placeholder"
             @click="navigateTo('/role')"
           >
-            探索更多
+            {{ t('home.exploreMore') }}
             <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
           </v-chip>
         </div>
@@ -427,10 +427,10 @@ void homeLoading
               </h2>
               <div class="d-flex align-center ga-4">
                 <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
-                  共 <span class="text-primary font-weight-bold">{{ platformStats.roadmapCount }}</span> 条学习路线
+                  {{ t('home.totalRoadmaps', { count: platformStats.roadmapCount }) }}
                 </span>
                 <v-btn variant="text" size="small" color="primary" rounded="lg" @click="navigateTo('/role')">
-                  查看全部
+                  {{ t('home.viewAll') }}
                   <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
                 </v-btn>
               </div>
@@ -465,12 +465,12 @@ void homeLoading
                       {{ role.name }}
                     </div>
                     <div class="text-caption text-medium-emphasis">
-                      {{ role.nodeCount }} 个知识节点
+                      {{ t('home.knowledgeNodes', { count: role.nodeCount }) }}
                     </div>
                   </div>
                 </div>
                 <div class="d-flex align-center justify-space-between mb-2">
-                  <span class="text-caption text-medium-emphasis">学习进度</span>
+                  <span class="text-caption text-medium-emphasis">{{ t('home.learningProgress') }}</span>
                   <span class="text-caption font-weight-bold text-primary">{{ role.progress }}%</span>
                 </div>
                 <v-progress-linear
@@ -497,7 +497,7 @@ void homeLoading
                   <v-avatar color="primary" size="48" class="mb-3" variant="tonal">
                     <v-icon icon="mdi-plus" size="24" />
                   </v-avatar>
-                  <div class="text-body-2 text-medium-emphasis">添加更多路线</div>
+                  <div class="text-body-2 text-medium-emphasis">{{ t('home.addMoreRoadmaps') }}</div>
                 </div>
               </v-card-text>
             </v-card>
@@ -516,7 +516,7 @@ void homeLoading
                 variant="tonal"
                 class="recommend-tag"
               >
-                示例
+                {{ t('home.example') }}
               </v-chip>
               <v-card-text class="pa-4 pa-sm-5">
                 <div class="d-flex align-center ga-3">
@@ -533,10 +533,10 @@ void homeLoading
                       class="text-subtitle-1 font-weight-bold text-truncate"
                       :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                     >
-                      {{ roadmap.name }}的学习路径
+                      {{ t('home.roleRoadmap', { name: roadmap.name }) }}
                     </div>
                     <div class="text-caption text-medium-emphasis">
-                      {{ roadmap.nodeCount }} 个知识节点
+                      {{ t('home.knowledgeNodes', { count: roadmap.nodeCount }) }}
                     </div>
                   </div>
                 </div>
@@ -555,7 +555,7 @@ void homeLoading
                   <v-avatar color="primary" size="48" variant="tonal">
                     <v-icon icon="mdi-compass" size="24" />
                   </v-avatar>
-                  <div class="text-body-2 text-medium-emphasis">探索更多路线</div>
+                  <div class="text-body-2 text-medium-emphasis">{{ t('home.exploreMoreRoadmaps') }}</div>
                 </div>
               </v-card-text>
             </v-card>
@@ -580,10 +580,10 @@ void homeLoading
               </h2>
               <div class="d-flex align-center ga-4">
                 <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
-                  共 <span class="text-primary font-weight-bold">{{ platformStats.courseCount }}</span> 门课程，<span class="text-primary font-weight-bold">{{ platformStats.knowledgeNodeCount.toLocaleString() }}</span> 个知识节点，<span class="text-primary font-weight-bold">{{ platformStats.articleCount.toLocaleString() }}</span> 篇文章
+                  {{ t('home.platformCourses', { courses: platformStats.courseCount, nodes: platformStats.knowledgeNodeCount.toLocaleString(), articles: platformStats.articleCount.toLocaleString() }) }}
                 </span>
                 <v-btn variant="text" size="small" color="primary" rounded="lg" @click="navigateTo('/courses')">
-                  浏览全部
+                  {{ t('home.browseAll') }}
                   <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
                 </v-btn>
               </div>
@@ -620,12 +620,12 @@ void homeLoading
                       {{ course.name }}
                     </div>
                     <div class="text-caption text-medium-emphasis text-truncate">
-                      {{ course.description ?? '点击查看详情' }}
+                      {{ course.description ?? t('home.clickToViewDetails') }}
                     </div>
                   </div>
                 </div>
                 <div class="d-flex align-center justify-space-between mb-2">
-                  <span class="text-caption text-medium-emphasis">学习进度</span>
+                  <span class="text-caption text-medium-emphasis">{{ t('home.learningProgress') }}</span>
                   <span class="text-caption font-weight-bold text-primary">{{ course.progress ?? 0 }}%</span>
                 </div>
                 <v-progress-linear
@@ -652,7 +652,7 @@ void homeLoading
                   <v-avatar color="primary" size="48" class="mb-3" variant="tonal">
                     <v-icon icon="mdi-plus" size="24" />
                   </v-avatar>
-                  <div class="text-body-2 text-medium-emphasis">添加更多课程</div>
+                  <div class="text-body-2 text-medium-emphasis">{{ t('home.addMoreCourses') }}</div>
                 </div>
               </v-card-text>
             </v-card>
@@ -671,7 +671,7 @@ void homeLoading
                 variant="tonal"
                 class="recommend-tag"
               >
-                示例
+                {{ t('home.example') }}
               </v-chip>
               <v-card-text class="pa-4 pa-sm-5">
                 <div class="d-flex align-center ga-3">
@@ -691,7 +691,7 @@ void homeLoading
                       {{ course.name }}
                     </div>
                     <div class="text-caption text-medium-emphasis text-truncate">
-                      点击开始学习
+                      {{ t('home.clickToStartLearning') }}
                     </div>
                   </div>
                 </div>
@@ -710,7 +710,7 @@ void homeLoading
                   <v-avatar color="primary" size="48" variant="tonal">
                     <v-icon icon="mdi-compass" size="24" />
                   </v-avatar>
-                  <div class="text-body-2 text-medium-emphasis">浏览更多课程</div>
+                  <div class="text-body-2 text-medium-emphasis">{{ t('home.browseMoreCourses') }}</div>
                 </div>
               </v-card-text>
             </v-card>
@@ -740,11 +740,11 @@ void homeLoading
                   variant="tonal"
                   size="small"
                 >
-                  {{ stats.reviewCards }} 张待复习
+                  {{ t('home.cardsToReview', { count: stats.reviewCards }) }}
                 </v-chip>
               </div>
               <v-btn variant="text" size="small" color="primary" rounded="lg" @click="navigateTo('/review')">
-                开始复习
+                {{ t('home.startReview') }}
                 <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
               </v-btn>
             </div>
@@ -781,13 +781,9 @@ void homeLoading
                 </div>
               </v-progress-circular>
               <div>
-                <div class="text-subtitle-1 font-weight-bold mb-1">今日进度</div>
+                <div class="text-subtitle-1 font-weight-bold mb-1">{{ t('home.todayProgress') }}</div>
                 <div class="text-body-2 text-medium-emphasis">
-                  已完成 {{
-                    reviewData.todayTotal > 0
-                      ? Math.round((reviewData.todayCompleted / reviewData.todayTotal) * 100)
-                      : 0
-                  }}%
+                  {{ t('home.completedPercent', { percent: reviewData.todayTotal > 0 ? Math.round((reviewData.todayCompleted / reviewData.todayTotal) * 100) : 0 }) }}
                 </div>
                 <v-chip
                   v-if="reviewData.streakDays > 0"
@@ -797,7 +793,7 @@ void homeLoading
                   class="mt-2"
                 >
                   <v-icon icon="mdi-fire" size="14" class="mr-1" />
-                  连续 {{ reviewData.streakDays }} 天
+                  {{ t('home.consecutiveDays', { days: reviewData.streakDays }) }}
                 </v-chip>
               </div>
             </v-card-text>
@@ -830,11 +826,11 @@ void homeLoading
                     {{ course.course.name }}
                   </div>
                   <div class="text-caption text-medium-emphasis text-truncate">
-                    共 {{ course.cardCount }} 张卡片
+                    {{ t('home.totalCards', { count: course.cardCount }) }}
                   </div>
                 </div>
                 <v-chip size="small" color="primary" variant="flat" class="flex-shrink-0">
-                  {{ course.dueCardCount }} 待复习
+                  {{ course.dueCardCount }} {{ t('home.toReview') }}
                 </v-chip>
               </div>
             </v-card-text>
@@ -855,8 +851,8 @@ void homeLoading
               <v-icon icon="mdi-lightbulb-outline" size="24" />
             </v-avatar>
             <div>
-              <div class="text-subtitle-1 font-weight-bold mb-1">还没有复习卡片</div>
-              <div class="text-body-2 text-medium-emphasis">学习课程时会自动生成，点击去学习</div>
+              <div class="text-subtitle-1 font-weight-bold mb-1">{{ t('home.noReviewCards') }}</div>
+              <div class="text-body-2 text-medium-emphasis">{{ t('home.noReviewCardsHint') }}</div>
             </div>
           </v-card-text>
         </v-card>
