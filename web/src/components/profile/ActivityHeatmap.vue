@@ -228,7 +228,7 @@ const formatValue = (day: DayData): string => {
         v-for="label in monthLabels"
         :key="label.index"
         class="month-label"
-        :style="{ left: `${label.index * 14 + 20}px` }"
+        :style="{ left: `${label.index * 13 + 20}px` }"
       >
         {{ label.month }}
       </span>
@@ -312,6 +312,7 @@ const formatValue = (day: DayData): string => {
   position: absolute;
   font-size: 11px;
   color: rgb(var(--v-theme-on-surface-variant));
+  white-space: nowrap;
 }
 
 .heatmap-body {
