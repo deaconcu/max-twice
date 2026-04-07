@@ -43,7 +43,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   title: '我们想和您一起，争取如下权利',
-  missionTitle: 'MaxTwice 的含义',
+  missionTitle: 'TwiceMax 的含义',
   missionIntro: '我们想和您一起，努力做到：',
   missionQuote: '"这里的任何一个知识节点，都能只看两遍就懂"',
   autoPlay: true,

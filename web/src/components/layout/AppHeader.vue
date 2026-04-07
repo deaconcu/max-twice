@@ -29,7 +29,7 @@ const handleSearch = () => {
               <v-icon size="28" color="primary">mdi-reddit</v-icon>
             </div>
             <!-- Logo 文字在小屏幕隐藏 -->
-            <h2 class="logo-text ml-2 d-none d-sm-block">MaxTwice</h2>
+            <h2 class="logo-text ml-2 d-none d-sm-block">TwiceMax</h2>
           </div>
         </v-col>
 
