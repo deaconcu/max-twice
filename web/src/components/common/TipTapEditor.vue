@@ -371,7 +371,7 @@
     <v-dialog v-model="imageDialog" max-width="500">
       <v-card rounded="xl">
         <v-card-title class="d-flex align-center justify-space-between pa-4">
-          <span class="text-h6">插入图片</span>
+          <span class="text-h6">{{ t('editor.insertImage') }}</span>
           <v-btn icon="mdi-close" variant="text" size="small" @click="imageDialog = false" />
         </v-card-title>
 
@@ -386,24 +386,24 @@
             @click="triggerFileUpload"
           >
             <v-icon icon="mdi-upload" class="mr-2" />
-            上传图片
+            {{ t('editor.uploadImage') }}
           </v-btn>
 
           <!-- 图片说明 -->
           <div class="text-caption mb-1 d-flex align-center">
             <v-icon icon="mdi-information-outline" size="16" color="grey" class="mr-1" />
-            <span class="text-grey mr-1">图片说明:</span>
-            <span class="text-grey">支持 JPG、PNG、WebP 格式，最大 5MB</span>
+            <span class="text-grey mr-1">{{ t('editor.imageHintLabel') }}</span>
+            <span class="text-grey">{{ t('editor.imageHint') }}</span>
           </div>
 
           <v-divider class="my-4">
-            <span class="text-caption text-grey">或</span>
+            <span class="text-caption text-grey">{{ t('editor.or') }}</span>
           </v-divider>
 
           <v-text-field
             v-model="imageUrl"
-            label="图片链接"
-            placeholder="https://example.com/image.jpg"
+            :label="t('editor.imageUrl')"
+            :placeholder="t('editor.imageUrlPlaceholder')"
             variant="outlined"
             density="comfortable"
             hide-details
@@ -418,14 +418,14 @@
 
         <v-card-actions class="pa-4">
           <v-spacer />
-          <v-btn variant="tonal" color="grey" @click="imageDialog = false">取消</v-btn>
+          <v-btn variant="tonal" color="grey" @click="imageDialog = false">{{ t('common.cancel') }}</v-btn>
           <v-btn
             color="primary"
             variant="tonal"
             :disabled="!imageUrl.trim()"
             @click="setImage"
           >
-            插入
+            {{ t('editor.insert') }}
           </v-btn>
         </v-card-actions>
       </v-card>

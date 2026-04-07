@@ -21,8 +21,14 @@
       </div>
       <div class="px-4 pb-4 pt-4 action-bottom">
         <div class="d-flex align-center justify-space-between">
-          <div class="text-caption text-grey px-2">
-            {{ contentLength }} 字符
+          <div class="d-flex align-center gap-2">
+            <span class="text-caption text-grey">{{ contentLength }} 字符</span>
+            <span v-if="contentLength < MIN_LENGTH" class="text-caption text-warning">
+              （还需 {{ MIN_LENGTH - contentLength }} 字符才能发布）
+            </span>
+            <span v-else-if="contentLength > MAX_LENGTH" class="text-caption text-error">
+              （超出 {{ contentLength - MAX_LENGTH }} 字符）
+            </span>
           </div>
           <div class="d-flex gap-2">
             <v-btn variant="text" @click="handleCancel">

@@ -8,6 +8,7 @@ let globalMermaidIdCounter = 0
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import renderMathInElement from 'katex/contrib/auto-render'
+import katex from 'katex'
 import 'katex/dist/katex.min.css'
 import mermaid from 'mermaid'
 import { upvoteApi, postApi, bookmarkApi } from '@/api'
@@ -252,10 +253,65 @@ const renderMermaidDiagrams = async (root: HTMLElement) => {
   )
 }
 
+// 渲染 TipTap 数学公式节点 (data-type="math-block")
+const renderTipTapMathNodes = (root: HTMLElement) => {
+  const mathNodes = root.querySelectorAll<HTMLElement>('span[data-type="math-block"]')
+  mathNodes.forEach((node) => {
+    const formula = node.getAttribute('data-formula')
+    const displayMode = node.getAttribute('data-display-mode') !== 'false'
+
+    if (!formula) return
+
+    try {
+      const rendered = katex.renderToString(formula, {
+        displayMode,
+        throwOnError: false,
+      })
+      node.innerHTML = rendered
+      node.classList.add('math-node', displayMode ? 'math-block' : 'math-inline')
+    } catch (e) {
+      node.innerHTML = `<span class="math-error">${formula}</span>`
+    }
+  })
+}
+
+// 渲染 TipTap Mermaid 图表节点 (data-type="mermaid-block")
+const renderTipTapMermaidNodes = async (root: HTMLElement) => {
+  ensureMermaidInitialized()
+  const mermaidNodes = root.querySelectorAll<HTMLElement>('div[data-type="mermaid-block"]')
+
+  await Promise.all(
+    Array.from(mermaidNodes).map(async (node) => {
+      if (node.dataset.processed === 'true') return
+
+      const code = node.getAttribute('data-code')
+      if (!code) return
+
+      const normalized = normalizeMermaidDefinition(code)
+      try {
+        const { svg } = await mermaid.render(`mermaid-${globalMermaidIdCounter++}`, normalized)
+        node.innerHTML = svg
+        node.dataset.processed = 'true'
+        node.classList.add('mermaid')
+      } catch (error) {
+        console.error('Mermaid render failed:', error, code)
+        node.dataset.processed = 'error'
+        const escapeHtml = (str: string) =>
+          str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        node.innerHTML = `<pre class="mermaid-error">${escapeHtml(normalized)}</pre>`
+      }
+    })
+  )
+}
+
 // 渲染数学公式
 const renderMath = () => {
   if (!contentRef.value) return
 
+  // 先渲染 TipTap 自定义格式的数学节点
+  renderTipTapMathNodes(contentRef.value)
+
+  // 再渲染传统分隔符格式 ($$...$$ 等)
   renderMathInElement(contentRef.value, {
     delimiters: [
       { left: '$$', right: '$$', display: true },
@@ -273,6 +329,7 @@ const applyEnhancements = async () => {
   if (!contentRef.value) return
 
   renderMath()
+  await renderTipTapMermaidNodes(contentRef.value)
   await renderMermaidDiagrams(contentRef.value)
   updateOverflowState()
 }
@@ -941,6 +998,28 @@ watch(
   border-radius: 8px;
   color: #856404;
   font-size: 0.875rem;
+}
+
+/* TipTap 数学公式节点样式 */
+.article-content :deep(.math-node) {
+  display: inline-block;
+}
+
+.article-content :deep(.math-block) {
+  display: block;
+  text-align: center;
+  padding: 8px 0;
+  margin: 4px 0;
+}
+
+.article-content :deep(.math-inline) {
+  padding: 0 2px;
+}
+
+.article-content :deep(.math-error) {
+  color: #dc3545;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
 }
 
 /* 移动端：限制公式宽度 */
