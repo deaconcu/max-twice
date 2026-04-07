@@ -18,13 +18,13 @@
             <div class="d-flex align-center">
               <v-icon icon="mdi-account-group" size="14" color="grey" class="mr-1" />
               <span class="text-caption text-grey-darken-2">
-                {{ formatNumber(course.learnerCount) }} 人学习
+                {{ formatNumber(course.learnerCount) }} {{ t('course.learnersSuffix') }}
               </span>
             </div>
             <div v-if="course.subCourseCount && course.subCourseCount > 0" class="d-flex align-center">
               <v-icon icon="mdi-book-multiple" size="14" color="grey" class="mr-1" />
               <span class="text-caption text-grey-darken-2">
-                {{ course.subCourseCount }} 个子课程
+                {{ t('course.subCoursesCount', { count: course.subCourseCount }) }}
               </span>
             </div>
           </div>
@@ -40,9 +40,12 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import type { Course } from '@/types/course'
 import { getColorByString } from '@/utils/color'
 import DynamicIcon from '@/components/common/DynamicIcon.vue'
+
+const { t } = useI18n()
 
 interface Props {
   course: Course

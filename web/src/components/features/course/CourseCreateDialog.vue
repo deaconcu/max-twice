@@ -85,7 +85,7 @@ const filteredSubCategories = computed(() => {
   return props.subCategories.filter((sub) => sub.mainCategoryId === courseData.value.mainCategoryId)
 })
 
-const categoryRules = [(v: number | null) => v !== null || '请选择分类']
+const categoryRules = [(v: number | null) => v !== null || t('course.selectCategoryRequired')]
 
 // 监听主分类变化，清空子分类选择
 watch(
@@ -165,7 +165,7 @@ const closeDialog = () => {
               v-model="courseData.name"
               :rules="courseNameRules"
               :counter="courseNameMaxLength"
-              placeholder="请输入课程名称"
+              :placeholder="t('course.namePlaceholder')"
               variant="outlined"
               density="compact"
               clearable
@@ -182,7 +182,7 @@ const closeDialog = () => {
               v-model="courseData.description"
               :rules="courseDescriptionRules"
               :counter="courseDescriptionMaxLength"
-              placeholder="请输入课程描述"
+              :placeholder="t('course.descriptionPlaceholder')"
               variant="outlined"
               density="compact"
               rows="10"
@@ -202,7 +202,7 @@ const closeDialog = () => {
               item-title="name"
               item-value="id"
               :rules="categoryRules"
-              placeholder="请选择主分类"
+              :placeholder="t('course.mainCategoryPlaceholder')"
               variant="outlined"
               density="compact"
               clearable
@@ -225,7 +225,7 @@ const closeDialog = () => {
               item-title="name"
               item-value="id"
               :rules="categoryRules"
-              placeholder="请先选择主分类"
+              :placeholder="t('course.subCategoryPlaceholder')"
               variant="outlined"
               density="compact"
               :disabled="!courseData.mainCategoryId"

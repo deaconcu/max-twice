@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import NotificationMenu from '@/components/common/NotificationMenu.vue'
 import UserMenu from '@/components/common/UserMenu.vue'
 import { HEADER_HEIGHT } from '@/constants/layout'
 
+const { t } = useI18n()
 const router = useRouter()
 const searchQuery = ref('')
 
@@ -42,7 +44,7 @@ const handleSearch = () => {
               v-model="searchQuery"
               density="compact"
               variant="solo"
-              placeholder="搜索课程、职业、文章..."
+              :placeholder="t('common.searchPlaceholder')"
               prepend-inner-icon="mdi-magnify"
               hide-details
               single-line

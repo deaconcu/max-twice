@@ -53,7 +53,7 @@
               @click="selectSubCategory(undefined)"
             >
               <span class="text-grey-darken-3">
-                全部{{ getCategoryName(selectedMainCategory) }}
+                {{ t('roleCenter.difficulty.allCategory', { category: getCategoryName(selectedMainCategory) }) }}
               </span>
             </v-btn>
 

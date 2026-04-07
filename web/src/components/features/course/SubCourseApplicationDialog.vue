@@ -22,7 +22,7 @@
               v-model="formData.name"
               :rules="courseNameRules"
               :counter="courseNameMaxLength"
-              placeholder="请输入子课程名称"
+              :placeholder="t('course.namePlaceholder')"
               variant="outlined"
               density="compact"
               clearable
@@ -39,7 +39,7 @@
               v-model="formData.description"
               :rules="courseDescriptionRules"
               :counter="courseDescriptionMaxLength"
-              placeholder="请输入子课程描述"
+              :placeholder="t('course.descriptionPlaceholder')"
               variant="outlined"
               density="compact"
               rows="10"

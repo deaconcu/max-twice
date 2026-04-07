@@ -22,7 +22,7 @@
             class="flex-grow-1"
             @click="handleCancel"
           >
-            {{ cancelText }}
+            {{ displayCancelText }}
           </v-btn>
           <v-btn
             :color="confirmColor"
@@ -32,7 +32,7 @@
             class="flex-grow-1"
             @click="handleConfirm"
           >
-            {{ confirmText }}
+            {{ displayConfirmText }}
           </v-btn>
         </div>
       </v-card-text>
@@ -42,11 +42,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface Props {
   modelValue: boolean
-  title?: string
-  message?: string
+  title: string
+  message: string
   confirmText?: string
   cancelText?: string
   confirmColor?: string
@@ -56,15 +59,15 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: '确认操作',
-  message: '确定要执行此操作吗？',
-  confirmText: '确认',
-  cancelText: '取消',
   confirmColor: 'error',
   icon: 'mdi-alert-circle-outline',
   iconColor: 'error-lighten-4',
   iconForeground: 'error',
 })
+
+// 按钮文案默认值
+const displayConfirmText = computed(() => props.confirmText || t('common.confirm'))
+const displayCancelText = computed(() => props.cancelText || t('common.cancel'))
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]

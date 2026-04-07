@@ -77,7 +77,7 @@ const {
     } else if (route.query.commentId) {
       params.commentId = Number(route.query.commentId)
     } else {
-      return Promise.reject(new Error('缺少 postId 或 commentId 参数'))
+      return Promise.reject(new Error(t('postDetail.missingParams')))
     }
     return pageApi.readPostDetail(params)
   },

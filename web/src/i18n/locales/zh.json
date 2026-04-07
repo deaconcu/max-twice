@@ -142,6 +142,7 @@
     "favorites": "收藏",
     "help": "帮助",
     "search": "搜索",
+    "searchPlaceholder": "搜索课程、职业、文章...",
     "submit": "提交",
     "cancel": "取消",
     "confirm": "确认",
@@ -587,9 +588,14 @@
     "createNew": "创建新课程",
     "fillInfo": "请填写课程信息并选择合适的分类",
     "name": "课程名称",
+    "namePlaceholder": "请输入子课程名称",
     "description": "课程描述",
+    "descriptionPlaceholder": "请输入子课程描述",
     "mainCategory": "主分类",
+    "mainCategoryPlaceholder": "请选择主分类",
     "subCategory": "子分类",
+    "subCategoryPlaceholder": "请先选择主分类",
+    "selectCategoryRequired": "请选择分类",
     "create": "创建课程",
     "loading": "正在加载课程...",
     "noCourses": "该分类下暂无课程",
@@ -635,6 +641,8 @@
     "createSubCourse": "创建子课程",
     "confirmCreateSubCourse": "是否需要创建 {name} 子课程？",
     "learnersCount": "{count} 人在学",
+    "learnersSuffix": "人学习",
+    "subCoursesCount": "{count} 个子课程",
     "learn": "学习",
     "clickToExit": "点击退出学习"
   },
@@ -903,6 +911,7 @@
     },
     "difficulty": {
       "all": "全部",
+      "allCategory": "全部{category}",
       "beginner": "初级",
       "intermediate": "中级",
       "advanced": "高级"
@@ -1528,7 +1537,8 @@
   },
   "postDetail": {
     "aiAssistant": "答疑助手",
-    "memoryDecks": "记忆卡片组"
+    "memoryDecks": "记忆卡片组",
+    "missingParams": "缺少 postId 或 commentId 参数"
   },
   "postingList": {
     "clickToUncomplete": "点击取消完成",

@@ -139,6 +139,7 @@
     "profile": "Profile",
     "settings": "Settings",
     "search": "Search",
+    "searchPlaceholder": "Search courses, roles, articles...",
     "submit": "Submit",
     "cancel": "Cancel",
     "confirm": "Confirm",
@@ -539,9 +540,14 @@
     "createNew": "Create New Course",
     "fillInfo": "Please fill in course information and select appropriate categories",
     "name": "Course Name",
+    "namePlaceholder": "Enter sub-course name",
     "description": "Course Description",
+    "descriptionPlaceholder": "Enter sub-course description",
     "mainCategory": "Main Category",
+    "mainCategoryPlaceholder": "Select main category",
     "subCategory": "Sub Category",
+    "subCategoryPlaceholder": "Select main category first",
+    "selectCategoryRequired": "Please select a category",
     "create": "Create Course",
     "loading": "Loading courses...",
     "noCourses": "No courses in this category",
@@ -587,6 +593,8 @@
     "createSubCourse": "Create Sub-Course",
     "confirmCreateSubCourse": "Do you want to create the {name} sub-course?",
     "learnersCount": "{count} learners",
+    "learnersSuffix": "learners",
+    "subCoursesCount": "{count} sub-courses",
     "learn": "Learn",
     "clickToExit": "Click to exit learning"
   },
@@ -852,6 +860,7 @@
     },
     "difficulty": {
       "all": "All",
+      "allCategory": "All {category}",
       "beginner": "Beginner",
       "intermediate": "Intermediate",
       "advanced": "Advanced"
@@ -1476,7 +1485,8 @@
   },
   "postDetail": {
     "aiAssistant": "AI Assistant",
-    "memoryDecks": "Memory Decks"
+    "memoryDecks": "Memory Decks",
+    "missingParams": "Missing postId or commentId parameter"
   },
   "postingList": {
     "clickToUncomplete": "Click to unmark as completed",

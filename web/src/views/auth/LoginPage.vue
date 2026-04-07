@@ -1,16 +1,32 @@
 <template>
   <div class="login-page">
+    <!-- 几何图形装饰 -->
+    <div class="geo-shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <svg class="shape shape-3" viewBox="0 0 100 90" width="70" height="63">
+        <path d="M50 8 Q50 0 56 8 L92 76 Q100 90 86 90 L14 90 Q0 90 8 76 L44 8 Q50 0 50 8 Z" fill="#66BB6A"/>
+      </svg>
+      <div class="shape shape-4"></div>
+      <div class="shape shape-5"></div>
+      <div class="shape shape-6"></div>
+      <div class="shape shape-7"></div>
+      <div class="shape shape-8"></div>
+      <div class="shape shape-9"></div>
+      <div class="shape shape-10"></div>
+    </div>
+
     <SimpleHeader />
 
     <v-container fluid class="login-container">
       <v-row align="center" justify="center">
         <!-- Left side - Website Introduction -->
-        <v-col cols="12" md="5" class="intro-section d-none d-md-flex">
+        <v-col cols="12" md="6" lg="7" class="intro-section d-none d-md-flex">
           <IntroSection />
         </v-col>
 
         <!-- Right side - Login Form -->
-        <v-col cols="12" md="5" sm="8" class="d-flex justify-center">
+        <v-col cols="12" md="5" lg="4" sm="8" class="d-flex justify-center">
           <div class="login-card-wrapper">
             <v-card class="login-card" rounded="xl" elevation="0">
               <!-- Logo Section -->
@@ -253,7 +269,7 @@ const goToRegister = () => {
   overflow: hidden;
 }
 
-/* 装饰性渐变球 - 右上角 */
+/* 模糊渐变球 - 右上角 */
 .login-page::before {
   content: '';
   position: absolute;
@@ -263,15 +279,15 @@ const goToRegister = () => {
   height: 1000px;
   background: radial-gradient(
     circle,
-    rgba(255, 87, 34, 0.25) 0%,
-    rgba(255, 87, 34, 0.1) 40%,
+    rgba(255, 87, 34, 0.15) 0%,
+    rgba(255, 87, 34, 0.05) 40%,
     transparent 70%
   );
   border-radius: 50%;
   pointer-events: none;
 }
 
-/* 装饰性渐变球 - 左下角 */
+/* 模糊渐变球 - 左下角 */
 .login-page::after {
   content: '';
   position: absolute;
@@ -281,12 +297,129 @@ const goToRegister = () => {
   height: 1100px;
   background: radial-gradient(
     circle,
-    rgba(0, 188, 212, 0.2) 0%,
-    rgba(0, 188, 212, 0.08) 40%,
+    rgba(0, 188, 212, 0.12) 0%,
+    rgba(0, 188, 212, 0.04) 40%,
     transparent 70%
   );
   border-radius: 50%;
   pointer-events: none;
+}
+
+/* 几何图形容器 */
+.geo-shapes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* 通用图形样式 */
+.shape {
+  position: absolute;
+  opacity: 0.15;
+}
+
+/* 圆形 - 橙色 */
+.shape-1 {
+  width: 80px;
+  height: 80px;
+  background-color: #FF7043;
+  border-radius: 50%;
+  top: 8%;
+  right: 12%;
+}
+
+/* 方形 - 青色 */
+.shape-2 {
+  width: 60px;
+  height: 60px;
+  background-color: #26C6DA;
+  border-radius: 8px;
+  top: 20%;
+  left: 8%;
+  transform: rotate(15deg);
+}
+
+/* 三角形 - 橙色 SVG 圆角 */
+.shape-3 {
+  top: 60%;
+  left: 5%;
+  opacity: 0.15;
+}
+
+/* 圆形 - 青色 小 */
+.shape-4 {
+  width: 40px;
+  height: 40px;
+  background-color: #26C6DA;
+  border-radius: 50%;
+  top: 35%;
+  right: 6%;
+}
+
+/* 方形 - 橙色 */
+.shape-5 {
+  width: 50px;
+  height: 50px;
+  background-color: #FF7043;
+  border-radius: 6px;
+  bottom: 15%;
+  right: 10%;
+  transform: rotate(-10deg);
+}
+
+/* 圆形 - 青色 模糊 */
+.shape-6 {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(38, 198, 218, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  bottom: 30%;
+  left: 10%;
+  opacity: 1;
+}
+
+/* 小圆形 - 橙色 */
+.shape-7 {
+  width: 30px;
+  height: 30px;
+  background-color: #FF7043;
+  border-radius: 50%;
+  top: 45%;
+  left: 20%;
+}
+
+/* 方形 - 青色 */
+.shape-8 {
+  width: 45px;
+  height: 45px;
+  background-color: #26C6DA;
+  border-radius: 10px;
+  bottom: 35%;
+  right: 18%;
+  transform: rotate(25deg);
+}
+
+/* 模糊圆形 - 橙色 */
+.shape-9 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 112, 67, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 10%;
+  left: 30%;
+  opacity: 1;
+}
+
+/* 模糊圆形 - 青色 */
+.shape-10 {
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(38, 198, 218, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  bottom: 10%;
+  right: 25%;
+  opacity: 1;
 }
 
 .login-container {

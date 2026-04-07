@@ -1,34 +1,21 @@
 <template>
   <div class="intro-content">
-    <!-- 主标语 -->
-    <h1 class="main-slogan">
-      人生没有说明书，<br />
-      我们一起写一本。
-    </h1>
+    <!-- 插画 -->
+    <img src="@/assets/images/front.png" alt="TwiceMax" class="hero-image" />
 
-    <!-- 品牌解释 -->
-    <div class="brand-explain">
-      <span class="brand-name">TwiceMax</span>
-      <span class="brand-meaning">= Twice（两遍）+ Max（最多）</span>
-    </div>
+    <!-- 文案区 -->
+    <div class="text-content">
+      <h1 class="main-slogan">
+        人生没有说明书，<br />
+        我们一起写一本。
+      </h1>
 
-    <p class="brand-desc">
-      我们的目标：让每个知识点，最多看两遍就能搞懂。
-    </p>
+      <p class="sub-slogan">想成为谁，就学什么。</p>
 
-    <!-- 特点列表 -->
-    <div class="features">
-      <div class="feature-item">
-        <v-icon size="20" color="primary" class="feature-icon">mdi-account-group</v-icon>
-        <span>从角色出发，系统化学习路径</span>
-      </div>
-      <div class="feature-item">
-        <v-icon size="20" color="primary" class="feature-icon">mdi-file-document-outline</v-icon>
-        <span>社区精选文章，知识点精炼易懂</span>
-      </div>
-      <div class="feature-item">
-        <v-icon size="20" color="primary" class="feature-icon">mdi-card-multiple-outline</v-icon>
-        <span>间隔复习卡片，科学记忆不遗忘</span>
+      <!-- 品牌解释 -->
+      <div class="brand-line">
+        <span class="brand-name">TwiceMax</span>
+        <span class="brand-meaning">— 每个知识点，最多看两遍就懂</span>
       </div>
     </div>
   </div>
@@ -40,59 +27,61 @@
 
 <style scoped>
 .intro-content {
-  max-width: 480px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+}
+
+/* 插画 */
+.hero-image {
+  width: 100%;
+  max-width: 1200px;
+  height: auto;
+  margin-bottom: 32px;
+}
+
+/* 文案区 */
+.text-content {
+  text-align: center;
 }
 
 /* 主标语 */
 .main-slogan {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.5;
   color: rgb(var(--v-theme-on-surface));
-  margin-bottom: 32px;
+  margin-bottom: 12px;
+}
+
+/* 副标语 */
+.sub-slogan {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: rgb(var(--v-theme-primary));
+  margin-bottom: 24px;
 }
 
 /* 品牌解释 */
-.brand-explain {
-  margin-bottom: 8px;
+.brand-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .brand-name {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .brand-meaning {
-  font-size: 1rem;
-  color: rgb(var(--v-theme-on-surface-variant));
-  margin-left: 8px;
-}
-
-.brand-desc {
-  font-size: 1rem;
-  color: rgb(var(--v-theme-on-surface));
-  line-height: 1.6;
-  margin-bottom: 40px;
-}
-
-/* 特点列表 */
-.features {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   font-size: 0.95rem;
   color: rgb(var(--v-theme-on-surface-variant));
-}
-
-.feature-icon {
-  flex-shrink: 0;
 }
 </style>
