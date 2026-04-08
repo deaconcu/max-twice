@@ -454,7 +454,7 @@ public class SystemProperties {
     @Data
     public static class Scheduler {
         /**
-         * 职业排行榜同步Cron表达式
+         * 角色排行榜同步Cron表达式
          */
         private String roleRankingSyncCron = "0 15 * * * ?";
 
@@ -469,7 +469,7 @@ public class SystemProperties {
         private long initializationDelayMs = 10000;
 
         /**
-         * 是否启用职业排行榜定时同步
+         * 是否启用角色排行榜定时同步
          */
         private boolean enableRoleRankingSync = true;
 
@@ -479,7 +479,7 @@ public class SystemProperties {
         private boolean enableCourseRankingSync = true;
 
         /**
-         * 是否启用应用启动时初始化（职业排行榜）
+         * 是否启用应用启动时初始化（角色排行榜）
          */
         private boolean enableRoleRankingStartupInit = true;
 

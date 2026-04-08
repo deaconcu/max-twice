@@ -333,15 +333,15 @@ public class ProgressController {
     }
 
     /**
-     * 获取用户正在学习的职业路线图（最多20条）
+     * 获取用户正在学习的角色路线图（最多20条）
      * GET /api/v1/progress/roles/{roleId}/roadmaps/learning
      */
     @GetMapping("/progress/roles/{roleId}/roadmaps/learning")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<UserLearningDTO<Object>>> getLearningRoadmapsByRole(
-            @PathVariable @NotNull(message = "职业ID不能为空")
-            @Positive(message = "职业ID必须大于0")
+            @PathVariable @NotNull(message = "角色ID不能为空")
+            @Positive(message = "角色ID必须大于0")
             Long roleId,
             @RequestParam(required = false)
             @Min(value = 1, message = "lastId必须大于0")

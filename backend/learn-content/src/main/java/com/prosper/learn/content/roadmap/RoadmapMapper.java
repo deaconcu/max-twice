@@ -40,7 +40,7 @@ public interface RoadmapMapper {
     int updateScore(long id, double score);
 
     /**
-     * 根据职业获取路线图列表（按创建时间排序）
+     * 根据角色获取路线图列表（按创建时间排序）
      */
     @Select("SELECT * FROM roadmap WHERE role_id = #{roleId} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
             "ORDER BY created_at DESC, id DESC LIMIT #{limit}")
@@ -49,7 +49,7 @@ public interface RoadmapMapper {
             @Param("limit") int limit);
 
     /**
-     * 根据职业获取路线图列表（按分数排序）
+     * 根据角色获取路线图列表（按分数排序）
      */
     @Select("SELECT * FROM roadmap WHERE role_id = #{roleId} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
@@ -58,7 +58,7 @@ public interface RoadmapMapper {
             @Param("limit") int limit);
 
     /**
-     * 分页获取职业路线图（按创建时间排序）
+     * 分页获取角色路线图（按创建时间排序）
      */
     @Select("SELECT * FROM roadmap WHERE role_id = #{roleId} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
             "AND (created_at < #{lastCreatedAt} OR (created_at = #{lastCreatedAt} AND id < #{lastId})) " +
@@ -70,7 +70,7 @@ public interface RoadmapMapper {
             @Param("limit") int limit);
 
     /**
-     * 分页获取职业路线图（按分数排序）
+     * 分页获取角色路线图（按分数排序）
      */
     @Select("SELECT * FROM roadmap WHERE role_id = #{roleId} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
             "AND (score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +

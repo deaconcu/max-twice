@@ -113,7 +113,7 @@ public class UserStatsDataService {
         return atomicIncrement(userId, "following_course_count", delta);
     }
 
-    /** 增量更新关注职业数 */
+    /** 增量更新关注角色数 */
     public boolean incrementFollowingRoles(long userId, int delta) {
         return atomicIncrement(userId, "following_role_count", delta);
     }
@@ -130,12 +130,12 @@ public class UserStatsDataService {
         return atomicIncrement(userId, "completed_course_count", delta);
     }
 
-    /** 增量更新进行中职业数 */
+    /** 增量更新进行中角色数 */
     public boolean incrementInProgressRoles(long userId, int delta) {
         return atomicIncrement(userId, "in_progress_role_count", delta);
     }
 
-    /** 增量更新已完成职业数 */
+    /** 增量更新已完成角色数 */
     public boolean incrementCompletedRoles(long userId, int delta) {
         return atomicIncrement(userId, "completed_role_count", delta);
     }

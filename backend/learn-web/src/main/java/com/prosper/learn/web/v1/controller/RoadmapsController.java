@@ -37,15 +37,15 @@ public class RoadmapsController {
     private final RoadmapService roadmapService;
 
     /**
-     * 获取职业路线图
+     * 获取角色路线图
      * 映射: GET /roadmap/list/{roleId} → GET /api/v1/roles/{roleId}/roadmaps?lastId=123&sortBy=latest
      */
     @GetMapping("/roles/{roleId}/roadmaps")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<RoadmapWithStatusDTO>> getRoadmapsByRole(
-            @PathVariable @NotNull(message = "职业ID不能为空")
-            @Positive(message = "职业ID必须大于0")
+            @PathVariable @NotNull(message = "角色ID不能为空")
+            @Positive(message = "角色ID必须大于0")
             Long roleId,
             @RequestParam(required = false)
             Long lastId,

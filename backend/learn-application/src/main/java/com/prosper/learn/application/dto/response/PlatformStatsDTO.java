@@ -18,7 +18,7 @@ public class PlatformStatsDTO {
     private Long courseCount;
     
     /**
-     * 职业路径总数
+     * 角色路径总数
      */
     private Long careerPathCount;
     

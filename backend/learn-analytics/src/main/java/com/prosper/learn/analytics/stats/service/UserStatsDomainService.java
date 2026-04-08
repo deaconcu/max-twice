@@ -107,7 +107,7 @@ public class UserStatsDomainService {
     }
 
     /**
-     * 增量更新关注职业数
+     * 增量更新关注角色数
      */
     @Transactional
     public void incrementFollowingRoles(Long userId, int delta) {

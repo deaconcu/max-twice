@@ -88,10 +88,10 @@ public class HomePageService {
         // 2. 用户学习统计
         homePageDTO.setUserStats(getUserLearningStats(user));
 
-        // 3. 收藏的职业（最新收藏的在前，最多10个）
+        // 3. 收藏的角色（最新收藏的在前，最多10个）
         homePageDTO.setBookmarkedRoles(getBookmarkedRoles(userId));
 
-        // 4. 正在学习的职业路线
+        // 4. 正在学习的角色路线
         homePageDTO.setLearningRoles(getLearningRoles(userId));
 
         // 5. 正在学习的课程
@@ -100,7 +100,7 @@ public class HomePageService {
         // 6. 复习概览
         homePageDTO.setReviewSummary(getReviewSummary(userId));
 
-        // 7. 热门职业榜单
+        // 7. 热门角色榜单
         homePageDTO.setHotRoles(getHotRoles());
 
         // 8. 热门课程榜单
@@ -139,7 +139,7 @@ public class HomePageService {
     }
 
     /**
-     * 获取正在学习的职业路线
+     * 获取正在学习的角色路线
      */
     private List<UserLearningDTO<Object>> getLearningRoles(Long userId) {
         try {
@@ -151,7 +151,7 @@ public class HomePageService {
                     LEARNING_ROLES_LIMIT
             );
         } catch (Exception e) {
-            log.error("获取正在学习的职业路线失败, userId={}", userId, e);
+            log.error("获取正在学习的角色路线失败, userId={}", userId, e);
             return new ArrayList<>();
         }
     }
@@ -181,13 +181,13 @@ public class HomePageService {
     }
 
     /**
-     * 获取热门职业榜单
+     * 获取热门角色榜单
      */
     private List<RoleDTO> getHotRoles() {
         try {
             return roleService.getHotRoles(HOT_ROLES_LIMIT);
         } catch (Exception e) {
-            log.error("获取热门职业失败", e);
+            log.error("获取热门角色失败", e);
             return new ArrayList<>();
         }
     }
@@ -205,7 +205,7 @@ public class HomePageService {
     }
 
     /**
-     * 获取收藏的职业（最新收藏的在前，最多10个）
+     * 获取收藏的角色（最新收藏的在前，最多10个）
      */
     private List<RoleDTO> getBookmarkedRoles(Long userId) {
         try {
@@ -220,12 +220,12 @@ public class HomePageService {
                 return new ArrayList<>();
             }
 
-            // 提取职业ID
+            // 提取角色ID
             List<Long> roleIds = bookmarks.stream()
                     .map(BookmarkDO::getObjectId)
                     .toList();
 
-            // 批量获取职业信息
+            // 批量获取角色信息
             List<RoleDO> roleDOList = roleDataService.getByIds(roleIds);
             Map<Long, RoleDO> roleDOMap = roleDOList.stream()
                     .collect(Collectors.toMap(RoleDO::getId, p -> p));
@@ -237,7 +237,7 @@ public class HomePageService {
                     .map(roleConverter::toDTO)
                     .toList();
         } catch (Exception e) {
-            log.error("获取收藏的职业失败, userId={}", userId, e);
+            log.error("获取收藏的角色失败, userId={}", userId, e);
             return new ArrayList<>();
         }
     }
@@ -261,7 +261,7 @@ public class HomePageService {
                     new TypeReference<Map<String, List<Long>>>() {}
             );
 
-            // 获取新手推荐职业
+            // 获取新手推荐角色
             List<Long> roleIds = config.getOrDefault("roles", new ArrayList<>());
             homePageDTO.setBeginnerRoles(getBeginnerRoles(roleIds));
 
@@ -282,7 +282,7 @@ public class HomePageService {
     }
 
     /**
-     * 获取新手推荐职业
+     * 获取新手推荐角色
      */
     private List<RoleBriefDTO> getBeginnerRoles(List<Long> roleIds) {
         if (roleIds == null || roleIds.isEmpty()) {
@@ -310,7 +310,7 @@ public class HomePageService {
         Map<Long, RoadmapDO> roadmapMap = roadmaps.stream()
                 .collect(Collectors.toMap(RoadmapDO::getId, r -> r));
 
-        // 获取关联的职业信息
+        // 获取关联的角色信息
         List<Long> roleIds = roadmaps.stream()
                 .map(RoadmapDO::getRoleId)
                 .distinct()
@@ -318,7 +318,7 @@ public class HomePageService {
         Map<Long, RoleDO> roleMap = roleDataService.getByIds(roleIds).stream()
                 .collect(Collectors.toMap(RoleDO::getId, p -> p));
 
-        // 按配置顺序返回，并填充职业信息
+        // 按配置顺序返回，并填充角色信息
         return roadmapIds.stream()
                 .map(roadmapMap::get)
                 .filter(r -> r != null)

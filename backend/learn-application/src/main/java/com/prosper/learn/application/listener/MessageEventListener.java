@@ -128,7 +128,7 @@ public class MessageEventListener {
                 messageService.createRoadmapUpvoteMessage(
                     event.getCreatorId(),          // 接收者
                     event.getVoterId(),            // 发送者
-                    event.getContextId(),          // 职业ID
+                    event.getContextId(),          // 角色ID
                     event.getContentId()          // 路线图ID
                 );
                 log.debug("发送路线图投票通知: contentId={}, voterId={}, creatorId={}",
@@ -321,7 +321,7 @@ public class MessageEventListener {
                         ModerationAction.REJECTED,
                         event.getReason()
                     );
-                    log.debug("发送职业审核拒绝通知: role={}, creatorId={}, reason={}",
+                    log.debug("发送角色审核拒绝通知: role={}, creatorId={}, reason={}",
                         event.getContentId(), event.getCreatorId(), event.getReason());
                 }
                 case course -> {

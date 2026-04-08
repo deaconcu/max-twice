@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 
 /**
  * 内容收藏事件
- * 当用户收藏内容时触发（包括课程关注、职业关注）
+ * 当用户收藏内容时触发（包括课程关注、角色关注）
  */
 @Data
 @AllArgsConstructor

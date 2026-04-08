@@ -35,7 +35,7 @@ public class ContentRemovedEvent {
     /** 目录型帖子引用的节点ID列表（post 类型且 postType=CONTENTS 时使用）*/
     private List<Long> referencedNodeIds;
 
-    /** 职业ID（roadmap 类型使用）*/
+    /** 角色ID（roadmap 类型使用）*/
     private Long roleId;
 
     /** 帖子ID（memory_card_deck 类型使用）*/
@@ -53,7 +53,7 @@ public class ContentRemovedEvent {
     /** 课程名称（用于通知）*/
     private String courseName;
 
-    /** 职业名称（用于通知）*/
+    /** 角色名称（用于通知）*/
     private String roleName;
 
     // ========== 各类型专用构造函数 ==========

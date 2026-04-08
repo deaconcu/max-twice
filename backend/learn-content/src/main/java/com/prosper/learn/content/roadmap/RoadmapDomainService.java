@@ -50,10 +50,10 @@ public class RoadmapDomainService {
     }
 
     /**
-     * 获取职业路线图列表（公开接口）
+     * 获取角色路线图列表（公开接口）
      * 用于匿名用户浏览，按分数排序
      *
-     * @param roleId 职业ID
+     * @param roleId 角色ID
      * @param lastId 最后一个路线图ID（分页游标）
      * @param limit 查询数量限制
      * @return 路线图列表
@@ -73,7 +73,7 @@ public class RoadmapDomainService {
     }
 
     /**
-     * 获取职业路线图列表（支持动态排序）
+     * 获取角色路线图列表（支持动态排序）
      */
     public List<RoadmapDO> getRoadmapsByRole(Long roleId, Long lastId, int limit, String sortBy) {
         if (lastId != null) {

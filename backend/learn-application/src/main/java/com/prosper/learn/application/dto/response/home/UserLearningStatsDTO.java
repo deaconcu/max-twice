@@ -20,7 +20,7 @@ public class UserLearningStatsDTO {
     private Integer coursesInProgress;
 
     /**
-     * 进行中的职业路线数
+     * 进行中的角色路线数
      */
     private Integer rolesInProgress;
 

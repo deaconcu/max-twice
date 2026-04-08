@@ -147,7 +147,7 @@ public class AdminContentsController {
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> filterRoadmaps(
             @RequestParam(required = false) @Positive(message = "路线图ID必须大于0") Long roadmapId,
-            @RequestParam(required = false) @Positive(message = "职业ID必须大于0") Long roleId,
+            @RequestParam(required = false) @Positive(message = "角色ID必须大于0") Long roleId,
             @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
             @RequestParam(required = false) Long lastId) {
         return ApiResponse.success(roadmapService.listByFilter(roadmapId, roleId, creatorId, lastId));
@@ -285,9 +285,9 @@ public class AdminContentsController {
     }
 
     /**
-     * 按名称搜索职业（管理后台）
+     * 按名称搜索角色（管理后台）
      * GET /api/v1/admin/contents/role/search?name=xxx
-     * 搜索所有状态的职业，支持滚动分页
+     * 搜索所有状态的角色，支持滚动分页
      */
     @GetMapping("/role/search")
     @RequireRole(UserRole.MODERATOR)
@@ -299,7 +299,7 @@ public class AdminContentsController {
     }
 
     /**
-     * 更新职业信息
+     * 更新角色信息
      * PUT /api/v1/admin/contents/role/{id}
      */
     @PutMapping("/role/{id}")
@@ -308,14 +308,14 @@ public class AdminContentsController {
     @Transactional
     @OperationLog(
         module = "全局内容管理",
-        type = "更新职业",
+        type = "更新角色",
         level = OperationLevel.MEDIUM,
         targetType = "Role",
         targetId = "#id"
     )
     public ApiResponse<?> updateRole(
-            @PathVariable @NotNull(message = "职业ID不能为空")
-            @Positive(message = "职业ID必须大于0") Long id,
+            @PathVariable @NotNull(message = "角色ID不能为空")
+            @Positive(message = "角色ID必须大于0") Long id,
             @Valid @RequestBody UpdateRoleRequest request,
             @CurrentUser UserDO currentUser) {
         roleService.update(id, request, currentUser);
@@ -323,15 +323,15 @@ public class AdminContentsController {
     }
 
     /**
-     * 获取职业详情（管理后台）
+     * 获取角色详情（管理后台）
      * GET /api/v1/admin/contents/role/{id}
      */
     @GetMapping("/role/{id}")
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> getRoleById(
-            @PathVariable @NotNull(message = "职业ID不能为空")
-            @Positive(message = "职业ID必须大于0") Long id) {
+            @PathVariable @NotNull(message = "角色ID不能为空")
+            @Positive(message = "角色ID必须大于0") Long id) {
         return ApiResponse.query(roleService.getAdminById(id));
     }
 

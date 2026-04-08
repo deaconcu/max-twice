@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
- * 职业应用服务
+ * 角色应用服务
  *
  * 负责协调跨领域逻辑、事件发布、DTO转换
  *
@@ -74,8 +74,8 @@ public class RoleService {
     // ========== Query 方法 ==========
 
     /**
-     * 返回正常状态的职业信息
-     * 职业被拒绝或屏蔽时抛出异常
+     * 返回正常状态的角色信息
+     * 角色被拒绝或屏蔽时抛出异常
      */
     public RoleDTO getById(long id, boolean published, Long userId) {
         RoleDO roleDO = roleDomainService.validateAndGet(id);
@@ -89,7 +89,7 @@ public class RoleService {
     }
 
     /**
-     * 获取职业列表（管理后台专用，包含状态和原因）
+     * 获取角色列表（管理后台专用，包含状态和原因）
      */
     public KeysetPageResponse<RoleAdminDTO> listByState(ContentState state, Long lastId, int limit) {
         Byte stateValue = state != null ? state.value() : null;
@@ -143,7 +143,7 @@ public class RoleService {
     }
 
     /**
-     * 获取职业详情（管理后台专用，任意状态）
+     * 获取角色详情（管理后台专用，任意状态）
      */
     public RoleAdminDTO getAdminById(Long id) {
         RoleDO roleDO = roleDomainService.getById(id);
@@ -163,7 +163,7 @@ public class RoleService {
     }
 
     /**
-     * 获取已发布的职业列表（公开接口，只返回已发布状态）
+     * 获取已发布的角色列表（公开接口，只返回已发布状态）
      */
     public List<RoleDTO> getApprovedByLastId(Long lastId, int limit) {
         List<RoleDO> roleDOList = roleDomainService.listByState(ContentState.PUBLISHED.value(), lastId, limit);
@@ -186,7 +186,7 @@ public class RoleService {
     }
 
     /**
-     * 管理后台按名称搜索职业（搜索所有状态，支持滚动分页）
+     * 管理后台按名称搜索角色（搜索所有状态，支持滚动分页）
      */
     public KeysetPageResponse<RoleAdminDTO> searchByName(String name, Long lastId) {
         int pageSize = 20;
@@ -222,7 +222,7 @@ public class RoleService {
 
     @Transactional
     public Long create(CreateRoleRequest request, UserDO creator) {
-        // 调用 DomainService 创建职业
+        // 调用 DomainService 创建角色
         return roleDomainService.create(
             creator.getId(),
             request.getName(),
@@ -240,7 +240,7 @@ public class RoleService {
             throw StatusCode.INVALID_PARAMETER.exception("更新请求不能为空");
         }
 
-        // 调用 DomainService 更新职业
+        // 调用 DomainService 更新角色
         roleDomainService.update(
             id,
             request.getName(),
@@ -263,7 +263,7 @@ public class RoleService {
             systemProperties.getRole().isEnableConcurrencyCheck()
         );
 
-        // 获取职业信息
+        // 获取角色信息
         RoleDO roleDO = roleDomainService.getById(id);
 
         // 发布审核通过事件，触发消息通知
@@ -284,7 +284,7 @@ public class RoleService {
             systemProperties.getRole().isEnableConcurrencyCheck()
         );
 
-        // 获取职业信息
+        // 获取角色信息
         RoleDO role = roleDomainService.getById(id);
         String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
 
@@ -310,11 +310,11 @@ public class RoleService {
         String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
 
         // ban 不发送任何消息或事件
-        log.info("职业 {} 被封禁，操作者: {}, 原因: {}", id, operator.getId(), reasonValue);
+        log.info("角色 {} 被封禁，操作者: {}, 原因: {}", id, operator.getId(), reasonValue);
     }
 
     /**
-     * 删除职业
+     * 删除角色
      */
     @Transactional
     public void delete(long id, UserDO operator) {
@@ -323,26 +323,26 @@ public class RoleService {
     }
 
     /**
-     * 获取热门职业列表
+     * 获取热门角色列表
      * 跨域查询：聚合 role 数据和 ranking 数据
      */
     public List<RoleDTO> getHotRoles(int limit) {
         validateHotRolesLimit(limit);
 
         try {
-            // 从 Ranking 域获取热门职业ID列表
+            // 从 Ranking 域获取热门角色ID列表
             List<Long> hotRoleIds = roleRankingService.getHotRoleIds(limit);
 
             if (hotRoleIds.isEmpty()) {
                 return new ArrayList<>();
             }
 
-            // 从 Role 域获取职业信息
+            // 从 Role 域获取角色信息
             List<RoleDO> roleDOList = roleDomainService.getByIds(hotRoleIds);
 
             List<RoleDTO> result = new ArrayList<>();
             for (RoleDO roleDO : roleDOList) {
-                // 只返回已发布状态的职业
+                // 只返回已发布状态的角色
                 if (roleDO.getState() != ContentState.PUBLISHED.value()) {
                     continue;
                 }

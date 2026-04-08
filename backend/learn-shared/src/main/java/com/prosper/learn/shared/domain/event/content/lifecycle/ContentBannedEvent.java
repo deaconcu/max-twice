@@ -39,7 +39,7 @@ public class ContentBannedEvent {
     /** 目录型帖子引用的节点ID列表（post 类型且 postType=CONTENTS 时使用）*/
     private List<Long> referencedNodeIds;
 
-    /** 职业ID（roadmap 类型使用）*/
+    /** 角色ID（roadmap 类型使用）*/
     private Long roleId;
 
     /** 帖子ID（memory_card_deck 类型使用，可为null）*/

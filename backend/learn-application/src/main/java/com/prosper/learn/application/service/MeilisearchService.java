@@ -107,7 +107,7 @@ public class MeilisearchService {
         int users = syncAllUsers();
         int roles = syncAllRoles();
 
-        log.info("Meilisearch 全量同步完成，耗时 {}ms，课程: {}，节点: {}，用户: {}，职业: {}",
+        log.info("Meilisearch 全量同步完成，耗时 {}ms，课程: {}，节点: {}，用户: {}，角色: {}",
             System.currentTimeMillis() - start, courses, nodes, users, roles);
     }
 
@@ -210,7 +210,7 @@ public class MeilisearchService {
     public int syncAllRoles() {
         if (meilisearchClient == null) return 0;
         try {
-            log.info("Meilisearch 同步职业...");
+            log.info("Meilisearch 同步角色...");
             meilisearchClient.deleteIndex(INDEX_ROLES);
             createIndexIfNotExists(INDEX_ROLES, "id");
             configureIndex(INDEX_ROLES, new String[]{"name", "description"});
@@ -227,15 +227,15 @@ public class MeilisearchService {
                 lastId = list.get(list.size() - 1).getId();
 
                 if (total % 1000 == 0) {
-                    log.info("Meilisearch 已同步 {} 个职业", total);
+                    log.info("Meilisearch 已同步 {} 个角色", total);
                 }
 
                 if (list.size() < 1000) break;
             }
-            log.info("Meilisearch 职业同步完成，共 {} 个", total);
+            log.info("Meilisearch 角色同步完成，共 {} 个", total);
             return total;
         } catch (Exception e) {
-            log.error("Meilisearch 同步职业失败", e);
+            log.error("Meilisearch 同步角色失败", e);
             return 0;
         }
     }
@@ -380,7 +380,7 @@ public class MeilisearchService {
             );
             meilisearchClient.index(INDEX_ROLES).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
         } catch (Exception e) {
-            log.error("Meilisearch 索引职业失败: {}", roleDO.getId(), e);
+            log.error("Meilisearch 索引角色失败: {}", roleDO.getId(), e);
         }
     }
 
@@ -390,7 +390,7 @@ public class MeilisearchService {
         try {
             meilisearchClient.index(INDEX_ROLES).deleteDocument(String.valueOf(id));
         } catch (Exception e) {
-            log.error("Meilisearch 删除职业失败: {}", id, e);
+            log.error("Meilisearch 删除角色失败: {}", id, e);
         }
     }
 
@@ -435,7 +435,7 @@ public class MeilisearchService {
             return meilisearchClient.index(INDEX_ROLES)
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
-            log.error("Meilisearch 搜索职业失败", e);
+            log.error("Meilisearch 搜索角色失败", e);
             return null;
         }
     }

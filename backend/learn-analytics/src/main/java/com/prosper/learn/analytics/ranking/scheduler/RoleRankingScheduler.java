@@ -26,10 +26,10 @@ public class RoleRankingScheduler {
     private static final String STATUS_APPROVED = "APPROVED";
     
     // 不变常量 - 日志消息
-    private static final String LOG_START_SYNC = "开始同步职业统计数据到Redis...";
-    private static final String LOG_SYNC_COMPLETE = "职业统计数据同步完成，更新了 {} 个职业的学习数据";
-    private static final String LOG_INITIALIZE = "初始化职业统计数据...";
-    private static final String LOG_MANUAL_SYNC = "手动触发职业统计数据同步...";
+    private static final String LOG_START_SYNC = "开始同步角色统计数据到Redis...";
+    private static final String LOG_SYNC_COMPLETE = "角色统计数据同步完成，更新了 {} 个角色的学习数据";
+    private static final String LOG_INITIALIZE = "初始化角色统计数据...";
+    private static final String LOG_MANUAL_SYNC = "手动触发角色统计数据同步...";
 
     // ========== 私有辅助方法 ==========
 
@@ -43,7 +43,7 @@ public class RoleRankingScheduler {
     }
 
     /**
-     * 验证和获取职业ID
+     * 验证和获取角色ID
      */
     private Long validateAndGetRoleId(Map<String, Object> row) {
         Number roleIdNum = (Number) row.get("role_id");
@@ -79,7 +79,7 @@ public class RoleRankingScheduler {
     }
 
     /**
-     * 处理职业学习数据
+     * 处理角色学习数据
      */
     private int processRoleLearningData(List<Map<String, Object>> learningData) {
         int updatedCount = 0;
@@ -92,7 +92,7 @@ public class RoleRankingScheduler {
                     roleRankingService.initializeRoleStats(roleId, learningCount);
                     updatedCount++;
                 } catch (Exception e) {
-                    log.warn("初始化职业 {} 统计数据失败: {}", roleId, e.getMessage());
+                    log.warn("初始化角色 {} 统计数据失败: {}", roleId, e.getMessage());
                 }
             }
         }
@@ -102,7 +102,7 @@ public class RoleRankingScheduler {
     // ========== 公共业务方法 ==========
 
     /**
-     * 每小时同步一次职业统计数据到Redis
+     * 每小时同步一次角色统计数据到Redis
      */
     @Scheduled(cron = "0 15 * * * ?")
     public void syncRoleStats() {
@@ -116,7 +116,7 @@ public class RoleRankingScheduler {
             // 先清空Redis中的统计数据
             roleRankingService.clearAllStats();
             
-            // 获取所有职业的学习数据（通过roadmap关联）
+            // 获取所有角色的学习数据（通过roadmap关联）
             String sql = getLearningDataSql();
             List<Map<String, Object>> learningData = jdbcTemplate.queryForList(
                 sql, STATUS_IN_PROGRESS, STATUS_APPROVED);
@@ -129,7 +129,7 @@ public class RoleRankingScheduler {
             log.info(LOG_SYNC_COMPLETE, updatedCount);
             
         } catch (Exception e) {
-            log.error("同步职业统计数据失败", e);
+            log.error("同步角色统计数据失败", e);
             throw StatusCode.SCHEDULER_DATA_SYNC_FAILED.exception(e);
         }
     }
@@ -147,7 +147,7 @@ public class RoleRankingScheduler {
             log.info(LOG_INITIALIZE);
             syncRoleStats();
         } catch (Exception e) {
-            log.error("初始化职业统计数据失败", e);
+            log.error("初始化角色统计数据失败", e);
             throw StatusCode.SCHEDULER_TASK_FAILED.exception(e);
         }
     }

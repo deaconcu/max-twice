@@ -4,7 +4,7 @@ import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
 
 /**
- * 职业管理后台 DTO
+ * 角色管理后台 DTO
  * 包含管理员需要的字段（如状态、拒绝原因等）
  */
 @Data

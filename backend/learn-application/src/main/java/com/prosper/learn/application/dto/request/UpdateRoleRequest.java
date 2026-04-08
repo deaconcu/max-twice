@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
- * 更新职业请求DTO
+ * 更新角色请求DTO
  *
  * @author Claude Code
  */
@@ -14,16 +14,16 @@ import lombok.Data;
 public class UpdateRoleRequest {
 
     /**
-     * 职业名称
+     * 角色名称
      */
-    @NotBlank(message = "职业名称不能为空")
-    @Size(max = 100, message = "职业名称长度不能超过100字符")
+    @NotBlank(message = "角色名称不能为空")
+    @Size(max = 100, message = "角色名称长度不能超过100字符")
     private String name;
 
     /**
-     * 职业描述
+     * 角色描述
      */
-    @Size(max = 500, message = "职业描述长度不能超过500字符")
+    @Size(max = 500, message = "角色描述长度不能超过500字符")
     private String description;
 
     /**

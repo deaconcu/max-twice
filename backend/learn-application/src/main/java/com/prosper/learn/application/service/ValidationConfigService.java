@@ -110,17 +110,17 @@ public class ValidationConfigService {
                 .label("帖子内容")
                 .build());
 
-        // 职业相关
+        // 角色相关
         rules.put("role-name", ValidationRuleDTO.builder()
                 .minLength(validation.getRoleNameMinLength())
                 .maxLength(validation.getRoleNameMaxLength())
-                .label("职业名称")
+                .label("角色名称")
                 .build());
 
         rules.put("role-description", ValidationRuleDTO.builder()
                 .minLength(validation.getRoleDescriptionMinLength())
                 .maxLength(validation.getRoleDescriptionMaxLength())
-                .label("职业描述")
+                .label("角色描述")
                 .build());
 
         // 消息相关

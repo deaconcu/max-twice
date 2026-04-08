@@ -88,7 +88,7 @@ public class PublicController {
     }
 
     /**
-     * 获取职业分类数据（公开接口，支持 ETag 缓存）
+     * 获取角色分类数据（公开接口，支持 ETag 缓存）
      * GET /api/v1/public/role-categories
      */
     @GetMapping("/role-categories")
@@ -115,7 +115,7 @@ public class PublicController {
                     .body(ApiResponse.success(categoryNode));
 
         } catch (Exception e) {
-            log.error("公开接口 获取职业分类失败", e);
+            log.error("公开接口 获取角色分类失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -156,36 +156,36 @@ public class PublicController {
     }
 
     /**
-     * 获取职业详情（公开接口，无需登录）
+     * 获取角色详情（公开接口，无需登录）
      * GET /api/v1/public/roles/{id}
      */
     @GetMapping("/roles/{id}")
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ApiResponse<RoleDTO> getRole(
-            @PathVariable @NotNull(message = "职业ID不能为空")
-            @Positive(message = "职业ID必须大于0")
+            @PathVariable @NotNull(message = "角色ID不能为空")
+            @Positive(message = "角色ID必须大于0")
             Long id) {
         try {
             RoleDTO roleDTO = roleService.getById(id, true, null);
             if (roleDTO == null) {
-                return ApiResponse.fail(StatusCode.ROLE_NOT_FOUND.getCode(), "职业不存在");
+                return ApiResponse.fail(StatusCode.ROLE_NOT_FOUND.getCode(), "角色不存在");
             }
             return ApiResponse.success(roleDTO);
         } catch (Exception e) {
-            log.error("公开接口 获取职业详情失败: {}", id, e);
+            log.error("公开接口 获取角色详情失败: {}", id, e);
             throw e;
         }
     }
 
     /**
-     * 获取职业的路线图列表（公开接口，无需登录）
+     * 获取角色的路线图列表（公开接口，无需登录）
      * GET /api/v1/public/roles/{roleId}/roadmaps?lastId=123&pageSize=20
      */
     @GetMapping("/roles/{roleId}/roadmaps")
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ApiResponse<List<RoadmapSummaryDTO>> getRoadmapsByRole(
-            @PathVariable @NotNull(message = "职业ID不能为空")
-            @Positive(message = "职业ID必须大于0")
+            @PathVariable @NotNull(message = "角色ID不能为空")
+            @Positive(message = "角色ID必须大于0")
             Long roleId,
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false, defaultValue = "20") Integer pageSize) {
@@ -193,7 +193,7 @@ public class PublicController {
             List<RoadmapSummaryDTO> roadmaps = roadmapService.getRoadmapsByRolePublic(roleId, lastId, pageSize);
             return ApiResponse.success(roadmaps);
         } catch (Exception e) {
-            log.error("公开接口 获取职业路线图列表失败: {}", roleId, e);
+            log.error("公开接口 获取角色路线图列表失败: {}", roleId, e);
             throw e;
         }
     }

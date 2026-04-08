@@ -20,7 +20,7 @@ public class RobotRoadmapDraftDTO {
     private String draftId;
 
     /**
-     * 职业ID
+     * 角色ID
      */
     private Long roleId;
 

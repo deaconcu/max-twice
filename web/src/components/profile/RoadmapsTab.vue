@@ -279,7 +279,7 @@ const editRoadmap = (roadmapId: number, roleId?: number) => {
     console.log('跳转到编辑页面:', editPath)
     router.push(editPath)
   } else {
-    console.warn('缺少 professionId，无法跳转到编辑页面')
+    console.warn('缺少 roleId，无法跳转到编辑页面')
   }
 }
 

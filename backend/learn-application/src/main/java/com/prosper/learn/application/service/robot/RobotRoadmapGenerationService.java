@@ -56,7 +56,7 @@ public class RobotRoadmapGenerationService {
      * 提交生成任务
      */
     public String submitGenerateTask(Long roleId, Long userId) {
-        // 验证职业存在
+        // 验证角色存在
         roleDataService.validateAndGet(roleId);
 
         // 生成任务ID
@@ -99,7 +99,7 @@ public class RobotRoadmapGenerationService {
         try {
             log.info("Robot 开始生成路径，taskId={}, roleId={}", taskId, roleId);
 
-            // 查询职业信息
+            // 查询角色信息
             RoleDO roleDO = roleDataService.validateAndGet(roleId);
 
             // 构建提示词
@@ -245,7 +245,7 @@ public class RobotRoadmapGenerationService {
                 redisTemplate.opsForZSet().removeRange(listKey, 0, count - MAX_DRAFT_SIZE - 1);
             }
 
-            log.info("Robot 草稿 {} 已保存，职业: {}，用户: {}", draftId, roleId, userId);
+            log.info("Robot 草稿 {} 已保存，角色: {}，用户: {}", draftId, roleId, userId);
             return draftId;
         } catch (Exception e) {
             log.error("Robot 草稿保存失败", e);
@@ -364,12 +364,12 @@ public class RobotRoadmapGenerationService {
 
                 ## 路径设计原则
 
-                ### 1. 根节点（职业目标）
-                - 第一个节点(id:0)是根节点，代表职业本身（如"Vue.js开发工程师"）
+                ### 1. 根节点（角色目标）
+                - 第一个节点(id:0)是根节点，代表角色本身（如"Vue.js开发工程师"）
                 - 根节点是学习路径的**终点目标**
                 - **根节点只有输入边，没有输出边**（有入无出）
                 - 所有学习路径最终汇聚到根节点
-                - **禁止使用**："XX职业导论"、"XX职业概览"、"XX入门指南"等虚构课程名
+                - **禁止使用**："XX角色导论"、"XX角色概览"、"XX入门指南"等虚构课程名
 
                 ### 2. 依赖关系设计规则
 
@@ -467,10 +467,10 @@ public class RobotRoadmapGenerationService {
      */
     private String buildRoadmapPrompt(RoleDO roleDO) {
         return String.format("""
-                职业名称：%s
-                职业描述：%s
+                角色名称：%s
+                角色描述：%s
 
-                任务：为该职业生成完整的学习路径。
+                任务：为该角色生成完整的学习路径。
 
                 请设计一个从零基础到精通的学习路径，包含必要的课程和知识点。
                 直接输出 JSON 格式的路径数据。

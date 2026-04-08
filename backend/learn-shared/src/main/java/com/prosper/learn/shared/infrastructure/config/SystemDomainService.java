@@ -16,7 +16,7 @@ import java.util.*;
  *
  * 职责：
  * 1. 应用启动时加载系统配置到内存
- * 2. 提供分类数据查询（课程分类、职业分类）
+ * 2. 提供分类数据查询（课程分类、角色分类）
  * 3. 提供分类验证功能
  */
 @Slf4j
@@ -29,7 +29,7 @@ public class SystemDomainService {
 
     // 内存缓存 - 课程分类
     private volatile JsonNode courseCategoriesCache;
-    // 内存缓存 - 职业分类
+    // 内存缓存 - 角色分类
     private volatile JsonNode roleCategoriesCache;
 
     // 课程主分类 ID 集合（用于快速验证）
@@ -37,9 +37,9 @@ public class SystemDomainService {
     // 课程分类映射：mainCategoryId -> Set<subCategoryId>
     private volatile Map<Integer, Set<Integer>> courseSubCategoryMap;
 
-    // 职业主分类 ID 集合（用于快速验证）
+    // 角色主分类 ID 集合（用于快速验证）
     private volatile Set<Integer> roleMainCategoryIds;
-    // 职业分类映射：mainCategoryId -> Set<subCategoryId>
+    // 角色分类映射：mainCategoryId -> Set<subCategoryId>
     private volatile Map<Integer, Set<Integer>> roleSubCategoryMap;
 
     /**
@@ -88,13 +88,13 @@ public class SystemDomainService {
     }
 
     /**
-     * 加载职业分类配置
+     * 加载角色分类配置
      */
     private void loadRoleCategories() {
         try {
             String configValue = systemDataService.getValue("role");
             if (configValue == null) {
-                log.warn("系统配置 职业分类配置未找到");
+                log.warn("系统配置 角色分类配置未找到");
                 return;
             }
 
@@ -110,9 +110,9 @@ public class SystemDomainService {
             // 构建快速查询索引
             buildRoleCategoryIndex(categoryNode);
 
-            log.info("系统配置 职业分类加载完成: {} 个主分类", roleMainCategoryIds.size());
+            log.info("系统配置 角色分类加载完成: {} 个主分类", roleMainCategoryIds.size());
         } catch (IOException e) {
-            log.error("系统配置 职业分类配置解析失败", e);
+            log.error("系统配置 角色分类配置解析失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -175,7 +175,7 @@ public class SystemDomainService {
     }
 
     /**
-     * 构建职业分类索引（用于快速验证）
+     * 构建角色分类索引（用于快速验证）
      *
      * 数据结构与课程分类相同
      */
@@ -217,7 +217,7 @@ public class SystemDomainService {
             this.roleSubCategoryMap = subCategoryMap;
 
         } catch (Exception e) {
-            log.error("系统配置 构建职业分类索引失败", e);
+            log.error("系统配置 构建角色分类索引失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -233,11 +233,11 @@ public class SystemDomainService {
     }
 
     /**
-     * 获取职业分类数据（已解析的 JsonNode）
+     * 获取角色分类数据（已解析的 JsonNode）
      */
     public JsonNode getRoleCategories() {
         if (roleCategoriesCache == null) {
-            throw StatusCode.SYSTEM_ERROR.exception("职业分类配置未加载");
+            throw StatusCode.SYSTEM_ERROR.exception("角色分类配置未加载");
         }
         return roleCategoriesCache;
     }
@@ -268,7 +268,7 @@ public class SystemDomainService {
     }
 
     /**
-     * 验证职业分类是否有效
+     * 验证角色分类是否有效
      *
      * @param mainCategoryId 主分类ID
      * @param subCategoryId 子分类ID
@@ -276,7 +276,7 @@ public class SystemDomainService {
      */
     public void validateRoleCategory(Integer mainCategoryId, Integer subCategoryId) {
         if (roleMainCategoryIds == null || roleSubCategoryMap == null) {
-            throw StatusCode.SYSTEM_ERROR.exception("职业分类配置未加载");
+            throw StatusCode.SYSTEM_ERROR.exception("角色分类配置未加载");
         }
 
         // 验证主分类

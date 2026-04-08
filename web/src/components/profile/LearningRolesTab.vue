@@ -176,7 +176,7 @@ const roles = computed(() => {
     // 后端返回的是万分位（0-10000），转换为百分比（0-100）
     const progress = userLearning.progressPercent ? userLearning.progressPercent / 100 : 0
 
-    const title = roadmap?.professionName || t('user.profile.unknownProfession')
+    const title = roadmap?.roleName || t('user.profile.unknownRole')
 
     return {
       id: userLearning.id,
@@ -184,7 +184,7 @@ const roles = computed(() => {
       title,
       progress,
       totalCourses: roadmap?.nodeCount || 0,
-      icon: roadmap?.professionIcon || 'mdi-briefcase-variant',
+      icon: roadmap?.roleIcon || 'mdi-briefcase-variant',
       iconColor: getColorByString(title),
     }
   })

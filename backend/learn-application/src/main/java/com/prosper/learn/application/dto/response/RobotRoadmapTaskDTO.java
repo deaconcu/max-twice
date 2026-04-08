@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RobotRoadmapTaskDTO {
     private String taskId;
-    private Long roleId;  // 职业ID
+    private Long roleId;  // 角色ID
     private Long userId;        // 用户ID
     private String status;      // PENDING, COMPLETED, FAILED
     private String result;      // JSON字符串（前端解析）

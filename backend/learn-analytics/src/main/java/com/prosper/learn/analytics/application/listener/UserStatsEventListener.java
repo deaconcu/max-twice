@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
  * - completed_courses: 已完成的课程数
  * - following_users: 关注的用户数
  * - following_courses: 关注的课程数
- * - following_roles: 关注的职业数
+ * - following_roles: 关注的角色数
  * - created_articles: 创建的文章数
  * - created_indexs: 创建的目录数
  * - created_roadmaps: 创建的路线图数
@@ -80,7 +80,7 @@ public class UserStatsEventListener {
 
     /**
      * 内容收藏事件 - 直接写数据库
-     * 统一处理课程关注、职业关注等
+     * 统一处理课程关注、角色关注等
      */
     @EventListener
     //@Async
@@ -93,7 +93,7 @@ public class UserStatsEventListener {
                     break;
                 case role:
                     userStatsService.incrementFollowingRoles(event.getUserId(), 1);
-                    log.debug("增加关注职业统计，用户ID: {}", event.getUserId());
+                    log.debug("增加关注角色统计，用户ID: {}", event.getUserId());
                     break;
                 default:
                     log.debug("内容收藏事件，暂不统计: contentType={}, userId={}",
@@ -118,7 +118,7 @@ public class UserStatsEventListener {
                     break;
                 case role:
                     userStatsService.incrementFollowingRoles(event.getUserId(), -1);
-                    log.debug("减少关注职业统计，用户ID: {}", event.getUserId());
+                    log.debug("减少关注角色统计，用户ID: {}", event.getUserId());
                     break;
                 default:
                     log.debug("取消内容收藏事件，暂不统计: contentType={}, userId={}",

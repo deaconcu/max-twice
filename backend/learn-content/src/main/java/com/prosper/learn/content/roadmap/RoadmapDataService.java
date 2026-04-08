@@ -88,7 +88,7 @@ public class RoadmapDataService {
     }
 
     /**
-     * 根据职业获取路线图列表（支持动态排序）
+     * 根据角色获取路线图列表（支持动态排序）
      */
     public List<RoadmapDO> getListByRoleOrderBy(long roleId, int limit, String sortBy) {
         if ("latest".equals(sortBy)) {
@@ -99,7 +99,7 @@ public class RoadmapDataService {
     }
 
     /**
-     * 根据职业分页获取路线图列表（支持动态排序，使用游标）
+     * 根据角色分页获取路线图列表（支持动态排序，使用游标）
      */
     public List<RoadmapDO> getListByRoleAfterCursorOrderBy(long roleId, Double lastScore,
                                                            LocalDateTime lastCreatedAt, long lastId, int limit, String sortBy) {

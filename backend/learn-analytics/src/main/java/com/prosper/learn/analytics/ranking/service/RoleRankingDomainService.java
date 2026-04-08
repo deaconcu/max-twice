@@ -23,7 +23,7 @@ public class RoleRankingDomainService {
     private static final String ROLE_LEARNING_PREFIX = "role:learning:";
 
     /**
-     * 获取热门职业ID列表（按学习人数降序）
+     * 获取热门角色ID列表（按学习人数降序）
      */
     public List<Long> getHotRoleIds(int limit) {
         validateLimit(limit);
@@ -37,13 +37,13 @@ public class RoleRankingDomainService {
                     .map(Long::parseLong)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("职业排行榜 获取热门职业失败，limit: {}", limit, e);
+            log.error("角色排行榜 获取热门角色失败，limit: {}", limit, e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
     /**
-     * 获取职业的学习人数
+     * 获取角色的学习人数
      */
     public long getRoleLearningCount(long roleId) {
         validateRoleId(roleId);
@@ -52,13 +52,13 @@ public class RoleRankingDomainService {
             String learningCountStr = redisTemplate.opsForValue().get(learningKey);
             return learningCountStr != null ? Long.parseLong(learningCountStr) : 0;
         } catch (Exception e) {
-            log.error("职业排行榜 获取职业学习人数失败，roleId: {}", roleId, e);
+            log.error("角色排行榜 获取角色学习人数失败，roleId: {}", roleId, e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
     /**
-     * 批量初始化职业统计数据（用于定时任务）
+     * 批量初始化角色统计数据（用于定时任务）
      */
     public void initializeRoleStats(long roleId, long learningCount) {
         validateRoleId(roleId);
@@ -67,10 +67,10 @@ public class RoleRankingDomainService {
             redisTemplate.opsForValue().set(learningKey, String.valueOf(learningCount));
             redisTemplate.opsForZSet().add(HOT_ROLES_KEY, String.valueOf(roleId), learningCount);
             
-            log.debug("职业排行榜 初始化统计: roleId={}，learningCount={}",
+            log.debug("角色排行榜 初始化统计: roleId={}，learningCount={}",
                      roleId, learningCount);
         } catch (Exception e) {
-            log.error("职业排行榜 初始化统计失败，roleId: {}", roleId, e);
+            log.error("角色排行榜 初始化统计失败，roleId: {}", roleId, e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -80,19 +80,19 @@ public class RoleRankingDomainService {
      */
     public void clearAllStats() {
         try {
-            // 清空热门职业排行榜
+            // 清空热门角色排行榜
             redisTemplate.delete(HOT_ROLES_KEY);
             
-            // 删除所有职业的统计数据
+            // 删除所有角色的统计数据
             Set<String> learningKeys = redisTemplate.keys(ROLE_LEARNING_PREFIX + "*");
             
             if (learningKeys != null && !learningKeys.isEmpty()) {
                 redisTemplate.delete(learningKeys);
             }
             
-            log.info("职业排行榜 已清空所有 Redis 统计数据");
+            log.info("角色排行榜 已清空所有 Redis 统计数据");
         } catch (Exception e) {
-            log.error("职业排行榜 清空统计数据失败", e);
+            log.error("角色排行榜 清空统计数据失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -100,14 +100,14 @@ public class RoleRankingDomainService {
     // ========== 私有辅助方法 ==========
 
     /**
-     * 生成职业学习数Redis键名
+     * 生成角色学习数Redis键名
      */
     private String generateLearningKey(long roleId) {
         return ROLE_LEARNING_PREFIX + roleId;
     }
 
     /**
-     * 验证职业ID有效性
+     * 验证角色ID有效性
      */
     private void validateRoleId(long roleId) {
         if (roleId <= 0) {

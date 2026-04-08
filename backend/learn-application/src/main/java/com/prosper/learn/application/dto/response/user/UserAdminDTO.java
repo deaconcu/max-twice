@@ -117,12 +117,12 @@ public class UserAdminDTO {
     private Integer completedCourseCount;
 
     /**
-     * 正在学习职业数
+     * 正在学习角色数
      */
     private Integer inProgressRoleCount;
 
     /**
-     * 已完成职业数
+     * 已完成角色数
      */
     private Integer completedRoleCount;
 
@@ -137,7 +137,7 @@ public class UserAdminDTO {
     private Integer followingCourseCount;
 
     /**
-     * 关注职业数
+     * 关注角色数
      */
     private Integer followingRoleCount;
 

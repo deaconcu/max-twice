@@ -85,13 +85,13 @@ public class AdminSearchController {
     @Transactional
     @OperationLog(
         module = "系统维护",
-        type = "同步职业搜索",
+        type = "同步角色搜索",
         level = OperationLevel.MEDIUM,
         targetType = "Role",
         targetId = "0"
     )
     public ApiResponse<Integer> syncRoles() {
-        log.info("管理后台 触发职业同步");
+        log.info("管理后台 触发角色同步");
         int count = meilisearchService.syncAllRoles();
         return ApiResponse.success(count);
     }

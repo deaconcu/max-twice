@@ -15,13 +15,13 @@ const loadMoreTrigger = ref<HTMLElement | null>(null)
 
 // 搜索关键词
 const searchQuery = ref<string>((route.query.q as string) || '')
-const activeTab = ref<string>('professions')
+const activeTab = ref<string>('roles')
 
 // 搜索结果
 const courses = ref<SearchResultItem[]>([])
 const nodes = ref<SearchResultItem[]>([])
 const users = ref<SearchResultItem[]>([])
-const professions = ref<SearchResultItem[]>([])
+const roles = ref<SearchResultItem[]>([])
 
 // 加载状态
 const searching = ref(false)
@@ -31,12 +31,12 @@ const loadingMore = ref(false)
 const coursesOffset = ref(0)
 const nodesOffset = ref(0)
 const usersOffset = ref(0)
-const professionsOffset = ref(0)
+const rolesOffset = ref(0)
 
 const hasMoreCourses = ref(true)
 const hasMoreNodes = ref(true)
 const hasMoreUsers = ref(true)
-const hasMoreProfessions = ref(true)
+const hasMoreRoles = ref(true)
 
 // 执行搜索
 const performSearch = async () => {
@@ -44,7 +44,7 @@ const performSearch = async () => {
     courses.value = []
     nodes.value = []
     users.value = []
-    professions.value = []
+    roles.value = []
     return
   }
 
@@ -54,19 +54,19 @@ const performSearch = async () => {
   coursesOffset.value = 0
   nodesOffset.value = 0
   usersOffset.value = 0
-  professionsOffset.value = 0
+  rolesOffset.value = 0
   hasMoreCourses.value = true
   hasMoreNodes.value = true
   hasMoreUsers.value = true
-  hasMoreProfessions.value = true
+  hasMoreRoles.value = true
 
   try {
     // 初始加载每个分类20条
-    const [coursesRes, nodesRes, usersRes, professionsRes] = await Promise.all([
+    const [coursesRes, nodesRes, usersRes, rolesRes] = await Promise.all([
       searchApi.searchCourses(searchQuery.value, 20, 0),
       searchApi.searchNodes(searchQuery.value, 20, 0),
       searchApi.searchUsers(searchQuery.value, 20, 0),
-      searchApi.searchProfessions(searchQuery.value, 20, 0),
+      searchApi.searchRoles(searchQuery.value, 20, 0),
     ])
 
     if (coursesRes.code === 200) {
@@ -84,20 +84,20 @@ const performSearch = async () => {
       usersOffset.value = users.value.length
       hasMoreUsers.value = users.value.length >= 20
     }
-    if (professionsRes.code === 200) {
-      professions.value = professionsRes.data || []
-      professionsOffset.value = professions.value.length
-      hasMoreProfessions.value = professions.value.length >= 20
+    if (rolesRes.code === 200) {
+      roles.value = rolesRes.data || []
+      rolesOffset.value = roles.value.length
+      hasMoreRoles.value = roles.value.length >= 20
     }
   } catch (error) {
     console.error('搜索失败:', error)
   } finally {
     searching.value = false
     // 自动切换到第一个有结果的标签
-    const tabs = ['professions', 'courses', 'nodes', 'users']
+    const tabs = ['roles', 'courses', 'nodes', 'users']
     for (const tab of tabs) {
       if (
-        (tab === 'professions' && professions.value.length > 0) ||
+        (tab === 'roles' && roles.value.length > 0) ||
         (tab === 'courses' && courses.value.length > 0) ||
         (tab === 'nodes' && nodes.value.length > 0) ||
         (tab === 'users' && users.value.length > 0)
@@ -120,9 +120,9 @@ const loadMoreResults = async () => {
   let offset = 0
 
   switch (activeTab.value) {
-    case 'professions':
-      hasMore = hasMoreProfessions.value
-      offset = professionsOffset.value
+    case 'roles':
+      hasMore = hasMoreRoles.value
+      offset = rolesOffset.value
       break
     case 'courses':
       hasMore = hasMoreCourses.value

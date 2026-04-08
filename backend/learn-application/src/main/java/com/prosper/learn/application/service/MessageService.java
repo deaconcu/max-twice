@@ -358,7 +358,7 @@ public class MessageService {
     }
 
     /**
-     * 发送职业审核通知
+     * 发送角色审核通知
      */
     public void sendRoleModeration(long userId, long roleId, String roleName,
                                    ModerationAction action, String reason) {

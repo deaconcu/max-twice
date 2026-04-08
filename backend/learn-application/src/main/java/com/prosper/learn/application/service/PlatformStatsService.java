@@ -45,7 +45,7 @@ public class PlatformStatsService {
             // 统计课程总数（只统计已发布的课程）
             Long courseCount = courseDataService.countActiveCourses();
             
-            // 统计职业路径总数（只统计已发布的职业）
+            // 统计角色路径总数（只统计已发布的角色）
             Long careerPathCount = roleDataService.countActiveRoles();
             
             // 统计学习路线图总数（只统计公开的路线图）

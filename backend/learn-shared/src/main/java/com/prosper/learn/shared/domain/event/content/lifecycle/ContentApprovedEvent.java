@@ -38,10 +38,10 @@ public class ContentApprovedEvent {
     /** 节点ID（post 类型使用）*/
     private Long nodeId;
 
-    /** 职业名称（role/roadmap 类型使用）*/
+    /** 角色名称（role/roadmap 类型使用）*/
     private String roleName;
 
-    /** 职业ID（roadmap 类型使用）*/
+    /** 角色ID（roadmap 类型使用）*/
     private Long roleId;
 
     /** 帖子ID（memory_card_deck 类型使用）*/

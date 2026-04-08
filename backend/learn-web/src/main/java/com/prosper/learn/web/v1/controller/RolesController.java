@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 职业管理接口
+ * 角色管理接口
  */
 @RestController
 @RequestMapping("/api/v1")
@@ -36,9 +36,9 @@ public class RolesController {
     private final RoleRankingScheduler roleRankingScheduler;
 
     /**
-     * 获取职业列表
+     * 获取角色列表
      * 支持按分类筛选和游标分页
-     * 不传分类参数时返回所有已发布职业
+     * 不传分类参数时返回所有已发布角色
      */
     @GetMapping("/roles")
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
@@ -58,7 +58,7 @@ public class RolesController {
             // 按主分类获取
             roleList = roleService.getListByMainCategoryAndLastId(mainCategory, lastId, limit);
         } else {
-            // 获取所有已发布职业
+            // 获取所有已发布角色
             roleList = roleService.getApprovedByLastId(lastId, limit);
         }
 
@@ -81,15 +81,15 @@ public class RolesController {
     }
 
     /**
-     * 获取职业详情
+     * 获取角色详情
      * 映射: GET /role?id=123 → GET /api/v1/roles/{id}
      */
     @GetMapping("/roles/{id}")
     @SaCheckLogin
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<RoleDTO> getRole(
-            @PathVariable @NotNull(message = "职业ID不能为空")
-            @Positive(message = "职业ID必须大于0")
+            @PathVariable @NotNull(message = "角色ID不能为空")
+            @Positive(message = "角色ID必须大于0")
             Long id,
             @CurrentUser UserDO currentUser) {
         RoleDTO role = roleService.getById(id, true, currentUser.getId());
@@ -97,7 +97,7 @@ public class RolesController {
     }
 
     /**
-     * 搜索职业
+     * 搜索角色
      */
     @GetMapping("/roles/search")
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
@@ -108,7 +108,7 @@ public class RolesController {
     }
 
     /**
-     * 创建职业
+     * 创建角色
      * 映射: POST /role → POST /api/v1/roles
      */
     @PostMapping("/roles")
@@ -121,7 +121,7 @@ public class RolesController {
         return ApiResponse.success();
     }
     /**
-     * 热门职业
+     * 热门角色
      * 映射: GET /role/hot → GET /api/v1/roles/hot?limit=10
      */
     @GetMapping("/roles/hot")
@@ -129,9 +129,9 @@ public class RolesController {
             @RequestParam(value = "limit", defaultValue = "10")
             @Positive(message = "限制数量必须大于0")
             Integer limit) {
-        log.info("开始获取热门职业，limit: {}", limit);
+        log.info("开始获取热门角色，limit: {}", limit);
         List<RoleDTO> hotRoles = roleService.getHotRoles(limit);
-        log.info("成功获取热门职业数量: {}", hotRoles.size());
+        log.info("成功获取热门角色数量: {}", hotRoles.size());
         return ApiResponse.query(hotRoles);
     }
 }

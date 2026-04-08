@@ -30,12 +30,12 @@ public class HomePageDTO {
     private UserLearningStatsDTO userStats;
 
     /**
-     * 收藏的职业列表（最新收藏的在前，最多10个）
+     * 收藏的角色列表（最新收藏的在前，最多10个）
      */
     private List<RoleDTO> bookmarkedRoles;
 
     /**
-     * 正在学习的职业路线（带进度）
+     * 正在学习的角色路线（带进度）
      */
     private List<UserLearningDTO<Object>> learningRoles;
 
@@ -50,7 +50,7 @@ public class HomePageDTO {
     private ReviewSummaryDTO reviewSummary;
 
     /**
-     * 热门职业榜单
+     * 热门角色榜单
      */
     private List<RoleDTO> hotRoles;
 
@@ -60,7 +60,7 @@ public class HomePageDTO {
     private List<CourseFullDTO> hotCourses;
 
     /**
-     * 新手推荐职业（从系统配置读取）
+     * 新手推荐角色（从系统配置读取）
      */
     private List<RoleBriefDTO> beginnerRoles;
 

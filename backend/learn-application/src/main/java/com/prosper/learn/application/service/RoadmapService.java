@@ -322,7 +322,7 @@ public class RoadmapService {
     // ========== 公共方法 ==========
 
     /**
-     * 获取职业路线图列表（公开接口，无个性化信息）
+     * 获取角色路线图列表（公开接口，无个性化信息）
      * 用于匿名用户浏览
      */
     public List<RoadmapSummaryDTO> getRoadmapsByRolePublic(Long roleId, Long lastId, Integer pageSize) {
@@ -404,7 +404,7 @@ public class RoadmapService {
     }
 
     /**
-     * 获取职业路线图列表（带置顶和状态信息）
+     * 获取角色路线图列表（带置顶和状态信息）
      */
     public List<RoadmapWithStatusDTO> getRoadmapsByRole(Long roleId, Long lastId, String sortBy, UserDO currentUser) {
         validateRoleId(roleId);
@@ -575,7 +575,7 @@ public class RoadmapService {
             List<Long> nodeIds = extractNodeIds(contentData);
 
             if (!nodeIds.isEmpty()) {
-                // 过滤掉ID为0的根节点（代表职业本身，不需要验证）
+                // 过滤掉ID为0的根节点（代表角色本身，不需要验证）
                 List<Long> nodeIdsToValidate = nodeIds.stream()
                     .filter(id -> id != 0)
                     .collect(Collectors.toList());
@@ -769,7 +769,7 @@ public class RoadmapService {
         domainService.approve(id);
         roadmap.setState(ContentState.PUBLISHED.value());
 
-        // 获取职业信息
+        // 获取角色信息
         RoleDO role = roleDataService.getById(roadmap.getRoleId());
 
         // 发布审核通过事件，触发统计更新（不发送消息）
@@ -797,7 +797,7 @@ public class RoadmapService {
         domainService.reject(id, reason);
         roadmap.setState(ContentState.REJECTED.value());
 
-        // 获取职业信息用于通知
+        // 获取角色信息用于通知
         RoleDO role = roleDataService.getById(roadmap.getRoleId());
 
         // 发布审核拒绝事件，触发消息通知
@@ -825,7 +825,7 @@ public class RoadmapService {
         // 记录之前的状态
         Byte previousState = roadmap.getState();
 
-        // 获取职业信息用于通知
+        // 获取角色信息用于通知
         RoleDO role = roleDataService.getById(roadmap.getRoleId());
 
         // 委托给 DomainService 执行状态变更
@@ -862,7 +862,7 @@ public class RoadmapService {
             throw StatusCode.INVALID_PARAMETER.exception("只能下架已发布的内容");
         }
 
-        // 获取职业信息用于通知
+        // 获取角色信息用于通知
         RoleDO role = roleDataService.getById(roadmap.getRoleId());
 
         // 委托给 DomainService 执行状态变更
@@ -906,7 +906,7 @@ public class RoadmapService {
             throw StatusCode.PERMISSION_DENIED.exception("只有管理员可以解封内容");
         }
 
-        // 获取职业信息用于通知
+        // 获取角色信息用于通知
         RoleDO role = roleDataService.getById(roadmap.getRoleId());
 
         // 委托给 DomainService 执行状态变更

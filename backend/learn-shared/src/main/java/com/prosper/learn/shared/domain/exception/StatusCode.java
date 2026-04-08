@@ -127,8 +127,8 @@ public enum StatusCode {
     ROLE_STATE_CONFLICT(2105, "专业状态已被其他操作修改，请刷新后重试"),
     ROLE_HOT_LIST_FAILED(2106, "获取热门专业失败"),
     ROLE_INVALID_LIMIT(2107, "专业查询数量超出限制"),
-    ROLE_BLOCKED(2108, "该职业已被屏蔽，暂时无法访问"),
-    ROLE_CATEGORY_INVALID(2109, "职业分类无效"),
+    ROLE_BLOCKED(2108, "该角色已被屏蔽，暂时无法访问"),
+    ROLE_CATEGORY_INVALID(2109, "角色分类无效"),
 
     // 记忆卡片相关 22xx
     MEMORY_CARD_DECK_NOT_FOUND(2201, "卡片组不存在"),

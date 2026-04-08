@@ -38,7 +38,7 @@ public class ContentRestoredEvent {
     /** 帖子类型（post 类型使用）*/
     private PostType postType;
 
-    /** 职业ID（roadmap 类型使用）*/
+    /** 角色ID（roadmap 类型使用）*/
     private Long roleId;
 
     /** 帖子ID（memory_card_deck 类型使用，可为null）*/

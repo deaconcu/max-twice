@@ -17,8 +17,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * 职业数据服务
- * 负责职业数据的 CRUD 和缓存管理
+ * 角色数据服务
+ * 负责角色数据的 CRUD 和缓存管理
  */
 @Slf4j
 @Service
@@ -30,7 +30,7 @@ public class RoleDataService {
     // ==================== 查询方法 ====================
 
     /**
-     * 根据ID查询职业
+     * 根据ID查询角色
      */
     @Cacheable(value = "roles", key = "#id", unless = "#result == null")
     public RoleDO getById(Long id) {
@@ -41,7 +41,7 @@ public class RoleDataService {
     }
 
     /**
-     * 批量根据ID查询职业
+     * 批量根据ID查询角色
      */
     public List<RoleDO> getByIds(Collection<Long> ids) {
         if (ids == null || ids.isEmpty()) {
@@ -58,7 +58,7 @@ public class RoleDataService {
     }
 
     /**
-     * 批量根据ID查询职业并转为Map
+     * 批量根据ID查询角色并转为Map
      */
     public Map<Long, RoleDO> getMapByIds(Collection<Long> ids) {
         return getByIds(ids).stream()
@@ -66,14 +66,14 @@ public class RoleDataService {
     }
 
     /**
-     * 统计活跃职业数量
+     * 统计活跃角色数量
      */
     public Long countActiveRoles() {
         return roleMapper.countActiveRoles();
     }
 
     /**
-     * 根据状态获取职业列表
+     * 根据状态获取角色列表
      */
     public List<RoleDO> listByState(Byte state, Long lastId, int limit) {
         return roleMapper.listByState(state, lastId, limit);
@@ -101,14 +101,14 @@ public class RoleDataService {
     }
 
     /**
-     * 搜索职业（按关键词，用户端）
+     * 搜索角色（按关键词，用户端）
      */
     public List<RoleDO> searchByKeyword(String keyword) {
         return roleMapper.searchByKeyword(keyword);
     }
 
     /**
-     * 管理后台按名称搜索职业
+     * 管理后台按名称搜索角色
      */
     public List<RoleDO> searchByName(String name, Long lastId, int limit) {
         return roleMapper.searchByName(name, lastId, limit);
@@ -117,11 +117,11 @@ public class RoleDataService {
     // ==================== 验证方法 ====================
 
     /**
-     * 验证职业ID并获取职业
+     * 验证角色ID并获取角色
      */
     public RoleDO validateAndGet(Long id) {
         if (id == null || id <= 0) {
-            throw StatusCode.INVALID_PARAMETER.exception("职业ID无效");
+            throw StatusCode.INVALID_PARAMETER.exception("角色ID无效");
         }
         RoleDO roleDO = getById(id);
         if (roleDO == null) {
@@ -131,7 +131,7 @@ public class RoleDataService {
     }
 
     /**
-     * 验证职业存在
+     * 验证角色存在
      */
     public void validateExists(Long id) {
         validateAndGet(id);
@@ -140,14 +140,14 @@ public class RoleDataService {
     // ==================== 写入方法 ====================
 
     /**
-     * 插入职业
+     * 插入角色
      */
     public void insert(RoleDO roleDO) {
         roleMapper.insert(roleDO);
     }
 
     /**
-     * 更新职业
+     * 更新角色
      */
     @CacheEvict(value = "roles", key = "#roleDO.id")
     public void update(RoleDO roleDO) {
@@ -158,7 +158,7 @@ public class RoleDataService {
     }
 
     /**
-     * 审批通过职业
+     * 审批通过角色
      */
     @CacheEvict(value = "roles", key = "#id")
     public int approve(long id) {
@@ -166,7 +166,7 @@ public class RoleDataService {
     }
 
     /**
-     * 拒绝职业申请
+     * 拒绝角色申请
      */
     @CacheEvict(value = "roles", key = "#id")
     public int reject(long id, String reason) {
@@ -174,7 +174,7 @@ public class RoleDataService {
     }
 
     /**
-     * 封禁职业
+     * 封禁角色
      */
     @CacheEvict(value = "roles", key = "#id")
     public int ban(long id, String reason) {
@@ -182,7 +182,7 @@ public class RoleDataService {
     }
 
     /**
-     * 删除职业
+     * 删除角色
      */
     @CacheEvict(value = "roles", key = "#id")
     public void delete(long id) {

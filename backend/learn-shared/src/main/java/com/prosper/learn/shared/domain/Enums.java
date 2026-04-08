@@ -352,8 +352,8 @@ public class Enums {
         postBanned(14, 2),           // 帖子被封禁 - 系统消息
         commentRejected(15, 2),      // 评论被拒绝 - 系统消息
         commentBanned(16, 2),        // 评论被封禁 - 系统消息
-        roleRejected(17, 2),   // 职业被拒绝 - 系统消息
-        roleBanned(18, 2),     // 职业被封禁 - 系统消息
+        roleRejected(17, 2),   // 角色被拒绝 - 系统消息
+        roleBanned(18, 2),     // 角色被封禁 - 系统消息
         roadmapRejected(19, 2),      // 路线图被拒绝 - 系统消息
         roadmapBanned(20, 2),        // 路线图被封禁 - 系统消息
         memoryDeckRejected(21, 2),   // 卡片组被拒绝 - 系统消息
@@ -361,7 +361,7 @@ public class Enums {
         nodeRejected(23, 2),         // 节点被拒绝 - 系统消息
         nodeBanned(24, 2),           // 节点被封禁 - 系统消息
         courseApproved(25, 2),       // 课程审核通过 - 系统消息
-        roleApproved(26, 2),   // 职业审核通过 - 系统消息
+        roleApproved(26, 2),   // 角色审核通过 - 系统消息
 
         system(99, 2),               // 其他系统消息 - 系统消息
         other(100, 4);               // 私信 - 私信（category=4）
@@ -927,13 +927,13 @@ public class Enums {
         // 学习统计
         LEARNING_COURSES("learning_courses", "正在学习课程数"),
         COMPLETED_COURSES("completed_courses", "已完成课程数"),
-        IN_PROGRESS_ROLES("in_progress_roles", "正在进行职业数"),
-        COMPLETED_ROLES("completed_roles", "已完成职业数"),
+        IN_PROGRESS_ROLES("in_progress_roles", "正在进行角色数"),
+        COMPLETED_ROLES("completed_roles", "已完成角色数"),
 
         // 社交统计
         FOLLOWING_USERS("following_users", "关注的人数"),
         FOLLOWING_COURSES("following_courses", "关注的课程数"),
-        FOLLOWING_ROLES("following_roles", "关注的职业数"),
+        FOLLOWING_ROLES("following_roles", "关注的角色数"),
 
         // 创作统计
         CREATED_ARTICLES("created_articles", "创建的文章数"),

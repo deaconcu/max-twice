@@ -46,7 +46,7 @@ public interface RoleMapper {
     List<RoleDO> searchByKeyword(String keyword);
 
     /**
-     * 管理后台按名称搜索职业（搜索所有状态，支持分页）
+     * 管理后台按名称搜索角色（搜索所有状态，支持分页）
      */
     @Select("<script>" +
             "SELECT * FROM role " +
