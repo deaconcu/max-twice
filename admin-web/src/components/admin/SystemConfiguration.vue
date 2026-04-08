@@ -8,18 +8,18 @@ const showSnackbar = inject<(message: string, type?: string) => void>('showSnack
 const systemConfigStore = useSystemConfigStore()
 
 // 配置项类型
-type ConfigKey = 'courseCategories' | 'professionCategories' | 'rejectReasons' | 'banReasons' | 'homepageRecommendations'
+type ConfigKey = 'courseCategories' | 'roleCategories' | 'rejectReasons' | 'banReasons' | 'homepageRecommendations'
 
 // 响应式数据
 const courseCategories = ref<string>('')
-const professionCategories = ref<string>('')
+const roleCategories = ref<string>('')
 const rejectReasons = ref<string>('')
 const banReasons = ref<string>('')
 const homepageRecommendations = ref<string>('')
 const frontendUrl = ref<string>('')
 const frontendUrlOriginal = ref<string>('')  // 原始值，用于对比是否修改
 const courseUpdatedAt = ref<string>('')
-const professionUpdatedAt = ref<string>('')
+const roleUpdatedAt = ref<string>('')
 const rejectReasonsUpdatedAt = ref<string>('')
 const banReasonsUpdatedAt = ref<string>('')
 const homepageRecommendationsUpdatedAt = ref<string>('')
@@ -50,9 +50,9 @@ const { loading: loadingConfig } = useFetch({
         if (item.key === 'courseCategories') {
           courseCategories.value = formatted
           courseUpdatedAt.value = item.updatedAt
-        } else if (item.key === 'professionCategories') {
-          professionCategories.value = formatted
-          professionUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'roleCategories') {
+          roleCategories.value = formatted
+          roleUpdatedAt.value = item.updatedAt
         } else if (item.key === 'rejectReasons') {
           rejectReasons.value = formatted
           rejectReasonsUpdatedAt.value = item.updatedAt
@@ -80,14 +80,14 @@ const openDialog = (key: ConfigKey): void => {
   dialogKey.value = key
   const titleMap: Record<ConfigKey, string> = {
     courseCategories: '课程分类',
-    professionCategories: '职业分类',
+    roleCategories: '职业分类',
     rejectReasons: '拒绝理由',
     banReasons: '屏蔽理由',
     homepageRecommendations: '首页新手推荐',
   }
   const valueMap: Record<ConfigKey, string> = {
     courseCategories: courseCategories.value,
-    professionCategories: professionCategories.value,
+    roleCategories: roleCategories.value,
     rejectReasons: rejectReasons.value,
     banReasons: banReasons.value,
     homepageRecommendations: homepageRecommendations.value,
@@ -128,9 +128,9 @@ const { execute: saveConfig, loading: saving } = useMutation(
       if (data.key === 'courseCategories') {
         courseCategories.value = dialogValue.value
         courseUpdatedAt.value = now
-      } else if (data.key === 'professionCategories') {
-        professionCategories.value = dialogValue.value
-        professionUpdatedAt.value = now
+      } else if (data.key === 'roleCategories') {
+        roleCategories.value = dialogValue.value
+        roleUpdatedAt.value = now
       } else if (data.key === 'rejectReasons') {
         rejectReasons.value = dialogValue.value
         rejectReasonsUpdatedAt.value = now
@@ -168,7 +168,7 @@ const saveDialogConfig = async (): Promise<void> => {
   // 映射前端 key 到后端 key
   const keyMap: Record<ConfigKey, string> = {
     courseCategories: 'courseCategories',
-    professionCategories: 'professionCategories',
+    roleCategories: 'roleCategories',
     rejectReasons: 'rejectReasons',
     banReasons: 'banReasons',
     homepageRecommendations: 'homepage_recommendations',
@@ -237,10 +237,10 @@ const saveFrontendUrl = async (): Promise<void> => {
           <v-list-item
             prepend-icon="mdi-briefcase-outline"
             title="职业分类"
-            :subtitle="professionUpdatedAt ? `上次更新: ${new Date(professionUpdatedAt).toLocaleString('zh-CN')}` : '职业主分类与子分类 JSON 配置'"
+            :subtitle="roleUpdatedAt ? `上次更新: ${new Date(roleUpdatedAt).toLocaleString('zh-CN')}` : '职业主分类与子分类 JSON 配置'"
             rounded="lg"
             class="config-item mb-2 px-4"
-            @click="openDialog('professionCategories')"
+            @click="openDialog('roleCategories')"
           >
             <template #append>
               <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>

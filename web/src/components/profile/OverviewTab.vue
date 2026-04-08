@@ -25,8 +25,8 @@ const router = useRouter()
 
 // 学习中的职业和课程
 const learningProgress = computed(() => ({
-  inProgressRoles: props.userStats?.inProgressProfessionCount || 0,
-  completedRoles: props.userStats?.completedProfessionCount || 0,
+  inProgressRoles: props.userStats?.inProgressRoleCount || 0,
+  completedRoles: props.userStats?.completedRoleCount || 0,
   learningCourses: props.userStats?.learningCourseCount || 0,
   completedCourses: props.userStats?.completedCourseCount || 0,
 }))

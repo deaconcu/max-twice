@@ -12,7 +12,7 @@
       <!-- 内容区 -->
       <div v-else-if="role" class="content-wrapper">
         <!-- 职业信息头部 -->
-        <div class="profession-header mb-6 mb-md-8 pa-0">
+        <div class="role-header mb-6 mb-md-8 pa-0">
           <div
             class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between ga-4"
           >
@@ -472,10 +472,10 @@ import { useRouter, useRoute } from 'vue-router'
 import { useFetch, useMutation } from '@/composables'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useUserStore } from '@/stores'
-import { professionApi, roadmapApi, progressApi, upvoteApi, bookmarkApi } from '@/api'
+import { roleApi, roadmapApi, progressApi, upvoteApi, bookmarkApi } from '@/api'
 import { ObjectType, VoteType } from '@/enums'
 import { getColorByString } from '@/utils/color'
-import type { Profession } from '@/types/profession'
+import type { Role } from '@/types/role'
 import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -501,8 +501,8 @@ const {
   data: role,
   loading,
   error: fetchError,
-} = useFetch<Profession>({
-  fetchFn: () => professionApi.getProfession(roleId.value),
+} = useFetch<Role>({
+  fetchFn: () => roleApi.getRole(roleId.value),
   immediate: true,
   defaultValue: null,
 })
@@ -529,7 +529,7 @@ const {
   reset: resetRoadmaps,
 } = useInfiniteScroll({
   fetchFn: async (params) => {
-    const response = await roadmapApi.getProfessionRoadmaps(
+    const response = await roadmapApi.getRoleRoadmaps(
       roleId.value,
       params.lastId,
       sortBy.value
@@ -561,7 +561,7 @@ watch(filterStatus, async (newStatus) => {
   if (newStatus === 'learning' && learningRoadmaps.value.length === 0) {
     loadingRoadmaps.value = true
     try {
-      const response = await progressApi.getLearningRoadmapsByProfession(roleId.value)
+      const response = await progressApi.getLearningRoadmapsByRole(roleId.value)
       if (response.code === 200) {
         learningRoadmaps.value = response.data || []
       }
@@ -651,7 +651,7 @@ const handleCreateRoadmap = (): void => {
 
 // 切换职业收藏状态
 const { execute: executeToggleBookmark, loading: bookmarking } = useMutation(
-  () => bookmarkApi.toggle('profession', roleId.value),
+  () => bookmarkApi.toggle('role', roleId.value),
   {
     successMessage: '',
     showToast: false,
@@ -773,7 +773,7 @@ const handleCopy = (roadmap: { id: number }): void => {
   }
 }
 
-.profession-header,
+.role-header,
 .filter-card {
   background-color: transparent;
 }

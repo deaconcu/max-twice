@@ -127,6 +127,6 @@ export interface ApprovalResponse {
   success: boolean
   message: string
   objectId: number
-  objectType: 'course' | 'profession'
+  objectType: 'course' | 'role'
   action: 'approve' | 'reject' | 'delete'
 }

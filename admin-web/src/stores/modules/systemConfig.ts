@@ -97,8 +97,8 @@ export const useSystemConfigStore = defineStore(
     /**
      * 获取职业前台链接
      */
-    function getProfessionUrl(professionId: number): string {
-      return `${frontendUrl.value}/career/${professionId}`
+    function getRoleUrl(roleId: number): string {
+      return `${frontendUrl.value}/career/${roleId}`
     }
 
     /**
@@ -153,7 +153,7 @@ export const useSystemConfigStore = defineStore(
       setFrontendUrl,
       setRejectReasons,
       setBanReasons,
-      getProfessionUrl,
+      getRoleUrl,
       getCourseUrl,
       getNodeUrl,
       getUserUrl,

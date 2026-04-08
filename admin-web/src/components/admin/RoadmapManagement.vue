@@ -20,7 +20,7 @@
           </v-col>
           <v-col cols="2">
             <v-text-field
-              v-model.number="professionIdFilter"
+              v-model.number="roleIdFilter"
               label="职业 ID"
               type="number"
               variant="outlined"
@@ -176,7 +176,7 @@
                       target="_blank"
                       class="text-body-1 font-weight-medium text-grey-darken-3 text-decoration-none"
                     >
-                      {{ roadmap.profession?.name || '未知职业' }}
+                      {{ roadmap.role?.name || '未知职业' }}
                       <v-icon icon="mdi-open-in-new" size="14" color="grey" class="ml-1"></v-icon>
                     </a>
                     <v-chip variant="flat" :color="getStateConfig(roadmap.state).color" size="x-small" class="ml-2">
@@ -191,7 +191,7 @@
                     <span class="mx-1">·</span>
                     <span>ID: {{ roadmap.id }}</span>
                     <span class="mx-1">·</span>
-                    <a v-if="roadmap.profession" :href="systemConfigStore.getProfessionUrl(roadmap.profession.id)" target="_blank" class="text-grey-darken-1">职业 ID: {{ roadmap.profession.id }}</a>
+                    <a v-if="roadmap.role" :href="systemConfigStore.getRoleUrl(roadmap.role.id)" target="_blank" class="text-grey-darken-1">职业 ID: {{ roadmap.role.id }}</a>
                     <span v-else>职业: 未知</span>
                   </div>
                 </div>
@@ -350,7 +350,7 @@
     <v-dialog v-model="graphDialogVisible" max-width="1400px">
       <v-card rounded="lg" variant="flat">
         <v-card-title class="d-flex align-center justify-space-between py-2 px-4">
-          <span class="text-subtitle-1 font-weight-medium">{{ graphRoadmap?.profession?.name || '路线图' }}</span>
+          <span class="text-subtitle-1 font-weight-medium">{{ graphRoadmap?.role?.name || '路线图' }}</span>
           <v-btn icon variant="text" size="small" @click="graphDialogVisible = false">
             <v-icon>mdi-close</v-icon>
           </v-btn>
@@ -401,7 +401,7 @@ interface RoadmapWithGraph extends Roadmap {
 }
 
 const roadmapIdFilter = ref<number | null>(null)
-const professionIdFilter = ref<number | null>(null)
+const roleIdFilter = ref<number | null>(null)
 const creatorIdFilter = ref<number | null>(null)
 const selectedStateIndex = ref<number>(0)
 const isFilterMode = ref<boolean>(false)
@@ -481,7 +481,7 @@ const applyAutoLayout = (nodeList: Node[], edgeList: Edge[]): Node[] => {
 // 解析 content 字段
 // 原始格式: [[edges], [nodeIds]]，edges: [[source, target], ...]，nodeIds: [id1, id2, ...]
 // 或已解析格式: { nodes: [...], edges: [...] }
-const parseContent = (content: string | object, professionName: string): { nodes: Node[]; edges: Edge[] } => {
+const parseContent = (content: string | object, roleName: string): { nodes: Node[]; edges: Edge[] } => {
   try {
     const data = typeof content === 'string' ? JSON.parse(content) : content
     if (!data) {
@@ -495,7 +495,7 @@ const parseContent = (content: string | object, professionName: string): { nodes
           return {
             id: String(node.id),
             type: 'default',
-            data: { label: professionName || '职业' },
+            data: { label: roleName || '职业' },
             position: node.position || { x: 0, y: 0 },
             targetPosition: Position.Left,
           }
@@ -536,7 +536,7 @@ const parseContent = (content: string | object, professionName: string): { nodes
           return {
             id: '0',
             type: 'default',
-            data: { label: professionName || '职业' },
+            data: { label: roleName || '职业' },
             position: { x: 0, y: 0 },
             targetPosition: Position.Left,
           }
@@ -575,8 +575,8 @@ const processRoadmapData = (roadmap: Roadmap): RoadmapWithGraph => {
     return { ...roadmap, parsedNodes: [], parsedEdges: [] }
   }
 
-  const professionName = roadmap.profession?.name || '职业'
-  const { nodes, edges } = parseContent(roadmap.content, professionName)
+  const roleName = roadmap.role?.name || '职业'
+  const { nodes, edges } = parseContent(roadmap.content, roleName)
   const layoutedNodes = nodes.length > 0 ? applyAutoLayout(nodes, edges) : []
 
   return {
@@ -641,7 +641,7 @@ const {
     if (isFilterMode.value) {
       return adminApi.getRoadmapsByFilter(
         roadmapIdFilter.value ?? undefined,
-        professionIdFilter.value ?? undefined,
+        roleIdFilter.value ?? undefined,
         creatorIdFilter.value ?? undefined,
         params.lastId ?? undefined
       )
@@ -676,7 +676,7 @@ const onFilterChange = (): void => {
 // 重置筛选
 const onResetFilter = (): void => {
   roadmapIdFilter.value = null
-  professionIdFilter.value = null
+  roleIdFilter.value = null
   creatorIdFilter.value = null
   isFilterMode.value = false
   resetList()

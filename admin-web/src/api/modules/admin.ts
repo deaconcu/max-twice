@@ -40,7 +40,7 @@ export interface OperateRequest {
 /**
  * 内容类型
  */
-export type ContentType = 'post' | 'roadmap' | 'memory_card_deck' | 'comment' | 'course' | 'profession' | 'node'
+export type ContentType = 'post' | 'roadmap' | 'memory_card_deck' | 'comment' | 'course' | 'role' | 'node'
 
 /**
  * 管理后台 API
@@ -176,34 +176,34 @@ export const adminApi = {
   /**
    * 根据筛选条件获取职业
    */
-  getProfessionsByFilter(state?: number, lastId?: number): Promise<ApiResponse<KeysetPageResponse<any>>> {
+  getRolesByFilter(state?: number, lastId?: number): Promise<ApiResponse<KeysetPageResponse<any>>> {
     const params: Record<string, unknown> = {}
     if (state !== undefined) params.state = state
     if (lastId !== undefined) params.lastId = lastId
-    return apiClient.get('/v1/admin/contents/profession', { params })
+    return apiClient.get('/v1/admin/contents/role', { params })
   },
 
   /**
    * 按名称搜索职业（管理后台）
    */
-  searchProfessionsByName(name: string, lastId?: number): Promise<ApiResponse<KeysetPageResponse<any>>> {
+  searchRolesByName(name: string, lastId?: number): Promise<ApiResponse<KeysetPageResponse<any>>> {
     const params: Record<string, unknown> = { name }
     if (lastId !== undefined) params.lastId = lastId
-    return apiClient.get('/v1/admin/contents/profession/search', { params })
+    return apiClient.get('/v1/admin/contents/role/search', { params })
   },
 
   /**
    * 获取职业详情（管理后台）
    */
-  getProfessionById(id: number): Promise<ApiResponse<any>> {
-    return apiClient.get(`/v1/admin/contents/profession/${id}`)
+  getRoleById(id: number): Promise<ApiResponse<any>> {
+    return apiClient.get(`/v1/admin/contents/role/${id}`)
   },
 
   /**
    * 更新职业信息
    */
-  updateProfession(id: number, request: any): Promise<ApiResponse<void>> {
-    return apiClient.put(`/v1/admin/contents/profession/${id}`, request)
+  updateRole(id: number, request: any): Promise<ApiResponse<void>> {
+    return apiClient.put(`/v1/admin/contents/role/${id}`, request)
   },
 
   // ========== 路线图管理 ==========
@@ -213,13 +213,13 @@ export const adminApi = {
    */
   getRoadmapsByFilter(
     roadmapId?: number,
-    professionId?: number,
+    roleId?: number,
     creatorId?: number,
     lastId?: number
   ): Promise<ApiResponse<KeysetPageResponse<any>>> {
     const params: Record<string, unknown> = {}
     if (roadmapId !== undefined) params.roadmapId = roadmapId
-    if (professionId !== undefined) params.professionId = professionId
+    if (roleId !== undefined) params.roleId = roleId
     if (creatorId !== undefined) params.creatorId = creatorId
     if (lastId !== undefined) params.lastId = lastId
     return apiClient.get('/v1/admin/contents/roadmap/filter', { params })
@@ -507,13 +507,13 @@ export const adminApi = {
   /**
    * 生成学习路径
    */
-  generateRoadmap(professionId: number): Promise<
+  generateRoadmap(roleId: number): Promise<
     ApiResponse<{
       taskId: string
       status: string
     }>
   > {
-    return apiClient.post(`/v1/admin/robot/roadmap/generate/${professionId}`)
+    return apiClient.post(`/v1/admin/robot/roadmap/generate/${roleId}`)
   },
 
   /**
@@ -522,7 +522,7 @@ export const adminApi = {
   getRoadmapTask(taskId: string): Promise<
     ApiResponse<{
       taskId: string
-      professionId?: number
+      roleId?: number
       userId?: number
       status: string
       result?: string
@@ -541,7 +541,7 @@ export const adminApi = {
     ApiResponse<
       Array<{
         taskId: string
-        professionId?: number
+        roleId?: number
         userId?: number
         status: string
         result?: string
@@ -557,9 +557,9 @@ export const adminApi = {
   /**
    * 保存路径草稿
    */
-  saveRoadmapDraft(professionId: number, draftContent: string): Promise<ApiResponse<string>> {
+  saveRoadmapDraft(roleId: number, draftContent: string): Promise<ApiResponse<string>> {
     return apiClient.post('/v1/admin/robot/roadmap/draft', draftContent, {
-      params: { professionId },
+      params: { roleId },
       headers: { 'Content-Type': 'application/json' },
     })
   },
@@ -585,7 +585,7 @@ export const adminApi = {
     ApiResponse<
       Array<{
         draftId: string
-        professionId?: number
+        roleId?: number
         userId?: number
         createdAt?: string
       }>
@@ -598,7 +598,7 @@ export const adminApi = {
    * 创建路线图
    */
   createRoadmap(data: {
-    professionId: number
+    roleId: number
     content: string
     description: string
     state: number
@@ -669,8 +669,8 @@ export const adminApi = {
   /**
    * 同步职业索引
    */
-  syncProfessionIndexes(): Promise<ApiResponse<number>> {
-    return apiClient.post('/v1/admin/search/sync-professions')
+  syncRoleIndexes(): Promise<ApiResponse<number>> {
+    return apiClient.post('/v1/admin/search/sync-roles')
   },
 
   // ========== 后台任务 ==========

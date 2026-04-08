@@ -1,5 +1,5 @@
 import type { User } from './user'
-import type { Profession } from './profession'
+import type { Role } from './role'
 import type { Node, Edge } from '@vue-flow/core'
 
 /**
@@ -13,8 +13,8 @@ import type { Node, Edge } from '@vue-flow/core'
 export interface Roadmap {
   id: number
   content?: string // 路线图内容
-  professionId?: number // 职业ID
-  profession?: Profession // 职业信息
+  roleId?: number
+  role?: Role
   description?: string // 描述
   state?: number // 状态：0-待审核，1-已批准，2-已拒绝
   reason?: string // 拒绝/封禁原因
@@ -50,6 +50,6 @@ export interface Roadmap {
  */
 export interface RoadmapBrief {
   id: number
-  professionName: string
+  roleName: string
   nodeCount: number
 }

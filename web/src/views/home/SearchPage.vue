@@ -145,12 +145,12 @@ const loadMoreResults = async () => {
     let response
 
     switch (activeTab.value) {
-      case 'professions':
-        response = await searchApi.searchProfessions(searchQuery.value, 20, professionsOffset.value)
+      case 'roles':
+        response = await searchApi.searchRoles(searchQuery.value, 20, rolesOffset.value)
         if (response.code === 200 && response.data) {
-          professions.value = [...professions.value, ...response.data]
-          professionsOffset.value += response.data.length
-          hasMoreProfessions.value = response.data.length >= 20
+          roles.value = [...roles.value, ...response.data]
+          rolesOffset.value += response.data.length
+          hasMoreRoles.value = response.data.length >= 20
         }
         break
       case 'courses':
@@ -197,7 +197,7 @@ watch(
       courses.value = []
       nodes.value = []
       users.value = []
-      professions.value = []
+      roles.value = []
     }
   },
   { immediate: true }
@@ -221,21 +221,21 @@ const handleSearch = () => {
 
 // 结果总数
 const totalResults = computed(() => {
-  return courses.value.length + nodes.value.length + users.value.length + professions.value.length
+  return courses.value.length + nodes.value.length + users.value.length + roles.value.length
 })
 
 // 是否有任何分类还有更多数据
 const hasAnyMore = computed(() => {
   return (
-    hasMoreCourses.value || hasMoreNodes.value || hasMoreUsers.value || hasMoreProfessions.value
+    hasMoreCourses.value || hasMoreNodes.value || hasMoreUsers.value || hasMoreRoles.value
   )
 })
 
 // 当前显示的结果
 const currentResults = computed(() => {
   switch (activeTab.value) {
-    case 'professions':
-      return professions.value
+    case 'roles':
+      return roles.value
     case 'courses':
       return courses.value
     case 'nodes':
@@ -250,7 +250,7 @@ const currentResults = computed(() => {
 // 导航到详情
 const navigateTo = (type: string, id: number) => {
   switch (type) {
-    case 'professions':
+    case 'roles':
       router.push(`/role/${id}`)
       break
     case 'courses':
@@ -277,7 +277,7 @@ const setupInfiniteScroll = () => {
       const entry = entries[0]
       if (entry?.isIntersecting && !loadingMore.value) {
         const hasMore =
-          (activeTab.value === 'professions' && hasMoreProfessions.value) ||
+          (activeTab.value === 'roles' && hasMoreRoles.value) ||
           (activeTab.value === 'courses' && hasMoreCourses.value) ||
           (activeTab.value === 'nodes' && hasMoreNodes.value) ||
           (activeTab.value === 'users' && hasMoreUsers.value)
@@ -365,8 +365,8 @@ watch(activeTab, () => {
 
         <!-- 标签页 -->
         <v-tabs v-model="activeTab" color="primary" class="mb-6">
-          <v-tab value="professions" :disabled="professions.length === 0">
-            {{ t('common.professions') }} ({{ professions.length }}{{ hasMoreProfessions ? '+' : '' }})
+          <v-tab value="roles" :disabled="roles.length === 0">
+            {{ t('common.roles') }} ({{ roles.length }}{{ hasMoreRoles ? '+' : '' }})
           </v-tab>
           <v-tab value="courses" :disabled="courses.length === 0">
             {{ t('common.courses') }} ({{ courses.length }}{{ hasMoreCourses ? '+' : '' }})
@@ -396,7 +396,7 @@ watch(activeTab, () => {
           <!-- 加载触发器 -->
           <div
             v-if="
-              (activeTab === 'professions' && hasMoreProfessions) ||
+              (activeTab === 'roles' && hasMoreRoles) ||
               (activeTab === 'courses' && hasMoreCourses) ||
               (activeTab === 'nodes' && hasMoreNodes) ||
               (activeTab === 'users' && hasMoreUsers)

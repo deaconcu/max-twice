@@ -42,11 +42,11 @@ export interface User {
   commentCount?: number // 总评论数
   learningCourseCount?: number // 正在学习课程数
   completedCourseCount?: number // 已完成课程数
-  inProgressProfessionCount?: number // 正在学习职业数
-  completedProfessionCount?: number // 已完成职业数
-  followingUserCount?: number // 关注用户数
-  followingCourseCount?: number // 关注课程数
-  followingProfessionCount?: number // 关注职业数
+  inProgressRoleCount?: number
+  completedRoleCount?: number
+  followingUserCount?: number
+  followingCourseCount?: number
+  followingRoleCount?: number
   createdArticleCount?: number // 创建文章数
   createdIndexCount?: number // 创建目录数
   createdRoadmapCount?: number // 创建路线图数

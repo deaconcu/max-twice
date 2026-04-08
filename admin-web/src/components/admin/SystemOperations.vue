@@ -189,8 +189,8 @@ const { execute: syncUsers, loading: syncingUsers } = useMutation(
   }
 )
 
-const { execute: syncProfessions, loading: syncingProfessions } = useMutation(
-  adminApi.syncProfessionIndexes,
+const { execute: syncRoles, loading: syncingRoles } = useMutation(
+  adminApi.syncRoleIndexes,
   {
     showToast: false,
     onSuccess: (result) => {
@@ -342,7 +342,7 @@ setTimeout(() => {
           </v-btn>
           <v-btn variant="tonal" :loading="syncingNodes" @click="syncNodes"> 节点 </v-btn>
           <v-btn variant="tonal" :loading="syncingUsers" @click="syncUsers"> 用户 </v-btn>
-          <v-btn variant="tonal" :loading="syncingProfessions" @click="syncProfessions">
+          <v-btn variant="tonal" :loading="syncingRoles" @click="syncRoles">
             职业
           </v-btn>
         </div>

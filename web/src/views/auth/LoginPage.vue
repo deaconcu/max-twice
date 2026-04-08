@@ -17,6 +17,37 @@
       <div class="shape shape-8"></div>
       <div class="shape shape-9"></div>
       <div class="shape shape-10"></div>
+      <div class="shape shape-11"></div>
+      <div class="shape shape-12"></div>
+      <div class="shape shape-13"></div>
+      <div class="shape shape-14"></div>
+      <svg class="shape shape-16" viewBox="0 0 100 90" width="50" height="45">
+        <path
+          d="M50 8 Q50 0 56 8 L92 76 Q100 90 86 90 L14 90 Q0 90 8 76 L44 8 Q50 0 50 8 Z"
+          fill="#AB47BC"
+        />
+      </svg>
+      <div class="shape shape-17"></div>
+      <div class="shape shape-19"></div>
+      <div class="shape shape-20"></div>
+      <div class="shape shape-21"></div>
+      <div class="shape shape-23"></div>
+      <div class="shape shape-24"></div>
+      <svg class="shape shape-25" viewBox="0 0 100 90" width="40" height="36">
+        <path
+          d="M50 8 Q50 0 56 8 L92 76 Q100 90 86 90 L14 90 Q0 90 8 76 L44 8 Q50 0 50 8 Z"
+          fill="#FFCA28"
+        />
+      </svg>
+      <div class="shape shape-26"></div>
+      <div class="shape shape-27"></div>
+      <div class="shape shape-28"></div>
+      <div class="shape shape-29"></div>
+      <div class="shape shape-30"></div>
+      <div class="shape shape-32"></div>
+      <div class="shape shape-34"></div>
+      <div class="shape shape-37"></div>
+      <div class="shape shape-38"></div>
     </div>
 
     <SimpleHeader />
@@ -427,6 +458,300 @@ const goToRegister = () => {
   border-radius: 50%;
   bottom: 10%;
   right: 25%;
+  opacity: 1;
+}
+
+/* 圆形 - 紫色 */
+.shape-11 {
+  width: 55px;
+  height: 55px;
+  background-color: #AB47BC;
+  border-radius: 50%;
+  top: 12%;
+  left: 15%;
+}
+
+/* 方形 - 黄色 */
+.shape-12 {
+  width: 40px;
+  height: 40px;
+  background-color: #FFCA28;
+  border-radius: 8px;
+  top: 70%;
+  right: 8%;
+  transform: rotate(20deg);
+}
+
+/* 圆形 - 粉色 */
+.shape-13 {
+  width: 35px;
+  height: 35px;
+  background-color: #EC407A;
+  border-radius: 50%;
+  bottom: 25%;
+  left: 3%;
+}
+
+/* 方形 - 靛蓝 */
+.shape-14 {
+  width: 50px;
+  height: 50px;
+  background-color: #5C6BC0;
+  border-radius: 10px;
+  top: 55%;
+  right: 3%;
+  transform: rotate(-15deg);
+}
+
+/* 模糊圆形 - 紫色 */
+.shape-15 {
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(171, 71, 188, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 40%;
+  right: 35%;
+  opacity: 1;
+}
+
+/* 三角形 - 紫色 */
+.shape-16 {
+  bottom: 8%;
+  left: 25%;
+  opacity: 0.15;
+}
+
+/* 模糊圆形 - 黄色 */
+.shape-17 {
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(255, 202, 40, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 5%;
+  left: 45%;
+  opacity: 1;
+}
+
+/* 模糊圆形 - 粉色 */
+.shape-18 {
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(236, 64, 122, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  bottom: 20%;
+  left: 35%;
+  opacity: 1;
+}
+
+/* 圆形 - 绿色 小 */
+.shape-19 {
+  width: 25px;
+  height: 25px;
+  background-color: #66BB6A;
+  border-radius: 50%;
+  top: 30%;
+  left: 5%;
+}
+
+/* 方形 - 粉色 */
+.shape-20 {
+  width: 35px;
+  height: 35px;
+  background-color: #EC407A;
+  border-radius: 6px;
+  top: 8%;
+  right: 25%;
+  transform: rotate(30deg);
+}
+
+/* 圆形 - 黄色 */
+.shape-21 {
+  width: 45px;
+  height: 45px;
+  background-color: #FFCA28;
+  border-radius: 50%;
+  bottom: 40%;
+  right: 5%;
+}
+
+/* 模糊圆形 - 靛蓝 */
+.shape-22 {
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(92, 107, 192, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 60%;
+  left: 5%;
+  opacity: 1;
+}
+
+/* 方形 - 绿色 */
+.shape-23 {
+  width: 30px;
+  height: 30px;
+  background-color: #66BB6A;
+  border-radius: 5px;
+  bottom: 12%;
+  right: 30%;
+  transform: rotate(-20deg);
+}
+
+/* 圆形 - 靛蓝 小 */
+.shape-24 {
+  width: 20px;
+  height: 20px;
+  background-color: #5C6BC0;
+  border-radius: 50%;
+  top: 42%;
+  right: 12%;
+}
+
+/* 三角形 - 黄色 */
+.shape-25 {
+  top: 75%;
+  right: 15%;
+  opacity: 0.15;
+}
+
+/* 模糊圆形 - 绿色 */
+.shape-26 {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(102, 187, 106, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 25%;
+  right: 40%;
+  opacity: 1;
+}
+
+/* 圆形 - 紫色 小 */
+.shape-27 {
+  width: 28px;
+  height: 28px;
+  background-color: #AB47BC;
+  border-radius: 50%;
+  bottom: 50%;
+  left: 12%;
+}
+
+/* 方形 - 橙色 小 */
+.shape-28 {
+  width: 22px;
+  height: 22px;
+  background-color: #ff7043;
+  border-radius: 4px;
+  top: 18%;
+  right: 35%;
+  transform: rotate(45deg);
+}
+
+/* 模糊圆形 - 橙色 中上 */
+.shape-29 {
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(255, 112, 67, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 15%;
+  right: 20%;
+  opacity: 1;
+}
+
+/* 模糊圆形 - 青色 左中 */
+.shape-30 {
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(38, 198, 218, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 50%;
+  left: 25%;
+  opacity: 1;
+}
+
+/* 模糊圆形 - 粉色 右下 */
+.shape-31 {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(236, 64, 122, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  bottom: 5%;
+  right: 40%;
+  opacity: 1;
+}
+
+/* 模糊圆形 - 黄色 左上 */
+.shape-32 {
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(255, 202, 40, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 8%;
+  left: 20%;
+  opacity: 1;
+}
+
+/* 模糊圆形 - 紫色 右中 */
+.shape-33 {
+  width: 190px;
+  height: 190px;
+  background: radial-gradient(circle, rgba(171, 71, 188, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 35%;
+  right: 8%;
+  opacity: 1;
+}
+
+/* 模糊圆形 - 绿色 下中 */
+.shape-34 {
+  width: 170px;
+  height: 170px;
+  background: radial-gradient(circle, rgba(102, 187, 106, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  bottom: 15%;
+  left: 50%;
+  opacity: 1;
+}
+
+/* 模糊圆形 - 靛蓝 上中 */
+.shape-35 {
+  width: 210px;
+  height: 210px;
+  background: radial-gradient(circle, rgba(92, 107, 192, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 3%;
+  left: 55%;
+  opacity: 1;
+}
+
+/* 模糊圆形 - 大 粉色 */
+.shape-36 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(236, 64, 122, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 20%;
+  right: 5%;
+  opacity: 1;
+}
+
+/* 模糊圆形 - 大 绿色 */
+.shape-37 {
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, rgba(102, 187, 106, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  bottom: 5%;
+  left: 20%;
+  opacity: 1;
+}
+
+/* 模糊圆形 - 大 黄色 */
+.shape-38 {
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(255, 202, 40, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 40%;
+  left: 40%;
   opacity: 1;
 }
 

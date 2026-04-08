@@ -204,7 +204,7 @@
                 :label="t('roleCenter.application.jobName')"
                 :placeholder="t('roleCenter.application.jobNamePlaceholder')"
                 :rules="jobNameRules"
-                :counter="professionNameMaxLength"
+                :counter="roleNameMaxLength"
                 variant="outlined"
                 clearable
                 required
@@ -243,7 +243,7 @@
                 :label="t('roleCenter.application.description')"
                 :placeholder="t('roleCenter.application.descriptionPlaceholder')"
                 :rules="descriptionRules"
-                :counter="professionDescriptionMaxLength"
+                :counter="roleDescriptionMaxLength"
                 variant="outlined"
                 clearable
                 required
@@ -302,8 +302,8 @@ import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useFetch, useMutation } from '@/composables'
 import { handleApiCall } from '@/composables/utils'
-import { professionApi } from '@/api'
-import type { Profession } from '@/types/profession'
+import { roleApi } from '@/api'
+import type { Role } from '@/types/role'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { useCategoryStore } from '@/stores'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
@@ -316,10 +316,10 @@ const { t } = useI18n()
 const categoryStore = useCategoryStore()
 
 // 验证规则
-const professionNameRules = useValidationRules('profession-name')
-const professionDescriptionRules = useValidationRules('profession-description')
-const professionNameMaxLength = useMaxLength('profession-name')
-const professionDescriptionMaxLength = useMaxLength('profession-description')
+const roleNameRules = useValidationRules('role-name')
+const roleDescriptionRules = useValidationRules('role-description')
+const roleNameMaxLength = useMaxLength('role-name')
+const roleDescriptionMaxLength = useMaxLength('role-description')
 
 // 状态管理
 const searchText = ref('')
@@ -342,7 +342,7 @@ const applicationForm = ref({
 const currentCategory = ref<{ mainCategory: number; subCategory: number } | null>(null)
 
 // 职业列表状态
-const roles = ref<Profession[]>([])
+const roles = ref<Role[]>([])
 const loading = ref(false)
 const loadingMore = ref(false)
 const hasMore = ref(true)
@@ -354,22 +354,22 @@ onMounted(async () => {
 })
 
 // 使用 useFetch 加载热门职业
-const { data: hotRolesData, loading: _loadingHotRoles } = useFetch<Profession[]>({
-  fetchFn: () => professionApi.getHotProfessions(15),
+const { data: hotRolesData, loading: _loadingHotRoles } = useFetch<Role[]>({
+  fetchFn: () => roleApi.getHotRoles(15),
   immediate: true,
   defaultValue: [],
 })
 
 // 计算属性 - 从 Store 中获取分类数据
 const categories = computed(() => {
-  return categoryStore.getProfessionMainCategories()
+  return categoryStore.getRoleMainCategories()
 })
 
 const subCategories = computed(() => {
   const allSubCategories: { id: number; name: string; mainCategoryId: number }[] = []
 
   categories.value.forEach((mainCategory) => {
-    const subs = categoryStore.getProfessionSubCategories(mainCategory.id)
+    const subs = categoryStore.getRoleSubCategories(mainCategory.id)
     subs.forEach((sub) => {
       allSubCategories.push({
         id: sub.id,
@@ -427,12 +427,12 @@ const loadRoles = async (reset = false) => {
 
     const fetchFn = currentCategory.value
       ? () =>
-          professionApi.getProfessionsByCategory(
+          roleApi.getRolesByCategory(
             lastId.value,
             currentCategory.value!.mainCategory,
             currentCategory.value!.subCategory
           )
-      : () => professionApi.getProfessionsByCategory(lastId.value)
+      : () => roleApi.getRolesByCategory(lastId.value)
 
     const result = await handleApiCall(fetchFn, {
       showToast: false,
@@ -464,12 +464,12 @@ const loadMore = async () => {
 
     const fetchFn = currentCategory.value
       ? () =>
-          professionApi.getProfessionsByCategory(
+          roleApi.getRolesByCategory(
             lastId.value,
             currentCategory.value!.mainCategory,
             currentCategory.value!.subCategory
           )
-      : () => professionApi.getProfessionsByCategory(lastId.value)
+      : () => roleApi.getRolesByCategory(lastId.value)
 
     const result = await handleApiCall(fetchFn, {
       showToast: false,
@@ -553,7 +553,7 @@ const handleSearch = async () => {
 
   try {
     loading.value = true
-    const result = await handleApiCall(() => professionApi.searchProfessions(searchText.value), {
+    const result = await handleApiCall(() => roleApi.searchRoles(searchText.value), {
       showToast: false,
       onError: (error) => {
         console.error('搜索职业失败:', error.message)
@@ -656,7 +656,7 @@ onBeforeUnmount(() => {
 /**
  * 跳转到职业详情（路线图列表）
  */
-const goToRoleDetail = (role: Profession) => {
+const goToRoleDetail = (role: Role) => {
   void router.push(`/role/${String(role.id)}`)
 }
 
@@ -684,11 +684,11 @@ const closeApplicationDialog = () => {
 /**
  * 表单验证规则
  */
-const jobNameRules = professionNameRules
+const jobNameRules = roleNameRules
 
 const categoryRules = [(v: number) => !!v || t('validation.required.mainCategory')]
 
-const descriptionRules = professionDescriptionRules
+const descriptionRules = roleDescriptionRules
 
 /**
  * 使用 useMutation 提交职业申请
@@ -700,7 +700,7 @@ const { execute: executeSubmit, loading: submitting } = useMutation(
     mainCategory: number
     subCategory: number
     skills: string
-  }) => professionApi.createProfession(data),
+  }) => roleApi.createRole(data),
   {
     successMessage: t('roleCenter.application.submittedSuccess'),
     onSuccess: () => {

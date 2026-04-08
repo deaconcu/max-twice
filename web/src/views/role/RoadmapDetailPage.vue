@@ -13,7 +13,7 @@
               <div class="d-flex align-center justify-space-between">
                 <div class="d-flex align-center">
                   <!-- 职业信息 -->
-                  <div v-if="roadmap?.profession" class="d-flex align-center">
+                  <div v-if="roadmap?.role" class="d-flex align-center">
                     <v-avatar
                       color="primary"
                       :size="$vuetify.display.mobile ? 36 : 40"
@@ -26,7 +26,7 @@
                       />
                     </v-avatar>
                     <span class="text-subtitle-1 text-md-h6 font-weight-bold text-grey-darken-4">
-                      {{ roadmap.profession.name }}
+                      {{ roadmap.role.name }}
                     </span>
                   </div>
                 </div>
@@ -253,7 +253,7 @@ const layoutApplied = ref(false)
 // 从路由获取参数
 const roleId = computed(() => {
   // roleId 不再从路由获取，从 roadmap 数据中获取
-  return roadmap.value?.professionId || 0
+  return roadmap.value?.roleId || 0
 })
 const roadmapId = computed(() => {
   const id = route.params.id
@@ -309,7 +309,7 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
           id: nodeId,
           type: 'default',
           data: {
-            label: roadmap.value?.profession?.name || t('roadmapDetail.currentRole'),
+            label: roadmap.value?.role?.name || t('roadmapDetail.currentRole'),
             ...node.data,
           },
           position: node.position || { x: 0, y: 0 },

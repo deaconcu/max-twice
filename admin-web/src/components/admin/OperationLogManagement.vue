@@ -28,7 +28,7 @@ const targetTypeOptions = [
   { text: '记忆卡片', value: 'MemoryCardDeck' },
   { text: '课程', value: 'Course' },
   { text: '节点', value: 'Node' },
-  { text: '职业', value: 'Profession' },
+  { text: '角色', value: 'Role' },
   { text: '系统', value: 'System' },
 ]
 

@@ -157,8 +157,8 @@ const stats = computed(() => ({
   totalCourses:
     (userStats.value?.learningCourseCount || 0) + (userStats.value?.completedCourseCount || 0),
   totalRoles:
-    (userStats.value?.inProgressProfessionCount || 0) +
-    (userStats.value?.completedProfessionCount || 0),
+    (userStats.value?.inProgressRoleCount || 0) +
+    (userStats.value?.completedRoleCount || 0),
   studyDays: userStats.value?.learningStreakDays || 0,
   reviewDays: userStats.value?.reviewStreakDays || 0,
   following: userStats.value?.followingUserCount || 0,

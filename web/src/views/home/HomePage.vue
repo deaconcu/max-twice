@@ -36,10 +36,10 @@ const { data: homeData, loading: homeLoading } = useFetch<HomePage>({
     userStats: {
       learningDays: 0,
       coursesInProgress: 0,
-      professionsInProgress: 0,
+      rolesInProgress: 0,
     },
-    bookmarkedProfessions: [],
-    learningProfessions: [],
+    bookmarkedRoles: [],
+    learningRoles: [],
     learningCourses: [],
     reviewSummary: {
       todayTotal: 0,
@@ -47,9 +47,9 @@ const { data: homeData, loading: homeLoading } = useFetch<HomePage>({
       streakDays: 0,
       courses: [],
     },
-    hotProfessions: [],
+    hotRoles: [],
     hotCourses: [],
-    beginnerProfessions: [],
+    beginnerRoles: [],
     beginnerRoadmaps: [],
     beginnerCourses: [],
   },
@@ -59,7 +59,7 @@ const { data: homeData, loading: homeLoading } = useFetch<HomePage>({
 const stats = computed(() => ({
   learningDays: homeData.value.userStats.learningDays,
   coursesInProgress: homeData.value.userStats.coursesInProgress,
-  professionsInProgress: homeData.value.userStats.professionsInProgress,
+  rolesInProgress: homeData.value.userStats.rolesInProgress,
   reviewCards: homeData.value.reviewSummary.todayTotal,
 }))
 
@@ -67,10 +67,10 @@ const stats = computed(() => ({
 const platformStats = computed(() => homeData.value.platformStats)
 
 // 计算属性：收藏的职业
-const bookmarkedProfessions = computed(() => homeData.value.bookmarkedProfessions)
+const bookmarkedRoles = computed(() => homeData.value.bookmarkedRoles)
 
 // 是否显示"查看更多"（等于10个时显示）
-const showMoreBookmarkedProfessions = computed(() => bookmarkedProfessions.value.length >= 10)
+const showMoreBookmarkedRoles = computed(() => bookmarkedRoles.value.length >= 10)
 
 // 计算属性：复习数据
 const reviewData = computed(() => ({
@@ -82,17 +82,17 @@ const reviewData = computed(() => ({
 
 // 计算属性：正在学习的职业路线
 const recentRoles = computed(() => {
-  return homeData.value.learningProfessions.map((item) => {
+  return homeData.value.learningRoles.map((item) => {
     const roadmap = item.object as
-      | { id: number; professionName: string; professionIcon?: string; nodeCount?: number }
+      | { id: number; roleName: string; roleIcon?: string; nodeCount?: number }
       | undefined
-    const name = roadmap?.professionName ?? t('home.unknownRole')
+    const name = roadmap?.roleName ?? t('home.unknownRole')
     return {
       id: item.id,
       roadmapId: item.objectId,
       name,
       progress: Math.round(item.progressPercent / 100),
-      icon: roadmap?.professionIcon ?? 'mdi-briefcase-variant',
+      icon: roadmap?.roleIcon ?? 'mdi-briefcase-variant',
       iconColor: getColorByString(name),
       nodeCount: roadmap?.nodeCount ?? 0,
     }
@@ -119,8 +119,8 @@ const recentCourses = computed(() => {
 })
 
 // 计算属性：热门职业榜单
-const hotProfessions = computed(() => {
-  return homeData.value.hotProfessions.map((item, index) => ({
+const hotRoles = computed(() => {
+  return homeData.value.hotRoles.map((item, index) => ({
     id: index + 1,
     roleId: item.id,
     name: item.name,
@@ -135,8 +135,8 @@ const hotProfessions = computed(() => {
 const hotCourses = computed(() => homeData.value.hotCourses)
 
 // 计算属性：新手推荐职业
-const beginnerProfessions = computed(() => {
-  return homeData.value.beginnerProfessions.map((item) => ({
+const beginnerRoles = computed(() => {
+  return homeData.value.beginnerRoles.map((item) => ({
     id: item.id,
     name: item.name,
     icon: item.icon ?? 'mdi-briefcase-variant',
@@ -148,9 +148,9 @@ const beginnerProfessions = computed(() => {
 const beginnerRoadmaps = computed(() => {
   return homeData.value.beginnerRoadmaps.map((item) => ({
     id: item.id,
-    name: item.profession?.name ?? t('home.unknownRole'),
-    icon: item.profession?.icon ?? 'mdi-briefcase-variant',
-    iconColor: getColorByString(item.profession?.name ?? ''),
+    name: item.role?.name ?? t('home.unknownRole'),
+    icon: item.role?.icon ?? 'mdi-briefcase-variant',
+    iconColor: getColorByString(item.role?.name ?? ''),
     nodeCount: item.nodeCount ?? 0,
   }))
 })
@@ -166,7 +166,7 @@ const beginnerCourses = computed(() => {
 })
 
 // 是否有更多职业（总数超过8个时，第8个显示为"更多"）
-const hasMoreRoles = computed(() => stats.value.professionsInProgress > 8)
+const hasMoreRoles = computed(() => stats.value.rolesInProgress > 8)
 
 // 是否有更多课程（总数超过8个时，第8个显示为"更多"）
 const hasMoreCourses = computed(() => stats.value.coursesInProgress > 8)
@@ -343,36 +343,36 @@ void homeLoading
         </div>
 
         <!-- 收藏的职业列表 -->
-        <template v-if="bookmarkedProfessions.length > 0">
+        <template v-if="bookmarkedRoles.length > 0">
           <div class="d-flex flex-wrap ga-3">
             <v-chip
-              v-for="profession in bookmarkedProfessions"
-              :key="profession.id"
+              v-for="role in bookmarkedRoles"
+              :key="role.id"
               color="primary"
               variant="tonal"
               size="large"
               rounded="lg"
-              class="profession-chip"
-              @click="openRole(profession.id)"
+              class="role-chip"
+              @click="openRole(role.id)"
             >
               <DynamicIcon
-                :icon="profession.icon"
+                :icon="role.icon"
                 default-icon="mdi-briefcase-variant"
                 :size="18"
-                :color="getColorByString(profession.name)"
+                :color="getColorByString(role.name)"
                 class="mr-2"
               />
-              {{ profession.name }}
+              {{ role.name }}
             </v-chip>
             <!-- 查看更多 -->
             <v-chip
-              v-if="showMoreBookmarkedProfessions"
+              v-if="showMoreBookmarkedRoles"
               color="grey"
               variant="outlined"
               size="large"
               rounded="lg"
-              class="profession-chip"
-              @click="navigateTo('/profile/bookmarks?type=profession')"
+              class="role-chip"
+              @click="navigateTo('/profile/bookmarks?type=role')"
             >
               {{ t('home.viewMore') }}
               <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
@@ -384,22 +384,22 @@ void homeLoading
         <template v-else>
           <div class="d-flex flex-wrap ga-3 align-center">
             <v-chip
-              v-for="profession in beginnerProfessions"
-              :key="profession.id"
+              v-for="role in beginnerRoles"
+              :key="role.id"
               variant="outlined"
               size="large"
               rounded="lg"
-              class="profession-chip profession-chip--placeholder"
-              @click="openRole(profession.id)"
+              class="role-chip role-chip--placeholder"
+              @click="openRole(role.id)"
             >
               <DynamicIcon
-                :icon="profession.icon"
+                :icon="role.icon"
                 default-icon="mdi-briefcase-variant"
                 :size="18"
-                :color="getColorByString(profession.name)"
+                :color="getColorByString(role.name)"
                 class="mr-2"
               />
-              {{ profession.name }}
+              {{ role.name }}
               <v-chip size="x-small" color="grey" variant="tonal" class="ml-2">{{
                 t('home.example')
               }}</v-chip>
@@ -409,7 +409,7 @@ void homeLoading
               variant="outlined"
               size="large"
               rounded="lg"
-              class="profession-chip profession-chip--placeholder"
+              class="role-chip role-chip--placeholder"
               @click="navigateTo('/role')"
             >
               {{ t('home.exploreMore') }}
@@ -950,7 +950,7 @@ void homeLoading
         </div>
         <div class="d-flex flex-wrap ga-2">
           <v-btn
-            v-for="role in hotProfessions"
+            v-for="role in hotRoles"
             :key="role.id"
             variant="flat"
             rounded="lg"
@@ -1137,22 +1137,22 @@ void homeLoading
   color: rgba(156, 39, 176, 0.85);
 }
 
-/* 职业标签样式 */
-.profession-chip {
+/* 角色标签样式 */
+.role-chip {
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.profession-chip:hover {
+.role-chip:hover {
   transform: translateY(-1px);
 }
 
 /* 占位标签（虚线边框） */
-.profession-chip--placeholder {
+.role-chip--placeholder {
   border: 1px dashed rgba(var(--v-theme-on-surface), 0.25) !important;
 }
 
-.profession-chip--placeholder:hover {
+.role-chip--placeholder:hover {
   border-color: rgb(var(--v-theme-primary)) !important;
 }
 

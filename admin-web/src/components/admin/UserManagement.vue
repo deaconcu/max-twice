@@ -341,9 +341,9 @@ const getRoleColor = (role?: number): string => {
                   <div class="text-caption text-grey-darken-1 mt-2">
                     <span class="font-weight-medium">互动:</span> 浏览 {{ user.viewCount ?? 0 }} | 两遍 {{ user.twiceCount ?? 0 }} | 赞 {{ user.likeCount ?? 0 }} | 评论 {{ user.commentCount ?? 0 }}
                     <span class="mx-2">·</span>
-                    <span class="font-weight-medium">学习:</span> 课程 {{ user.learningCourseCount ?? 0 }}/{{ user.completedCourseCount ?? 0 }} | 职业 {{ user.inProgressProfessionCount ?? 0 }}/{{ user.completedProfessionCount ?? 0 }}
+                    <span class="font-weight-medium">学习:</span> 课程 {{ user.learningCourseCount ?? 0 }}/{{ user.completedCourseCount ?? 0 }} | 角色 {{ user.inProgressRoleCount ?? 0 }}/{{ user.completedRoleCount ?? 0 }}
                     <span class="mx-2">·</span>
-                    <span class="font-weight-medium">关注:</span> 用户 {{ user.followingUserCount ?? 0 }} | 课程 {{ user.followingCourseCount ?? 0 }} | 职业 {{ user.followingProfessionCount ?? 0 }}
+                    <span class="font-weight-medium">关注:</span> 用户 {{ user.followingUserCount ?? 0 }} | 课程 {{ user.followingCourseCount ?? 0 }} | 角色 {{ user.followingRoleCount ?? 0 }}
                     <span class="mx-2">·</span>
                     <span class="font-weight-medium">创作:</span> 文章 {{ user.createdArticleCount ?? 0 }} | 目录 {{ user.createdIndexCount ?? 0 }} | 路线图 {{ user.createdRoadmapCount ?? 0 }} | 卡片组 {{ user.createdCardDeckCount ?? 0 }}
                   </div>

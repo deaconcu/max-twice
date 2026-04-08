@@ -17,11 +17,11 @@ const { t } = useI18n()
 const router = useRouter()
 
 // 当前激活的标签
-const activeType = ref<ContentType>('profession')
+const activeType = ref<ContentType>('role')
 
 // 收藏数据（统一存储 BookmarkDTO）
 const bookmarks = ref<Record<ContentType, Bookmark[]>>({
-  profession: [],
+  role: [],
   course: [],
   roadmap: [],
   post: [],
@@ -34,7 +34,7 @@ const loadingMore = ref(false)
 
 // 分页参数
 const lastIds = ref<Record<ContentType, number | undefined>>({
-  profession: undefined,
+  role: undefined,
   course: undefined,
   roadmap: undefined,
   post: undefined,
@@ -42,7 +42,7 @@ const lastIds = ref<Record<ContentType, number | undefined>>({
 })
 
 const hasMore = ref<Record<ContentType, boolean>>({
-  profession: true,
+  role: true,
   course: true,
   roadmap: true,
   post: true,
@@ -127,8 +127,8 @@ function goToDetail(item: Bookmark) {
   if (!obj) return
 
   switch (activeType.value) {
-    case 'profession':
-      router.push(`/profession/${item.objectId}`)
+    case 'role':
+      router.push(`/role/${item.objectId}`)
       break
     case 'roadmap':
       router.push(`/roadmap/${item.objectId}`)
@@ -149,14 +149,14 @@ function goToDetail(item: Bookmark) {
 function getIcon(item: Bookmark): string | null {
   const obj = item.object as Record<string, unknown>
   if (!obj) return null
-  return (obj.icon as string) || (obj.professionIcon as string) || null
+  return (obj.icon as string) || (obj.roleIcon as string) || null
 }
 
 // 获取名称
 function getName(item: Bookmark): string {
   const obj = item.object as Record<string, unknown>
   if (!obj) return t('user.profile.unknown')
-  return (obj.name as string) || (obj.professionName as string) || t('user.profile.unknown')
+  return (obj.name as string) || (obj.roleName as string) || t('user.profile.unknown')
 }
 
 // 获取图标颜色
@@ -197,7 +197,7 @@ function getPostIconColor(): string {
   <div class="bookmarks-tab">
     <!-- 二级标签 -->
     <v-tabs v-model="activeType" color="primary" class="mb-6">
-      <v-tab value="profession">{{ t('nav.role') }}</v-tab>
+      <v-tab value="role">{{ t('nav.role') }}</v-tab>
       <v-tab value="roadmap">{{ t('nav.roadmap') }}</v-tab>
       <v-tab value="course">{{ t('nav.courses') }}</v-tab>
       <v-tab value="post">{{ t('user.profile.article') }}</v-tab>
@@ -217,8 +217,8 @@ function getPostIconColor(): string {
 
     <!-- 收藏列表 -->
     <div v-else>
-      <!-- 职业 - 网格卡片 -->
-      <div v-if="activeType === 'profession'" class="bookmark-grid">
+      <!-- 角色 - 网格卡片 -->
+      <div v-if="activeType === 'role'" class="bookmark-grid">
         <v-card
           v-for="item in currentItems"
           :key="item.id"

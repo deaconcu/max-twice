@@ -92,7 +92,7 @@ public class SystemDomainService {
      */
     private void loadRoleCategories() {
         try {
-            String configValue = systemDataService.getValue("role");
+            String configValue = systemDataService.getValue("roleCategories");
             if (configValue == null) {
                 log.warn("系统配置 角色分类配置未找到");
                 return;
