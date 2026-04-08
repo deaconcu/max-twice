@@ -726,34 +726,6 @@ public class MemoryCardDeckService {
         log.info("卡片组 恢复: deckId={}，审核人={}", deckId, auditorId);
     }
 
-    /**
-     * 计算卡片组统计信息
-     */
-    /*
-    private DeckStatsDTO calculateDeckStats(Long deckId) {
-        if (deckId == null) {
-            return new DeckStatsDTO();
-        }
-        
-        // 获取卡片组信息
-        MemoryCardDeckDO deck = deckDomainService.getById(deckId);
-        if (deck == null) {
-            return new DeckStatsDTO();
-        }
-        
-        DeckStatsDTO stats = new DeckStatsDTO();
-        stats.setTotalCards(deck.getCardCount());
-        stats.setUpvotes(deck.getUpvoteCount());
-        stats.setVersion(deck.getVersion());
-        
-        // TODO: 如需要更多统计信息，可以继续扩展
-        // stats.setDownloads(获取下载数);
-        // stats.setUsage(获取使用情况);
-        
-        return stats;
-    }
-     */
-
     // ========== 版本检测相关方法 ==========
 
     /**

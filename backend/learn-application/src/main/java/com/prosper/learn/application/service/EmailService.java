@@ -1,5 +1,6 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.analytics.monitoring.service.ErrorLogService;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,6 +8,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
  * 邮件服务
@@ -20,6 +24,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final SystemProperties systemProperties;
+    private final ErrorLogService errorLogService;
 
     /**
      * 异步发送验证邮件
@@ -44,19 +49,31 @@ public class EmailService {
             log.info("验证邮件发送成功: {}", toEmail);
 
         } catch (org.springframework.mail.MailAuthenticationException e) {
-            // SMTP 认证失败（配置问题）
-            log.error("邮件服务认证失败，请检查 SMTP 配置: email={}, error={}",
-                     toEmail, e.getMessage());
-            // TODO: 发送告警给管理员
+            // SMTP 认证失败（配置问题），写入后台错误日志
+            log.error("邮件服务认证失败，请检查 SMTP 配置: email={}, error={}", toEmail, e.getMessage());
+            errorLogService.recordBackendError(
+                    e.getClass().getName(),
+                    "SMTP认证失败: " + e.getMessage(),
+                    getStackTrace(e),
+                    "EmailService.sendVerificationEmailAsync", null, null);
 
         } catch (org.springframework.mail.MailSendException e) {
-            // 邮件发送失败（收件地址无效、被拒绝等）
+            // 邮件发送失败（收件地址无效、被拒绝等），写入后台错误日志
             log.error("邮件发送失败: email={}, error={}", toEmail, e.getMessage());
-            // TODO: 可以记录到失败队列，稍后重试
+            errorLogService.recordBackendError(
+                    e.getClass().getName(),
+                    "邮件发送失败: email=" + toEmail + ", " + e.getMessage(),
+                    getStackTrace(e),
+                    "EmailService.sendVerificationEmailAsync", null, null);
 
         } catch (Exception e) {
             // 其他未知错误
             log.error("发送验证邮件时发生未知错误: email={}", toEmail, e);
+            errorLogService.recordBackendError(
+                    e.getClass().getName(),
+                    "发送验证邮件未知错误: email=" + toEmail + ", " + e.getMessage(),
+                    getStackTrace(e),
+                    "EmailService.sendVerificationEmailAsync", null, null);
         }
     }
 
@@ -84,5 +101,11 @@ public class EmailService {
             log.error("发送验证邮件失败: email={}", toEmail, e);
             return false;
         }
+    }
+
+    private String getStackTrace(Exception e) {
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
     }
 }

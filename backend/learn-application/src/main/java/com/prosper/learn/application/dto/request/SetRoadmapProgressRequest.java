@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 public class SetRoadmapProgressRequest {
     
     @NotNull(message = "专业ID不能为空")
-    private Long roleId;
+    private Long professionId;
     
     @NotNull(message = "路线图ID不能为空")
     private Long roadmapId;
