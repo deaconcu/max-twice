@@ -370,11 +370,29 @@
   },
   "user": {
     "login": {
-      "title": "User Login",
+      "title": "Login",
+      "subtitle": "Continue your learning journey",
       "email": "Email",
+      "emailPlaceholder": "Enter your email address",
       "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
       "loginButton": "Login",
-      "registerLink": "Don't have an account? Register"
+      "loggingIn": "Logging in...",
+      "registerLink": "Don't have an account?",
+      "registerNow": "Register now",
+      "loginSuccess": "Login successful!",
+      "loginFailed": "Login failed",
+      "welcome": "Welcome back, continue your learning journey",
+      "hint": "Login with email and password",
+      "agreementPrefix": "By continuing, you agree to our",
+      "userAgreement": "Terms of Service",
+      "agreementMiddle": "and acknowledge our",
+      "privacyPolicy": "Privacy Policy",
+      "captchaLoadFailed": "Captcha failed to load, please refresh the page",
+      "captchaRequired": "Please complete the captcha verification",
+      "captchaTooManyFailed": "Too many failed login attempts, please complete the captcha"
     },
     "register": {
       "title": "Welcome to Join",

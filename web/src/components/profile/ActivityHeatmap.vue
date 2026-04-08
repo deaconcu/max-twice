@@ -215,16 +215,16 @@ const formatDate = (dateStr: string): string => {
 
 // 格式化活跃值显示
 const formatValue = (day: DayData): string => {
-  if (!day.hasData) return t('profile.heatmap.notJoined')
+  if (!day.hasData) return t('user.profile.heatmap.notJoined')
   const parts: string[] = []
   if (day.completedNodes > 0 || day.cancelCompletedNodes > 0) {
     const net = day.completedNodes - day.cancelCompletedNodes
-    parts.push(t('profile.heatmap.completedNodes', { net, completed: day.completedNodes, cancelled: day.cancelCompletedNodes }))
+    parts.push(t('user.profile.heatmap.completedNodes', { net, completed: day.completedNodes, cancelled: day.cancelCompletedNodes }))
   }
   if (day.reviewedCards > 0) {
-    parts.push(t('profile.heatmap.reviewedCards', { count: day.reviewedCards }))
+    parts.push(t('user.profile.heatmap.reviewedCards', { count: day.reviewedCards }))
   }
-  return parts.length > 0 ? parts.join(locale.value === 'zh' ? '，' : ', ') : t('profile.heatmap.noActivity')
+  return parts.length > 0 ? parts.join(locale.value === 'zh' ? '，' : ', ') : t('user.profile.heatmap.noActivity')
 }
 </script>
 
@@ -247,11 +247,11 @@ const formatValue = (day: DayData): string => {
       <!-- 星期标签 -->
       <div class="weekday-labels">
         <span class="weekday-label"></span>
-        <span class="weekday-label">{{ t('profile.heatmap.mon') }}</span>
+        <span class="weekday-label">{{ t('user.profile.heatmap.mon') }}</span>
         <span class="weekday-label"></span>
-        <span class="weekday-label">{{ t('profile.heatmap.wed') }}</span>
+        <span class="weekday-label">{{ t('user.profile.heatmap.wed') }}</span>
         <span class="weekday-label"></span>
-        <span class="weekday-label">{{ t('profile.heatmap.fri') }}</span>
+        <span class="weekday-label">{{ t('user.profile.heatmap.fri') }}</span>
         <span class="weekday-label"></span>
       </div>
 
@@ -284,17 +284,17 @@ const formatValue = (day: DayData): string => {
     <div class="heatmap-footer">
       <div class="heatmap-summary">
         <span class="text-caption text-grey">
-          {{ t('profile.heatmap.yearSummary', { nodes: totalCompletedNodes, cards: totalReviewedCards.toLocaleString() }) }}
+          {{ t('user.profile.heatmap.yearSummary', { nodes: totalCompletedNodes, cards: totalReviewedCards.toLocaleString() }) }}
         </span>
       </div>
       <div class="heatmap-legend">
-        <span class="legend-text">{{ t('profile.heatmap.less') }}</span>
+        <span class="legend-text">{{ t('user.profile.heatmap.less') }}</span>
         <div class="legend-cell level-0" />
         <div class="legend-cell level-1" />
         <div class="legend-cell level-2" />
         <div class="legend-cell level-3" />
         <div class="legend-cell level-4" />
-        <span class="legend-text">{{ t('profile.heatmap.more') }}</span>
+        <span class="legend-text">{{ t('user.profile.heatmap.more') }}</span>
       </div>
     </div>
   </div>

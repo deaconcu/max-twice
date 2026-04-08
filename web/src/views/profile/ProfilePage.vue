@@ -236,7 +236,7 @@ const handleNavigate = (tab: string, mode: string) => {
                     @click="currentMode = 'settings'"
                   >
                     <v-icon icon="mdi-pencil" size="14" class="mr-1" />
-                    {{ t('profile.editProfile') }}
+                    {{ t('user.profile.editProfile') }}
                   </v-btn>
                 </div>
 
@@ -245,13 +245,13 @@ const handleNavigate = (tab: string, mode: string) => {
                   {{ userInfo.bio }}
                 </p>
                 <p v-else-if="isOwnProfile" class="text-body-2 text-grey mb-3">
-                  {{ t('profile.addBioHint') }}
+                  {{ t('user.profile.addBioHint') }}
                 </p>
 
                 <!-- 加入时间 -->
                 <div class="text-caption text-grey-darken-1">
                   <v-icon icon="mdi-calendar" size="14" class="mr-1" />
-                  {{ t('profile.joinedAt', { date: userInfo.joinDate }) }}
+                  {{ t('user.profile.joinedAt', { date: userInfo.joinDate }) }}
                 </div>
               </div>
             </div>
@@ -276,24 +276,24 @@ const handleNavigate = (tab: string, mode: string) => {
               @click="activeTab = 'overview'; currentMode = 'learner'"
             >
               <v-icon icon="mdi-view-dashboard-outline" size="18" class="mr-2" />
-              {{ t('profile.nav.overview') }}
+              {{ t('user.profile.nav.overview') }}
             </div>
 
             <!-- 学习分组 -->
-            <div class="nav-group-title mt-4">{{ t('profile.nav.learning') }}</div>
+            <div class="nav-group-title mt-4">{{ t('user.profile.nav.learning') }}</div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'roles' }"
               @click="activeTab = 'roles'; currentMode = 'learner'"
             >
-              {{ t('profile.nav.learningRoles') }}
+              {{ t('user.profile.nav.learningRoles') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'courses-learning' }"
               @click="activeTab = 'courses-learning'; currentMode = 'learner'"
             >
-              {{ t('profile.nav.learningCourses') }}
+              {{ t('user.profile.nav.learningCourses') }}
             </div>
             <div
               v-if="isOwnProfile"
@@ -301,64 +301,64 @@ const handleNavigate = (tab: string, mode: string) => {
               :class="{ 'nav-item-active': activeTab === 'bookmarks' }"
               @click="activeTab = 'bookmarks'; currentMode = 'learner'"
             >
-              {{ t('profile.nav.myBookmarks') }}
+              {{ t('user.profile.nav.myBookmarks') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'people' }"
               @click="activeTab = 'people'; currentMode = 'learner'"
             >
-              {{ t('profile.nav.following') }}
+              {{ t('user.profile.nav.following') }}
             </div>
 
             <!-- 创作分组 -->
-            <div class="nav-group-title mt-4">{{ t('profile.nav.creation') }}</div>
+            <div class="nav-group-title mt-4">{{ t('user.profile.nav.creation') }}</div>
             <div
               v-if="isOwnProfile"
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'stats' }"
               @click="activeTab = 'stats'; currentMode = 'creator'"
             >
-              {{ t('profile.nav.creatorStats') }}
+              {{ t('user.profile.nav.creatorStats') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'articles' }"
               @click="activeTab = 'articles'; currentMode = 'creator'"
             >
-              {{ t('profile.nav.createdArticles') }}
+              {{ t('user.profile.nav.createdArticles') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'catalogs' }"
               @click="activeTab = 'catalogs'; currentMode = 'creator'"
             >
-              {{ t('profile.nav.createdCatalogs') }}
+              {{ t('user.profile.nav.createdCatalogs') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'roadmaps' }"
               @click="activeTab = 'roadmaps'; currentMode = 'creator'"
             >
-              {{ t('profile.nav.createdRoadmaps') }}
+              {{ t('user.profile.nav.createdRoadmaps') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'decks' }"
               @click="activeTab = 'decks'; currentMode = 'creator'"
             >
-              {{ t('profile.nav.createdDecks') }}
+              {{ t('user.profile.nav.createdDecks') }}
             </div>
 
             <!-- 设置 -->
-            <div v-if="isOwnProfile" class="nav-group-title mt-4">{{ t('profile.nav.settings') }}</div>
+            <div v-if="isOwnProfile" class="nav-group-title mt-4">{{ t('user.profile.nav.settings') }}</div>
             <div
               v-if="isOwnProfile"
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'info' }"
               @click="activeTab = 'info'; currentMode = 'settings'"
             >
-              {{ t('profile.nav.personalInfo') }}
+              {{ t('user.profile.nav.personalInfo') }}
             </div>
           </div>
         </v-col>
@@ -375,7 +375,7 @@ const handleNavigate = (tab: string, mode: string) => {
               class="primary-mode-btn"
               @click="activeTab = 'overview'; currentMode = 'learner'"
             >
-              {{ t('profile.nav.overview') }}
+              {{ t('user.profile.nav.overview') }}
             </v-btn>
             <v-btn
               :color="currentMode === 'learner' && activeTab !== 'overview' ? 'primary' : undefined"
@@ -385,7 +385,7 @@ const handleNavigate = (tab: string, mode: string) => {
               class="primary-mode-btn"
               @click="activeTab = 'roles'; currentMode = 'learner'"
             >
-              {{ t('profile.nav.learning') }}
+              {{ t('user.profile.nav.learning') }}
             </v-btn>
             <v-btn
               :color="currentMode === 'creator' ? 'primary' : undefined"
@@ -395,7 +395,7 @@ const handleNavigate = (tab: string, mode: string) => {
               class="primary-mode-btn"
               @click="activeTab = isOwnProfile ? 'stats' : 'articles'; currentMode = 'creator'"
             >
-              {{ t('profile.nav.creation') }}
+              {{ t('user.profile.nav.creation') }}
             </v-btn>
             <v-btn
               v-if="isOwnProfile"
@@ -406,7 +406,7 @@ const handleNavigate = (tab: string, mode: string) => {
               class="primary-mode-btn"
               @click="activeTab = 'info'; currentMode = 'settings'"
             >
-              {{ t('profile.nav.settings') }}
+              {{ t('user.profile.nav.settings') }}
             </v-btn>
           </div>
 
@@ -420,10 +420,10 @@ const handleNavigate = (tab: string, mode: string) => {
             density="compact"
             show-arrows
           >
-            <v-tab value="roles">{{ t('profile.nav.roles') }}</v-tab>
-            <v-tab value="courses-learning">{{ t('profile.nav.courses') }}</v-tab>
-            <v-tab v-if="isOwnProfile" value="bookmarks">{{ t('profile.nav.bookmarks') }}</v-tab>
-            <v-tab value="people">{{ t('profile.nav.friends') }}</v-tab>
+            <v-tab value="roles">{{ t('user.profile.nav.roles') }}</v-tab>
+            <v-tab value="courses-learning">{{ t('user.profile.nav.courses') }}</v-tab>
+            <v-tab v-if="isOwnProfile" value="bookmarks">{{ t('user.profile.nav.bookmarks') }}</v-tab>
+            <v-tab value="people">{{ t('user.profile.nav.friends') }}</v-tab>
           </v-tabs>
           <v-tabs
             v-else-if="currentMode === 'creator'"
@@ -434,11 +434,11 @@ const handleNavigate = (tab: string, mode: string) => {
             density="compact"
             show-arrows
           >
-            <v-tab v-if="isOwnProfile" value="stats">{{ t('profile.nav.stats') }}</v-tab>
-            <v-tab value="articles">{{ t('profile.nav.articles') }}</v-tab>
-            <v-tab value="catalogs">{{ t('profile.nav.catalogs') }}</v-tab>
-            <v-tab value="roadmaps">{{ t('profile.nav.roadmaps') }}</v-tab>
-            <v-tab value="decks">{{ t('profile.nav.decks') }}</v-tab>
+            <v-tab v-if="isOwnProfile" value="stats">{{ t('user.profile.nav.stats') }}</v-tab>
+            <v-tab value="articles">{{ t('user.profile.nav.articles') }}</v-tab>
+            <v-tab value="catalogs">{{ t('user.profile.nav.catalogs') }}</v-tab>
+            <v-tab value="roadmaps">{{ t('user.profile.nav.roadmaps') }}</v-tab>
+            <v-tab value="decks">{{ t('user.profile.nav.decks') }}</v-tab>
           </v-tabs>
         </v-col>
 

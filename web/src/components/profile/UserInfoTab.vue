@@ -7,7 +7,7 @@
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
                 <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
-                  >{{ t('profile.userInfo.avatar') }}</span
+                  >{{ t('user.profile.userInfo.avatar') }}</span
                 >
               </div>
               <div class="flex-grow-1 d-flex flex-column align-start">
@@ -38,7 +38,7 @@
                   />
                 </div>
                 <p class="text-caption text-grey mt-2 text-center text-sm-start">
-                  {{ t('profile.userInfo.avatarHint') }}
+                  {{ t('user.profile.userInfo.avatarHint') }}
                 </p>
               </div>
             </div>
@@ -49,7 +49,7 @@
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
                 <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
-                  >{{ t('profile.userInfo.name') }}</span
+                  >{{ t('user.profile.userInfo.name') }}</span
                 >
               </div>
               <div class="flex-grow-1">
@@ -69,7 +69,7 @@
                     @click="displayModifyName = true"
                   >
                     <v-icon icon="mdi-pencil" size="16" class="mr-1" />
-                    {{ t('profile.userInfo.modify') }}
+                    {{ t('user.profile.userInfo.modify') }}
                   </v-btn>
                 </div>
                 <div v-else>
@@ -114,7 +114,7 @@
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
                 <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
-                  >{{ t('profile.userInfo.bio') }}</span
+                  >{{ t('user.profile.userInfo.bio') }}</span
                 >
               </div>
               <div class="flex-grow-1">
@@ -123,7 +123,7 @@
                   class="d-flex flex-column flex-sm-row align-start align-sm-center"
                 >
                   <span class="text-body-2 text-md-body-1 text-grey-darken-3 mb-2 mb-sm-0">{{
-                    localUserInfo.bio || t('profile.userInfo.bioNotSet')
+                    localUserInfo.bio || t('user.profile.userInfo.bioNotSet')
                   }}</span>
                   <v-btn
                     variant="text"
@@ -134,7 +134,7 @@
                     @click="displayModifyBio = true"
                   >
                     <v-icon icon="mdi-pencil" size="16" class="mr-1" />
-                    {{ t('profile.userInfo.modify') }}
+                    {{ t('user.profile.userInfo.modify') }}
                   </v-btn>
                 </div>
                 <div v-else>
@@ -144,7 +144,7 @@
                     variant="outlined"
                     rounded="lg"
                     rows="3"
-                    :placeholder="t('profile.userInfo.bioPlaceholder')"
+                    :placeholder="t('user.profile.userInfo.bioPlaceholder')"
                     :rules="biographyRules"
                     :counter="biographyMaxLength"
                     style="max-width: 500px"
@@ -180,7 +180,7 @@
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
                 <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
-                  >{{ t('profile.userInfo.email') }}</span
+                  >{{ t('user.profile.userInfo.email') }}</span
                 >
               </div>
               <div class="flex-grow-1">
@@ -194,7 +194,7 @@
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
                 <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
-                  >{{ t('profile.userInfo.timezone') }}</span
+                  >{{ t('user.profile.userInfo.timezone') }}</span
                 >
               </div>
               <div class="flex-grow-1">
@@ -214,7 +214,7 @@
                     @click="displayModifyTimezone = true"
                   >
                     <v-icon icon="mdi-pencil" size="16" class="mr-1" />
-                    {{ t('profile.userInfo.modify') }}
+                    {{ t('user.profile.userInfo.modify') }}
                   </v-btn>
                 </div>
                 <div v-else>
@@ -260,7 +260,7 @@
             <div class="d-flex flex-column flex-sm-row align-start">
               <div class="label-section mb-2 mb-sm-0">
                 <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
-                  >{{ t('profile.userInfo.joinDate') }}</span
+                  >{{ t('user.profile.userInfo.joinDate') }}</span
                 >
               </div>
               <div class="flex-grow-1">
@@ -282,7 +282,7 @@
           closable
           @click:close="showSuccessAlert = false"
         >
-          {{ t('profile.userInfo.saveSuccess') }}
+          {{ t('user.profile.userInfo.saveSuccess') }}
         </v-alert>
   </div>
 </template>
@@ -399,13 +399,13 @@ const handleAvatarUpload = async (event: Event) => {
   // 验证文件类型
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
   if (!allowedTypes.includes(file.type)) {
-    showSnackbar?.(t('profile.userInfo.avatarTypeError'), 'error')
+    showSnackbar?.(t('user.profile.userInfo.avatarTypeError'), 'error')
     return
   }
 
   // 验证文件大小 (5MB)
   if (file.size > 5 * 1024 * 1024) {
-    showSnackbar?.(t('profile.userInfo.avatarSizeError'), 'error')
+    showSnackbar?.(t('user.profile.userInfo.avatarSizeError'), 'error')
     return
   }
 
@@ -415,16 +415,16 @@ const handleAvatarUpload = async (event: Event) => {
 
     // 如果返回 null，说明上传失败
     if (!avatarUrl) {
-      showSnackbar?.(t('profile.userInfo.avatarUploadFailed'), 'error')
+      showSnackbar?.(t('user.profile.userInfo.avatarUploadFailed'), 'error')
       return
     }
 
     // 通知父组件更新 profileUser
     emit('updateAvatar', avatarUrl)
-    showSnackbar?.(t('profile.userInfo.avatarUpdateSuccess'), 'success')
+    showSnackbar?.(t('user.profile.userInfo.avatarUpdateSuccess'), 'success')
   } catch (error: any) {
     console.error('Avatar upload failed:', error)
-    showSnackbar?.(error.message || t('profile.userInfo.avatarUploadFailed'), 'error')
+    showSnackbar?.(error.message || t('user.profile.userInfo.avatarUploadFailed'), 'error')
   } finally {
     // 清空 input，允许重复选择同一文件
     if (target) target.value = ''

@@ -115,10 +115,10 @@
 
                   <!-- 用户协议 -->
                   <p class="text-caption text-center text-medium-emphasis mb-4">
-                    继续操作即表示你同意我们的
-                    <a href="#" class="text-primary text-decoration-none">用户协议</a>
-                    并确认已了解
-                    <a href="#" class="text-primary text-decoration-none">隐私政策</a>。
+                    {{ t('user.login.agreementPrefix') }}
+                    <a href="#" class="text-primary text-decoration-none">{{ t('user.login.userAgreement') }}</a>
+                    {{ t('user.login.agreementMiddle') }}
+                    <a href="#" class="text-primary text-decoration-none">{{ t('user.login.privacyPolicy') }}</a>。
                   </p>
 
                   <v-divider class="my-6" />
@@ -191,7 +191,7 @@ const onTurnstileVerify = (token: string) => {
 }
 
 const onTurnstileError = () => {
-  errorMessage.value = '人机验证加载失败，请刷新页面重试'
+  errorMessage.value = t('user.login.captchaLoadFailed')
 }
 
 const onTurnstileExpire = () => {
@@ -209,7 +209,7 @@ const handleLogin = async () => {
 
   // 如果显示验证码但未完成验证
   if (showCaptcha.value && !turnstileToken.value) {
-    errorMessage.value = '请完成人机验证'
+    errorMessage.value = t('user.login.captchaRequired')
     return
   }
 
@@ -224,7 +224,7 @@ const handleLogin = async () => {
     // 检查是否需要验证码（错误码 2604）
     if (err?.code === BUSINESS_ERROR.CAPTCHA_REQUIRED) {
       showCaptcha.value = true
-      errorMessage.value = '登录失败次数过多，请完成人机验证'
+      errorMessage.value = t('user.login.captchaTooManyFailed')
       return
     }
 

@@ -418,7 +418,14 @@
       "loginSuccess": "登录成功！",
       "loginFailed": "登录失败",
       "welcome": "欢迎回来，继续你的学习之旅",
-      "hint": "使用邮箱和密码登录"
+      "hint": "使用邮箱和密码登录",
+      "agreementPrefix": "继续操作即表示你同意我们的",
+      "userAgreement": "用户协议",
+      "agreementMiddle": "并确认已了解",
+      "privacyPolicy": "隐私政策",
+      "captchaLoadFailed": "人机验证加载失败，请刷新页面重试",
+      "captchaRequired": "请完成人机验证",
+      "captchaTooManyFailed": "登录失败次数过多，请完成人机验证"
     },
     "register": {
       "title": "注册",
@@ -433,7 +440,9 @@
       "loginLink": "已有账号？",
       "loginNow": "立即登录",
       "registerSuccess": "注册成功！",
-      "registerFailed": "注册失败"
+      "registerFailed": "注册失败",
+      "captchaLoadFailed": "人机验证加载失败，请刷新页面重试",
+      "captchaRequired": "请完成人机验证"
     },
     "profile": {
       "title": "个人资料",

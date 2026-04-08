@@ -64,7 +64,7 @@ const goToReview = () => {
     <!-- 学习进度概览 -->
     <div class="section">
       <div class="section-header">
-        <h3 class="section-title">{{ t('profile.overview.learningProgress') }}</h3>
+        <h3 class="section-title">{{ t('user.profile.overview.learningProgress') }}</h3>
       </div>
       <v-row>
         <!-- 职业学习 -->
@@ -82,7 +82,7 @@ const goToReview = () => {
                     <v-icon icon="mdi-briefcase-outline" color="white" />
                   </v-avatar>
                   <div>
-                    <div class="text-body-2 text-grey">{{ t('profile.overview.roleRoutes') }}</div>
+                    <div class="text-body-2 text-grey">{{ t('user.profile.overview.roleRoutes') }}</div>
                     <div class="text-h5 font-weight-bold">
                       {{ learningProgress.inProgressRoles + learningProgress.completedRoles }}
                     </div>
@@ -93,11 +93,11 @@ const goToReview = () => {
               <div class="d-flex ga-4 text-caption text-grey">
                 <span>
                   <v-icon icon="mdi-clock-outline" size="14" class="mr-1" />
-                  {{ t('profile.overview.inProgress', { count: learningProgress.inProgressRoles }) }}
+                  {{ t('user.profile.overview.inProgress', { count: learningProgress.inProgressRoles }) }}
                 </span>
                 <span>
                   <v-icon icon="mdi-check-circle-outline" size="14" class="mr-1" />
-                  {{ t('profile.overview.completed', { count: learningProgress.completedRoles }) }}
+                  {{ t('user.profile.overview.completed', { count: learningProgress.completedRoles }) }}
                 </span>
               </div>
             </v-card-text>
@@ -119,7 +119,7 @@ const goToReview = () => {
                     <v-icon icon="mdi-book-open-page-variant-outline" color="white" />
                   </v-avatar>
                   <div>
-                    <div class="text-body-2 text-grey">{{ t('profile.overview.courses') }}</div>
+                    <div class="text-body-2 text-grey">{{ t('user.profile.overview.courses') }}</div>
                     <div class="text-h5 font-weight-bold">
                       {{ learningProgress.learningCourses + learningProgress.completedCourses }}
                     </div>
@@ -130,11 +130,11 @@ const goToReview = () => {
               <div class="d-flex ga-4 text-caption text-grey">
                 <span>
                   <v-icon icon="mdi-clock-outline" size="14" class="mr-1" />
-                  {{ t('profile.overview.inProgress', { count: learningProgress.learningCourses }) }}
+                  {{ t('user.profile.overview.inProgress', { count: learningProgress.learningCourses }) }}
                 </span>
                 <span>
                   <v-icon icon="mdi-check-circle-outline" size="14" class="mr-1" />
-                  {{ t('profile.overview.completed', { count: learningProgress.completedCourses }) }}
+                  {{ t('user.profile.overview.completed', { count: learningProgress.completedCourses }) }}
                 </span>
               </div>
             </v-card-text>
@@ -146,7 +146,7 @@ const goToReview = () => {
     <!-- 连续学习 -->
     <div class="section">
       <div class="section-header">
-        <h3 class="section-title">{{ t('profile.overview.learningRecord') }}</h3>
+        <h3 class="section-title">{{ t('user.profile.overview.learningRecord') }}</h3>
       </div>
       <v-row>
         <v-col cols="6" sm="3">
@@ -155,7 +155,7 @@ const goToReview = () => {
               <div class="text-h4 font-weight-bold text-primary mb-1">
                 {{ streakData.learningDays }}
               </div>
-              <div class="text-caption text-grey">{{ t('profile.overview.consecutiveLearning') }}</div>
+              <div class="text-caption text-grey">{{ t('user.profile.overview.consecutiveLearning') }}</div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -165,7 +165,7 @@ const goToReview = () => {
               <div class="text-h4 font-weight-bold text-success mb-1">
                 {{ streakData.reviewDays }}
               </div>
-              <div class="text-caption text-grey">{{ t('profile.overview.consecutiveReview') }}</div>
+              <div class="text-caption text-grey">{{ t('user.profile.overview.consecutiveReview') }}</div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -175,7 +175,7 @@ const goToReview = () => {
               <div class="text-h4 font-weight-bold text-grey-darken-2 mb-1">
                 {{ streakData.totalLearningDays }}
               </div>
-              <div class="text-caption text-grey">{{ t('profile.overview.totalLearning') }}</div>
+              <div class="text-caption text-grey">{{ t('user.profile.overview.totalLearning') }}</div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -185,7 +185,7 @@ const goToReview = () => {
               <div class="text-h4 font-weight-bold text-grey-darken-2 mb-1">
                 {{ streakData.totalReviewDays }}
               </div>
-              <div class="text-caption text-grey">{{ t('profile.overview.totalReview') }}</div>
+              <div class="text-caption text-grey">{{ t('user.profile.overview.totalReview') }}</div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -200,7 +200,7 @@ const goToReview = () => {
           @click="goToReview"
         >
           <v-icon icon="mdi-cards-outline" class="mr-2" />
-          {{ t('profile.overview.goReview') }}
+          {{ t('user.profile.overview.goReview') }}
         </v-btn>
       </div>
     </div>
@@ -208,7 +208,7 @@ const goToReview = () => {
     <!-- 创作概览 -->
     <div class="section">
       <div class="section-header">
-        <h3 class="section-title">{{ t('profile.overview.creationContent') }}</h3>
+        <h3 class="section-title">{{ t('user.profile.overview.creationContent') }}</h3>
       </div>
       <v-row>
         <v-col cols="6" sm="3">
@@ -221,7 +221,7 @@ const goToReview = () => {
             <v-card-text class="text-center pa-4">
               <v-icon icon="mdi-file-document-outline" size="28" color="primary" class="mb-2" />
               <div class="text-h5 font-weight-bold mb-1">{{ creationData.articles }}</div>
-              <div class="text-caption text-grey">{{ t('profile.overview.articles') }}</div>
+              <div class="text-caption text-grey">{{ t('user.profile.overview.articles') }}</div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -235,7 +235,7 @@ const goToReview = () => {
             <v-card-text class="text-center pa-4">
               <v-icon icon="mdi-format-list-bulleted" size="28" color="success" class="mb-2" />
               <div class="text-h5 font-weight-bold mb-1">{{ creationData.catalogs }}</div>
-              <div class="text-caption text-grey">{{ t('profile.overview.catalogs') }}</div>
+              <div class="text-caption text-grey">{{ t('user.profile.overview.catalogs') }}</div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -249,7 +249,7 @@ const goToReview = () => {
             <v-card-text class="text-center pa-4">
               <v-icon icon="mdi-map-marker-path" size="28" color="warning" class="mb-2" />
               <div class="text-h5 font-weight-bold mb-1">{{ creationData.roadmaps }}</div>
-              <div class="text-caption text-grey">{{ t('profile.overview.roadmaps') }}</div>
+              <div class="text-caption text-grey">{{ t('user.profile.overview.roadmaps') }}</div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -263,7 +263,7 @@ const goToReview = () => {
             <v-card-text class="text-center pa-4">
               <v-icon icon="mdi-cards" size="28" color="info" class="mb-2" />
               <div class="text-h5 font-weight-bold mb-1">{{ creationData.decks }}</div>
-              <div class="text-caption text-grey">{{ t('profile.overview.decks') }}</div>
+              <div class="text-caption text-grey">{{ t('user.profile.overview.decks') }}</div>
             </v-card-text>
           </v-card>
         </v-col>
