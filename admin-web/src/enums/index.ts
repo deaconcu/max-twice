@@ -102,8 +102,8 @@ export const MessageType = {
   POST_BANNED: 14, // 帖子被封禁
   COMMENT_REJECTED: 15, // 评论被拒绝
   COMMENT_BANNED: 16, // 评论被封禁
-  PROFESSION_REJECTED: 17, // 职业被拒绝
-  PROFESSION_BANNED: 18, // 职业被封禁
+  ROLE_REJECTED: 17,
+  ROLE_BANNED: 18,
   ROADMAP_REJECTED: 19, // 路线图被拒绝
   ROADMAP_BANNED: 20, // 路线图被封禁
   MEMORY_DECK_REJECTED: 21, // 卡片组被拒绝
@@ -111,7 +111,7 @@ export const MessageType = {
   NODE_REJECTED: 23, // 节点被拒绝
   NODE_BANNED: 24, // 节点被封禁
   COURSE_APPROVED: 25, // 课程审核通过
-  PROFESSION_APPROVED: 26, // 职业审核通过
+  ROLE_APPROVED: 26,
 
   SYSTEM: 99, // 系统消息
   OTHER: 100, // 其他

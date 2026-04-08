@@ -64,10 +64,7 @@
               size="small"
               rounded="lg"
               :color="selectedPeriod === '7' ? 'primary' : 'default'"
-              @click="
-                selectedPeriod = '7'
-                onPeriodChange()
-              "
+              @click="selectedPeriod = '7'; onPeriodChange()"
             >
               {{ t('user.profile.creatorStats.days7') }}
             </v-btn>
@@ -76,10 +73,7 @@
               size="small"
               rounded="lg"
               :color="selectedPeriod === '30' ? 'primary' : 'default'"
-              @click="
-                selectedPeriod = '30'
-                onPeriodChange()
-              "
+              @click="selectedPeriod = '30'; onPeriodChange()"
             >
               {{ t('user.profile.creatorStats.days30') }}
             </v-btn>
@@ -88,10 +82,7 @@
               size="small"
               rounded="lg"
               :color="selectedPeriod === '180' ? 'primary' : 'default'"
-              @click="
-                selectedPeriod = '180'
-                onPeriodChange()
-              "
+              @click="selectedPeriod = '180'; onPeriodChange()"
             >
               {{ t('user.profile.creatorStats.days180') }}
             </v-btn>
@@ -100,10 +91,7 @@
               size="small"
               rounded="lg"
               :color="selectedPeriod === '365' ? 'primary' : 'default'"
-              @click="
-                selectedPeriod = '365'
-                onPeriodChange()
-              "
+              @click="selectedPeriod = '365'; onPeriodChange()"
             >
               {{ t('user.profile.creatorStats.days365') }}
             </v-btn>

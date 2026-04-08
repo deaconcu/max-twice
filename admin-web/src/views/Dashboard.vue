@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/modules/auth'
 import { useUserStore } from '@/stores/modules/user'
 import { UserRole } from '@/enums'
 import { userApi } from '@/api'
-import ProfessionManagement from '@/components/admin/ProfessionManagement.vue'
+import RoleManagement from '@/components/admin/RoleManagement.vue'
 import SystemConfiguration from '@/components/admin/SystemConfiguration.vue'
 import SystemOperations from '@/components/admin/SystemOperations.vue'
 import CourseManagement from '@/components/admin/CourseManagement.vue'
@@ -59,7 +59,7 @@ const validTabs = [
   'content-generator-node',
   'content-generator-path',
   'content-generator-management',
-  'profession-management',
+  'role-management',
   'course-management',
   'roadmap-management',
   'node-management',
@@ -87,7 +87,7 @@ const menuItems = [
   { icon: 'mdi-bug-outline', text: '错误日志', value: 'error-logs' },
   { header: '全局内容管理' },
   { icon: 'mdi-account-multiple', text: '用户', value: 'user-management' },
-  { icon: 'mdi-briefcase-check-outline', text: '职业', value: 'profession-management' },
+  { icon: 'mdi-briefcase-check-outline', text: '角色', value: 'role-management' },
   { icon: 'mdi-book-check-outline', text: '课程', value: 'course-management' },
   { icon: 'mdi-file-tree-outline', text: '节点', value: 'node-management' },
   { header: '用户内容管理' },
@@ -216,8 +216,8 @@ onMounted(async () => {
         </v-card>
 
         <!-- 职业申请管理 -->
-        <v-card v-if="tab == 'profession-management'" class="px-6 pt-2 pb-6 no-border" rounded="lg">
-          <ProfessionManagement />
+        <v-card v-if="tab == 'role-management'" class="px-6 pt-2 pb-6 no-border" rounded="lg">
+          <RoleManagement />
         </v-card>
 
         <!-- 课程管理 -->

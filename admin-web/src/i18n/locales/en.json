@@ -508,7 +508,7 @@
       "specificDirection": "Specific Direction"
     },
     "listing": {
-      "hotProfessions": "Hot Career Recommendations ({count} careers in total)",
+      "hotRoles": "Hot Role Recommendations ({count} roles in total)",
       "categoryJobs": "{category} Careers ({count} in total)",
       "specificJobs": "{count} careers in total",
       "loadingMore": "Loading more careers...",
@@ -605,7 +605,7 @@
       "completed": "Completed",
       "unknown": "Unknown"
     },
-    "professions": {
+    "roles": {
       "fullStack": "Full Stack Developer",
       "frontend": "Frontend Developer",
       "dataScientist": "Data Scientist"
@@ -680,7 +680,7 @@
     "subtitle": "Comprehensive ranking based on learners and subscribers",
     "tabs": {
       "courses": "Hot Courses",
-      "professions": "Hot Professions"
+      "roles": "Hot Roles"
     },
     "sortBy": "Sort by:",
     "sortOptions": {
@@ -706,7 +706,7 @@
     "systemConfig": "System Configuration",
     "systemOperations": "System Operations",
     "courseManagement": "Course Management",
-    "professionManagement": "Profession Management",
+    "roleManagement": "Role Management",
     "addSuccess": "Added successfully!",
     "operationSuccess": "Operation successful!",
     "modules": "Functional Modules",
@@ -978,16 +978,16 @@
     "subtitle": "Manage core system configuration parameters",
     "configValid": "Config Valid",
     "courseCategories": "Course Categories Configuration",
-    "professionCategories": "Profession Categories Configuration",
+    "roleCategories": "Role Categories Configuration",
     "courseCategoriesJSON": "Course Categories JSON",
-    "professionCategoriesJSON": "Profession Categories JSON",
+    "roleCategoriesJSON": "Role Categories JSON",
     "courseCategoriesPlaceholder": "Please enter the JSON configuration for course categories...",
-    "professionCategoriesPlaceholder": "Please enter the JSON configuration for profession categories...",
+    "roleCategoriesPlaceholder": "Please enter the JSON configuration for role categories...",
     "courseCategoriesHint": "Configure the classification structure and related parameters for courses",
-    "professionCategoriesHint": "Configure the classification structure and related parameters for professions",
+    "roleCategoriesHint": "Configure the classification structure and related parameters for roles",
     "fullConfigPreview": "Full Configuration Preview",
     "mergedConfig": "Merged Complete Configuration",
-    "mergedConfigHint": "This is the complete system configuration after merging course categories and profession categories",
+    "mergedConfigHint": "This is the complete system configuration after merging course categories and role categories",
     "saveConfig": "Save Configuration",
     "format": "Format",
     "lastUpdate": "Last Update:",
@@ -1020,9 +1020,9 @@
     "delete": "Delete",
     "restore": "Restore"
   },
-  "professionManagement": {
-    "title": "Profession Application Management",
-    "subtitle": "Review and manage user-submitted profession applications",
+  "roleManagement": {
+    "title": "Role Application Management",
+    "subtitle": "Review and manage user-submitted role applications",
     "loading": "Loading...",
     "pending": "Pending",
     "approved": "Approved",

@@ -152,6 +152,9 @@
     "about": "About",
     "profile": "Profile",
     "settings": "Settings",
+    "privacy": "Privacy",
+    "favorites": "Favorites",
+    "help": "Help",
     "search": "Search",
     "searchPlaceholder": "Search courses, roles, articles...",
     "searchPlaceholderFull": "Search courses, nodes, users, roles...",
@@ -179,7 +182,16 @@
     "success": "Success",
     "error": "Error",
     "warning": "Warning",
+    "goBack": "Go Back",
+    "goHome": "Go Home",
+    "all": "All",
+    "clearFilters": "Clear Filters",
+    "loadMore": "Load More",
     "guest": "Guest",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "saveSettings": "Save Settings",
+    "noCards": "No cards",
     "bookmark": "Bookmark",
     "unbookmark": "Unbookmark",
     "copied": "Copied",
@@ -201,8 +213,7 @@
     "reachedEnd": "You've reached the end",
     "previewImage": "Preview image",
     "user": "User",
-    "redirecting": "Redirecting...",
-    "all": "All"
+    "redirecting": "Redirecting..."
   },
   "notification": {
     "title": "Notifications",
@@ -282,6 +293,12 @@
     "hoursAgo": "{n} hours ago",
     "daysAgo": "{n} days ago",
     "new": "NEW"
+  },
+  "userMenu": {
+    "profileCenter": "Profile Center",
+    "learner": "Learner",
+    "personalSettings": "Personal Settings",
+    "logout": "Logout"
   },
   "error": {
     "loadFailed": "Load failed",
@@ -365,7 +382,6 @@
     "cards": " cards",
     "reviewSelected": "Review Selected",
     "resetLearning": "Reset Learning",
-    "noCards": "No Cards",
     "noCardsInCourse": "This course has no memory cards at the moment",
     "selectCourse": "Select Course",
     "selectCourseHint": "Please select a course to manage its settings",
@@ -493,6 +509,7 @@
       "learning": "Currently Learning",
       "statistics": "Statistics",
       "subscriptions": "My Subscribed Courses",
+      "following": "Following",
       "myContents": "My Created Contents",
       "myArticles": "My Created Articles",
       "myMemoryDecks": "My Memory Decks",
@@ -879,6 +896,9 @@
     "viewComments": "View Comments",
     "up": "Move Up",
     "down": "Move Down",
+    "status": {
+      "inProgress": "In Progress"
+    },
     "difficulty": {
       "beginner": "Beginner",
       "intermediate": "Intermediate",

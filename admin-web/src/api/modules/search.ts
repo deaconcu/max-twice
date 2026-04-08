@@ -50,12 +50,12 @@ export const searchApi = {
   /**
    * 搜索职业
    */
-  searchProfessions(
+  searchRoles(
     query: string,
     limit: number = 20,
     offset: number = 0
   ): Promise<ApiResponse<SearchResultItem[]>> {
-    return apiClient.get('/v1/search/professions', { params: { q: query, limit, offset } })
+    return apiClient.get('/v1/search/roles', { params: { q: query, limit, offset } })
   },
 
   /**
@@ -66,7 +66,7 @@ export const searchApi = {
       courses: SearchResultItem[]
       nodes: SearchResultItem[]
       users: SearchResultItem[]
-      professions: SearchResultItem[]
+      roles: SearchResultItem[]
     }>
   > {
     return apiClient.get('/v1/search/all', { params: { q: query, limit } })

@@ -53,7 +53,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { systemApi } from '@/api'
-import type { ProfessionCategory, CategoryMapping } from '@/types/profession.d'
+import type { RoleCategory, CategoryMapping } from '@/types/role.d'
 import { useFetch } from '@/composables/useFetch'
 
 interface Props {
@@ -91,12 +91,12 @@ const selectedSubCategory = computed({
 })
 
 // 动态数据
-const mainCategories = ref<ProfessionCategory[]>([])
+const mainCategories = ref<RoleCategory[]>([])
 const categoryMapping = ref<CategoryMapping[]>([])
 
 // 使用 useFetch 加载职业类别数据
 const { loading } = useFetch({
-  fetchFn: systemApi.getProfessionCategories,
+  fetchFn: systemApi.getRoleCategories,
   immediate: true,
   onSuccess: (data) => {
     mainCategories.value = data.mainCategories || []

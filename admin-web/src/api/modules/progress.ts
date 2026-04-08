@@ -133,7 +133,7 @@ export const progressApi = {
   /**
    * 获取用户正在学习的职业路线图（最多20条）
    */
-  getLearningRoadmapsByProfession(professionId: number): Promise<ApiResponse<Roadmap[]>> {
-    return apiClient.get(`/v1/progress/professions/${String(professionId)}/roadmaps/learning`)
+  getLearningRoadmapsByRole(roleId: number): Promise<ApiResponse<Roadmap[]>> {
+    return apiClient.get(`/v1/progress/roles/${String(roleId)}/roadmaps/learning`)
   },
 }

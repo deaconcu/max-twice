@@ -16,8 +16,8 @@ export const systemApi = {
   /**
    * 获取职业分类数据
    */
-  getProfessionCategories(): Promise<ApiResponse> {
-    return apiClient.get('/v1/public/profession-categories')
+  getRoleCategories(): Promise<ApiResponse> {
+    return apiClient.get('/v1/public/role-categories')
   },
 
   /**

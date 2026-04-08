@@ -205,8 +205,8 @@ const getMessageContent = (message: Message): string => {
       if (contentType === 'roadmap') {
         // 路线图点赞
         const voterName = data.voterName || '用户'
-        const professionName = data.professionName || '职业'
-        return `${voterName} 点赞了你的${professionName}路线图`
+        const roleName = data.roleName || '职业'
+        return `${voterName} 点赞了你的${roleName}路线图`
       }
 
       // 原有逻辑：帖子和评论
@@ -256,13 +256,13 @@ const getMessageContent = (message: Message): string => {
     }
 
     if (type === MessageType.REPLY_ROADMAP_COMMENT) {
-      const professionName = data.professionName || '路线图'
-      return `${senderName} 回复了您在路线图《${professionName}》下的评论`
+      const roleName = data.roleName || '路线图'
+      return `${senderName} 回复了您在路线图《${roleName}》下的评论`
     }
 
     if (type === MessageType.ROADMAP_COMMENT) {
-      const professionName = data.professionName || '路线图'
-      return `${senderName} 评论了您创建的路线图《${professionName}》`
+      const roleName = data.roleName || '路线图'
+      return `${senderName} 评论了您创建的路线图《${roleName}》`
     }
 
     // 审核消息
@@ -270,7 +270,7 @@ const getMessageContent = (message: Message): string => {
       return `您提交的课程《${data.courseName || ''}》审核通过！`
     }
     if (type === MessageType.PROFESSION_APPROVED) {
-      return `您提交的职业《${data.professionName || ''}》审核通过！`
+      return `您提交的职业《${data.roleName || ''}》审核通过！`
     }
 
     if (type === MessageType.COURSE_REJECTED) {
@@ -307,17 +307,17 @@ const getMessageContent = (message: Message): string => {
     }
 
     if (type === MessageType.PROFESSION_REJECTED) {
-      return `您提交的职业《${data.professionName || ''}》审核未通过。原因：${data.reason || ''}`
+      return `您提交的职业《${data.roleName || ''}》审核未通过。原因：${data.reason || ''}`
     }
     if (type === MessageType.PROFESSION_BANNED) {
-      return `您提交的职业《${data.professionName || ''}》已被封禁。原因：${data.reason || ''}`
+      return `您提交的职业《${data.roleName || ''}》已被封禁。原因：${data.reason || ''}`
     }
 
     if (type === MessageType.ROADMAP_REJECTED) {
-      return `您为职业《${data.professionName || ''}》提交的路线图审核未通过。原因：${data.reason || ''}`
+      return `您为职业《${data.roleName || ''}》提交的路线图审核未通过。原因：${data.reason || ''}`
     }
     if (type === MessageType.ROADMAP_BANNED) {
-      return `您为职业《${data.professionName || ''}》提交的路线图已被封禁。原因：${data.reason || ''}`
+      return `您为职业《${data.roleName || ''}》提交的路线图已被封禁。原因：${data.reason || ''}`
     }
 
     if (type === MessageType.MEMORY_DECK_REJECTED) {
@@ -587,15 +587,15 @@ const handleMessageClick = (message: Message) => {
       type === MessageType.PROFESSION_BANNED
     ) {
       // 职业审核 - 跳转到职业
-      const professionId = data.professionId
-      if (professionId) {
-        url = `/profession/${professionId}`
+      const roleId = data.roleId
+      if (roleId) {
+        url = `/role/${roleId}`
       }
     } else if (type === MessageType.ROADMAP_REJECTED || type === MessageType.ROADMAP_BANNED) {
       // 路线图审核 - 跳转到职业/路线图
-      const professionId = data.professionId
-      if (professionId) {
-        url = `/profession/${professionId}`
+      const roleId = data.roleId
+      if (roleId) {
+        url = `/role/${roleId}`
       }
     } else if (
       type === MessageType.MEMORY_DECK_REJECTED ||

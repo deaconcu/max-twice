@@ -21,7 +21,7 @@ const { fitView } = useVueFlow()
 const webBaseUrl = import.meta.env.VITE_WEB_BASE_URL || 'http://localhost:5178'
 
 // 职业选择
-const professionId = ref<string>('')
+const roleId = ref<string>('')
 
 // 任务状态
 const taskId = ref<string>('')
@@ -157,7 +157,7 @@ const EDGE_STYLE = {
 // 生成路径
 const { execute: generateRoadmap, loading: generating } = useMutation(
   async () => {
-    const id = parseInt(professionId.value, 10)
+    const id = parseInt(roleId.value, 10)
     const response = await adminApi.generateRoadmap(id)
     return response
   },
@@ -713,7 +713,7 @@ const applyAutoLayout = () => {
 }
 
 const startGenerate = () => {
-  if (!professionId.value) {
+  if (!roleId.value) {
     return
   }
   generateRoadmap()
@@ -963,7 +963,7 @@ const loadHistoryRoadmap = (item: any) => {
   if (item.result) {
     generatedContent.value = item.result
     parseAndDisplayRoadmap(item.result)
-    professionId.value = item.professionId?.toString() || ''
+    roleId.value = item.roleId?.toString() || ''
     taskStatus.value = ''
     historyDialog.value = false // 关闭弹窗
   }
@@ -991,7 +991,7 @@ const loadDraftRoadmap = async (item: any) => {
     if (response.code === 200 && response.data) {
       generatedContent.value = response.data
       parseAndDisplayRoadmap(response.data)
-      professionId.value = item.professionId?.toString() || ''
+      roleId.value = item.roleId?.toString() || ''
       taskStatus.value = ''
       draftDialog.value = false // 关闭弹窗
     }
@@ -1003,7 +1003,7 @@ const loadDraftRoadmap = async (item: any) => {
 // 保存草稿
 const { execute: saveDraft, loading: savingDraft } = useMutation(
   async () => {
-    if (!professionId.value) {
+    if (!roleId.value) {
       throw new Error('请先输入职业 ID')
     }
 
@@ -1029,7 +1029,7 @@ const { execute: saveDraft, loading: savingDraft } = useMutation(
       throw new Error('没有可保存的内容')
     }
 
-    const id = parseInt(professionId.value, 10)
+    const id = parseInt(roleId.value, 10)
     return await adminApi.saveRoadmapDraft(id, contentToSave)
   },
   {
@@ -1069,7 +1069,7 @@ const openSaveRoadmapDialog = () => {
 // 保存路径到数据库
 const { execute: saveRoadmapToDB, loading: savingRoadmap } = useMutation(
   async () => {
-    if (!professionId.value) {
+    if (!roleId.value) {
       throw new Error('请先输入职业 ID')
     }
 
@@ -1095,9 +1095,9 @@ const { execute: saveRoadmapToDB, loading: savingRoadmap } = useMutation(
       throw new Error('请输入路径描述')
     }
 
-    const id = parseInt(professionId.value, 10)
+    const id = parseInt(roleId.value, 10)
     return await adminApi.createRoadmap({
-      professionId: id,
+      roleId: id,
       content: contentToSave,
       description: roadmapDescription.value,
       state: roadmapState.value,
@@ -1153,7 +1153,7 @@ onUnmounted(() => {
         <v-row class="align-center">
           <v-col cols="12" md="3">
             <v-text-field
-              v-model="professionId"
+              v-model="roleId"
               label="职业 ID"
               type="number"
               variant="outlined"
@@ -1166,7 +1166,7 @@ onUnmounted(() => {
             <v-btn
               variant="tonal"
               :loading="generating || taskStatus === 'PENDING'"
-              :disabled="!professionId"
+              :disabled="!roleId"
               @click="startGenerate"
             >
               <v-icon icon="mdi-auto-fix" class="mr-2"></v-icon>
@@ -1212,7 +1212,7 @@ onUnmounted(() => {
               variant="tonal"
               size="small"
               :loading="savingDraft"
-              :disabled="!professionId || !generatedContent"
+              :disabled="!roleId || !generatedContent"
               @click="saveDraft"
             >
               <v-icon icon="mdi-content-save" size="16" class="mr-1"></v-icon>
@@ -1222,7 +1222,7 @@ onUnmounted(() => {
               variant="tonal"
               size="small"
               color="success"
-              :disabled="!professionId || !generatedContent"
+              :disabled="!roleId || !generatedContent"
               @click="openSaveRoadmapDialog"
             >
               <v-icon icon="mdi-check-circle" size="16" class="mr-1"></v-icon>
@@ -1278,7 +1278,7 @@ onUnmounted(() => {
               variant="tonal"
               size="small"
               :loading="savingDraft"
-              :disabled="!professionId || nodes.length === 0"
+              :disabled="!roleId || nodes.length === 0"
               @click="saveDraft"
             >
               <v-icon icon="mdi-content-save" size="16" class="mr-1"></v-icon>
@@ -1288,7 +1288,7 @@ onUnmounted(() => {
               variant="tonal"
               size="small"
               color="success"
-              :disabled="!professionId || nodes.length === 0"
+              :disabled="!roleId || nodes.length === 0"
               @click="openSaveRoadmapDialog"
             >
               <v-icon icon="mdi-check-circle" size="16" class="mr-1"></v-icon>
@@ -1628,7 +1628,7 @@ onUnmounted(() => {
                 ></v-icon>
               </template>
               <v-list-item-title class="text-body-2">
-                职业 ID: {{ item.professionId }} - {{ item.createdAt }}
+                职业 ID: {{ item.roleId }} - {{ item.createdAt }}
               </v-list-item-title>
               <v-list-item-subtitle class="text-caption">
                 {{ item.status === 'COMPLETED' ? '生成成功' : item.status === 'FAILED' ? '生成失败' : '生成中' }}
@@ -1671,7 +1671,7 @@ onUnmounted(() => {
                 <v-icon icon="mdi-file-document-outline" color="primary" size="20"></v-icon>
               </template>
               <v-list-item-title class="text-body-2">
-                职业 ID: {{ item.professionId }} - {{ item.createdAt }}
+                职业 ID: {{ item.roleId }} - {{ item.createdAt }}
               </v-list-item-title>
               <template #append>
                 <div class="d-flex" style="gap: 8px">

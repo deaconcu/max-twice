@@ -38,12 +38,12 @@
     "keepLearning": "今天也要继续加油学习哦 🎯",
     "todayLearning": "今日学习(分钟)",
     "guideTitle": "开始你的学习之旅",
-    "guideSubtitle": "4步开启系统化学习，海量资源助你实现职业目标",
+    "guideSubtitle": "4步开启系统化学习，海量资源助你实现角色目标",
     "step": "步骤",
     "exploreCareer": {
-      "title": "探索职业",
-      "description": "探索职业方向，制定职业发展路线",
-      "stat": "{count}个职业方向",
+      "title": "探索角色",
+      "description": "探索角色方向，制定角色发展路线",
+      "stat": "{count}个角色方向",
       "statDetail": "覆盖技术、设计、管理等热门领域"
     },
     "browseCourses": {
@@ -67,11 +67,11 @@
     "stats": {
       "coursesInProgress": "进行中课程",
       "completedCourses": "已完成课程",
-      "careersInProgress": "进行中职业",
+      "careersInProgress": "进行中角色",
       "learningDays": "累计学习天数"
     },
     "learningCourses": "正在学习的课程",
-    "learningCareers": "正在学习的职业",
+    "learningCareers": "正在学习的角色",
     "recommendedCourses": "推荐课程",
     "recentActivities": "最近活动",
     "viewAll": "查看全部",
@@ -156,7 +156,7 @@
     "dashboard": "仪表板",
     "learning": "学习",
     "courses": "课程",
-    "career": "职业",
+    "career": "角色",
     "memoryReview": "复习",
     "profile": "我的",
     "roadmap": "学习路线",
@@ -427,7 +427,7 @@
     "unpinSuccess": "已取消课程表置顶",
     "pinFailed": "置顶操作失败，请稍后重试",
     "fillDescription": "请填写课程表描述",
-    "systematicLearning": "系统化学习路径，助力职业发展",
+    "systematicLearning": "系统化学习路径，助力角色发展",
     "skills": {
       "javaBasics": "Java基础语法",
       "oop": "面向对象编程",
@@ -462,7 +462,7 @@
     "roadmapMoveDown": "路线图下移",
     "loadFailed": "加载学习数据失败",
     "unknownStatus": "未知状态",
-    "careerCenter": "职业中心",
+    "careerCenter": "角色中心",
     "courseCenter": "课程中心",
     "startTime": "开始时间",
     "studyDuration": "学习时长",
@@ -548,58 +548,58 @@
     }
   },
   "careerCenter": {
-    "title": "职业中心",
-    "subtitle": "探索职业道路，规划美好未来",
+    "title": "角色中心",
+    "subtitle": "探索角色道路，规划美好未来",
     "navigation": {
       "learning": "正在学习",
-      "career": "职业中心",
+      "career": "角色中心",
       "courses": "课程中心"
     },
     "search": {
-      "placeholder": "搜索你感兴趣的职业、技能或公司...",
+      "placeholder": "搜索你感兴趣的角色、技能或公司...",
       "button": "搜索",
-      "applyJob": "申请添加职业"
+      "applyJob": "申请添加角色"
     },
     "category": {
-      "title": "职业领域筛选",
-      "subtitle": "选择感兴趣的职业领域，进一步筛选具体方向",
+      "title": "角色领域筛选",
+      "subtitle": "选择感兴趣的角色领域，进一步筛选具体方向",
       "specificDirection": "具体方向"
     },
     "listing": {
-      "hotProfessions": "热门职业推荐（共 {count} 个职业）",
-      "categoryJobs": "{category} 职业（共 {count} 个）",
-      "specificJobs": "共 {count} 个职业",
-      "loadingMore": "正在加载更多职业...",
-      "allLoaded": "- 已加载全部职业 -",
-      "loading": "正在加载职业信息..."
+      "hotRoles": "热门角色推荐（共 {count} 个角色）",
+      "categoryJobs": "{category} 角色（共 {count} 个）",
+      "specificJobs": "共 {count} 个角色",
+      "loadingMore": "正在加载更多角色...",
+      "allLoaded": "- 已加载全部角色 -",
+      "loading": "正在加载角色信息..."
     },
     "empty": {
-      "noJobs": "暂无职业信息",
+      "noJobs": "暂无角色信息",
       "noJobsDesc": "请稍后再试或联系管理员",
-      "noRelatedJobs": "暂无相关职业",
-      "noRelatedJobsDesc": "该分类下暂时没有职业信息",
-      "noCategoryJobs": "该分类下暂无职业",
-      "noCategoryJobsDesc": "请选择具体的二级分类或等待更多职业上线",
-      "noSearchResults": "未找到相关职业",
+      "noRelatedJobs": "暂无相关角色",
+      "noRelatedJobsDesc": "该分类下暂时没有角色信息",
+      "noCategoryJobs": "该分类下暂无角色",
+      "noCategoryJobsDesc": "请选择具体的二级分类或等待更多角色上线",
+      "noSearchResults": "未找到相关角色",
       "noSearchResultsDesc": "试试其他关键词或浏览分类"
     },
     "application": {
-      "title": "申请新职业",
-      "subtitle": "提交职业申请，经审核后将添加到职业库",
-      "name": "职业名称",
-      "nameRequired": "请输入职业名称",
-      "jobName": "职业名称",
+      "title": "申请新角色",
+      "subtitle": "提交角色申请，经审核后将添加到角色库",
+      "name": "角色名称",
+      "nameRequired": "请输入角色名称",
+      "jobName": "角色名称",
       "jobNamePlaceholder": "例如：全栈开发工程师",
-      "category": "职业分类",
-      "description": "职业描述",
-      "descriptionRequired": "请输入职业描述",
-      "descriptionPlaceholder": "详细描述这个职业的工作内容和职责...",
+      "category": "角色分类",
+      "description": "角色描述",
+      "descriptionRequired": "请输入角色描述",
+      "descriptionPlaceholder": "详细描述这个角色的工作内容和职责...",
       "skills": "核心技能 (选填，用逗号分隔)",
       "skillsHint": "多个技能用逗号分隔，例如：JavaScript, Vue.js, Node.js",
       "skillsPlaceholder": "例如：JavaScript, Vue.js, Node.js",
       "cancel": "取消",
       "submit": "提交申请",
-      "submittedSuccess": "职业申请已提交，我们将在3个工作日内审核",
+      "submittedSuccess": "角色申请已提交，我们将在3个工作日内审核",
       "submitFailed": "提交申请失败，请稍后重试"
     },
     "difficulty": {
@@ -609,9 +609,9 @@
       "advanced": "高级"
     },
     "errors": {
-      "loadFailed": "加载职业数据失败",
-      "loadCategoryFailed": "加载主分类职业失败",
-      "loadSubcategoryFailed": "加载子分类职业失败"
+      "loadFailed": "加载角色数据失败",
+      "loadCategoryFailed": "加载主分类角色失败",
+      "loadSubcategoryFailed": "加载子分类角色失败"
     }
   },
   "confirmDialog": {
@@ -627,14 +627,14 @@
     "confirmResetButton": "确认重置"
   },
   "rightSidebar": {
-    "vision": "如果职业是对世界的探索和体验，不是一种深度绑定",
+    "vision": "如果角色是对世界的探索和体验，不是一种深度绑定",
     "platformData": "平台数据",
     "myLearning": "我的学习",
     "learningTips": "学习小贴士",
-    "hotCareers": "热门职业",
+    "hotCareers": "热门角色",
     "hotCourses": "热门课程",
     "courseTotal": "课程总数",
-    "careerPaths": "职业路径",
+    "careerPaths": "角色路径",
     "learningRoadmaps": "学习路线",
     "knowledgeNodes": "知识节点",
     "articleCount": "文章数量",
@@ -642,7 +642,7 @@
     "studying": "我在学习",
     "viewAll": "查看全部",
     "progress": "进度",
-    "noLearningCareers": "暂无学习职业",
+    "noLearningCareers": "暂无学习角色",
     "noLearningCourses": "暂无学习课程",
     "learningQuotes": {
       "quote1": "学而时习之，不亦说乎",
@@ -663,7 +663,7 @@
       "completed": "已完成",
       "unknown": "未知"
     },
-    "professions": {
+    "roles": {
       "fullStack": "全栈开发工程师",
       "frontend": "前端开发工程师",
       "dataScientist": "数据科学家"
@@ -676,7 +676,7 @@
   },
   "roadmapCreate": {
     "title": "创建新课程表",
-    "rootNodeTitle": "职业",
+    "rootNodeTitle": "角色",
     "searchCourses": "搜索课程",
     "deleteSelected": "删除选中",
     "reset": "重置",
@@ -711,7 +711,7 @@
     "coreSkills": "核心技能",
     "courses": "{count} 门课程",
     "learnersCount": "人学习",
-    "exploreCareer": "探索职业",
+    "exploreCareer": "探索角色",
     "difficulty": {
       "beginner": "初级",
       "intermediate": "中级",
@@ -738,7 +738,7 @@
     "subtitle": "基于学习人数和收藏人数的综合排名",
     "tabs": {
       "courses": "热门课程",
-      "professions": "热门职业"
+      "roles": "热门角色"
     },
     "sortBy": "排序方式：",
     "sortOptions": {
@@ -764,7 +764,7 @@
     "systemConfig": "系统配置",
     "systemOperations": "系统操作",
     "courseManagement": "课程管理",
-    "professionManagement": "职业管理",
+    "roleManagement": "角色管理",
     "addSuccess": "添加成功！",
     "operationSuccess": "操作成功！",
     "modules": "功能模块",
@@ -985,7 +985,7 @@
     "contactUs": "联系我们",
     "privacyPolicy": "隐私政策",
     "termsOfService": "服务条款",
-    "careerPhilosophy": "职业应该是自我实现"
+    "careerPhilosophy": "角色应该是自我实现"
   },
   "categorySelector": {
     "mainCategory": "主分类",
@@ -1045,16 +1045,16 @@
     "subtitle": "管理系统的核心配置参数",
     "configValid": "配置有效",
     "courseCategories": "课程类别配置",
-    "professionCategories": "职业类别配置",
+    "roleCategories": "角色类别配置",
     "courseCategoriesJSON": "课程类别 JSON",
-    "professionCategoriesJSON": "职业类别 JSON",
+    "roleCategoriesJSON": "角色类别 JSON",
     "courseCategoriesPlaceholder": "请输入课程类别的JSON配置...",
-    "professionCategoriesPlaceholder": "请输入职业类别的JSON配置...",
+    "roleCategoriesPlaceholder": "请输入角色类别的JSON配置...",
     "courseCategoriesHint": "配置课程的分类结构和相关参数",
-    "professionCategoriesHint": "配置职业的分类结构和相关参数",
+    "roleCategoriesHint": "配置角色的分类结构和相关参数",
     "fullConfigPreview": "完整配置预览",
     "mergedConfig": "合并后的完整配置",
-    "mergedConfigHint": "这是将课程类别和职业类别合并后的完整系统配置",
+    "mergedConfigHint": "这是将课程类别和角色类别合并后的完整系统配置",
     "saveConfig": "保存配置",
     "format": "格式化",
     "lastUpdate": "最后更新：",
@@ -1087,9 +1087,9 @@
     "delete": "删除",
     "restore": "恢复"
   },
-  "professionManagement": {
-    "title": "职业申请管理",
-    "subtitle": "审核和管理用户提交的职业申请",
+  "roleManagement": {
+    "title": "角色申请管理",
+    "subtitle": "审核和管理用户提交的角色申请",
     "loading": "加载中...",
     "pending": "待审核",
     "approved": "已通过",
