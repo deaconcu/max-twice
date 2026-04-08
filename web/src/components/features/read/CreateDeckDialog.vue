@@ -67,6 +67,7 @@ const cardForm = ref({
   back: '',
 })
 
+const frontTextareaRef = ref<HTMLElement | null>(null)
 const cards = ref<Card[]>([])
 const showEmptyError = ref(false)
 
@@ -169,9 +170,10 @@ const addCard = () => {
 
   // 聚焦到前面输入框
   nextTick(() => {
-    const frontInput = document.querySelector('textarea[placeholder="输入问题..."]')!
-    if (frontInput) {
-      frontInput.focus()
+    const el = frontTextareaRef.value
+    if (el) {
+      const textarea = el.querySelector('textarea')
+      if (textarea) textarea.focus()
     }
   })
 }
@@ -234,6 +236,7 @@ const closeDialog = () => {
         <!-- 卡片添加表单 -->
         <v-form class="mb-6" @submit.prevent="addCard">
           <v-textarea
+            ref="frontTextareaRef"
             v-model="cardForm.front"
             :label="t('createDeck.questionLabel')"
             :placeholder="t('createDeck.questionPlaceholder')"

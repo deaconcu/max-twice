@@ -86,7 +86,7 @@
                   color="grey"
                   variant="text"
                   size="small"
-                  @click.stop="editRoadmap(roadmap.id, roadmap.professionId)"
+                  @click.stop="editRoadmap(roadmap.id, roadmap.roleId)"
                 >
                   {{ t('common.edit') }}
                 </v-btn>
@@ -220,9 +220,9 @@ const roadmaps = computed(() => {
 
   return roadmapsData.value.map((roadmap) => ({
     id: roadmap.id,
-    professionId: roadmap.profession?.id || roadmap.professionId,
-    name: roadmap.profession?.name || t('user.profile.unknownProfession'),
-    profession: roadmap.profession?.name || t('user.profile.unknownProfession'),
+    roleId: roadmap.role?.id || roadmap.roleId,
+    name: roadmap.role?.name || t('user.profile.unknownRole'),
+    role: roadmap.role?.name || t('user.profile.unknownRole'),
     description: roadmap.description || t('hotRanking.noDescription'),
     usageCount: roadmap.learnerCount || 0,
     starCount: roadmap.likeCount || 0,
@@ -273,9 +273,9 @@ const goToRoadmapDetail = (roadmapId: number) => {
 }
 
 // 编辑路线图
-const editRoadmap = (roadmapId: number, professionId?: number) => {
-  if (professionId) {
-    const editPath = `/role/${professionId}/roadmap/${roadmapId}/edit`
+const editRoadmap = (roadmapId: number, roleId?: number) => {
+  if (roleId) {
+    const editPath = `/role/${roleId}/roadmap/${roadmapId}/edit`
     console.log('跳转到编辑页面:', editPath)
     router.push(editPath)
   } else {
