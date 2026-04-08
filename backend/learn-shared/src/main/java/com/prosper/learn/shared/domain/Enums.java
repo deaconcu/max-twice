@@ -186,7 +186,6 @@ public class Enums {
         }
     }
 
-    // TODO 上线前需要都+1
     public enum ContentState implements ValueEnum<Byte> {
         DRAFT((byte)0),
         SUBMITTED((byte)1),

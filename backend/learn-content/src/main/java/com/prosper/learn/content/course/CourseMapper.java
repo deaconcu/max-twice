@@ -102,6 +102,9 @@ public interface CourseMapper {
     /**
      * 根据根节点ID列表批量查询课程
      */
+    @Select("SELECT * FROM course WHERE root_node_id = #{rootNodeId} LIMIT 1")
+    CourseDO getByRootNodeId(@Param("rootNodeId") long rootNodeId);
+
     @Select({"<script>SELECT * FROM course WHERE root_node_id IN " +
             "<foreach item='id' collection='rootNodeIds' open='(' separator=',' close=')'>#{id}</foreach>" +
             "</script>"})

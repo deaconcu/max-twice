@@ -136,6 +136,13 @@ public class CourseDataService {
     }
 
     /**
+     * 根据根节点ID查询课程
+     */
+    public CourseDO getByRootNodeId(long rootNodeId) {
+        return courseMapper.getByRootNodeId(rootNodeId);
+    }
+
+    /**
      * 根据根节点ID列表批量查询课程
      */
     public List<CourseDO> getByRootNodeIds(List<Long> rootNodeIds) {

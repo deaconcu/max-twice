@@ -28,34 +28,34 @@ public interface CommentMapper {
             "ORDER BY score DESC, id DESC limit #{count}")
     List<CommentDO> getByObjectIdPaginated(long objectId, int objectType, double lastScore, long lastId, int count);
 
-    // TODO: 性能优化 - 当前 SQL 对每个父评论执行一次子查询，性能较差
-    // 优化方案（需要 MySQL 8.0+）：使用窗口函数替代子查询
-    // SELECT * FROM (
-    //   SELECT *,
-    //          ROW_NUMBER() OVER (PARTITION BY reply_to_comment_id
-    //                            ORDER BY score DESC, id DESC) as rn
-    //   FROM comment
-    //   WHERE reply_to_comment_id IN <foreach ...>
-    //     AND state = PUBLISHED_VALUE
-    //     AND deleted_at IS NULL
-    // ) ranked
-    // WHERE rn = 1
-    @Select("<script>SELECT * " +
-            "FROM comment c1 " +
-            "where c1.reply_to_comment_id IN " +
+    // 使用窗口函数（MySQL 8.0+）一次扫描获取每个父评论下分数最高的子评论，性能优于相关子查询
+    @Select("<script>SELECT * FROM (" +
+            "SELECT *, ROW_NUMBER() OVER (PARTITION BY reply_to_comment_id ORDER BY score DESC, id DESC) as rn " +
+            "FROM comment " +
+            "WHERE reply_to_comment_id IN " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
-            "AND c1.state = " + ContentState.PUBLISHED_VALUE + " " +
-            "AND c1.deleted_at IS NULL " +
-            "AND c1.id = (" +
-            "  SELECT c2.id " +
-            "  FROM comment c2 " +
-            "  WHERE c2.reply_to_comment_id = c1.reply_to_comment_id " +
-            "  AND c2.state = " + ContentState.PUBLISHED_VALUE + " " +
-            "  AND c2.deleted_at IS NULL " +
-            "  ORDER BY c2.score DESC, c2.id DESC " +
-            "  LIMIT 1" +
-            ")</script>")
+            "AND state = " + ContentState.PUBLISHED_VALUE + " " +
+            "AND deleted_at IS NULL" +
+            ") ranked WHERE rn = 1</script>")
     List<CommentDO> getChildren(List<Long> ids);
+
+    // 旧实现（相关子查询，对每个父评论执行一次子查询，数据量大时性能较差）
+    // @Select("<script>SELECT * " +
+    //         "FROM comment c1 " +
+    //         "where c1.reply_to_comment_id IN " +
+    //         "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
+    //         "AND c1.state = " + ContentState.PUBLISHED_VALUE + " " +
+    //         "AND c1.deleted_at IS NULL " +
+    //         "AND c1.id = (" +
+    //         "  SELECT c2.id " +
+    //         "  FROM comment c2 " +
+    //         "  WHERE c2.reply_to_comment_id = c1.reply_to_comment_id " +
+    //         "  AND c2.state = " + ContentState.PUBLISHED_VALUE + " " +
+    //         "  AND c2.deleted_at IS NULL " +
+    //         "  ORDER BY c2.score DESC, c2.id DESC " +
+    //         "  LIMIT 1" +
+    //         ")</script>")
+    // List<CommentDO> getChildren(List<Long> ids);
 
     // 首页加载话题回复，按分数排序，只显示已通过且未删除的评论
     @Select("SELECT * FROM comment where reply_to_comment_id = #{commentId} and state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL ORDER BY score DESC, id DESC limit #{count}")

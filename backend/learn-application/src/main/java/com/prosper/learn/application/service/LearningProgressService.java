@@ -269,73 +269,6 @@ public class LearningProgressService {
     // ========== 私有辅助方法（跨域逻辑）==========
 
     /**
-     * 更新课程进度
-     * 基于用户目录1中的节点层级结构计算进度
-     *
-     * @param userId 用户ID
-     * @param nodeId 节点ID（用于日志）
-     * @param courseId 课程ID
-     */
-    private void updateCourseProgress(long userId, long nodeId, long courseId) {
-        try {
-            // 获取课程的根节点ID
-            CourseDO course = courseDataService.validateAndGet(courseId);
-
-            // 1. 获取用户目录1的内容（跨域依赖：content领域，使用根节点ID）
-            String toc1Content = tocService.getToc(userId, course.getRootNodeId(), 1);
-            if (toc1Content == null) return;
-
-            // 2. 解析目录结构
-            JsonNode tocNode = objectMapper.readTree(toc1Content);
-
-            // 3. 收集目录中的所有节点ID（使用 TocDomainService）
-            Set<Long> nodeIdsInToc = tocService.collectNodeIdsFromToc(toc1Content);
-
-            // 4. 批量检查哪些节点已完成
-            Set<Long> completedNodes = domainService.getCompletedNodesInList(userId, nodeIdsInToc);
-
-            // 5. 递归计算层级进度
-            double progressPercent = calculateHierarchicalProgress(tocNode, completedNodes) * 10000;
-            int finalProgress = (int) Math.floor(progressPercent);
-
-            // 5. 更新或创建用户节点学习记录（使用 rootNodeId）
-            Long rootNodeId = course.getRootNodeId();
-            UserLearningDO userCourse = userLearningDomainService.getByUserAndType(userId, Enums.ContentType.node, rootNodeId);
-
-            if (userCourse == null) {
-                userLearningDomainService.startLearning(userId, Enums.ContentType.node, rootNodeId, Enums.Bool.TRUE.value());
-                userLearningDomainService.updateProgress(userId, Enums.ContentType.node, rootNodeId, finalProgress);
-
-                if (finalProgress >= 10000) {
-                    // 发布学习完成事件（新创建的记录，事件中使用 courseId）
-                    eventPublisher.publishEvent(new LearningCompletedEvent(
-                        userId,
-                        courseId,
-                        Enums.ContentType.course
-                    ));
-                }
-            } else {
-                int oldProgress = userCourse.getProgressPercent() != null ? userCourse.getProgressPercent() : 0;
-                userLearningDomainService.updateProgress(userId, Enums.ContentType.node, rootNodeId, finalProgress);
-
-                // 发布学习完成事件（从进行中变为完成，事件中使用 courseId）
-                if (finalProgress >= 10000 && oldProgress < 10000) {
-                    eventPublisher.publishEvent(new LearningCompletedEvent(
-                        userId,
-                        courseId,
-                        Enums.ContentType.course
-                    ));
-                }
-            }
-
-            log.info("学习进度 课程 {} 层级进度更新: {}%", courseId, finalProgress);
-
-        } catch (Exception e) {
-            log.error("学习进度 课程进度更新失败: {}", e.getMessage());
-        }
-    }
-
-    /**
      * 递归计算层级进度（支持父节点覆盖逻辑）
      *
      * @param node 当前节点
@@ -446,12 +379,16 @@ public class LearningProgressService {
             // 更新进度到数据库
             userLearningDomainService.updateProgress(userId, Enums.ContentType.node, nodeId, newProgress);
 
-            // 如果从未完成变为完成，发布完成事件
-            // 注意：这里无法知道具体的 courseId，只能用 nodeId
-            // 如果需要 courseId，可以查询 node.courseId，但对于普通节点可能没有意义
+            // 如果从未完成变为完成，且是课程根节点，发布课程完成事件
             if (newProgress >= 10000 && oldProgress < 10000) {
-                // TODO: 是否需要发布事件？如果需要，可能需要查询 node.courseId
                 log.info("用户 {} 完成节点 {} 的学习", userId, nodeId);
+                if (learning.getIsRootNode() != null && learning.getIsRootNode() == 1) {
+                    CourseDO course = courseDataService.getByRootNodeId(nodeId);
+                    if (course != null) {
+                        eventPublisher.publishEvent(new LearningCompletedEvent(
+                                userId, course.getId(), Enums.ContentType.course));
+                    }
+                }
             }
 
             log.debug("更新节点 {} 进度：{} -> {}", nodeId, oldProgress, newProgress);
