@@ -27,12 +27,7 @@
           class="font-weight-medium category-btn"
           @click="selectMainCategory(category.id)"
         >
-          <v-icon
-            :icon="category.icon"
-            size="18"
-            class="mr-2"
-            color="grey-darken-2"
-          />
+          <v-icon :icon="category.icon" size="18" class="mr-2" color="grey-darken-2" />
           <span class="text-grey-darken-3">
             {{ category.name }}
           </span>
@@ -53,7 +48,11 @@
               @click="selectSubCategory(undefined)"
             >
               <span class="text-grey-darken-3">
-                {{ t('roleCenter.difficulty.allCategory', { category: getCategoryName(selectedMainCategory) }) }}
+                {{
+                  t('roleCenter.difficulty.allCategory', {
+                    category: getCategoryName(selectedMainCategory),
+                  })
+                }}
               </span>
             </v-btn>
 

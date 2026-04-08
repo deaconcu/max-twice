@@ -11,13 +11,13 @@ public interface UserStatsMapper {
     // ===== 基础CRUD操作 =====
 
     @Insert("INSERT INTO user_stats (user_id, view_count, twice_count, like_count, comment_count, " +
-            "learning_course_count, completed_course_count, in_progress_profession_count, completed_profession_count, " +
-            "following_user_count, following_course_count, following_profession_count, " +
+            "learning_course_count, completed_course_count, in_progress_role_count, completed_role_count, " +
+            "following_user_count, following_course_count, following_role_count, " +
             "created_article_count, created_index_count, created_roadmap_count, created_card_deck_count, " +
             "review_streak_days, last_card_review_date, learning_streak_days, last_learning_date) " +
             "VALUES (#{userId}, #{viewCount}, #{twiceCount}, #{likeCount}, #{commentCount}, " +
-            "#{learningCourseCount}, #{completedCourseCount}, #{inProgressProfessionCount}, #{completedProfessionCount}, " +
-            "#{followingUserCount}, #{followingCourseCount}, #{followingProfessionCount}, " +
+            "#{learningCourseCount}, #{completedCourseCount}, #{inProgressRoleCount}, #{completedRoleCount}, " +
+            "#{followingUserCount}, #{followingCourseCount}, #{followingRoleCount}, " +
             "#{createdArticleCount}, #{createdIndexCount}, #{createdRoadmapCount}, #{createdCardDeckCount}, " +
             "#{reviewStreakDays}, #{lastCardReviewDate}, #{learningStreakDays}, #{lastLearningDate})")
     int insert(UserStatsDO userStats);

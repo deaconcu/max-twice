@@ -1,15 +1,15 @@
 /**
- * 职业相关的类型定义
- * 参考：backend/learn-application/src/main/java/com/prosper/learn/application/dto/response/ProfessionDTO.java
+ * 角色相关的类型定义
+ * 参考：backend/learn-application/src/main/java/com/prosper/learn/application/dto/response/RoleDTO.java
  */
 
 /**
- * 职业信息接口
+ * 角色信息接口
  */
-export interface Profession {
+export interface Role {
   id: number
-  name: string // 职业名称
-  description?: string // 职业描述
+  name: string // 角色名称
+  description?: string // 角色描述
   price?: string // 价格
   skills?: string // 技能要求
   mainCategory?: number // 主分类
@@ -21,9 +21,9 @@ export interface Profession {
 }
 
 /**
- * 职业分类
+ * 角色分类
  */
-export interface ProfessionCategory {
+export interface RoleCategory {
   id: number
   title: string
   icon?: string
@@ -46,9 +46,9 @@ export interface CategoryMapping {
 }
 
 /**
- * 带显示属性的职业信息（用于前端展示）
+ * 带显示属性的角色信息（用于前端展示）
  */
-export interface RoleWithDisplay extends Profession {
+export interface RoleWithDisplay extends Role {
   icon?: string
   iconColor?: string
 }

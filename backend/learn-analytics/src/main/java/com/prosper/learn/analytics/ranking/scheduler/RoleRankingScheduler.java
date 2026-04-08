@@ -1,6 +1,6 @@
 package com.prosper.learn.analytics.ranking.scheduler;
 
-import com.prosper.learn.analytics.ranking.service.ProfessionRankingDomainService;
+import com.prosper.learn.analytics.ranking.service.RoleRankingDomainService;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
@@ -15,9 +15,9 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ProfessionRankingScheduler {
+public class RoleRankingScheduler {
 
-    private final ProfessionRankingDomainService professionRankingService;
+    private final RoleRankingDomainService roleRankingService;
     private final JdbcTemplate jdbcTemplate;
     private final SystemProperties systemProperties;
 
@@ -45,12 +45,12 @@ public class ProfessionRankingScheduler {
     /**
      * 验证和获取职业ID
      */
-    private Long validateAndGetProfessionId(Map<String, Object> row) {
-        Number professionIdNum = (Number) row.get("profession_id");
-        if (professionIdNum == null) {
+    private Long validateAndGetRoleId(Map<String, Object> row) {
+        Number roleIdNum = (Number) row.get("role_id");
+        if (roleIdNum == null) {
             return null;
         }
-        return professionIdNum.longValue();
+        return roleIdNum.longValue();
     }
 
     /**
@@ -69,9 +69,9 @@ public class ProfessionRankingScheduler {
      */
     private String getLearningDataSql() {
         return """
-            SELECT p.id as profession_id, COUNT(ur.id) as learning_count 
-            FROM profession p
-            LEFT JOIN roadmap r ON p.id = r.profession_id
+            SELECT p.id as role_id, COUNT(ur.id) as learning_count 
+            FROM role p
+            LEFT JOIN roadmap r ON p.id = r.role_id
             LEFT JOIN user_roadmap ur ON r.id = ur.roadmap_id AND ur.state = ?
             WHERE p.state = ?
             GROUP BY p.id
@@ -81,18 +81,18 @@ public class ProfessionRankingScheduler {
     /**
      * 处理职业学习数据
      */
-    private int processProfessionLearningData(List<Map<String, Object>> learningData) {
+    private int processRoleLearningData(List<Map<String, Object>> learningData) {
         int updatedCount = 0;
         for (Map<String, Object> row : learningData) {
-            Long professionId = validateAndGetProfessionId(row);
+            Long roleId = validateAndGetRoleId(row);
             Long learningCount = validateAndGetCount(row);
             
-            if (professionId != null) {
+            if (roleId != null) {
                 try {
-                    professionRankingService.initializeProfessionStats(professionId, learningCount);
+                    roleRankingService.initializeRoleStats(roleId, learningCount);
                     updatedCount++;
                 } catch (Exception e) {
-                    log.warn("初始化职业 {} 统计数据失败: {}", professionId, e.getMessage());
+                    log.warn("初始化职业 {} 统计数据失败: {}", roleId, e.getMessage());
                 }
             }
         }
@@ -105,7 +105,7 @@ public class ProfessionRankingScheduler {
      * 每小时同步一次职业统计数据到Redis
      */
     @Scheduled(cron = "0 15 * * * ?")
-    public void syncProfessionStats() {
+    public void syncRoleStats() {
         if (!systemProperties.getScheduler().isEnableRoleRankingSync()) {
             return;
         }
@@ -114,7 +114,7 @@ public class ProfessionRankingScheduler {
         
         try {
             // 先清空Redis中的统计数据
-            professionRankingService.clearAllStats();
+            roleRankingService.clearAllStats();
             
             // 获取所有职业的学习数据（通过roadmap关联）
             String sql = getLearningDataSql();
@@ -124,7 +124,7 @@ public class ProfessionRankingScheduler {
             validateQueryResult(learningData);
             
             // 同步学习数据到Redis
-            int updatedCount = processProfessionLearningData(learningData);
+            int updatedCount = processRoleLearningData(learningData);
             
             log.info(LOG_SYNC_COMPLETE, updatedCount);
             
@@ -138,14 +138,14 @@ public class ProfessionRankingScheduler {
      * 应用启动时执行一次初始化
      */
     @Scheduled(initialDelay = 10000, fixedDelay = Long.MAX_VALUE)
-    public void initializeProfessionStats() {
+    public void initializeRoleStats() {
         if (!systemProperties.getScheduler().isEnableRoleRankingStartupInit()) {
             return;
         }
         
         try {
             log.info(LOG_INITIALIZE);
-            syncProfessionStats();
+            syncRoleStats();
         } catch (Exception e) {
             log.error("初始化职业统计数据失败", e);
             throw StatusCode.SCHEDULER_TASK_FAILED.exception(e);
@@ -158,7 +158,7 @@ public class ProfessionRankingScheduler {
     public void manualSync() {
         try {
             log.info(LOG_MANUAL_SYNC);
-            syncProfessionStats();
+            syncRoleStats();
         } catch (Exception e) {
             log.error("手动同步失败", e);
             throw StatusCode.SCHEDULER_TASK_FAILED.exception(e);

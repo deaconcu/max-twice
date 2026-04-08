@@ -146,15 +146,15 @@ app:
     enable-sync-status-check: true
     # 是否启用关闭时强制同步
     enable-shutdown-sync: true
-  profession:
+  role:
     # 分页查询默认页面大小
     default-page-size: 20
     # 默认专业图标
     default-icon: "mdi-triangle-outline"
     # 默认热门专业数量限制
-    default-hot-professions-limit: 20
+    default-hot-role-limit: 20
     # 最大热门专业数量限制
-    max-hot-professions-limit: 100
+    max-hot-role-limit: 100
     # 是否启用专业状态验证
     enable-state-validation: true
     # 是否启用并发状态检查
@@ -234,11 +234,11 @@ app:
     # 帖子相关
     post-content-min-length: 10
     post-content-max-length: 20000
-    # 专业相关
-    profession-name-min-length: 2
-    profession-name-max-length: 30
-    profession-description-min-length: 20
-    profession-description-max-length: 2000
+    # 角色相关
+    role-name-min-length: 2
+    role-name-max-length: 30
+    role-description-min-length: 20
+    role-description-max-length: 2000
     # 记忆卡片相关
     card-front-min-length: 5
     card-front-max-length: 500

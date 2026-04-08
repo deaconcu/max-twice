@@ -6,8 +6,10 @@
     >
       <div></div>
       <div class="text-caption text-grey">
-        <span class="font-weight-bold text-primary">{{ stats.following }}</span> {{ t('user.profile.following') }} ·
-        <span class="font-weight-bold text-success">{{ stats.followers }}</span> {{ t('user.profile.followers') }}
+        <span class="font-weight-bold text-primary">{{ stats.following }}</span>
+        {{ t('user.profile.following') }} ·
+        <span class="font-weight-bold text-success">{{ stats.followers }}</span>
+        {{ t('user.profile.followers') }}
       </div>
     </div>
 
@@ -17,13 +19,7 @@
     <!-- 用户列表 -->
     <div v-else-if="formattedUsers.length > 0">
       <div class="user-grid">
-        <v-card
-          v-for="user in formattedUsers"
-          :key="user.id"
-          rounded="lg"
-          border
-          class="user-card"
-        >
+        <v-card v-for="user in formattedUsers" :key="user.id" rounded="lg" border class="user-card">
           <v-card-text class="pa-3 position-relative">
             <v-btn
               color="grey"
@@ -46,8 +42,14 @@
                   {{ user.name }}
                 </div>
                 <div class="d-flex align-center justify-space-between">
-                  <span class="text-caption text-medium-emphasis text-truncate" style="flex: 1; min-width: 0">{{ user.bio }}</span>
-                  <span v-if="user.followedAt" class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(user.followedAt) }}</span>
+                  <span
+                    class="text-caption text-medium-emphasis text-truncate"
+                    style="flex: 1; min-width: 0"
+                    >{{ user.bio }}</span
+                  >
+                  <span v-if="user.followedAt" class="text-caption text-grey flex-shrink-0 ml-2">{{
+                    formatRelativeTime(user.followedAt)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -64,7 +66,9 @@
         color="grey-lighten-2"
         class="mb-3 mb-md-4"
       />
-      <p class="text-body-2 text-md-body-1 text-grey-darken-2">{{ t('rightSidebar.noLearningRoles') }}</p>
+      <p class="text-body-2 text-md-body-1 text-grey-darken-2">
+        {{ t('rightSidebar.noLearningRoles') }}
+      </p>
       <p class="text-caption text-md-body-2 text-grey">{{ t('user.profile.shareExperience') }}</p>
     </div>
 

@@ -2,7 +2,7 @@
   <v-dialog v-model="visible" @click:outside="close">
     <v-card rounded="xl" class="chart-dialog-card">
       <v-card-title class="pa-4 d-flex align-center justify-space-between">
-        <span class="text-h6">图表预览</span>
+        <span class="text-h6">{{ t('chart.preview') }}</span>
         <v-btn icon="mdi-close" variant="text" size="small" @click="close"></v-btn>
       </v-card-title>
       <v-card-text class="pa-6 pt-2">
@@ -14,6 +14,9 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue: boolean

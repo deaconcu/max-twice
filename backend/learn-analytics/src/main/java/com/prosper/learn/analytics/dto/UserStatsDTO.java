@@ -5,8 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Data
 @Builder
 @NoArgsConstructor
@@ -25,13 +23,13 @@ public class UserStatsDTO {
     // 学习进度统计
     private Integer learningCourseCount;
     private Integer completedCourseCount;
-    private Integer inProgressProfessionCount;
-    private Integer completedProfessionCount;
+    private Integer inProgressRoleCount;
+    private Integer completedRoleCount;
 
     // 社交关系统计
     private Integer followingUserCount;
     private Integer followingCourseCount;
-    private Integer followingProfessionCount;
+    private Integer followingRoleCount;
 
     // 创作内容统计
     private Integer createdArticleCount;
@@ -53,11 +51,11 @@ public class UserStatsDTO {
             .commentCount(0)
             .learningCourseCount(0)
             .completedCourseCount(0)
-            .inProgressProfessionCount(0)
-            .completedProfessionCount(0)
+            .inProgressRoleCount(0)
+            .completedRoleCount(0)
             .followingUserCount(0)
             .followingCourseCount(0)
-            .followingProfessionCount(0)
+            .followingRoleCount(0)
             .createdArticleCount(0)
             .createdIndexCount(0)
             .createdRoadmapCount(0)

@@ -110,17 +110,24 @@
 
                   <!-- 用户协议 -->
                   <p class="text-caption text-center text-medium-emphasis mb-4">
-                    继续操作即表示你同意我们的
-                    <a href="#" class="text-primary text-decoration-none">用户协议</a>
-                    并确认已了解
-                    <a href="#" class="text-primary text-decoration-none">隐私政策</a>。
+                    {{ t('user.login.agreementPrefix') }}
+                    <a href="#" class="text-primary text-decoration-none">{{
+                      t('user.login.userAgreement')
+                    }}</a>
+                    {{ t('user.login.agreementMiddle') }}
+                    <a href="#" class="text-primary text-decoration-none">{{
+                      t('user.login.privacyPolicy')
+                    }}</a
+                    >。
                   </p>
 
                   <v-divider class="my-6" />
 
                   <!-- 登录链接 -->
                   <div class="text-center">
-                    <span class="text-body-2 text-medium-emphasis"> 已有账号？ </span>
+                    <span class="text-body-2 text-medium-emphasis">
+                      {{ t('user.register.loginLink') }}
+                    </span>
                     <a
                       href="#"
                       class="text-body-2 text-primary text-decoration-none font-weight-bold ml-1"
@@ -148,7 +155,7 @@ import {
   useEmailRules,
   useValidationRules,
   useMaxLength,
-  confirmPasswordRule,
+  useConfirmPasswordRule,
 } from '@/composables/useValidation'
 import { HEADER_HEIGHT } from '@/constants/layout'
 import SimpleHeader from '@/components/layout/SimpleHeader.vue'
@@ -162,6 +169,7 @@ const { register, isRegistering } = useAuth()
 // 验证规则
 const emailRules = useEmailRules()
 const passwordRules = useValidationRules('password')
+const confirmPasswordRule = useConfirmPasswordRule()
 const emailMaxLength = useMaxLength('email')
 const passwordMaxLength = useMaxLength('password')
 
@@ -189,7 +197,7 @@ const onTurnstileVerify = (token: string) => {
 }
 
 const onTurnstileError = () => {
-  errorMessage.value = '人机验证加载失败，请刷新页面重试'
+  errorMessage.value = t('user.register.captchaLoadFailed')
 }
 
 const onTurnstileExpire = () => {
@@ -213,7 +221,7 @@ const handleRegister = async () => {
 
   // 验证 Turnstile token
   if (!turnstileToken.value) {
-    errorMessage.value = '请完成人机验证'
+    errorMessage.value = t('user.register.captchaRequired')
     return
   }
 

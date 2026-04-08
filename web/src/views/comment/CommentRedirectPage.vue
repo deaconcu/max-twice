@@ -3,9 +3,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { commentApi } from '@/api'
 import { ObjectType } from '@/enums'
 import { useFetch } from '@/composables'
+import { useI18n } from '@/composables/useI18n'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const commentId = Number(route.params.id)
 
@@ -95,8 +97,13 @@ const { loading } = useFetch({
 
 <template>
   <div class="redirect-page">
-    <v-progress-circular v-if="loading" indeterminate color="primary" size="48"></v-progress-circular>
-    <p class="mt-4 text-grey">正在跳转...</p>
+    <v-progress-circular
+      v-if="loading"
+      indeterminate
+      color="primary"
+      size="48"
+    ></v-progress-circular>
+    <p class="mt-4 text-grey">{{ t('common.redirecting') }}</p>
   </div>
 </template>
 

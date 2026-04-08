@@ -36,7 +36,7 @@ public class ContentRemovedEvent {
     private List<Long> referencedNodeIds;
 
     /** 职业ID（roadmap 类型使用）*/
-    private Long professionId;
+    private Long roleId;
 
     /** 帖子ID（memory_card_deck 类型使用）*/
     private Long postId;
@@ -54,7 +54,7 @@ public class ContentRemovedEvent {
     private String courseName;
 
     /** 职业名称（用于通知）*/
-    private String professionName;
+    private String roleName;
 
     // ========== 各类型专用构造函数 ==========
 
@@ -88,14 +88,14 @@ public class ContentRemovedEvent {
     }
 
     /** Roadmap 类型构造函数 */
-    public static ContentRemovedEvent forRoadmap(Long creatorId, Long roadmapId, Long professionId,
-                                                 String professionName, String reason) {
+    public static ContentRemovedEvent forRoadmap(Long creatorId, Long roadmapId, Long roleId,
+                                                 String roleName, String reason) {
         ContentRemovedEvent event = new ContentRemovedEvent();
         event.creatorId = creatorId;
         event.contentId = roadmapId;
         event.contentType = ContentType.roadmap;
-        event.professionId = professionId;
-        event.professionName = professionName;
+        event.roleId = roleId;
+        event.roleName = roleName;
         event.reason = reason;
         return event;
     }

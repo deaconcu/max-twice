@@ -1,3 +1,5 @@
+import i18n from '@/i18n'
+
 /**
  * 格式化相对时间
  * @param timeStr 时间字符串
@@ -16,10 +18,11 @@ export const formatRelativeTime = (timeStr?: string): string => {
   const months = Math.floor(days / 30)
   const years = Math.floor(days / 365)
 
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes}分钟前`
-  if (hours < 24) return `${hours}小时前`
-  if (days < 30) return `${days}天前`
-  if (months < 12) return `${months}个月前`
-  return `${years}年前`
+  const t = i18n.global.t
+  if (minutes < 1) return t('time.justNow')
+  if (minutes < 60) return t('time.minutesAgo', { n: minutes })
+  if (hours < 24) return t('time.hoursAgo', { n: hours })
+  if (days < 30) return t('time.daysAgo', { n: days })
+  if (months < 12) return t('time.monthsAgo', { n: months })
+  return t('time.yearsAgo', { n: years })
 }

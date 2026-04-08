@@ -179,11 +179,11 @@ public class UserLearningService {
 
     /**
      * 根据父对象查询用户的路径学习记录（带 roadmap 对象）
-     * 用于查询：某个 profession 下的 roadmap 学习记录
+     * 用于查询：某个 role 下的 roadmap 学习记录
      */
-    public List<UserLearningDTO<Object>> getRoadmapListByUserWithParent(Long userId, Long professionId, Byte state, Long lastId, int limit) {
+    public List<UserLearningDTO<Object>> getRoadmapListByUserWithParent(Long userId, Long roleId, Byte state, Long lastId, int limit) {
         List<UserLearningDO> learnings = userLearningDomainService.getByUserAndTypeAndParent(
-            userId, Enums.ContentType.roadmap, professionId, state, lastId, limit
+            userId, Enums.ContentType.roadmap, roleId, state, lastId, limit
         );
 
         if (learnings.isEmpty()) {

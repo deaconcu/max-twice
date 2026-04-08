@@ -2,11 +2,13 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { searchApi } from '@/api'
+import { useI18n } from '@/composables/useI18n'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import type { SearchResultItem } from '@/api/modules/search'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 // 加载触发器
 const loadMoreTrigger = ref<HTMLElement | null>(null)
@@ -224,7 +226,9 @@ const totalResults = computed(() => {
 
 // 是否有任何分类还有更多数据
 const hasAnyMore = computed(() => {
-  return hasMoreCourses.value || hasMoreNodes.value || hasMoreUsers.value || hasMoreProfessions.value
+  return (
+    hasMoreCourses.value || hasMoreNodes.value || hasMoreUsers.value || hasMoreProfessions.value
+  )
 })
 
 // 当前显示的结果
@@ -327,21 +331,14 @@ watch(activeTab, () => {
         <v-text-field
           v-model="searchQuery"
           variant="outlined"
-          placeholder="搜索课程、节点、用户、职业..."
+          :placeholder="t('common.searchPlaceholderFull')"
           prepend-inner-icon="mdi-magnify"
           hide-details
           density="comfortable"
           @keyup.enter="handleSearch"
         >
           <template #append-inner>
-            <v-btn
-              color="primary"
-              variant="flat"
-              size="small"
-              @click="handleSearch"
-            >
-              搜索
-            </v-btn>
+            <v-btn color="primary" variant="flat" size="small" @click="handleSearch"> {{ t('common.search') }} </v-btn>
           </template>
         </v-text-field>
       </div>
@@ -349,36 +346,36 @@ watch(activeTab, () => {
       <!-- 加载状态 -->
       <div v-if="searching" class="text-center py-12">
         <v-progress-circular indeterminate color="primary"></v-progress-circular>
-        <div class="mt-4 text-body-2 text-grey">搜索中...</div>
+        <div class="mt-4 text-body-2 text-grey">{{ t('common.searching') }}</div>
       </div>
 
       <!-- 无结果 -->
       <div v-else-if="!searching && searchQuery && totalResults === 0" class="text-center py-12">
         <v-icon icon="mdi-magnify" size="80" color="grey-lighten-2"></v-icon>
-        <div class="text-h6 mt-4 text-grey-darken-1">未找到相关结果</div>
-        <div class="text-body-2 text-grey mt-2">试试其他关键词</div>
+        <div class="text-h6 mt-4 text-grey-darken-1">{{ t('common.noResults') }}</div>
+        <div class="text-body-2 text-grey mt-2">{{ t('common.tryOtherKeywords') }}</div>
       </div>
 
       <!-- 搜索结果 -->
       <div v-else-if="!searching && searchQuery && totalResults > 0">
         <!-- 结果统计 -->
         <div class="text-body-2 text-grey-darken-1 mb-4">
-          找到约 {{ totalResults }}{{ hasAnyMore ? '+' : '' }} 条结果
+          {{ t('common.foundResults', { count: totalResults }) }}{{ hasAnyMore ? '+' : '' }}
         </div>
 
         <!-- 标签页 -->
         <v-tabs v-model="activeTab" color="primary" class="mb-6">
           <v-tab value="professions" :disabled="professions.length === 0">
-            职业 ({{ professions.length }}{{ hasMoreProfessions ? '+' : '' }})
+            {{ t('common.professions') }} ({{ professions.length }}{{ hasMoreProfessions ? '+' : '' }})
           </v-tab>
           <v-tab value="courses" :disabled="courses.length === 0">
-            课程 ({{ courses.length }}{{ hasMoreCourses ? '+' : '' }})
+            {{ t('common.courses') }} ({{ courses.length }}{{ hasMoreCourses ? '+' : '' }})
           </v-tab>
           <v-tab value="nodes" :disabled="nodes.length === 0">
-            节点 ({{ nodes.length }}{{ hasMoreNodes ? '+' : '' }})
+            {{ t('common.nodes') }} ({{ nodes.length }}{{ hasMoreNodes ? '+' : '' }})
           </v-tab>
           <v-tab value="users" :disabled="users.length === 0">
-            用户 ({{ users.length }}{{ hasMoreUsers ? '+' : '' }})
+            {{ t('common.users') }} ({{ users.length }}{{ hasMoreUsers ? '+' : '' }})
           </v-tab>
         </v-tabs>
 
@@ -412,7 +409,7 @@ watch(activeTab, () => {
 
           <!-- 没有更多 -->
           <div v-else-if="currentResults.length > 0" class="text-center py-6 text-body-2 text-grey">
-            没有更多结果了
+            {{ t('common.noMoreResults') }}
           </div>
         </div>
       </div>
@@ -420,8 +417,8 @@ watch(activeTab, () => {
       <!-- 空状态 -->
       <div v-else class="text-center py-12">
         <v-icon icon="mdi-magnify" size="80" color="grey-lighten-2"></v-icon>
-        <div class="text-h6 mt-4 text-grey-darken-1">输入关键词开始搜索</div>
-        <div class="text-body-2 text-grey mt-2">搜索用户、职业、课程或节点</div>
+        <div class="text-h6 mt-4 text-grey-darken-1">{{ t('common.enterKeywords') }}</div>
+        <div class="text-body-2 text-grey mt-2">{{ t('common.searchHint') }}</div>
       </div>
     </v-container>
   </DefaultLayout>

@@ -4,13 +4,13 @@ import com.prosper.learn.application.dto.request.CreateCourseRequest;
 import com.prosper.learn.application.dto.request.CreateNodeRequest;
 import com.prosper.learn.application.dto.request.OperateRequest;
 import com.prosper.learn.application.dto.request.UpdateCourseRequest;
-import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
+import com.prosper.learn.application.dto.request.UpdateRoleRequest;
 import com.prosper.learn.application.service.CommentService;
 import com.prosper.learn.application.service.CourseService;
 import com.prosper.learn.application.service.MemoryCardDeckService;
 import com.prosper.learn.application.service.NodeService;
 import com.prosper.learn.application.service.PostService;
-import com.prosper.learn.application.service.ProfessionService;
+import com.prosper.learn.application.service.RoleService;
 import com.prosper.learn.application.service.RoadmapService;
 import com.prosper.learn.application.service.StatsService;
 import com.prosper.learn.shared.domain.exception.StatusCode;
@@ -36,7 +36,7 @@ import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 内容管理统一后台接口
- * 支持所有内容类型的统一管理：post, roadmap, memory_card_deck, comment, course, profession, node
+ * 支持所有内容类型的统一管理：post, roadmap, memory_card_deck, comment, course, role, node
  *
  * 统一接口：
  * - GET  /contents/{contentType}?state=xxx&lastId=xxx - 按状态分页查询（每页20条）
@@ -55,7 +55,7 @@ public class AdminContentsController {
     private final MemoryCardDeckService memoryCardDeckService;
     private final CommentService commentService;
     private final CourseService courseService;
-    private final ProfessionService professionService;
+    private final RoleService roleService;
     private final NodeService nodeService;
     private final StatsService statsService;
 
@@ -67,7 +67,7 @@ public class AdminContentsController {
      * 按状态查询内容列表（分页）
      * GET /api/v1/admin/contents/{contentType}?state=xxx&lastId=xxx
      *
-     * @param contentType 内容类型: post, roadmap, memory_card_deck, comment, course, profession
+     * @param contentType 内容类型: post, roadmap, memory_card_deck, comment, course, role
      * @param state 状态: pending/submitted, approved/published, rejected, banned
      * @param lastId 分页游标（默认0）
      * @return 内容列表（每页20条）
@@ -99,8 +99,8 @@ public class AdminContentsController {
             case "course" -> ApiResponse.success(
                 courseService.listByState(stateValue, lastId)
             );
-            case "profession" -> ApiResponse.success(
-                professionService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE)
+            case "role" -> ApiResponse.success(
+                roleService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE)
             );
             case "node" -> ApiResponse.success(
                 nodeService.listByState(stateValue, lastId)
@@ -140,17 +140,17 @@ public class AdminContentsController {
 
     /**
      * 路线图高级筛选
-     * GET /api/v1/admin/contents/roadmap/filter?roadmapId=xxx&professionId=xxx&creatorId=xxx&lastId=xxx
+     * GET /api/v1/admin/contents/roadmap/filter?roadmapId=xxx&roleId=xxx&creatorId=xxx&lastId=xxx
      */
     @GetMapping("/roadmap/filter")
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> filterRoadmaps(
             @RequestParam(required = false) @Positive(message = "路线图ID必须大于0") Long roadmapId,
-            @RequestParam(required = false) @Positive(message = "职业ID必须大于0") Long professionId,
+            @RequestParam(required = false) @Positive(message = "职业ID必须大于0") Long roleId,
             @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
             @RequestParam(required = false) Long lastId) {
-        return ApiResponse.success(roadmapService.listByFilter(roadmapId, professionId, creatorId, lastId));
+        return ApiResponse.success(roadmapService.listByFilter(roadmapId, roleId, creatorId, lastId));
     }
 
     /**
@@ -286,23 +286,23 @@ public class AdminContentsController {
 
     /**
      * 按名称搜索职业（管理后台）
-     * GET /api/v1/admin/contents/profession/search?name=xxx
+     * GET /api/v1/admin/contents/role/search?name=xxx
      * 搜索所有状态的职业，支持滚动分页
      */
-    @GetMapping("/profession/search")
+    @GetMapping("/role/search")
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<?> searchProfessionsByName(
+    public ApiResponse<?> searchRolesByName(
             @RequestParam @NotBlank(message = "搜索名称不能为空") String name,
             @RequestParam(required = false) Long lastId) {
-        return ApiResponse.query(professionService.searchByName(name, lastId));
+        return ApiResponse.query(roleService.searchByName(name, lastId));
     }
 
     /**
      * 更新职业信息
-     * PUT /api/v1/admin/contents/profession/{id}
+     * PUT /api/v1/admin/contents/role/{id}
      */
-    @PutMapping("/profession/{id}")
+    @PutMapping("/role/{id}")
     @RequireRole(UserRole.ADMIN)
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @Transactional
@@ -310,29 +310,29 @@ public class AdminContentsController {
         module = "全局内容管理",
         type = "更新职业",
         level = OperationLevel.MEDIUM,
-        targetType = "Profession",
+        targetType = "Role",
         targetId = "#id"
     )
-    public ApiResponse<?> updateProfession(
+    public ApiResponse<?> updateRole(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0") Long id,
-            @Valid @RequestBody UpdateProfessionRequest request,
+            @Valid @RequestBody UpdateRoleRequest request,
             @CurrentUser UserDO currentUser) {
-        professionService.update(id, request, currentUser);
+        roleService.update(id, request, currentUser);
         return ApiResponse.success();
     }
 
     /**
      * 获取职业详情（管理后台）
-     * GET /api/v1/admin/contents/profession/{id}
+     * GET /api/v1/admin/contents/role/{id}
      */
-    @GetMapping("/profession/{id}")
+    @GetMapping("/role/{id}")
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<?> getProfessionById(
+    public ApiResponse<?> getRoleById(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0") Long id) {
-        return ApiResponse.query(professionService.getAdminById(id));
+        return ApiResponse.query(roleService.getAdminById(id));
     }
 
     /**
@@ -365,15 +365,15 @@ public class AdminContentsController {
      * 内容审核操作（统一接口）
      * 支持操作: approve(审核通过), reject(审核拒绝), remove(下架), ban(封禁), restore(恢复), delete(删除)
      *
-     * @param contentType 内容类型: post, roadmap, memory_card_deck, comment, course, profession, node
+     * @param contentType 内容类型: post, roadmap, memory_card_deck, comment, course, role, node
      * @param id 内容ID
      * @param request 操作请求 { action, reason }
      * @param currentUser 当前操作员
      *
      * 注意:
      * - remove 操作仅支持 post, roadmap, memory_card_deck
-     * - restore 操作仅支持 post, roadmap, memory_card_deck, course, profession
-     * - delete 操作仅支持 course, profession
+     * - restore 操作仅支持 post, roadmap, memory_card_deck, course, role
+     * - delete 操作仅支持 course, role
      * - comment 不发送审核通知
      */
     @PostMapping("/{contentType}/{id}/operate")
@@ -381,7 +381,7 @@ public class AdminContentsController {
     @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @Transactional
     @OperationLog(
-        module = "#contentType == 'course' || #contentType == 'profession' || #contentType == 'node' ? '全局内容管理' : '用户内容管理'",
+        module = "#contentType == 'course' || #contentType == 'role' || #contentType == 'node' ? '全局内容管理' : '用户内容管理'",
         type = "#request.action.toUpperCase() == 'APPROVE' ? '审核通过' : " +
                "#request.action.toUpperCase() == 'REJECT' ? '审核拒绝' : " +
                "#request.action.toUpperCase() == 'REMOVE' ? '下架' : " +
@@ -412,7 +412,7 @@ public class AdminContentsController {
             case "memory_card_deck" -> operateMemoryCardDeck(id, action, reason, currentUser);
             case "comment" -> operateComment(id, action, reason, currentUser);
             case "course" -> operateCourse(id, action, reason, currentUser);
-            case "profession" -> operateProfession(id, action, reason, currentUser);
+            case "role" -> operateRole(id, action, reason, currentUser);
             case "node" -> operateNode(id, action, reason);
             default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的内容类型: " + contentType);
         }
@@ -430,9 +430,9 @@ public class AdminContentsController {
             }
         }
 
-        // delete 操作只支持 course 和 profession
+        // delete 操作只支持 course 和 role
         if ("delete".equals(action)) {
-            if (!"course".equals(contentType) && !"profession".equals(contentType)) {
+            if (!"course".equals(contentType) && !"role".equals(contentType)) {
                 throw StatusCode.INVALID_PARAMETER.exception(contentType + " 不支持删除操作");
             }
         }
@@ -502,12 +502,12 @@ public class AdminContentsController {
         }
     }
 
-    private void operateProfession(Long id, String action, String reason, UserDO currentUser) {
+    private void operateRole(Long id, String action, String reason, UserDO currentUser) {
         switch (action) {
-            case "approve" -> professionService.approve(id, currentUser);
-            case "reject" -> professionService.reject(id, reason, currentUser);
-            case "ban" -> professionService.ban(id, reason, currentUser);
-            case "delete" -> professionService.delete(id, currentUser);
+            case "approve" -> roleService.approve(id, currentUser);
+            case "reject" -> roleService.reject(id, reason, currentUser);
+            case "ban" -> roleService.ban(id, reason, currentUser);
+            case "delete" -> roleService.delete(id, currentUser);
             default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
         }
     }

@@ -29,6 +29,6 @@ public class LikeUpvoteCancelledEvent<T> {
     /** 内容对象 */
     private T contentObject;
 
-    /** 上下文ID - 对于Post/Comment是nodeId，对于Roadmap是professionId */
+    /** 上下文ID - 对于Post/Comment是nodeId，对于Roadmap是 roleId */
     private Long contextId;
 }

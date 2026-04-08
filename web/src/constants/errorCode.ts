@@ -28,4 +28,6 @@ export const BUSINESS_ERROR = {
 /**
  * 所有错误码类型
  */
-export type ErrorCode = (typeof HTTP_STATUS)[keyof typeof HTTP_STATUS] | (typeof BUSINESS_ERROR)[keyof typeof BUSINESS_ERROR]
+export type ErrorCode =
+  | (typeof HTTP_STATUS)[keyof typeof HTTP_STATUS]
+  | (typeof BUSINESS_ERROR)[keyof typeof BUSINESS_ERROR]

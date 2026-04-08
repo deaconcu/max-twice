@@ -6,6 +6,7 @@ import axios, {
 } from 'axios'
 import type { ApiResponse } from '@/types/api'
 import { logger } from '@/utils/logger'
+import i18n from '@/i18n'
 
 /**
  * 自定义 API 错误类
@@ -119,7 +120,7 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
     // 处理 ETag 缓存
-    const etag = response.headers['etag']
+    const etag = response.headers.etag
     if (etag && response.config.url) {
       // 保存 ETag 和响应数据
       etagCache.set(response.config.url, etag, response.data)
@@ -179,8 +180,9 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(new ApiError(status, apiData.message ?? error.message, apiData))
     } else if (error.request) {
       // 请求已发出但没有收到响应
-      logger.error('网络错误：无法连接到服务器')
-      return Promise.reject(new ApiError(0, '网络错误：无法连接到服务器'))
+      const networkErrorMsg = i18n.global.t('error.networkError')
+      logger.error(networkErrorMsg)
+      return Promise.reject(new ApiError(0, networkErrorMsg))
     } else {
       // 请求配置错误
       logger.error('请求配置错误', error.message)

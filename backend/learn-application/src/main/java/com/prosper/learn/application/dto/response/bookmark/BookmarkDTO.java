@@ -6,7 +6,7 @@ import lombok.Data;
  * 收藏记录响应 DTO（带关联对象）
  *
  * @param <T> 关联对象类型
- *           - objectType=profession 时，T 为 ProfessionBriefDTO
+ *           - objectType=role 时，T 为 RoleBriefDTO
  *           - objectType=roadmap 时，T 为 RoadmapBriefDTO
  *           - objectType=course 时，T 为 CourseBriefDTO
  *           - objectType=post 时，T 为 PostBriefDTO

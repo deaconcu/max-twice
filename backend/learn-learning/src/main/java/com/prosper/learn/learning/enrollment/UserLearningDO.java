@@ -38,7 +38,7 @@ public class UserLearningDO {
 
     /**
      * 父对象ID（仅 roadmap 使用）
-     * - roadmap: parent_id = profession_id
+     * - roadmap: parent_id = role_id
      * - course: parent_id = null 或 0
      */
     private Long parentId;

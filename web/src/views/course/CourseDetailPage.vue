@@ -157,7 +157,7 @@
                 >
                   <v-icon icon="mdi-plus" size="20" class="mr-2" />
                   <span class="d-none d-sm-inline">{{ t('course.applySubCourse') }}</span>
-                  <span class="d-sm-none">申请</span>
+                  <span class="d-sm-none">{{ t('course.applyShort') }}</span>
                 </v-btn>
               </div>
 
@@ -429,10 +429,10 @@ const {
 })
 
 // 使用 useFetch 加载子课程列表
-const {
-  data: subCoursesResponse,
-  loading: _loadingSubCourses,
-} = useFetch<{ items: Course[]; hasMore: boolean }>({
+const { data: subCoursesResponse, loading: _loadingSubCourses } = useFetch<{
+  items: Course[]
+  hasMore: boolean
+}>({
   fetchFn: () => courseApi.getSubCourses(courseId.value),
   immediate: true,
   defaultValue: { items: [], hasMore: false },
@@ -471,7 +471,7 @@ const {
   (payload: { parentId: number; name: string; description: string }) =>
     courseApi.createSubcourse(payload.parentId, payload.name, payload.description),
   {
-    successMessage: '申请提交成功，等待审核',
+    successMessage: t('course.applySuccess'),
     onSuccess: () => {
       applicationDialog.value = false
       // 刷新子课程列表
@@ -488,20 +488,16 @@ const confirmDialog = ref(false)
 const pendingSubCourseType = ref<'quickstart' | 'exercises'>('quickstart')
 
 // 默认子课程的名称和描述
-const defaultSubCourses = {
+const defaultSubCourses = computed(() => ({
   quickstart: {
-    name: '快速入门',
-    nameEn: 'Quick Start',
-    description: '快速了解本课程的核心内容，帮助您快速上手',
-    descriptionEn: 'Quickly understand the core content of this course to help you get started',
+    name: t('course.quickstart'),
+    description: t('course.quickstartDesc'),
   },
   exercises: {
-    name: '习题练习',
-    nameEn: 'Exercises',
-    description: '通过习题巩固所学知识，提升实践能力',
-    descriptionEn: 'Consolidate knowledge through exercises and improve practical skills',
+    name: t('course.exercises'),
+    description: t('course.exercisesDesc'),
   },
-}
+}))
 
 const error = computed(() => (fetchError.value ? t('course.loadError') : null))
 
@@ -509,11 +505,15 @@ const error = computed(() => (fetchError.value ? t('course.loadError') : null))
  * 检查是否已存在某个默认子课程
  */
 const hasQuickstartCourse = computed(() =>
-  subCourses.value.some(c => c.name === '快速入门' || c.name === 'Quick Start')
+  subCourses.value.some(
+    (c) => c.name === t('course.quickstart') || c.name === 'Quick Start' || c.name === '快速入门'
+  )
 )
 
 const hasExercisesCourse = computed(() =>
-  subCourses.value.some(c => c.name === '习题练习' || c.name === 'Exercises')
+  subCourses.value.some(
+    (c) => c.name === t('course.exercises') || c.name === 'Exercises' || c.name === '习题练习'
+  )
 )
 
 /**
@@ -615,7 +615,7 @@ const handleCreateDefaultSubCourse = (type: 'quickstart' | 'exercises') => {
  */
 const handleConfirmCreateDefaultSubCourse = async () => {
   const type = pendingSubCourseType.value
-  const subCourseData = defaultSubCourses[type]
+  const subCourseData = defaultSubCourses.value[type]
 
   await executeCreateSubCourse({
     parentId: courseId.value,
@@ -637,7 +637,6 @@ const handleConfirmCreateDefaultSubCourse = async () => {
 .page-header-row {
   margin-bottom: 24px;
 }
-
 
 /* 课程头部卡片 */
 .course-header-card {

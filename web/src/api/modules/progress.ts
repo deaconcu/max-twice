@@ -26,7 +26,10 @@ export const progressApi = {
   /**
    * 取消节点完成标记
    */
-  unmarkNodeComplete(nodeId: number, rootNodeId: number): Promise<ApiResponse<NodeProgressResponse>> {
+  unmarkNodeComplete(
+    nodeId: number,
+    rootNodeId: number
+  ): Promise<ApiResponse<NodeProgressResponse>> {
     return apiClient.delete(`/v1/progress/nodes/${String(nodeId)}/complete`, {
       data: { rootNodeId },
     })
@@ -144,9 +147,9 @@ export const progressApi = {
   },
 
   /**
-   * 获取用户正在学习的职业路线图（最多20条）
+   * 获取用户正在学习的角色路线图（最多20条）
    */
-  getLearningRoadmapsByProfession(professionId: number): Promise<ApiResponse<Roadmap[]>> {
-    return apiClient.get(`/v1/progress/professions/${String(professionId)}/roadmaps/learning`)
+  getLearningRoadmapsByRole(roleId: number): Promise<ApiResponse<Roadmap[]>> {
+    return apiClient.get(`/v1/progress/roles/${String(roleId)}/roadmaps/learning`)
   },
 }

@@ -2,14 +2,11 @@ package com.prosper.learn.application.service;
 
 import com.prosper.learn.analytics.dto.ContentStatsDTO;
 import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
-import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.application.dto.response.UpvoteStatusDTO;
-import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
-import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.interaction.comment.CommentDO;
@@ -50,7 +47,7 @@ public class UpvoteService {
     private final NodeDataService nodeDataService;
     private final CommentDataService commentDataService;
     private final RoadmapDataService roadmapDataService;
-    private final ProfessionDataService professionDataService;
+    private final RoleDataService roleDataService;
     private final MemoryCardDeckDataService deckDataService;
     private final ApplicationEventPublisher eventPublisher;
     private final ContentStatsDomainService contentStatsDomainService;
@@ -205,12 +202,12 @@ public class UpvoteService {
         if (added) {
             eventPublisher.publishEvent(new LikeUpvotedEvent<>(
                 user.getId(), roadmapDO.getId(), ContentType.roadmap,
-                roadmapDO.getCreatorId(), roadmapDO, roadmapDO.getProfessionId()
+                roadmapDO.getCreatorId(), roadmapDO, roadmapDO.getRoleId()
             ));
         } else {
             eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
                 user.getId(), roadmapDO.getId(), ContentType.roadmap,
-                roadmapDO.getCreatorId(), roadmapDO, roadmapDO.getProfessionId()
+                roadmapDO.getCreatorId(), roadmapDO, roadmapDO.getRoleId()
             ));
         }
 

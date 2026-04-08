@@ -47,12 +47,12 @@ public class SearchController {
         return ApiResponse.success(extractHits(result));
     }
 
-    @GetMapping("/professions")
-    public ApiResponse<List<Map<String, Object>>> searchProfessions(
+    @GetMapping("/roles")
+    public ApiResponse<List<Map<String, Object>>> searchRoles(
             @RequestParam String q,
             @RequestParam(defaultValue = "20") int limit,
             @RequestParam(defaultValue = "0") int offset) {
-        Searchable result = meilisearchService.searchProfessions(q, limit, offset);
+        Searchable result = meilisearchService.searchRoles(q, limit, offset);
         return ApiResponse.success(extractHits(result));
     }
 
@@ -71,8 +71,8 @@ public class SearchController {
         Searchable usersResult = meilisearchService.searchUsers(q, limit, 0);
         results.put("users", extractHits(usersResult));
 
-        Searchable professionsResult = meilisearchService.searchProfessions(q, limit, 0);
-        results.put("professions", extractHits(professionsResult));
+        Searchable rolesResult = meilisearchService.searchRoles(q, limit, 0);
+        results.put("roles", extractHits(rolesResult));
 
         return ApiResponse.success(results);
     }

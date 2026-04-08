@@ -7,6 +7,7 @@ import { Node, mergeAttributes } from '@tiptap/core'
 import { VueNodeViewRenderer, NodeViewWrapper } from '@tiptap/vue-3'
 import { defineComponent, h, ref, watch, onMounted, nextTick } from 'vue'
 import mermaid from 'mermaid'
+import i18n from '@/i18n'
 
 // 初始化 Mermaid
 let mermaidInitialized = false
@@ -55,7 +56,7 @@ const MermaidBlockComponent = defineComponent({
       const code = props.node.attrs.code || ''
 
       if (!code.trim()) {
-        renderedHtml.value = '<div class="mermaid-placeholder">输入 Mermaid 代码...</div>'
+        renderedHtml.value = `<div class="mermaid-placeholder">${i18n.global.t('editor.mermaidPlaceholder')}</div>`
         hasError.value = false
         return
       }
@@ -89,9 +90,12 @@ const MermaidBlockComponent = defineComponent({
       nextTick(renderMermaid)
     })
 
-    watch(() => props.node.attrs.code, () => {
-      nextTick(renderMermaid)
-    })
+    watch(
+      () => props.node.attrs.code,
+      () => {
+        nextTick(renderMermaid)
+      }
+    )
 
     return () => {
       return h(

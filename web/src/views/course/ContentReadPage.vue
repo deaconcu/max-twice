@@ -17,23 +17,14 @@
           <v-card-text class="pa-0 drawer-card-content">
             <div class="drawer-container">
               <!-- 目录为空的提示 -->
-              <div
-                v-if="data && (!data.toc || data.toc.length === 0)"
-                class="pa-8 text-center"
-              >
+              <div v-if="data && (!data.toc || data.toc.length === 0)" class="pa-8 text-center">
                 <v-icon icon="mdi-compass-outline" size="56" color="primary" class="mb-4"></v-icon>
-                <div class="text-h6 text-medium-emphasis mb-3">开启目录导航</div>
+                <div class="text-h6 text-medium-emphasis mb-3">{{ t('read.toc.enableNavigation') }}</div>
                 <div class="text-body-2 text-medium-emphasis mb-4">
-                  在文章列表中选择一篇目录帖子
-                  <br />
-                  即可开启目录树导航功能
+                  {{ t('read.toc.selectCatalog') }}
                 </div>
-                <v-btn
-                  variant="tonal"
-                  color="primary"
-                  @click="drawerOpen = false"
-                >
-                  知道了
+                <v-btn variant="tonal" color="primary" @click="drawerOpen = false">
+                  {{ t('read.toc.gotIt') }}
                 </v-btn>
               </div>
 
@@ -288,7 +279,7 @@
       @click="drawerOpen = true"
     >
       <v-icon :size="$vuetify.display.mobile ? 20 : 24">mdi-format-list-bulleted</v-icon>
-      <v-tooltip activator="parent" location="left">课程目录</v-tooltip>
+      <v-tooltip activator="parent" location="left">{{ t('read.toc.courseToc') }}</v-tooltip>
     </v-btn>
   </DefaultLayout>
 </template>
@@ -317,6 +308,7 @@ import type { MemoryCardDeck } from '@/types/memory'
 import type { KeysetPageResponse } from '@/types/api'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
+import { useI18n } from '@/composables/useI18n'
 import { VoteType } from '@/enums'
 import { convertVoteType } from '@/utils/postUtils'
 
@@ -330,6 +322,7 @@ const convertVoteType = (voteType: number | null | undefined): string | null => 
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 
 // 基本状态
 const showFixedBar = ref(false)
@@ -369,7 +362,7 @@ const targetSubCommentId = computed(() => {
 
 // 开始学习课程
 const { execute: startLearning, loading: startingLearning } = useMutation(
-  () => progressApi.startCourse(courseId.value!),
+  () => progressApi.startCourse(courseId.value),
   {
     onSuccess: () => {
       isLearning.value = true
@@ -379,7 +372,7 @@ const { execute: startLearning, loading: startingLearning } = useMutation(
 
 // 取消学习课程
 const { execute: cancelLearning, loading: cancelingLearning } = useMutation(
-  () => progressApi.cancelCourse(courseId.value!),
+  () => progressApi.cancelCourse(courseId.value),
   {
     onSuccess: () => {
       isLearning.value = false
@@ -409,20 +402,20 @@ const { execute: markNodeCompleted, loading: markingNode } = useMutation(
     return progressApi.markNodeComplete(nodeId, rootNodeId)
   },
   {
-    successMessage: '已标记节点完成',
+    successMessage: t('course.nodeMarkedComplete'),
     onSuccess: (response) => {
       // 更新当前节点的完成状态
-      if (data.value && data.value.node) {
+      if (data.value?.node) {
         data.value.node.isCompleted = response.completed
       }
 
       // 更新课程进度
-      if (data.value && data.value.course && response.courseProgressPercent !== undefined) {
+      if (data.value?.course && response.courseProgressPercent !== undefined) {
         data.value.course.progressPercent = response.courseProgressPercent
       }
 
       // 更新目录树中该节点的完成状态
-      if (data.value && data.value.tocNodeInfos && response.nodeId) {
+      if (data.value?.tocNodeInfos && response.nodeId) {
         const nodeInfo = data.value.tocNodeInfos[response.nodeId]
         if (nodeInfo) {
           nodeInfo.isCompleted = response.completed
@@ -430,7 +423,7 @@ const { execute: markNodeCompleted, loading: markingNode } = useMutation(
       }
 
       // 更新可完成节点标识
-      if (data.value && data.value.tocNodeInfos && response.completableNodeIds) {
+      if (data.value?.tocNodeInfos && response.completableNodeIds) {
         // 先清除所有节点的 canComplete 标识
         Object.values(data.value.tocNodeInfos).forEach((info: any) => {
           info.canComplete = false
@@ -466,20 +459,20 @@ const { execute: unmarkNodeCompleted, loading: unmarkingNode } = useMutation(
     return progressApi.unmarkNodeComplete(nodeId, rootNodeId)
   },
   {
-    successMessage: '已取消节点完成',
+    successMessage: t('course.nodeUnmarkedComplete'),
     onSuccess: (response) => {
       // 更新当前节点的完成状态
-      if (data.value && data.value.node) {
+      if (data.value?.node) {
         data.value.node.isCompleted = response.completed
       }
 
       // 更新课程进度
-      if (data.value && data.value.course && response.courseProgressPercent !== undefined) {
+      if (data.value?.course && response.courseProgressPercent !== undefined) {
         data.value.course.progressPercent = response.courseProgressPercent
       }
 
       // 更新目录树中该节点的完成状态
-      if (data.value && data.value.tocNodeInfos && response.nodeId) {
+      if (data.value?.tocNodeInfos && response.nodeId) {
         const nodeInfo = data.value.tocNodeInfos[response.nodeId]
         if (nodeInfo) {
           nodeInfo.isCompleted = response.completed
@@ -487,7 +480,7 @@ const { execute: unmarkNodeCompleted, loading: unmarkingNode } = useMutation(
       }
 
       // 更新可完成节点标识
-      if (data.value && data.value.tocNodeInfos && response.completableNodeIds) {
+      if (data.value?.tocNodeInfos && response.completableNodeIds) {
         // 先清除所有节点的 canComplete 标识
         Object.values(data.value.tocNodeInfos).forEach((info: any) => {
           info.canComplete = false
@@ -509,7 +502,7 @@ const handleNodeCompleted = async () => {
   console.log('ContentReadPage: handleNodeCompleted 被调用', {
     nodeId: data.value?.node?.id,
     courseId: courseId.value,
-    currentCompleted: data.value?.node?.isCompleted
+    currentCompleted: data.value?.node?.isCompleted,
   })
 
   // 如果已完成，则取消完成；如果未完成，则标记完成
@@ -619,7 +612,7 @@ const {
   execute: loadMorePosts,
 } = useFetch<KeysetPageResponse<any>>({
   fetchFn: () => {
-    if (!data.value || !data.value.otherPostings || !data.value.node) {
+    if (!data.value?.otherPostings || !data.value.node) {
       return Promise.reject(new Error('No data'))
     }
     const lastPosting = data.value.otherPostings[data.value.otherPostings.length - 1]
@@ -644,7 +637,7 @@ const {
 
 // 加载更多数据
 const loadMore = async () => {
-  if (loadingMore.value || !hasMore.value || !data.value || !data.value.otherPostings) return
+  if (loadingMore.value || !hasMore.value || !data.value?.otherPostings) return
 
   const lastPosting = data.value.otherPostings[data.value.otherPostings.length - 1]
   if (!lastPosting) return
@@ -765,12 +758,7 @@ onMounted(() => {
 
 // 监听路由变化，重新加载数据
 watch(
-  () => [
-    route.params.id,
-    route.query.path,
-    route.query.nodeId,
-    route.query.courseId,
-  ],
+  () => [route.params.id, route.query.path, route.query.nodeId, route.query.courseId],
   () => {
     // 检查参数是否与上次加载的相同
     const nodeIdSame = lastLoadedParams.value.nodeId === route.query.nodeId

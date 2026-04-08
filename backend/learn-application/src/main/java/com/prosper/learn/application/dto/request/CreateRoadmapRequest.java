@@ -9,7 +9,7 @@ import lombok.Data;
 public class CreateRoadmapRequest {
 
     @NotNull(message = "专业ID不能为空")
-    private Long professionId;
+    private Long roleId;
 
     @NotBlank(message = "路线图内容不能为空")
     @ConfigurableSize(configKey = "roadmap-content")

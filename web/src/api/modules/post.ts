@@ -80,11 +80,7 @@ export const postApi = {
   /**
    * 搜索相似节点
    */
-  searchSimilarNodes(
-    query: string,
-    topK: number = 10,
-    threshold: number = 0.0
-  ): Promise<ApiResponse<Node[]>> {
+  searchSimilarNodes(query: string, topK = 10, threshold = 0.0): Promise<ApiResponse<Node[]>> {
     return apiClient.get('/v1/nodes/search', {
       params: {
         query,
@@ -110,7 +106,7 @@ export const postApi = {
    * 初始化节点 Embedding（管理员）
    */
   initNodeEmbeddings(
-    batchSize: number = 20
+    batchSize = 20
   ): Promise<ApiResponse<{ successCount: number; failCount: number; totalProcessed: number }>> {
     return apiClient.post('/v1/admin/contents/nodes/init-embeddings', null, {
       params: {

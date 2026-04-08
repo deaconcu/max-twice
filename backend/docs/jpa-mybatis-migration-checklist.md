@@ -366,11 +366,11 @@
 
 按照以下模块依次迁移：
 
-#### Profession 模块
-- [ ] ProfessionDO 改造
-- [ ] 创建 ProfessionRepository
-- [ ] 精简 ProfessionMapper
-- [ ] 重构 ProfessionService
+#### Role 模块
+- [ ] RoleDO 改造
+- [ ] 创建 RoleRepository
+- [ ] 精简 RoleMapper
+- [ ] 重构 RoleService
 - [ ] 测试
 
 #### Roadmap 模块

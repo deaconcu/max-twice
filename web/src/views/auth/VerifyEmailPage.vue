@@ -19,25 +19,20 @@
                   <v-icon size="48" color="success">mdi-email-check</v-icon>
                 </div>
                 <h2 class="text-h5 font-weight-bold mt-4 mb-2">
-                  验证邮箱
+                  {{ t('user.verifyEmail.title') }}
                 </h2>
-                <p class="text-body-2 text-medium-emphasis">请输入发送到您邮箱的验证码</p>
+                <p class="text-body-2 text-medium-emphasis">{{ t('user.verifyEmail.subtitle') }}</p>
               </v-card-text>
 
               <!-- 验证表单 -->
               <v-card-text class="px-8 pb-8">
                 <v-form ref="verifyFormRef" @submit.prevent="handleVerify">
                   <!-- 邮箱显示 -->
-                  <v-alert
-                    type="info"
-                    variant="tonal"
-                    density="compact"
-                    class="mb-4"
-                  >
+                  <v-alert type="info" variant="tonal" density="compact" class="mb-4">
                     <div class="d-flex align-center">
                       <v-icon size="20" class="mr-2">mdi-email-outline</v-icon>
                       <span class="text-body-2">
-                        验证码已发送至: <strong>{{ email }}</strong>
+                        {{ t('user.verifyEmail.codeSentTo') }} <strong>{{ email }}</strong>
                       </span>
                     </div>
                   </v-alert>
@@ -45,8 +40,8 @@
                   <!-- 验证码输入 -->
                   <v-text-field
                     v-model="formData.code"
-                    label="验证码"
-                    placeholder="请输入6位数字验证码"
+                    :label="t('user.verifyEmail.codeLabel')"
+                    :placeholder="t('user.verifyEmail.codePlaceholder')"
                     :rules="[verificationCodeRule]"
                     :disabled="isVerifying"
                     variant="outlined"
@@ -80,7 +75,11 @@
                     color="success"
                     class="text-none font-weight-bold mb-3"
                   >
-                    {{ isVerifying ? '验证中...' : '验证邮箱' }}
+                    {{
+                      isVerifying
+                        ? t('user.verifyEmail.verifying')
+                        : t('user.verifyEmail.verifyButton')
+                    }}
                   </v-btn>
 
                   <!-- 重新发送验证码 -->
@@ -93,7 +92,11 @@
                       :loading="isResending"
                       @click="handleResend"
                     >
-                      {{ countdown > 0 ? `重新发送 (${countdown}秒)` : '重新发送验证码' }}
+                      {{
+                        countdown > 0
+                          ? t('user.verifyEmail.resendCountdown', { seconds: countdown })
+                          : t('user.verifyEmail.resendButton')
+                      }}
                     </v-btn>
                   </div>
 
@@ -101,13 +104,15 @@
 
                   <!-- 返回登录 -->
                   <div class="text-center">
-                    <span class="text-body-2 text-medium-emphasis"> 已经验证？ </span>
+                    <span class="text-body-2 text-medium-emphasis">
+                      {{ t('user.verifyEmail.alreadyVerified') }}
+                    </span>
                     <a
                       href="#"
                       class="text-body-2 text-primary text-decoration-none font-weight-bold ml-1"
                       @click.prevent="goToLogin"
                     >
-                      立即登录
+                      {{ t('user.verifyEmail.loginNow') }}
                     </a>
                   </div>
                 </v-form>
@@ -123,9 +128,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import { authApi } from '@/api'
 import { useUserStore } from '@/stores'
-import { verificationCodeRule } from '@/composables/useValidation'
+import { useVerificationCodeRule } from '@/composables/useValidation'
 import { RIGHTS_DECLARATION } from '@/constants/site'
 import { HEADER_HEIGHT } from '@/constants/layout'
 import SimpleHeader from '@/components/layout/SimpleHeader.vue'
@@ -134,9 +140,13 @@ import IntroSection from '@/components/common/IntroSection.vue'
 const router = useRouter()
 const userStore = useUserStore()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
+const { t } = useI18n()
+
+// 验证规则
+const verificationCodeRule = useVerificationCodeRule()
 
 // 从路由获取邮箱地址
-const email = ref(router.currentRoute.value.query.email as string || '')
+const email = ref((router.currentRoute.value.query.email as string) || '')
 
 // 表单数据
 const formData = ref({
@@ -160,7 +170,7 @@ const handleVerify = async () => {
   if (!valid) return
 
   if (!email.value) {
-    errorMessage.value = '邮箱地址无效'
+    errorMessage.value = t('user.verifyEmail.emailInvalid')
     return
   }
 
@@ -175,19 +185,19 @@ const handleVerify = async () => {
       userStore.setUser(response.data)
 
       // 显示成功提示
-      showSnackbar?.('邮箱验证成功！', 'success')
+      showSnackbar?.(t('user.verifyEmail.verifySuccess'), 'success')
 
       // 跳转到首页
       await router.push('/')
     } else {
-      errorMessage.value = response.message || '验证失败'
+      errorMessage.value = response.message || t('user.verifyEmail.verifyFailed')
     }
   } catch (error: any) {
     // 显示错误信息
     if (error?.message) {
       errorMessage.value = error.message
     } else {
-      errorMessage.value = '验证失败，请重试'
+      errorMessage.value = t('user.verifyEmail.verifyFailedRetry')
     }
   } finally {
     isVerifying.value = false
@@ -197,7 +207,7 @@ const handleVerify = async () => {
 // 重新发送验证码
 const handleResend = async () => {
   if (!email.value) {
-    errorMessage.value = '邮箱地址无效'
+    errorMessage.value = t('user.verifyEmail.emailInvalid')
     return
   }
 
@@ -208,7 +218,7 @@ const handleResend = async () => {
     await authApi.resendVerificationCode(email.value)
 
     // 显示成功提示
-    showSnackbar?.('验证码已重新发送，请查收邮件', 'success')
+    showSnackbar?.(t('user.verifyEmail.codeSent'), 'success')
 
     // 启动60秒倒计时
     startCountdown()
@@ -217,7 +227,7 @@ const handleResend = async () => {
     if (error?.message) {
       errorMessage.value = error.message
     } else {
-      errorMessage.value = '发送失败，请稍后重试'
+      errorMessage.value = t('user.verifyEmail.sendFailed')
     }
   } finally {
     isResending.value = false
@@ -252,7 +262,7 @@ const goToLogin = () => {
 // 组件挂载时检查邮箱
 onMounted(() => {
   if (!email.value) {
-    showSnackbar?.('邮箱地址无效，请重新注册', 'error')
+    showSnackbar?.(t('user.verifyEmail.emailInvalidRedirect'), 'error')
     void router.push('/register')
   }
 })

@@ -2,6 +2,14 @@
 import { ref, computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 
+const props = withDefaults(defineProps<Props>(), {
+  selectedText: '',
+  nodeTitle: '',
+  nodeDescription: '',
+})
+
+const emit = defineEmits<Emits>()
+
 const { t } = useI18n()
 
 interface Props {
@@ -10,17 +18,7 @@ interface Props {
   nodeDescription?: string
 }
 
-interface Emits {
-  (e: 'update:selectedText', value: string): void
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  selectedText: '',
-  nodeTitle: '',
-  nodeDescription: '',
-})
-
-const emit = defineEmits<Emits>()
+type Emits = (e: 'update:selectedText', value: string) => void
 
 // 状态
 const userQuestion = ref('')
@@ -124,7 +122,9 @@ const clearQuote = () => {
             <div class="d-flex align-center text-caption text-grey-darken-1">
               <v-icon icon="mdi-format-quote-close" size="14" class="mr-1"></v-icon>
               <span>{{ t('aiAssistant.quoted') }}</span>
-              <span class="text-grey ml-1">({{ t('aiAssistant.charCount', { count: selectedText.length }) }})</span>
+              <span class="text-grey ml-1"
+                >({{ t('aiAssistant.charCount', { count: selectedText.length }) }})</span
+              >
             </div>
             <div class="d-flex align-center">
               <v-btn

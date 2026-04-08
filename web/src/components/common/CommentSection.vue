@@ -9,16 +9,6 @@ import { ObjectType, VoteType } from '@/enums'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import { useUserStore } from '@/stores/modules/user'
 
-const { t } = useI18n()
-
-interface Props {
-  postId?: number
-  commentCount?: number
-  objectType?: number
-  targetCommentId?: number | null
-  targetSubCommentId?: number | null
-}
-
 const props = withDefaults(defineProps<Props>(), {
   postId: 0,
   commentCount: 0,
@@ -30,6 +20,16 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   viewAllComments: []
 }>()
+
+const { t } = useI18n()
+
+interface Props {
+  postId?: number
+  commentCount?: number
+  objectType?: number
+  targetCommentId?: number | null
+  targetSubCommentId?: number | null
+}
 
 // 验证规则
 const commentRules = useValidationRules('comment-content')
@@ -146,7 +146,9 @@ const { execute: fetchSubCommentContext } = useFetch({
 
       // 使用 MutationObserver 监听目标子评论元素出现
       const observer = new MutationObserver(() => {
-        const subCommentEl = document.querySelector(`[data-sub-comment-id="${props.targetSubCommentId}"]`)
+        const subCommentEl = document.querySelector(
+          `[data-sub-comment-id="${props.targetSubCommentId}"]`
+        )
         if (subCommentEl) {
           subCommentEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
           observer.disconnect()
@@ -401,11 +403,7 @@ const upvotingCommentId = ref<number | null>(null)
 let currentUpvoteComment: any = null
 
 const { execute: doUpvote } = useMutation(
-  () => upvoteApi.upvote(
-    currentUpvoteComment.id,
-    ObjectType.COMMENT,
-    VoteType.LIKE
-  ),
+  () => upvoteApi.upvote(currentUpvoteComment.id, ObjectType.COMMENT, VoteType.LIKE),
   {
     onSuccess: (result) => {
       currentUpvoteComment.liked = result.liked
@@ -472,7 +470,7 @@ onBeforeUnmount(() => {
     <div class="comment-input-section">
       <v-textarea
         v-model="newComment"
-        placeholder="写下你的评论..."
+        :placeholder="t('comment.inputPlaceholder')"
         variant="outlined"
         density="comfortable"
         rounded="lg"
@@ -535,213 +533,227 @@ onBeforeUnmount(() => {
         :data-comment-id="comment.id"
         class="comment-item mb-2"
       >
-        <div class="comment-content" :class="{ 'highlighted': highlightedCommentId === comment.id }">
+        <div class="comment-content" :class="{ highlighted: highlightedCommentId === comment.id }">
           <div class="d-flex">
-          <UserAvatar
-            :name="comment.creator?.name || t('comment.anonymousUser')"
-            :avatar-url="comment.creator?.avatar"
-            size="30"
-            rounded="lg"
-            class="mr-3"
-          />
-          <div class="flex-grow-1">
-            <div class="d-flex align-center mb-2">
-              <span class="text-body-2 font-weight-medium text-grey-darken-3">
-                {{ comment.creator?.name || t('comment.anonymousUser') }}
-              </span>
-              <span class="text-caption text-grey mx-2">·</span>
-              <span class="text-caption text-grey">
-                {{ comment.createdAt }}
-              </span>
-            </div>
-            <p class="text-body-2 mb-2">
-              {{ comment.content }}
-            </p>
+            <UserAvatar
+              :name="comment.creator?.name || t('comment.anonymousUser')"
+              :avatar-url="comment.creator?.avatar"
+              size="30"
+              rounded="lg"
+              class="mr-3"
+            />
+            <div class="flex-grow-1">
+              <div class="d-flex align-center mb-2">
+                <span class="text-body-2 font-weight-medium text-grey-darken-3">
+                  {{ comment.creator?.name || t('comment.anonymousUser') }}
+                </span>
+                <span class="text-caption text-grey mx-2">·</span>
+                <span class="text-caption text-grey">
+                  {{ comment.createdAt }}
+                </span>
+              </div>
+              <p class="text-body-2 mb-2">
+                {{ comment.content }}
+              </p>
 
-            <!-- 操作按钮 -->
-            <div class="d-flex align-center mb-2">
-              <v-btn
-                size="small"
-                variant="text"
-                :color="comment.liked ? 'primary' : 'grey-darken-2'"
-                :disabled="isOwnComment(comment)"
-                @click="handleUpvoteComment(comment)"
-              >
-                <v-icon :icon="comment.liked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'" size="16" class="mr-1"></v-icon>
-                {{ comment.likeCount || 0 }}
-              </v-btn>
-              <v-btn
-                size="small"
-                variant="text"
-                color="grey-darken-2"
-                class="ml-2"
-                @click="toggleReply(comment.id)"
-              >
-                <v-icon icon="mdi-comment-outline" size="16" class="mr-1"></v-icon>
-                {{ t('comment.reply') }}
-              </v-btn>
-            </div>
-
-            <!-- 回复输入框 - 只在回复主评论时显示 -->
-            <div v-if="activeReplyId === comment.id && replyToUserId === null" class="mt-2 mb-3">
-              <v-textarea
-                v-model="replyContent"
-                :placeholder="t('comment.replyPlaceholder')"
-                variant="outlined"
-                density="comfortable"
-                rounded="lg"
-                rows="2"
-                :rules="isReplyFocused ? commentRules : []"
-                :counter="commentMaxLength"
-                auto-grow
-                hide-details="auto"
-                class="mb-2"
-                @focus="isReplyFocused = true"
-                @blur="isReplyFocused = false"
-              ></v-textarea>
-              <div class="d-flex justify-end">
+              <!-- 操作按钮 -->
+              <div class="d-flex align-center mb-2">
                 <v-btn
                   size="small"
                   variant="text"
-                  color="grey"
-                  class="mr-2"
-                  @click="toggleReply(comment.id)"
+                  :color="comment.liked ? 'primary' : 'grey-darken-2'"
+                  :disabled="isOwnComment(comment)"
+                  @click="handleUpvoteComment(comment)"
                 >
-                  {{ t('common.cancel') }}
+                  <v-icon
+                    :icon="comment.liked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                    size="16"
+                    class="mr-1"
+                  ></v-icon>
+                  {{ comment.likeCount || 0 }}
                 </v-btn>
                 <v-btn
                   size="small"
-                  color="primary"
-                  variant="tonal"
-                  :disabled="!replyContent.trim()"
-                  :loading="replying"
-                  @mousedown.prevent="handleSubmitReply(comment.id)"
+                  variant="text"
+                  color="grey-darken-2"
+                  class="ml-2"
+                  @click="toggleReply(comment.id)"
                 >
-                  {{ t('comment.postReply') }}
+                  <v-icon icon="mdi-comment-outline" size="16" class="mr-1"></v-icon>
+                  {{ t('comment.reply') }}
                 </v-btn>
+              </div>
+
+              <!-- 回复输入框 - 只在回复主评论时显示 -->
+              <div v-if="activeReplyId === comment.id && replyToUserId === null" class="mt-2 mb-3">
+                <v-textarea
+                  v-model="replyContent"
+                  :placeholder="t('comment.replyPlaceholder')"
+                  variant="outlined"
+                  density="comfortable"
+                  rounded="lg"
+                  rows="2"
+                  :rules="isReplyFocused ? commentRules : []"
+                  :counter="commentMaxLength"
+                  auto-grow
+                  hide-details="auto"
+                  class="mb-2"
+                  @focus="isReplyFocused = true"
+                  @blur="isReplyFocused = false"
+                ></v-textarea>
+                <div class="d-flex justify-end">
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    color="grey"
+                    class="mr-2"
+                    @click="toggleReply(comment.id)"
+                  >
+                    {{ t('common.cancel') }}
+                  </v-btn>
+                  <v-btn
+                    size="small"
+                    color="primary"
+                    variant="tonal"
+                    :disabled="!replyContent.trim()"
+                    :loading="replying"
+                    @mousedown.prevent="handleSubmitReply(comment.id)"
+                  >
+                    {{ t('comment.postReply') }}
+                  </v-btn>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <!-- comment-content 结束 -->
+        <!-- comment-content 结束 -->
 
-      <!-- 子评论列表 -->
-      <div v-if="comment.children && comment.children.length > 0" class="sub-comments mt-3 ms-10">
-              <!-- 子评论上方省略号 -->
-              <div v-if="comment.hasMoreRepliesBefore" class="sub-comments-ellipsis mb-4">
-                <v-icon icon="mdi-dots-horizontal" color="grey" size="20"></v-icon>
-              </div>
+        <!-- 子评论列表 -->
+        <div v-if="comment.children && comment.children.length > 0" class="sub-comments mt-3 ms-10">
+          <!-- 子评论上方省略号 -->
+          <div v-if="comment.hasMoreRepliesBefore" class="sub-comments-ellipsis mb-4">
+            <v-icon icon="mdi-dots-horizontal" color="grey" size="20"></v-icon>
+          </div>
 
-              <div
-                v-for="subComment in comment.children"
-                :key="subComment.id"
-                :data-sub-comment-id="subComment.id"
-                class="sub-comment-item mb-2"
-                :class="{ 'highlighted': highlightedSubCommentId === subComment.id }"
-              >
-                <div class="d-flex">
-                  <UserAvatar
-                    :name="subComment.creator?.name || t('comment.anonymousUser')"
-                    :avatar-url="subComment.creator?.avatar"
-                    size="24"
+          <div
+            v-for="subComment in comment.children"
+            :key="subComment.id"
+            :data-sub-comment-id="subComment.id"
+            class="sub-comment-item mb-2"
+            :class="{ highlighted: highlightedSubCommentId === subComment.id }"
+          >
+            <div class="d-flex">
+              <UserAvatar
+                :name="subComment.creator?.name || t('comment.anonymousUser')"
+                :avatar-url="subComment.creator?.avatar"
+                size="24"
+                rounded="lg"
+                class="mr-2"
+              />
+              <div class="flex-grow-1">
+                <div class="d-flex align-center mb-2">
+                  <span class="text-body-2 font-weight-medium text-grey-darken-3">
+                    {{ subComment.creator?.name || t('comment.anonymousUser') }}
+                  </span>
+                  <span class="text-caption text-grey mx-2">·</span>
+                  <span class="text-caption text-grey">
+                    {{ subComment.createdAt }}
+                  </span>
+                </div>
+                <p class="text-body-2 mb-2">
+                  <span v-if="subComment.toUser?.name" class="text-primary font-weight-medium">
+                    @{{ subComment.toUser.name }}
+                  </span>
+                  {{ subComment.content }}
+                </p>
+                <div class="d-flex align-center mb-2">
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    :color="subComment.liked ? 'primary' : 'grey-darken-2'"
+                    :disabled="isOwnComment(subComment)"
+                    @click="handleUpvoteComment(subComment)"
+                  >
+                    <v-icon
+                      :icon="subComment.liked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                      size="16"
+                      class="mr-1"
+                    ></v-icon>
+                    {{ subComment.likeCount || 0 }}
+                  </v-btn>
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    color="grey-darken-2"
+                    class="ml-2"
+                    @click="replyToSubComment(comment.id, subComment)"
+                  >
+                    <v-icon icon="mdi-comment-outline" size="16" class="mr-1"></v-icon>
+                    {{ t('comment.reply') }}
+                  </v-btn>
+                </div>
+
+                <!-- 子评论的回复输入框 -->
+                <div v-if="activeReplyId === subComment.id" class="mt-2">
+                  <v-textarea
+                    v-model="replyContent"
+                    :placeholder="
+                      t('comment.replyToPlaceholder', {
+                        name: subComment.creator?.name || t('comment.anonymousUser'),
+                      })
+                    "
+                    variant="outlined"
+                    density="comfortable"
                     rounded="lg"
-                    class="mr-2"
-                  />
-                  <div class="flex-grow-1">
-                    <div class="d-flex align-center mb-2">
-                      <span class="text-body-2 font-weight-medium text-grey-darken-3">
-                        {{ subComment.creator?.name || t('comment.anonymousUser') }}
-                      </span>
-                      <span class="text-caption text-grey mx-2">·</span>
-                      <span class="text-caption text-grey">
-                        {{ subComment.createdAt }}
-                      </span>
-                    </div>
-                    <p class="text-body-2 mb-2">
-                      <span v-if="subComment.toUser?.name" class="text-primary font-weight-medium">
-                        @{{ subComment.toUser.name }}
-                      </span>
-                      {{ subComment.content }}
-                    </p>
-                    <div class="d-flex align-center mb-2">
-                      <v-btn
-                        size="small"
-                        variant="text"
-                        :color="subComment.liked ? 'primary' : 'grey-darken-2'"
-                        :disabled="isOwnComment(subComment)"
-                        @click="handleUpvoteComment(subComment)"
-                      >
-                        <v-icon :icon="subComment.liked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'" size="16" class="mr-1"></v-icon>
-                        {{ subComment.likeCount || 0 }}
-                      </v-btn>
-                      <v-btn
-                        size="small"
-                        variant="text"
-                        color="grey-darken-2"
-                        class="ml-2"
-                        @click="replyToSubComment(comment.id, subComment)"
-                      >
-                        <v-icon icon="mdi-comment-outline" size="16" class="mr-1"></v-icon>
-                        {{ t('comment.reply') }}
-                      </v-btn>
-                    </div>
-
-                    <!-- 子评论的回复输入框 -->
-                    <div v-if="activeReplyId === subComment.id" class="mt-2">
-                      <v-textarea
-                        v-model="replyContent"
-                        :placeholder="t('comment.replyToPlaceholder', { name: subComment.creator?.name || t('comment.anonymousUser') })"
-                        variant="outlined"
-                        density="comfortable"
-                        rounded="lg"
-                        rows="2"
-                        :rules="isReplyFocused ? commentRules : []"
-                        :counter="commentMaxLength"
-                        auto-grow
-                        hide-details="auto"
-                        class="mb-2"
-                        @focus="isReplyFocused = true"
-                        @blur="isReplyFocused = false"
-                      ></v-textarea>
-                      <div class="d-flex justify-end">
-                        <v-btn
-                          size="small"
-                          variant="text"
-                          color="grey"
-                          class="mr-2"
-                          @click="cancelReply"
-                        >
-                          {{ t('common.cancel') }}
-                        </v-btn>
-                        <v-btn
-                          size="small"
-                          color="primary"
-                          variant="tonal"
-                          :disabled="!replyContent.trim()"
-                          :loading="replying"
-                          @mousedown.prevent="handleSubmitReply(comment.id)"
-                        >
-                          {{ t('comment.postReply') }}
-                        </v-btn>
-                      </div>
-                    </div>
+                    rows="2"
+                    :rules="isReplyFocused ? commentRules : []"
+                    :counter="commentMaxLength"
+                    auto-grow
+                    hide-details="auto"
+                    class="mb-2"
+                    @focus="isReplyFocused = true"
+                    @blur="isReplyFocused = false"
+                  ></v-textarea>
+                  <div class="d-flex justify-end">
+                    <v-btn
+                      size="small"
+                      variant="text"
+                      color="grey"
+                      class="mr-2"
+                      @click="cancelReply"
+                    >
+                      {{ t('common.cancel') }}
+                    </v-btn>
+                    <v-btn
+                      size="small"
+                      color="primary"
+                      variant="tonal"
+                      :disabled="!replyContent.trim()"
+                      :loading="replying"
+                      @mousedown.prevent="handleSubmitReply(comment.id)"
+                    >
+                      {{ t('comment.postReply') }}
+                    </v-btn>
                   </div>
                 </div>
               </div>
-
-              <!-- 查看更多子评论按钮 -->
-              <v-btn
-                v-if="comment.hasMoreReplies"
-                variant="text"
-                size="small"
-                color="grey-darken-2"
-                class="mt-0"
-                @click="loadSubComments(comment)"
-              >
-                {{ t('comment.viewMoreReplies') }} ({{ comment.replyCount - (comment.children?.length || 0) }})
-              </v-btn>
             </div>
+          </div>
+
+          <!-- 查看更多子评论按钮 -->
+          <v-btn
+            v-if="comment.hasMoreReplies"
+            variant="text"
+            size="small"
+            color="grey-darken-2"
+            class="mt-0"
+            @click="loadSubComments(comment)"
+          >
+            {{ t('comment.viewMoreReplies') }} ({{
+              comment.replyCount - (comment.children?.length || 0)
+            }})
+          </v-btn>
+        </div>
       </div>
       <!-- comment-item 结束 -->
 
@@ -810,7 +822,8 @@ onBeforeUnmount(() => {
 }
 
 @keyframes highlight-pulse {
-  0%, 100% {
+  0%,
+  100% {
     border-left-color: rgb(var(--v-theme-primary));
   }
   50% {

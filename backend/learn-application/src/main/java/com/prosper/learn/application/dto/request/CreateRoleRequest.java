@@ -12,7 +12,7 @@ import lombok.Data;
  * @author Claude Code
  */
 @Data
-public class CreateProfessionRequest {
+public class CreateRoleRequest {
 
     /**
      * 职业名称

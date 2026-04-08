@@ -5,24 +5,23 @@
 
     <!-- 文案区 -->
     <div class="text-content">
-      <h1 class="main-slogan">
-        人生没有说明书，<br />
-        我们一起写一本。
-      </h1>
+      <h1 class="main-slogan" v-html="t('intro.mainSlogan')"></h1>
 
-      <p class="sub-slogan">想成为谁，就学什么。</p>
+      <p class="sub-slogan">{{ t('intro.subSlogan') }}</p>
 
       <!-- 品牌解释 -->
       <div class="brand-line">
         <span class="brand-name">TwiceMax</span>
-        <span class="brand-meaning">— 每个知识点，最多看两遍就懂</span>
+        <span class="brand-meaning">{{ t('intro.brandMeaning') }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// 简化版，不需要 props 和轮播逻辑
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 </script>
 
 <style scoped>

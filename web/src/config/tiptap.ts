@@ -64,7 +64,7 @@ lowlight.register('sh', bash) // shell 使用 bash 高亮
 /**
  * 获取 TipTap 编辑器扩展配置
  */
-export function getTipTapExtensions(placeholder = '请在这里输入内容...') {
+export function getTipTapExtensions(placeholder = '') {
   return [
     // 基础功能包（段落、标题、粗体、斜体、删除线、代码、引用等）
     StarterKit.configure({
@@ -176,7 +176,7 @@ export interface TipTapOptions {
  * 默认编辑器选项
  */
 export const DEFAULT_TIPTAP_OPTIONS: TipTapOptions = {
-  placeholder: '请在这里输入内容...',
+  placeholder: '',
   editable: true,
   autofocus: false,
 }

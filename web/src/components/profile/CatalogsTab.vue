@@ -50,166 +50,174 @@
     <!-- 加载状态 -->
     <LoadingSpinner v-if="loading && filteredCatalogs.length === 0" />
 
-        <!-- 目录列表 -->
-        <v-infinite-scroll
-          v-else-if="filteredCatalogs.length > 0"
-          :items="filteredCatalogs"
-          @load="onLoadMore"
+    <!-- 目录列表 -->
+    <v-infinite-scroll
+      v-else-if="filteredCatalogs.length > 0"
+      :items="filteredCatalogs"
+      @load="onLoadMore"
+    >
+      <div v-for="(catalog, index) in filteredCatalogs" :key="catalog.id">
+        <v-card
+          rounded="lg"
+          border
+          hover
+          class="catalog-card mb-5"
+          @click="goToCatalog(catalog.id)"
         >
-          <div v-for="(catalog, index) in filteredCatalogs" :key="catalog.id">
-            <v-card
-              rounded="lg"
-              border
-              hover
-              class="catalog-card mb-5"
-              @click="goToCatalog(catalog.id)"
-            >
-              <v-card-text class="pa-4 pb-2">
-                <!-- 顶部：课程 > 节点 + 状态 -->
-                <div class="d-flex align-center justify-space-between mb-3">
-                  <!-- 左侧：课程和节点路径 -->
-                  <div class="d-flex align-center text-body-2 text-medium-emphasis" style="min-width: 0">
-                    <span v-if="catalog.course" class="text-truncate" @click.stop="goToCourse(catalog.course.id)" style="cursor: pointer">
-                      {{ catalog.course.name }}
-                    </span>
-                    <v-icon v-if="catalog.course && catalog.node" icon="mdi-chevron-right" size="16" class="mx-1 flex-shrink-0" />
-                    <span v-if="catalog.node" class="text-truncate">{{ catalog.node }}</span>
-                  </div>
+          <v-card-text class="pa-4 pb-2">
+            <!-- 顶部：课程 > 节点 + 状态 -->
+            <div class="d-flex align-center justify-space-between mb-3">
+              <!-- 左侧：课程和节点路径 -->
+              <div
+                class="d-flex align-center text-body-2 text-medium-emphasis"
+                style="min-width: 0"
+              >
+                <span
+                  v-if="catalog.course"
+                  class="text-truncate"
+                  style="cursor: pointer"
+                  @click.stop="goToCourse(catalog.course.id)"
+                >
+                  {{ catalog.course.name }}
+                </span>
+                <v-icon
+                  v-if="catalog.course && catalog.node"
+                  icon="mdi-chevron-right"
+                  size="16"
+                  class="mx-1 flex-shrink-0"
+                />
+                <span v-if="catalog.node" class="text-truncate">{{ catalog.node }}</span>
+              </div>
 
-                  <!-- 右侧：状态标签 -->
-                  <v-chip
-                    v-if="catalog.state === 0"
-                    size="x-small"
-                    color="grey"
-                    variant="tonal"
-                    class="flex-shrink-0 ml-2"
-                  >
-                    {{ t('user.profile.draft') }}
-                  </v-chip>
-                  <v-chip
-                    v-else-if="catalog.state === 1"
-                    size="x-small"
-                    color="warning"
-                    variant="tonal"
-                    class="flex-shrink-0 ml-2"
-                  >
-                    {{ t('admin.pending') }}
-                  </v-chip>
-                  <v-chip
-                    v-else-if="catalog.state === 2"
-                    size="x-small"
-                    color="success"
-                    variant="tonal"
-                    class="flex-shrink-0 ml-2"
-                  >
-                    {{ t('user.profile.published') }}
-                  </v-chip>
-                  <v-chip
-                    v-else-if="catalog.state === 3"
-                    size="x-small"
-                    color="error"
-                    variant="tonal"
-                    class="flex-shrink-0 ml-2"
-                  >
-                    {{ t('admin.rejected') }}
-                  </v-chip>
-                  <v-chip
-                    v-else-if="catalog.state === 4"
-                    size="x-small"
-                    color="error"
-                    variant="tonal"
-                    class="flex-shrink-0 ml-2"
-                  >
-                    {{ t('admin.banned') }}
-                  </v-chip>
-                </div>
-
-                <!-- 主要内容：目录章节列表 -->
-                <div v-if="catalog.contentNodes.length > 0" class="catalog-nodes mb-3">
-                  <div
-                    v-for="(node, idx) in catalog.contentNodes"
-                    :key="idx"
-                    class="catalog-node-item py-2 px-3"
-                  >
-                    <div class="text-body-1 text-grey-darken-3">
-                      {{ idx + 1 }}. {{ node.name }}
-                    </div>
-                    <div
-                      v-if="node.description"
-                      class="text-body-2 text-medium-emphasis"
-                    >
-                      {{ node.description }}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 底部：统计信息 + 操作按钮 -->
-                <div class="d-flex align-center justify-space-between">
-                  <div class="d-flex align-center text-caption text-grey" style="gap: 12px">
-                    <span>{{ catalog.commentCount }} {{ t('notification.comment') }}</span>
-                    <span>{{ catalog.deckCount }} {{ t('review.cards') }}</span>
-                    <span>{{ catalog.contentNodes.length }} {{ t('learning.nodes') }}</span>
-                    <span class="d-none d-sm-inline">{{ formatDate(catalog.createdAt) }}</span>
-                  </div>
-                  <div class="d-flex align-center">
-                    <v-btn
-                      v-if="catalog.state === 0"
-                      color="primary"
-                      variant="text"
-                      size="x-small"
-                      icon="mdi-pencil"
-                      @click.stop="editCatalog(catalog)"
-                    />
-                    <v-btn
-                      color="grey"
-                      variant="text"
-                      size="x-small"
-                      icon="mdi-delete"
-                      @click.stop="deleteCatalog(catalog.id)"
-                    />
-                  </div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </div>
-
-          <template #loading>
-            <div class="text-center py-4">
-              <v-progress-circular indeterminate color="primary" size="32" />
+              <!-- 右侧：状态标签 -->
+              <v-chip
+                v-if="catalog.state === 0"
+                size="x-small"
+                color="grey"
+                variant="tonal"
+                class="flex-shrink-0 ml-2"
+              >
+                {{ t('user.profile.draft') }}
+              </v-chip>
+              <v-chip
+                v-else-if="catalog.state === 1"
+                size="x-small"
+                color="warning"
+                variant="tonal"
+                class="flex-shrink-0 ml-2"
+              >
+                {{ t('admin.pending') }}
+              </v-chip>
+              <v-chip
+                v-else-if="catalog.state === 2"
+                size="x-small"
+                color="success"
+                variant="tonal"
+                class="flex-shrink-0 ml-2"
+              >
+                {{ t('user.profile.published') }}
+              </v-chip>
+              <v-chip
+                v-else-if="catalog.state === 3"
+                size="x-small"
+                color="error"
+                variant="tonal"
+                class="flex-shrink-0 ml-2"
+              >
+                {{ t('admin.rejected') }}
+              </v-chip>
+              <v-chip
+                v-else-if="catalog.state === 4"
+                size="x-small"
+                color="error"
+                variant="tonal"
+                class="flex-shrink-0 ml-2"
+              >
+                {{ t('admin.banned') }}
+              </v-chip>
             </div>
-          </template>
 
-          <template #empty>
-            <div v-if="!searchQuery" class="text-center py-4">
-              <p class="text-body-2 text-grey">{{ t('postingList.reachedEnd') }}</p>
+            <!-- 主要内容：目录章节列表 -->
+            <div v-if="catalog.contentNodes.length > 0" class="catalog-nodes mb-3">
+              <div
+                v-for="(node, idx) in catalog.contentNodes"
+                :key="idx"
+                class="catalog-node-item py-2 px-3"
+              >
+                <div class="text-body-1 text-grey-darken-3">{{ idx + 1 }}. {{ node.name }}</div>
+                <div v-if="node.description" class="text-body-2 text-medium-emphasis">
+                  {{ node.description }}
+                </div>
+              </div>
             </div>
-          </template>
-        </v-infinite-scroll>
 
-        <!-- 空状态 -->
-        <div v-else class="text-center py-8 py-md-12">
-          <v-icon
-            icon="mdi-folder-multiple"
-            :size="$vuetify.display.mobile ? 48 : 64"
-            color="grey-lighten-2"
-            class="mb-3 mb-md-4"
-          />
-          <p class="text-body-2 text-md-body-1 text-grey-darken-2">
-            {{ searchQuery ? t('user.profile.noCatalogsFound') : t('user.profile.noCatalogsCreated') }}
-          </p>
-          <p class="text-caption text-md-body-2 text-grey">
-            {{ searchQuery ? t('user.profile.tryOtherKeywords') : t('user.profile.createCatalogHint') }}
-          </p>
+            <!-- 底部：统计信息 + 操作按钮 -->
+            <div class="d-flex align-center justify-space-between">
+              <div class="d-flex align-center text-caption text-grey" style="gap: 12px">
+                <span>{{ catalog.commentCount }} {{ t('notification.comment') }}</span>
+                <span>{{ catalog.deckCount }} {{ t('review.cards') }}</span>
+                <span>{{ catalog.contentNodes.length }} {{ t('learning.nodes') }}</span>
+                <span class="d-none d-sm-inline">{{ formatDate(catalog.createdAt) }}</span>
+              </div>
+              <div class="d-flex align-center">
+                <v-btn
+                  v-if="catalog.state === 0"
+                  color="primary"
+                  variant="text"
+                  size="x-small"
+                  icon="mdi-pencil"
+                  @click.stop="editCatalog(catalog)"
+                />
+                <v-btn
+                  color="grey"
+                  variant="text"
+                  size="x-small"
+                  icon="mdi-delete"
+                  @click.stop="deleteCatalog(catalog.id)"
+                />
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </div>
+
+      <template #loading>
+        <div class="text-center py-4">
+          <v-progress-circular indeterminate color="primary" size="32" />
         </div>
+      </template>
 
-        <!-- 删除确认对话框 -->
-        <ConfirmDialog
-          v-model="showDeleteDialog"
-          :title="t('common.confirm')"
-          :message="t('common.delete') + '?'"
-          :confirm-text="t('common.confirm')"
-          @confirm="confirmDelete"
-        />
+      <template #empty>
+        <div v-if="!searchQuery" class="text-center py-4">
+          <p class="text-body-2 text-grey">{{ t('postingList.reachedEnd') }}</p>
+        </div>
+      </template>
+    </v-infinite-scroll>
+
+    <!-- 空状态 -->
+    <div v-else class="text-center py-8 py-md-12">
+      <v-icon
+        icon="mdi-folder-multiple"
+        :size="$vuetify.display.mobile ? 48 : 64"
+        color="grey-lighten-2"
+        class="mb-3 mb-md-4"
+      />
+      <p class="text-body-2 text-md-body-1 text-grey-darken-2">
+        {{ searchQuery ? t('user.profile.noCatalogsFound') : t('user.profile.noCatalogsCreated') }}
+      </p>
+      <p class="text-caption text-md-body-2 text-grey">
+        {{ searchQuery ? t('user.profile.tryOtherKeywords') : t('user.profile.createCatalogHint') }}
+      </p>
+    </div>
+
+    <!-- 删除确认对话框 -->
+    <ConfirmDialog
+      v-model="showDeleteDialog"
+      :title="t('common.confirm')"
+      :message="t('common.delete') + '?'"
+      :confirm-text="t('common.confirm')"
+      @confirm="confirmDelete"
+    />
 
     <NodeSelectorDialog
       v-if="editingCatalog"
@@ -323,9 +331,9 @@ const filteredCatalogs = computed(() => {
     result = result.filter((catalog) => {
       const matchNode = catalog.node?.toLowerCase().includes(query)
       const matchCourse = catalog.course?.name.toLowerCase().includes(query)
-      const matchContent = catalog.contentNodes.some((node: { name: string; description?: string }) =>
-        node.name.toLowerCase().includes(query) ||
-        node.description?.toLowerCase().includes(query)
+      const matchContent = catalog.contentNodes.some(
+        (node: { name: string; description?: string }) =>
+          node.name.toLowerCase().includes(query) || node.description?.toLowerCase().includes(query)
       )
       return matchNode || matchCourse || matchContent
     })
@@ -356,7 +364,7 @@ const deleteCatalog = (postId: number) => {
 // 编辑目录（只能编辑草稿）
 const editCatalog = (catalog: any) => {
   const post = posts.value?.find((p) => p.id === catalog.id)
-  if (post && post.state === 0) {
+  if (post?.state === 0) {
     // DRAFT
     editingCatalog.value = post
     nodeSelectorDialog.value?.open()

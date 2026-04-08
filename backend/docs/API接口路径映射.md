@@ -166,7 +166,7 @@
 
 | 现有接口 | 新接口路径 | 说明 |
 |---------|-----------|-----|
-| `GET /roadmap/list/{professionId}` | `GET /api/v1/professions/{professionId}/roadmaps?lastId=123` | 获取职业路线图 |
+| `GET /roadmap/list/{roleId}` | `GET /api/v1/roles/{roleId}/roadmaps?lastId=123` | 获取职业路线图 |
 | `PUT /roadmap/{id}` | `PUT /api/v1/roadmaps/{id}` | 更新路线图 |
 | `PUT /roadmap/{id}/upvote` | `PUT /api/v1/roadmaps/{id}/upvote` | 路线图点赞 |
 | `POST /roadmap` | `POST /api/v1/roadmaps` | 创建路线图 |
@@ -175,21 +175,21 @@
 
 ---
 
-### 9. ProfessionClient → ProfessionsApi
+### 9. roleClient → rolesApi
 
 | 现有接口 | 新接口路径 | 说明 |
 |---------|-----------|-----|
-| `GET /profession/list?page=1` | `GET /api/v1/professions?page=0&size=20` | 分页获取职业 |
-| `GET /profession/list?state=1&lastId=123` | `GET /api/v1/professions?state=1&lastId=123` | 按状态获取职业 |
-| `GET /profession/list?mainCategory=1&lastId=123` | `GET /api/v1/professions?mainCategory=1&lastId=123` | 按主分类获取 |
-| `GET /profession/list?mainCategory=1&subCategory=2&lastId=123` | `GET /api/v1/professions?mainCategory=1&subCategory=2&lastId=123` | 按分类获取 |
-| `GET /profession/list/approved` | `GET /api/v1/professions/approved?lastId=123` | 获取已批准职业 |
-| `GET /profession?id=123` | `GET /api/v1/professions/{id}` | 获取职业详情 |
-| `POST /profession` | `POST /api/v1/professions` | 创建职业 |
-| `PUT /profession` | `PUT /api/v1/professions/{id}` | 更新职业 |
-| `POST /profession/operate` | `POST /api/v1/professions/{id}/approve` | 职业审核操作 |
-| `DELETE /profession` | `DELETE /api/v1/professions/{id}` | 删除职业 |
-| `GET /profession/hot` | `GET /api/v1/professions/hot?limit=10` | 热门职业 |
+| `GET /role/list?page=1` | `GET /api/v1/roles?page=0&size=20` | 分页获取职业 |
+| `GET /role/list?state=1&lastId=123` | `GET /api/v1/roles?state=1&lastId=123` | 按状态获取职业 |
+| `GET /role/list?mainCategory=1&lastId=123` | `GET /api/v1/roles?mainCategory=1&lastId=123` | 按主分类获取 |
+| `GET /role/list?mainCategory=1&subCategory=2&lastId=123` | `GET /api/v1/roles?mainCategory=1&subCategory=2&lastId=123` | 按分类获取 |
+| `GET /role/list/approved` | `GET /api/v1/roles/approved?lastId=123` | 获取已批准职业 |
+| `GET /role?id=123` | `GET /api/v1/roles/{id}` | 获取职业详情 |
+| `POST /role` | `POST /api/v1/roles` | 创建职业 |
+| `PUT /role` | `PUT /api/v1/roles/{id}` | 更新职业 |
+| `POST /role/operate` | `POST /api/v1/roles/{id}/approve` | 职业审核操作 |
+| `DELETE /role` | `DELETE /api/v1/roles/{id}` | 删除职业 |
+| `GET /role/hot` | `GET /api/v1/roles/hot?limit=10` | 热门职业 |
 
 ---
 
@@ -240,7 +240,7 @@
 6. **MessagesApi** - 消息管理接口
 7. **ProgressApi** - 学习进度接口
 8. **RoadmapsApi** - 路线图接口
-9. **ProfessionsApi** - 职业管理接口
+9. **rolesApi** - 职业管理接口
 10. **StatsApi** - 统计接口
 11. **UpvotesApi** - 点赞接口
 12. **ContentsApi** - 内容管理接口

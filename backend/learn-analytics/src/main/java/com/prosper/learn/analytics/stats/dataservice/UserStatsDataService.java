@@ -56,11 +56,11 @@ public class UserStatsDataService {
         // 初始化其他统计字段
         stats.setLearningCourseCount(0);
         stats.setCompletedCourseCount(0);
-        stats.setInProgressProfessionCount(0);
-        stats.setCompletedProfessionCount(0);
+        stats.setInProgressRoleCount(0);
+        stats.setCompletedRoleCount(0);
         stats.setFollowingUserCount(0);
         stats.setFollowingCourseCount(0);
-        stats.setFollowingProfessionCount(0);
+        stats.setFollowingRoleCount(0);
         stats.setCreatedArticleCount(0);
         stats.setCreatedIndexCount(0);
         stats.setCreatedRoadmapCount(0);
@@ -114,8 +114,8 @@ public class UserStatsDataService {
     }
 
     /** 增量更新关注职业数 */
-    public boolean incrementFollowingProfessions(long userId, int delta) {
-        return atomicIncrement(userId, "following_profession_count", delta);
+    public boolean incrementFollowingRoles(long userId, int delta) {
+        return atomicIncrement(userId, "following_role_count", delta);
     }
 
     // ==================== 学习类统计字段更新方法 ====================
@@ -131,13 +131,13 @@ public class UserStatsDataService {
     }
 
     /** 增量更新进行中职业数 */
-    public boolean incrementInProgressProfessions(long userId, int delta) {
-        return atomicIncrement(userId, "in_progress_profession_count", delta);
+    public boolean incrementInProgressRoles(long userId, int delta) {
+        return atomicIncrement(userId, "in_progress_role_count", delta);
     }
 
     /** 增量更新已完成职业数 */
-    public boolean incrementCompletedProfessions(long userId, int delta) {
-        return atomicIncrement(userId, "completed_profession_count", delta);
+    public boolean incrementCompletedRoles(long userId, int delta) {
+        return atomicIncrement(userId, "completed_role_count", delta);
     }
 
     // ==================== 创作类统计字段更新方法 ====================
@@ -165,6 +165,7 @@ public class UserStatsDataService {
     /**
      * 设置字段绝对值（内部方法）
      */
+    /*
     private boolean setField(long userId, String field, int newValue) {
         // 确保统计记录存在
         getOrCreate(userId);
@@ -178,41 +179,7 @@ public class UserStatsDataService {
         log.warn("设置字段值失败: userId={}, field={}, newValue={}", userId, field, newValue);
         return false;
     }
-
-    /** 设置关注用户数 */
-    public boolean setFollowingUsers(long userId, int newValue) {
-        return setField(userId, "following_user_count", newValue);
-    }
-
-    /** 设置关注课程数 */
-    public boolean setFollowingCourses(long userId, int newValue) {
-        return setField(userId, "following_course_count", newValue);
-    }
-
-    /** 设置关注职业数 */
-    public boolean setFollowingProfessions(long userId, int newValue) {
-        return setField(userId, "following_profession_count", newValue);
-    }
-
-    /** 设置学习中课程数 */
-    public boolean setLearningCourses(long userId, int newValue) {
-        return setField(userId, "learning_course_count", newValue);
-    }
-
-    /** 设置已完成课程数 */
-    public boolean setCompletedCourses(long userId, int newValue) {
-        return setField(userId, "completed_course_count", newValue);
-    }
-
-    /** 设置进行中职业数 */
-    public boolean setInProgressProfessions(long userId, int newValue) {
-        return setField(userId, "in_progress_profession_count", newValue);
-    }
-
-    /** 设置已完成职业数 */
-    public boolean setCompletedProfessions(long userId, int newValue) {
-        return setField(userId, "completed_profession_count", newValue);
-    }
+     */
 
     /**
      * 批量获取用户统计

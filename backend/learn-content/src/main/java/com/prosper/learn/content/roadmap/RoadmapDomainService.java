@@ -45,27 +45,27 @@ public class RoadmapDomainService {
     /**
      * 高级筛选路线图列表
      */
-    public List<RoadmapDO> listByFilter(Long roadmapId, Long professionId, Long creatorId, Long lastId, int limit) {
-        return roadmapDataService.listByFilter(roadmapId, professionId, creatorId, lastId, limit);
+    public List<RoadmapDO> listByFilter(Long roadmapId, Long roleId, Long creatorId, Long lastId, int limit) {
+        return roadmapDataService.listByFilter(roadmapId, roleId, creatorId, lastId, limit);
     }
 
     /**
      * 获取职业路线图列表（公开接口）
      * 用于匿名用户浏览，按分数排序
      *
-     * @param professionId 职业ID
+     * @param roleId 职业ID
      * @param lastId 最后一个路线图ID（分页游标）
      * @param limit 查询数量限制
      * @return 路线图列表
      */
-    public List<RoadmapDO> getRoadmapsByProfessionPublic(Long professionId, Long lastId, int limit) {
+    public List<RoadmapDO> getRoadmapsByRolePublic(Long roleId, Long lastId, int limit) {
         if (lastId == null || lastId == 0) {
-            return roadmapDataService.getListByProfessionOrderBy(professionId, limit, "score");
+            return roadmapDataService.getListByRoleOrderBy(roleId, limit, "score");
         } else {
             RoadmapDO lastRoadmap = roadmapDataService.getById(lastId);
             if (lastRoadmap != null) {
-                return roadmapDataService.getListByProfessionAfterCursorOrderBy(
-                    professionId, lastRoadmap.getScore(), lastRoadmap.getCreatedAt(), lastId, limit, "score");
+                return roadmapDataService.getListByRoleAfterCursorOrderBy(
+                    roleId, lastRoadmap.getScore(), lastRoadmap.getCreatedAt(), lastId, limit, "score");
             } else {
                 return new ArrayList<>();
             }
@@ -75,17 +75,17 @@ public class RoadmapDomainService {
     /**
      * 获取职业路线图列表（支持动态排序）
      */
-    public List<RoadmapDO> getRoadmapsByProfession(Long professionId, Long lastId, int limit, String sortBy) {
+    public List<RoadmapDO> getRoadmapsByRole(Long roleId, Long lastId, int limit, String sortBy) {
         if (lastId != null) {
             RoadmapDO lastRoadmap = roadmapDataService.getById(lastId);
             if (lastRoadmap != null) {
-                return roadmapDataService.getListByProfessionAfterCursorOrderBy(
-                    professionId, lastRoadmap.getScore(), lastRoadmap.getCreatedAt(), lastId, limit, sortBy);
+                return roadmapDataService.getListByRoleAfterCursorOrderBy(
+                    roleId, lastRoadmap.getScore(), lastRoadmap.getCreatedAt(), lastId, limit, sortBy);
             }
         }
 
         // 首次加载
-        return roadmapDataService.getListByProfessionOrderBy(professionId, limit, sortBy);
+        return roadmapDataService.getListByRoleOrderBy(roleId, limit, sortBy);
     }
 
     /**
@@ -323,7 +323,7 @@ public class RoadmapDomainService {
      * 创建路线图
      */
     @Transactional
-    public Long createRoadmap(long professionId, String content, String description, long userId, int nodeCount, Byte state) {
+    public Long createRoadmap(long roleId, String content, String description, long userId, int nodeCount, Byte state) {
         // Domain 层安全验证：状态只能是草稿或提交审核
         if (!ContentState.DRAFT.value().equals(state) && !ContentState.SUBMITTED.value().equals(state)) {
             throw new IllegalArgumentException("状态非法");
@@ -333,15 +333,15 @@ public class RoadmapDomainService {
         roadmapDO.setContent(content);
         roadmapDO.setContentHash(calculateContentHash(content));
         roadmapDO.setDescription(description);
-        roadmapDO.setProfessionId(professionId);
+        roadmapDO.setRoleId(roleId);
         roadmapDO.setCreatorId(userId);
         roadmapDO.setNodeCount(nodeCount);
         roadmapDO.setState(state);
         roadmapDO.setScore(0.0);
 
         roadmapDataService.insert(roadmapDO);
-        log.info("路线图 创建成功: roadmapId={}，professionId={}，userId={}，state={}",
-            roadmapDO.getId(), professionId, userId, state);
+        log.info("路线图 创建成功: roadmapId={}，roleId={}，userId={}，state={}",
+            roadmapDO.getId(), roleId, userId, state);
 
         return roadmapDO.getId();
     }

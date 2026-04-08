@@ -250,616 +250,695 @@ void homeLoading
     <LoadingSpinner v-if="homeLoading" />
 
     <template v-else>
-    <!-- 欢迎区域 -->
-    <div class="welcome-section">
-      <div
-        class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between ga-4 ga-md-6"
-      >
-        <!-- 左侧：用户信息 + 连续学习天数 -->
-        <div class="d-flex align-center ga-3 ga-sm-4 flex-grow-1" style="min-width: 0">
-          <UserAvatar
-            :name="userName"
-            :avatar-url="userStore.currentUser?.avatar"
-            :size="$vuetify.display.mobile ? 48 : 64"
-            rounded="lg"
-            avatar-class="flex-shrink-0"
-          />
-          <div style="min-width: 0">
-            <div class="d-flex align-center ga-2 ga-sm-3 flex-wrap">
-              <h1
-                class="text-h5 text-sm-h4 font-weight-bold text-truncate"
-                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-              >
-                {{ t('home.greeting', { name: userName }) }}
-              </h1>
-              <!-- 连续学习天数 -->
-              <v-chip
-                v-if="stats.learningDays > 0"
-                color="warning"
-                variant="tonal"
-                size="small"
-                class="flex-shrink-0"
-              >
-                <v-icon icon="mdi-fire" size="14" class="mr-1" />
-                {{ t('home.consecutiveDays', { days: stats.learningDays }) }}
-              </v-chip>
-            </div>
-            <p
-              class="text-caption text-sm-body-2 mt-1 text-truncate"
-              :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-            >
-              {{ t('home.keepLearning') }}
-            </p>
-          </div>
-        </div>
-
-        <!-- 右侧：热力图 -->
-        <div class="d-none d-lg-flex align-center flex-shrink-0">
-          <ActivityHeatmap :months="12" />
-        </div>
-      </div>
-    </div>
-
-    <!-- 学习引导 -->
-    <div class="text-body-1 font-weight-medium text-medium-emphasis mb-6">
-      {{ t('home.startJourney') }}
-    </div>
-
-    <!-- 模块1：我在扮演什么角色 - 收藏的职业 -->
-    <div class="role-entry-section mb-8 mb-md-12">
-      <!-- 模块标题 -->
-      <div class="section-header mb-4">
-        <div class="d-flex align-center ga-4 mb-3">
-          <span class="module-number module-number--warning">1</span>
-          <div class="flex-grow-1">
-            <div class="d-flex align-center justify-space-between">
-              <h2
-                class="text-h6 text-md-h5 font-weight-bold"
-                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-              >
-                {{ quickLinks[0].title }}
-              </h2>
-              <div class="d-flex align-center ga-4">
-                <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
-                  {{ t('home.platformRoles', { count: platformStats.rolePathCount }) }}
-                </span>
-                <v-btn variant="text" size="small" color="primary" rounded="lg" @click="navigateTo('/role')">
-                  {{ t('home.exploreRoles') }}
-                  <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
-                </v-btn>
-              </div>
-            </div>
-            <p class="text-body-2 text-medium-emphasis ma-0 mt-1">
-              {{ quickLinks[0].description }}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 收藏的职业列表 -->
-      <template v-if="bookmarkedProfessions.length > 0">
-        <div class="d-flex flex-wrap ga-3">
-          <v-chip
-            v-for="profession in bookmarkedProfessions"
-            :key="profession.id"
-            color="primary"
-            variant="tonal"
-            size="large"
-            rounded="lg"
-            class="profession-chip"
-            @click="openRole(profession.id)"
-          >
-            <DynamicIcon
-              :icon="profession.icon"
-              default-icon="mdi-briefcase-variant"
-              :size="18"
-              :color="getColorByString(profession.name)"
-              class="mr-2"
+      <!-- 欢迎区域 -->
+      <div class="welcome-section">
+        <div
+          class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between ga-4 ga-md-6"
+        >
+          <!-- 左侧：用户信息 + 连续学习天数 -->
+          <div class="d-flex align-center ga-3 ga-sm-4 flex-grow-1" style="min-width: 0">
+            <UserAvatar
+              :name="userName"
+              :avatar-url="userStore.currentUser?.avatar"
+              :size="$vuetify.display.mobile ? 48 : 64"
+              rounded="lg"
+              avatar-class="flex-shrink-0"
             />
-            {{ profession.name }}
-          </v-chip>
-          <!-- 查看更多 -->
-          <v-chip
-            v-if="showMoreBookmarkedProfessions"
-            color="grey"
-            variant="outlined"
-            size="large"
-            rounded="lg"
-            class="profession-chip"
-            @click="navigateTo('/profile/bookmarks?type=profession')"
-          >
-            {{ t('home.viewMore') }}
-            <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
-          </v-chip>
-        </div>
-      </template>
-
-      <!-- 空状态：展示推荐角色 -->
-      <template v-else>
-        <div class="d-flex flex-wrap ga-3 align-center">
-          <v-chip
-            v-for="profession in beginnerProfessions"
-            :key="profession.id"
-            variant="outlined"
-            size="large"
-            rounded="lg"
-            class="profession-chip profession-chip--placeholder"
-            @click="openRole(profession.id)"
-          >
-            <DynamicIcon
-              :icon="profession.icon"
-              default-icon="mdi-briefcase-variant"
-              :size="18"
-              :color="getColorByString(profession.name)"
-              class="mr-2"
-            />
-            {{ profession.name }}
-            <v-chip size="x-small" color="grey" variant="tonal" class="ml-2">{{ t('home.example') }}</v-chip>
-          </v-chip>
-          <!-- 探索更多 -->
-          <v-chip
-            variant="outlined"
-            size="large"
-            rounded="lg"
-            class="profession-chip profession-chip--placeholder"
-            @click="navigateTo('/role')"
-          >
-            {{ t('home.exploreMore') }}
-            <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
-          </v-chip>
-        </div>
-      </template>
-    </div>
-
-    <!-- 模块2：我要学什么 - 正在跟踪的路线图 -->
-    <div class="roadmap-section mb-8 mb-md-12">
-      <!-- 模块标题 -->
-      <div class="section-header mb-4">
-        <div class="d-flex align-center ga-4 mb-3">
-          <span class="module-number module-number--primary">2</span>
-          <div class="flex-grow-1">
-            <div class="d-flex align-center justify-space-between">
-              <h2
-                class="text-h6 text-md-h5 font-weight-bold"
-                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-              >
-                {{ quickLinks[1].title }}
-              </h2>
-              <div class="d-flex align-center ga-4">
-                <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
-                  {{ t('home.totalRoadmaps', { count: platformStats.roadmapCount }) }}
-                </span>
-                <v-btn variant="text" size="small" color="primary" rounded="lg" @click="navigateTo('/role')">
-                  {{ t('home.viewAll') }}
-                  <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
-                </v-btn>
+            <div style="min-width: 0">
+              <div class="d-flex align-center ga-2 ga-sm-3 flex-wrap">
+                <h1
+                  class="text-h5 text-sm-h4 font-weight-bold text-truncate"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                >
+                  {{ t('home.greeting', { name: userName }) }}
+                </h1>
+                <!-- 连续学习天数 -->
+                <v-chip
+                  v-if="stats.learningDays > 0"
+                  color="warning"
+                  variant="tonal"
+                  size="small"
+                  class="flex-shrink-0"
+                >
+                  <v-icon icon="mdi-fire" size="14" class="mr-1" />
+                  {{ t('home.consecutiveDays', { days: stats.learningDays }) }}
+                </v-chip>
               </div>
+              <p
+                class="text-caption text-sm-body-2 mt-1 text-truncate"
+                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+              >
+                {{ t('home.keepLearning') }}
+              </p>
             </div>
-            <p class="text-body-2 text-medium-emphasis ma-0 mt-1">
-              {{ quickLinks[1].description }}
-            </p>
+          </div>
+
+          <!-- 右侧：热力图 -->
+          <div class="d-none d-lg-flex align-center flex-shrink-0">
+            <ActivityHeatmap :months="12" />
           </div>
         </div>
       </div>
 
-      <!-- 路线图卡片列表 -->
-      <template v-if="recentRoles.length > 0">
-        <v-row>
-          <v-col v-for="role in displayRoles" :key="role.id" cols="12" sm="6" md="4" lg="3">
-            <v-card rounded="xl" hover class="h-100 module-card" @click="openRoadmap(role.roadmapId)">
-              <v-card-text class="pa-4 pa-sm-5">
-                <div class="d-flex align-center ga-3 mb-4">
-                  <div class="icon-container flex-shrink-0">
-                    <DynamicIcon
-                      :icon="role.icon"
-                      default-icon="mdi-briefcase-variant"
-                      :size="24"
-                      :color="role.iconColor"
-                    />
-                  </div>
-                  <div class="flex-grow-1" style="min-width: 0">
-                    <div
-                      class="text-subtitle-1 font-weight-bold text-truncate"
-                      :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                    >
-                      {{ role.name }}
-                    </div>
-                    <div class="text-caption text-medium-emphasis">
-                      {{ t('home.knowledgeNodes', { count: role.nodeCount }) }}
-                    </div>
-                  </div>
-                </div>
-                <div class="d-flex align-center justify-space-between mb-2">
-                  <span class="text-caption text-medium-emphasis">{{ t('home.learningProgress') }}</span>
-                  <span class="text-caption font-weight-bold text-primary">{{ role.progress }}%</span>
-                </div>
-                <v-progress-linear
-                  :model-value="role.progress"
-                  color="primary"
-                  bg-color="primary"
-                  bg-opacity="0.15"
-                  height="8"
-                  rounded
-                />
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <!-- 添加更多卡片 -->
-          <v-col v-if="hasMoreRoles" cols="12" sm="6" md="4" lg="3">
-            <v-card
-              rounded="xl"
-              class="h-100 empty-placeholder-card"
-              @click="navigateTo('/role')"
-            >
-              <v-card-text class="pa-4 pa-sm-5 d-flex align-center justify-center h-100" style="min-height: 140px">
-                <div class="text-center">
-                  <v-avatar color="primary" size="48" class="mb-3" variant="tonal">
-                    <v-icon icon="mdi-plus" size="24" />
-                  </v-avatar>
-                  <div class="text-body-2 text-medium-emphasis">{{ t('home.addMoreRoadmaps') }}</div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-      </template>
-
-      <!-- 空状态：展示推荐路线图 -->
-      <template v-else>
-        <v-row>
-          <v-col v-for="roadmap in beginnerRoadmaps" :key="roadmap.id" cols="12" sm="6" md="4" lg="3">
-            <v-card rounded="xl" hover class="h-100 module-card module-card--placeholder position-relative" @click="openRoadmap(roadmap.id)">
-              <v-chip
-                size="x-small"
-                color="grey"
-                variant="tonal"
-                class="recommend-tag"
-              >
-                {{ t('home.example') }}
-              </v-chip>
-              <v-card-text class="pa-4 pa-sm-5">
-                <div class="d-flex align-center ga-3">
-                  <div class="icon-container flex-shrink-0">
-                    <DynamicIcon
-                      :icon="roadmap.icon"
-                      default-icon="mdi-briefcase-variant"
-                      :size="24"
-                      :color="roadmap.iconColor"
-                    />
-                  </div>
-                  <div class="flex-grow-1" style="min-width: 0">
-                    <div
-                      class="text-subtitle-1 font-weight-bold text-truncate"
-                      :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                    >
-                      {{ t('home.roleRoadmap', { name: roadmap.name }) }}
-                    </div>
-                    <div class="text-caption text-medium-emphasis">
-                      {{ t('home.knowledgeNodes', { count: roadmap.nodeCount }) }}
-                    </div>
-                  </div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          <!-- 探索更多 -->
-          <v-col cols="12" sm="6" md="4" lg="3">
-            <v-card
-              rounded="xl"
-              class="h-100 empty-placeholder-card"
-              @click="navigateTo('/role')"
-            >
-              <v-card-text class="pa-4 pa-sm-5 d-flex align-center justify-center h-100">
-                <div class="d-flex align-center ga-3">
-                  <v-avatar color="primary" size="48" variant="tonal">
-                    <v-icon icon="mdi-compass" size="24" />
-                  </v-avatar>
-                  <div class="text-body-2 text-medium-emphasis">{{ t('home.exploreMoreRoadmaps') }}</div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-      </template>
-    </div>
-
-    <!-- 模块3：我在学什么 - 正在学习的课程 -->
-    <div class="course-section mb-8 mb-md-12">
-      <!-- 模块标题 -->
-      <div class="section-header mb-4">
-        <div class="d-flex align-center ga-4 mb-3">
-          <span class="module-number module-number--info">3</span>
-          <div class="flex-grow-1">
-            <div class="d-flex align-center justify-space-between">
-              <h2
-                class="text-h6 text-md-h5 font-weight-bold"
-                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-              >
-                {{ quickLinks[2].title }}
-              </h2>
-              <div class="d-flex align-center ga-4">
-                <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
-                  {{ t('home.platformCourses', { courses: platformStats.courseCount, nodes: platformStats.knowledgeNodeCount.toLocaleString(), articles: platformStats.articleCount.toLocaleString() }) }}
-                </span>
-                <v-btn variant="text" size="small" color="primary" rounded="lg" @click="navigateTo('/courses')">
-                  {{ t('home.browseAll') }}
-                  <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
-                </v-btn>
-              </div>
-            </div>
-            <p
-              class="text-body-2 text-medium-emphasis ma-0 mt-1"
-            >
-              {{ quickLinks[2].description }}
-            </p>
-          </div>
-        </div>
+      <!-- 学习引导 -->
+      <div class="text-body-1 font-weight-medium text-medium-emphasis mb-6">
+        {{ t('home.startJourney') }}
       </div>
 
-      <!-- 课程卡片列表 -->
-      <template v-if="recentCourses.length > 0">
-        <v-row>
-          <v-col v-for="course in displayCourses" :key="course.id" cols="12" sm="6" md="4" lg="3">
-            <v-card rounded="xl" hover class="h-100 module-card" @click="openCourse(course.id)">
-              <v-card-text class="pa-4 pa-sm-5">
-                <div class="d-flex align-center ga-3 mb-4">
-                  <div class="icon-container flex-shrink-0">
-                    <DynamicIcon
-                      :icon="course.icon"
-                      default-icon="mdi-book-open-variant"
-                      :size="24"
-                      :color="course.iconColor"
-                    />
-                  </div>
-                  <div class="flex-grow-1" style="min-width: 0">
-                    <div
-                      class="text-subtitle-1 font-weight-bold text-truncate"
-                      :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                    >
-                      {{ course.name }}
-                    </div>
-                    <div class="text-caption text-medium-emphasis text-truncate">
-                      {{ course.description ?? t('home.clickToViewDetails') }}
-                    </div>
-                  </div>
-                </div>
-                <div class="d-flex align-center justify-space-between mb-2">
-                  <span class="text-caption text-medium-emphasis">{{ t('home.learningProgress') }}</span>
-                  <span class="text-caption font-weight-bold text-primary">{{ course.progress ?? 0 }}%</span>
-                </div>
-                <v-progress-linear
-                  :model-value="course.progress ?? 0"
-                  color="primary"
-                  bg-color="primary"
-                  bg-opacity="0.15"
-                  height="8"
-                  rounded
-                />
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <!-- 添加更多卡片 -->
-          <v-col v-if="hasMoreCourses" cols="12" sm="6" md="4" lg="3">
-            <v-card
-              rounded="xl"
-              class="h-100 empty-placeholder-card"
-              @click="navigateTo('/courses')"
-            >
-              <v-card-text class="pa-4 pa-sm-5 d-flex align-center justify-center h-100" style="min-height: 140px">
-                <div class="text-center">
-                  <v-avatar color="primary" size="48" class="mb-3" variant="tonal">
-                    <v-icon icon="mdi-plus" size="24" />
-                  </v-avatar>
-                  <div class="text-body-2 text-medium-emphasis">{{ t('home.addMoreCourses') }}</div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-      </template>
-
-      <!-- 空状态：展示推荐课程 -->
-      <template v-else>
-        <v-row>
-          <v-col v-for="course in beginnerCourses" :key="course.id" cols="12" sm="6" md="4" lg="3">
-            <v-card rounded="xl" hover class="h-100 module-card module-card--placeholder position-relative" @click="openCourse(course.id)">
-              <v-chip
-                size="x-small"
-                color="grey"
-                variant="tonal"
-                class="recommend-tag"
-              >
-                {{ t('home.example') }}
-              </v-chip>
-              <v-card-text class="pa-4 pa-sm-5">
-                <div class="d-flex align-center ga-3">
-                  <div class="icon-container flex-shrink-0">
-                    <DynamicIcon
-                      :icon="course.icon"
-                      default-icon="mdi-book-open-variant"
-                      :size="24"
-                      :color="course.iconColor"
-                    />
-                  </div>
-                  <div class="flex-grow-1" style="min-width: 0">
-                    <div
-                      class="text-subtitle-1 font-weight-bold text-truncate"
-                      :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                    >
-                      {{ course.name }}
-                    </div>
-                    <div class="text-caption text-medium-emphasis text-truncate">
-                      {{ t('home.clickToStartLearning') }}
-                    </div>
-                  </div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          <!-- 浏览更多 -->
-          <v-col cols="12" sm="6" md="4" lg="3">
-            <v-card
-              rounded="xl"
-              class="h-100 empty-placeholder-card"
-              @click="navigateTo('/courses')"
-            >
-              <v-card-text class="pa-4 pa-sm-5 d-flex align-center justify-center h-100">
-                <div class="d-flex align-center ga-3">
-                  <v-avatar color="primary" size="48" variant="tonal">
-                    <v-icon icon="mdi-compass" size="24" />
-                  </v-avatar>
-                  <div class="text-body-2 text-medium-emphasis">{{ t('home.browseMoreCourses') }}</div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-      </template>
-    </div>
-
-    <!-- 模块4：我学会了吗 - 今日复习 -->
-    <div class="review-section mb-8 mb-md-12">
-      <!-- 模块标题 -->
-      <div class="section-header mb-4">
-        <div class="d-flex align-center ga-4 mb-3">
-          <span class="module-number module-number--success">4</span>
-          <div class="flex-grow-1">
-            <div class="d-flex align-center justify-space-between">
-              <div class="d-flex align-center ga-3">
+      <!-- 模块1：我在扮演什么角色 - 收藏的职业 -->
+      <div class="role-entry-section mb-8 mb-md-12">
+        <!-- 模块标题 -->
+        <div class="section-header mb-4">
+          <div class="d-flex align-center ga-4 mb-3">
+            <span class="module-number module-number--warning">1</span>
+            <div class="flex-grow-1">
+              <div class="d-flex align-center justify-space-between">
                 <h2
                   class="text-h6 text-md-h5 font-weight-bold"
                   :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                 >
-                  {{ quickLinks[3].title }}
+                  {{ quickLinks[0].title }}
                 </h2>
-                <v-chip
-                  v-if="stats.reviewCards > 0"
-                  color="success"
-                  variant="tonal"
-                  size="small"
-                >
-                  {{ t('home.cardsToReview', { count: stats.reviewCards }) }}
-                </v-chip>
+                <div class="d-flex align-center ga-4">
+                  <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
+                    {{ t('home.platformRoles', { count: platformStats.rolePathCount }) }}
+                  </span>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    color="primary"
+                    rounded="lg"
+                    @click="navigateTo('/role')"
+                  >
+                    {{ t('home.exploreRoles') }}
+                    <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
+                  </v-btn>
+                </div>
               </div>
-              <v-btn variant="text" size="small" color="primary" rounded="lg" @click="navigateTo('/review')">
-                {{ t('home.startReview') }}
-                <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
-              </v-btn>
+              <p class="text-body-2 text-medium-emphasis ma-0 mt-1">
+                {{ quickLinks[0].description }}
+              </p>
             </div>
-            <p
-              class="text-body-2 text-medium-emphasis ma-0 mt-1"
-            >
-              {{ quickLinks[3].description }}
-            </p>
           </div>
         </div>
+
+        <!-- 收藏的职业列表 -->
+        <template v-if="bookmarkedProfessions.length > 0">
+          <div class="d-flex flex-wrap ga-3">
+            <v-chip
+              v-for="profession in bookmarkedProfessions"
+              :key="profession.id"
+              color="primary"
+              variant="tonal"
+              size="large"
+              rounded="lg"
+              class="profession-chip"
+              @click="openRole(profession.id)"
+            >
+              <DynamicIcon
+                :icon="profession.icon"
+                default-icon="mdi-briefcase-variant"
+                :size="18"
+                :color="getColorByString(profession.name)"
+                class="mr-2"
+              />
+              {{ profession.name }}
+            </v-chip>
+            <!-- 查看更多 -->
+            <v-chip
+              v-if="showMoreBookmarkedProfessions"
+              color="grey"
+              variant="outlined"
+              size="large"
+              rounded="lg"
+              class="profession-chip"
+              @click="navigateTo('/profile/bookmarks?type=profession')"
+            >
+              {{ t('home.viewMore') }}
+              <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
+            </v-chip>
+          </div>
+        </template>
+
+        <!-- 空状态：展示推荐角色 -->
+        <template v-else>
+          <div class="d-flex flex-wrap ga-3 align-center">
+            <v-chip
+              v-for="profession in beginnerProfessions"
+              :key="profession.id"
+              variant="outlined"
+              size="large"
+              rounded="lg"
+              class="profession-chip profession-chip--placeholder"
+              @click="openRole(profession.id)"
+            >
+              <DynamicIcon
+                :icon="profession.icon"
+                default-icon="mdi-briefcase-variant"
+                :size="18"
+                :color="getColorByString(profession.name)"
+                class="mr-2"
+              />
+              {{ profession.name }}
+              <v-chip size="x-small" color="grey" variant="tonal" class="ml-2">{{
+                t('home.example')
+              }}</v-chip>
+            </v-chip>
+            <!-- 探索更多 -->
+            <v-chip
+              variant="outlined"
+              size="large"
+              rounded="lg"
+              class="profession-chip profession-chip--placeholder"
+              @click="navigateTo('/role')"
+            >
+              {{ t('home.exploreMore') }}
+              <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
+            </v-chip>
+          </div>
+        </template>
       </div>
 
-      <!-- 复习进度和卡片组 -->
-      <template v-if="reviewData.todayTotal > 0 || reviewData.courses.length > 0">
-        <div class="d-flex flex-wrap ga-4">
-          <!-- 今日进度卡片 -->
-          <v-card rounded="xl" class="review-progress-card module-card">
-            <v-card-text class="d-flex align-center ga-5 pa-4 pa-sm-5">
-              <v-progress-circular
-                :model-value="
-                  reviewData.todayTotal > 0
-                    ? (reviewData.todayCompleted / reviewData.todayTotal) * 100
-                    : 0
-                "
-                color="primary"
-                :size="72"
-                :width="6"
-              >
-                <div class="text-center">
-                  <div class="text-h6 font-weight-bold text-primary">
-                    {{ reviewData.todayCompleted }}
-                  </div>
-                  <div class="text-caption text-medium-emphasis">/{{ reviewData.todayTotal }}</div>
-                </div>
-              </v-progress-circular>
-              <div>
-                <div class="text-subtitle-1 font-weight-bold mb-1">{{ t('home.todayProgress') }}</div>
-                <div class="text-body-2 text-medium-emphasis">
-                  {{ t('home.completedPercent', { percent: reviewData.todayTotal > 0 ? Math.round((reviewData.todayCompleted / reviewData.todayTotal) * 100) : 0 }) }}
-                </div>
-                <v-chip
-                  v-if="reviewData.streakDays > 0"
-                  color="warning"
-                  variant="tonal"
-                  size="small"
-                  class="mt-2"
+      <!-- 模块2：我要学什么 - 正在跟踪的路线图 -->
+      <div class="roadmap-section mb-8 mb-md-12">
+        <!-- 模块标题 -->
+        <div class="section-header mb-4">
+          <div class="d-flex align-center ga-4 mb-3">
+            <span class="module-number module-number--primary">2</span>
+            <div class="flex-grow-1">
+              <div class="d-flex align-center justify-space-between">
+                <h2
+                  class="text-h6 text-md-h5 font-weight-bold"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                 >
-                  <v-icon icon="mdi-fire" size="14" class="mr-1" />
-                  {{ t('home.consecutiveDays', { days: reviewData.streakDays }) }}
-                </v-chip>
-              </div>
-            </v-card-text>
-          </v-card>
-
-          <!-- 待复习课程列表 -->
-          <v-card
-            v-for="course in reviewData.courses"
-            :key="course.course.id"
-            rounded="xl"
-            hover
-            class="review-deck-card module-card"
-            @click="navigateTo('/review')"
-          >
-            <v-card-text class="pa-4 pa-sm-5">
-              <div class="d-flex align-center ga-3">
-                <div class="icon-container-sm flex-shrink-0">
-                  <DynamicIcon
-                    :icon="course.course.icon"
-                    default-icon="mdi-book-open-variant"
-                    :size="20"
-                    :color="getColorByString(course.course.name)"
-                  />
+                  {{ quickLinks[1].title }}
+                </h2>
+                <div class="d-flex align-center ga-4">
+                  <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
+                    {{ t('home.totalRoadmaps', { count: platformStats.roadmapCount }) }}
+                  </span>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    color="primary"
+                    rounded="lg"
+                    @click="navigateTo('/role')"
+                  >
+                    {{ t('home.viewAll') }}
+                    <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
+                  </v-btn>
                 </div>
-                <div class="flex-grow-1" style="min-width: 0">
-                  <div
-                    class="text-subtitle-2 font-weight-bold text-truncate"
+              </div>
+              <p class="text-body-2 text-medium-emphasis ma-0 mt-1">
+                {{ quickLinks[1].description }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 路线图卡片列表 -->
+        <template v-if="recentRoles.length > 0">
+          <v-row>
+            <v-col v-for="role in displayRoles" :key="role.id" cols="12" sm="6" md="4" lg="3">
+              <v-card
+                rounded="xl"
+                hover
+                class="h-100 module-card"
+                @click="openRoadmap(role.roadmapId)"
+              >
+                <v-card-text class="pa-4 pa-sm-5">
+                  <div class="d-flex align-center ga-3 mb-4">
+                    <div class="icon-container flex-shrink-0">
+                      <DynamicIcon
+                        :icon="role.icon"
+                        default-icon="mdi-briefcase-variant"
+                        :size="24"
+                        :color="role.iconColor"
+                      />
+                    </div>
+                    <div class="flex-grow-1" style="min-width: 0">
+                      <div
+                        class="text-subtitle-1 font-weight-bold text-truncate"
+                        :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                      >
+                        {{ role.name }}
+                      </div>
+                      <div class="text-caption text-medium-emphasis">
+                        {{ t('home.knowledgeNodes', { count: role.nodeCount }) }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex align-center justify-space-between mb-2">
+                    <span class="text-caption text-medium-emphasis">{{
+                      t('home.learningProgress')
+                    }}</span>
+                    <span class="text-caption font-weight-bold text-primary"
+                      >{{ role.progress }}%</span
+                    >
+                  </div>
+                  <v-progress-linear
+                    :model-value="role.progress"
+                    color="primary"
+                    bg-color="primary"
+                    bg-opacity="0.15"
+                    height="8"
+                    rounded
+                  />
+                </v-card-text>
+              </v-card>
+            </v-col>
+
+            <!-- 添加更多卡片 -->
+            <v-col v-if="hasMoreRoles" cols="12" sm="6" md="4" lg="3">
+              <v-card
+                rounded="xl"
+                class="h-100 empty-placeholder-card"
+                @click="navigateTo('/role')"
+              >
+                <v-card-text
+                  class="pa-4 pa-sm-5 d-flex align-center justify-center h-100"
+                  style="min-height: 140px"
+                >
+                  <div class="text-center">
+                    <v-avatar color="primary" size="48" class="mb-3" variant="tonal">
+                      <v-icon icon="mdi-plus" size="24" />
+                    </v-avatar>
+                    <div class="text-body-2 text-medium-emphasis">
+                      {{ t('home.addMoreRoadmaps') }}
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </template>
+
+        <!-- 空状态：展示推荐路线图 -->
+        <template v-else>
+          <v-row>
+            <v-col
+              v-for="roadmap in beginnerRoadmaps"
+              :key="roadmap.id"
+              cols="12"
+              sm="6"
+              md="4"
+              lg="3"
+            >
+              <v-card
+                rounded="xl"
+                hover
+                class="h-100 module-card module-card--placeholder position-relative"
+                @click="openRoadmap(roadmap.id)"
+              >
+                <v-chip size="x-small" color="grey" variant="tonal" class="recommend-tag">
+                  {{ t('home.example') }}
+                </v-chip>
+                <v-card-text class="pa-4 pa-sm-5">
+                  <div class="d-flex align-center ga-3">
+                    <div class="icon-container flex-shrink-0">
+                      <DynamicIcon
+                        :icon="roadmap.icon"
+                        default-icon="mdi-briefcase-variant"
+                        :size="24"
+                        :color="roadmap.iconColor"
+                      />
+                    </div>
+                    <div class="flex-grow-1" style="min-width: 0">
+                      <div
+                        class="text-subtitle-1 font-weight-bold text-truncate"
+                        :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                      >
+                        {{ t('home.roleRoadmap', { name: roadmap.name }) }}
+                      </div>
+                      <div class="text-caption text-medium-emphasis">
+                        {{ t('home.knowledgeNodes', { count: roadmap.nodeCount }) }}
+                      </div>
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            <!-- 探索更多 -->
+            <v-col cols="12" sm="6" md="4" lg="3">
+              <v-card
+                rounded="xl"
+                class="h-100 empty-placeholder-card"
+                @click="navigateTo('/role')"
+              >
+                <v-card-text class="pa-4 pa-sm-5 d-flex align-center justify-center h-100">
+                  <div class="d-flex align-center ga-3">
+                    <v-avatar color="primary" size="48" variant="tonal">
+                      <v-icon icon="mdi-compass" size="24" />
+                    </v-avatar>
+                    <div class="text-body-2 text-medium-emphasis">
+                      {{ t('home.exploreMoreRoadmaps') }}
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </template>
+      </div>
+
+      <!-- 模块3：我在学什么 - 正在学习的课程 -->
+      <div class="course-section mb-8 mb-md-12">
+        <!-- 模块标题 -->
+        <div class="section-header mb-4">
+          <div class="d-flex align-center ga-4 mb-3">
+            <span class="module-number module-number--info">3</span>
+            <div class="flex-grow-1">
+              <div class="d-flex align-center justify-space-between">
+                <h2
+                  class="text-h6 text-md-h5 font-weight-bold"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                >
+                  {{ quickLinks[2].title }}
+                </h2>
+                <div class="d-flex align-center ga-4">
+                  <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
+                    {{
+                      t('home.platformCourses', {
+                        courses: platformStats.courseCount,
+                        nodes: platformStats.knowledgeNodeCount.toLocaleString(),
+                        articles: platformStats.articleCount.toLocaleString(),
+                      })
+                    }}
+                  </span>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    color="primary"
+                    rounded="lg"
+                    @click="navigateTo('/courses')"
+                  >
+                    {{ t('home.browseAll') }}
+                    <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
+                  </v-btn>
+                </div>
+              </div>
+              <p class="text-body-2 text-medium-emphasis ma-0 mt-1">
+                {{ quickLinks[2].description }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 课程卡片列表 -->
+        <template v-if="recentCourses.length > 0">
+          <v-row>
+            <v-col v-for="course in displayCourses" :key="course.id" cols="12" sm="6" md="4" lg="3">
+              <v-card rounded="xl" hover class="h-100 module-card" @click="openCourse(course.id)">
+                <v-card-text class="pa-4 pa-sm-5">
+                  <div class="d-flex align-center ga-3 mb-4">
+                    <div class="icon-container flex-shrink-0">
+                      <DynamicIcon
+                        :icon="course.icon"
+                        default-icon="mdi-book-open-variant"
+                        :size="24"
+                        :color="course.iconColor"
+                      />
+                    </div>
+                    <div class="flex-grow-1" style="min-width: 0">
+                      <div
+                        class="text-subtitle-1 font-weight-bold text-truncate"
+                        :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                      >
+                        {{ course.name }}
+                      </div>
+                      <div class="text-caption text-medium-emphasis text-truncate">
+                        {{ course.description ?? t('home.clickToViewDetails') }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex align-center justify-space-between mb-2">
+                    <span class="text-caption text-medium-emphasis">{{
+                      t('home.learningProgress')
+                    }}</span>
+                    <span class="text-caption font-weight-bold text-primary"
+                      >{{ course.progress ?? 0 }}%</span
+                    >
+                  </div>
+                  <v-progress-linear
+                    :model-value="course.progress ?? 0"
+                    color="primary"
+                    bg-color="primary"
+                    bg-opacity="0.15"
+                    height="8"
+                    rounded
+                  />
+                </v-card-text>
+              </v-card>
+            </v-col>
+
+            <!-- 添加更多卡片 -->
+            <v-col v-if="hasMoreCourses" cols="12" sm="6" md="4" lg="3">
+              <v-card
+                rounded="xl"
+                class="h-100 empty-placeholder-card"
+                @click="navigateTo('/courses')"
+              >
+                <v-card-text
+                  class="pa-4 pa-sm-5 d-flex align-center justify-center h-100"
+                  style="min-height: 140px"
+                >
+                  <div class="text-center">
+                    <v-avatar color="primary" size="48" class="mb-3" variant="tonal">
+                      <v-icon icon="mdi-plus" size="24" />
+                    </v-avatar>
+                    <div class="text-body-2 text-medium-emphasis">
+                      {{ t('home.addMoreCourses') }}
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </template>
+
+        <!-- 空状态：展示推荐课程 -->
+        <template v-else>
+          <v-row>
+            <v-col
+              v-for="course in beginnerCourses"
+              :key="course.id"
+              cols="12"
+              sm="6"
+              md="4"
+              lg="3"
+            >
+              <v-card
+                rounded="xl"
+                hover
+                class="h-100 module-card module-card--placeholder position-relative"
+                @click="openCourse(course.id)"
+              >
+                <v-chip size="x-small" color="grey" variant="tonal" class="recommend-tag">
+                  {{ t('home.example') }}
+                </v-chip>
+                <v-card-text class="pa-4 pa-sm-5">
+                  <div class="d-flex align-center ga-3">
+                    <div class="icon-container flex-shrink-0">
+                      <DynamicIcon
+                        :icon="course.icon"
+                        default-icon="mdi-book-open-variant"
+                        :size="24"
+                        :color="course.iconColor"
+                      />
+                    </div>
+                    <div class="flex-grow-1" style="min-width: 0">
+                      <div
+                        class="text-subtitle-1 font-weight-bold text-truncate"
+                        :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                      >
+                        {{ course.name }}
+                      </div>
+                      <div class="text-caption text-medium-emphasis text-truncate">
+                        {{ t('home.clickToStartLearning') }}
+                      </div>
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            <!-- 浏览更多 -->
+            <v-col cols="12" sm="6" md="4" lg="3">
+              <v-card
+                rounded="xl"
+                class="h-100 empty-placeholder-card"
+                @click="navigateTo('/courses')"
+              >
+                <v-card-text class="pa-4 pa-sm-5 d-flex align-center justify-center h-100">
+                  <div class="d-flex align-center ga-3">
+                    <v-avatar color="primary" size="48" variant="tonal">
+                      <v-icon icon="mdi-compass" size="24" />
+                    </v-avatar>
+                    <div class="text-body-2 text-medium-emphasis">
+                      {{ t('home.browseMoreCourses') }}
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </template>
+      </div>
+
+      <!-- 模块4：我学会了吗 - 今日复习 -->
+      <div class="review-section mb-8 mb-md-12">
+        <!-- 模块标题 -->
+        <div class="section-header mb-4">
+          <div class="d-flex align-center ga-4 mb-3">
+            <span class="module-number module-number--success">4</span>
+            <div class="flex-grow-1">
+              <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center ga-3">
+                  <h2
+                    class="text-h6 text-md-h5 font-weight-bold"
                     :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                   >
-                    {{ course.course.name }}
-                  </div>
-                  <div class="text-caption text-medium-emphasis text-truncate">
-                    {{ t('home.totalCards', { count: course.cardCount }) }}
-                  </div>
+                    {{ quickLinks[3].title }}
+                  </h2>
+                  <v-chip v-if="stats.reviewCards > 0" color="success" variant="tonal" size="small">
+                    {{ t('home.cardsToReview', { count: stats.reviewCards }) }}
+                  </v-chip>
                 </div>
-                <v-chip size="small" color="primary" variant="flat" class="flex-shrink-0">
-                  {{ course.dueCardCount }} {{ t('home.toReview') }}
-                </v-chip>
+                <v-btn
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  rounded="lg"
+                  @click="navigateTo('/review')"
+                >
+                  {{ t('home.startReview') }}
+                  <v-icon icon="mdi-arrow-right" size="16" class="ml-1" />
+                </v-btn>
+              </div>
+              <p class="text-body-2 text-medium-emphasis ma-0 mt-1">
+                {{ quickLinks[3].description }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 复习进度和卡片组 -->
+        <template v-if="reviewData.todayTotal > 0 || reviewData.courses.length > 0">
+          <div class="d-flex flex-wrap ga-4">
+            <!-- 今日进度卡片 -->
+            <v-card rounded="xl" class="review-progress-card module-card">
+              <v-card-text class="d-flex align-center ga-5 pa-4 pa-sm-5">
+                <v-progress-circular
+                  :model-value="
+                    reviewData.todayTotal > 0
+                      ? (reviewData.todayCompleted / reviewData.todayTotal) * 100
+                      : 0
+                  "
+                  color="primary"
+                  :size="72"
+                  :width="6"
+                >
+                  <div class="text-center">
+                    <div class="text-h6 font-weight-bold text-primary">
+                      {{ reviewData.todayCompleted }}
+                    </div>
+                    <div class="text-caption text-medium-emphasis">
+                      /{{ reviewData.todayTotal }}
+                    </div>
+                  </div>
+                </v-progress-circular>
+                <div>
+                  <div class="text-subtitle-1 font-weight-bold mb-1">
+                    {{ t('home.todayProgress') }}
+                  </div>
+                  <div class="text-body-2 text-medium-emphasis">
+                    {{
+                      t('home.completedPercent', {
+                        percent:
+                          reviewData.todayTotal > 0
+                            ? Math.round((reviewData.todayCompleted / reviewData.todayTotal) * 100)
+                            : 0,
+                      })
+                    }}
+                  </div>
+                  <v-chip
+                    v-if="reviewData.streakDays > 0"
+                    color="warning"
+                    variant="tonal"
+                    size="small"
+                    class="mt-2"
+                  >
+                    <v-icon icon="mdi-fire" size="14" class="mr-1" />
+                    {{ t('home.consecutiveDays', { days: reviewData.streakDays }) }}
+                  </v-chip>
+                </div>
+              </v-card-text>
+            </v-card>
+
+            <!-- 待复习课程列表 -->
+            <v-card
+              v-for="course in reviewData.courses"
+              :key="course.course.id"
+              rounded="xl"
+              hover
+              class="review-deck-card module-card"
+              @click="navigateTo('/review')"
+            >
+              <v-card-text class="pa-4 pa-sm-5">
+                <div class="d-flex align-center ga-3">
+                  <div class="icon-container-sm flex-shrink-0">
+                    <DynamicIcon
+                      :icon="course.course.icon"
+                      default-icon="mdi-book-open-variant"
+                      :size="20"
+                      :color="getColorByString(course.course.name)"
+                    />
+                  </div>
+                  <div class="flex-grow-1" style="min-width: 0">
+                    <div
+                      class="text-subtitle-2 font-weight-bold text-truncate"
+                      :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                    >
+                      {{ course.course.name }}
+                    </div>
+                    <div class="text-caption text-medium-emphasis text-truncate">
+                      {{ t('home.totalCards', { count: course.cardCount }) }}
+                    </div>
+                  </div>
+                  <v-chip size="small" color="primary" variant="flat" class="flex-shrink-0">
+                    {{ course.dueCardCount }} {{ t('home.toReview') }}
+                  </v-chip>
+                </div>
+              </v-card-text>
+            </v-card>
+          </div>
+        </template>
+
+        <!-- 空状态：引导去学习 -->
+        <template v-else>
+          <v-card
+            rounded="xl"
+            class="module-card module-card--placeholder"
+            style="max-width: 400px"
+            @click="navigateTo('/courses')"
+          >
+            <v-card-text class="pa-5 d-flex align-center ga-4">
+              <v-avatar color="success" size="48" variant="tonal">
+                <v-icon icon="mdi-lightbulb-outline" size="24" />
+              </v-avatar>
+              <div>
+                <div class="text-subtitle-1 font-weight-bold mb-1">
+                  {{ t('home.noReviewCards') }}
+                </div>
+                <div class="text-body-2 text-medium-emphasis">
+                  {{ t('home.noReviewCardsHint') }}
+                </div>
               </div>
             </v-card-text>
           </v-card>
-        </div>
-      </template>
+        </template>
+      </div>
 
-      <!-- 空状态：引导去学习 -->
-      <template v-else>
-        <v-card
-          rounded="xl"
-          class="module-card module-card--placeholder"
-          style="max-width: 400px"
-          @click="navigateTo('/courses')"
-        >
-          <v-card-text class="pa-5 d-flex align-center ga-4">
-            <v-avatar color="success" size="48" variant="tonal">
-              <v-icon icon="mdi-lightbulb-outline" size="24" />
-            </v-avatar>
-            <div>
-              <div class="text-subtitle-1 font-weight-bold mb-1">{{ t('home.noReviewCards') }}</div>
-              <div class="text-body-2 text-medium-emphasis">{{ t('home.noReviewCardsHint') }}</div>
-            </div>
-          </v-card-text>
-        </v-card>
-      </template>
-    </div>
-
-    <!-- 热门区域（暂时隐藏）
+      <!-- 热门区域（暂时隐藏）
     <v-row class="mb-6 mb-md-10">
       <v-col cols="12" md="6">
         <div class="d-flex align-baseline ga-5 mb-4">

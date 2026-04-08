@@ -166,13 +166,13 @@ public class AdminRobotController {
 
     // ========== 路径生成 ==========
 
-    @PostMapping("/roadmap/generate/{professionId}")
+    @PostMapping("/roadmap/generate/{roleId}")
     @SaCheckLogin
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<RobotRoadmapTaskDTO> generateRoadmap(
-            @PathVariable @NotNull @Positive Long professionId) {
+            @PathVariable @NotNull @Positive Long roleId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        String taskId = roadmapGenerationService.submitGenerateTask(professionId, userId);
+        String taskId = roadmapGenerationService.submitGenerateTask(roleId, userId);
         return ApiResponse.success(RobotRoadmapTaskDTO.builder()
             .taskId(taskId)
             .status("PENDING")
@@ -198,10 +198,10 @@ public class AdminRobotController {
     @SaCheckLogin
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<String> saveRoadmapDraft(
-            @RequestParam @NotNull @Positive Long professionId,
+            @RequestParam @NotNull @Positive Long roleId,
             @RequestBody @NotBlank String draftContent) {
         Long userId = StpUtil.getLoginIdAsLong();
-        String draftId = roadmapGenerationService.saveDraft(professionId, userId, draftContent);
+        String draftId = roadmapGenerationService.saveDraft(roleId, userId, draftContent);
         return ApiResponse.success(draftId);
     }
 

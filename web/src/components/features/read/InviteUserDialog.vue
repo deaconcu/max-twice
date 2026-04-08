@@ -5,15 +5,15 @@ import { messageApi } from '@/api/modules/message'
 import { useMutation } from '@/composables/useMutation'
 import { useI18n } from '@/composables/useI18n'
 
+const props = withDefaults(defineProps<Props>(), {
+  nodeId: 0,
+})
+
 const { t } = useI18n()
 
 interface Props {
   nodeId?: number
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  nodeId: 0,
-})
 
 const dialog = defineModel<boolean>({ default: false })
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')

@@ -16,10 +16,7 @@ import com.prosper.learn.shared.domain.event.user.review.CardReviewedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-import static com.prosper.learn.shared.domain.Enums.ContentType;
 
 /**
  * 用户统计事件监听器
@@ -31,7 +28,7 @@ import static com.prosper.learn.shared.domain.Enums.ContentType;
  * - completed_courses: 已完成的课程数
  * - following_users: 关注的用户数
  * - following_courses: 关注的课程数
- * - following_professions: 关注的职业数
+ * - following_roles: 关注的职业数
  * - created_articles: 创建的文章数
  * - created_indexs: 创建的目录数
  * - created_roadmaps: 创建的路线图数
@@ -94,8 +91,8 @@ public class UserStatsEventListener {
                     userStatsService.incrementFollowingCourses(event.getUserId(), 1);
                     log.debug("增加关注课程统计，用户ID: {}", event.getUserId());
                     break;
-                case profession:
-                    userStatsService.incrementFollowingProfessions(event.getUserId(), 1);
+                case role:
+                    userStatsService.incrementFollowingRoles(event.getUserId(), 1);
                     log.debug("增加关注职业统计，用户ID: {}", event.getUserId());
                     break;
                 default:
@@ -119,8 +116,8 @@ public class UserStatsEventListener {
                     userStatsService.incrementFollowingCourses(event.getUserId(), -1);
                     log.debug("减少关注课程统计，用户ID: {}", event.getUserId());
                     break;
-                case profession:
-                    userStatsService.incrementFollowingProfessions(event.getUserId(), -1);
+                case role:
+                    userStatsService.incrementFollowingRoles(event.getUserId(), -1);
                     log.debug("减少关注职业统计，用户ID: {}", event.getUserId());
                     break;
                 default:

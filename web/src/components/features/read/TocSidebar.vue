@@ -15,11 +15,7 @@
           >
             {{ t('toc.title') }}
           </v-chip>
-          <div
-            v-for="(item, index) in toc"
-            :key="index"
-            class="position-relative d-inline-block"
-          >
+          <div v-for="(item, index) in toc" :key="index" class="position-relative d-inline-block">
             <v-chip
               label
               rounded="lg"
@@ -81,17 +77,6 @@ import { ref } from 'vue'
 import TreeNode from '@/components/common/TreeNode.vue'
 import { useI18n } from '@/composables/useI18n'
 
-const { t } = useI18n()
-
-interface Props {
-  toc?: any[]
-  tocNodeInfos?: Record<number, any>
-  nodeId?: number
-  path?: string | null
-  isLearning?: boolean
-  showConfig?: boolean
-}
-
 withDefaults(defineProps<Props>(), {
   toc: () => [],
   tocNodeInfos: () => ({}),
@@ -104,6 +89,17 @@ withDefaults(defineProps<Props>(), {
 defineEmits<{
   config: []
 }>()
+
+const { t } = useI18n()
+
+interface Props {
+  toc?: any[]
+  tocNodeInfos?: Record<number, any>
+  nodeId?: number
+  path?: string | null
+  isLearning?: boolean
+  showConfig?: boolean
+}
 
 const currContentsIndex = ref(0)
 const isTocHovering = ref(false)

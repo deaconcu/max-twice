@@ -40,7 +40,7 @@ public class ContentBannedEvent {
     private List<Long> referencedNodeIds;
 
     /** 职业ID（roadmap 类型使用）*/
-    private Long professionId;
+    private Long roleId;
 
     /** 帖子ID（memory_card_deck 类型使用，可为null）*/
     private Long postId;
@@ -58,7 +58,7 @@ public class ContentBannedEvent {
     private String postContentPreview;
     private String nodeName;
     private String courseName;
-    private String professionName;
+    private String roleName;
 
     // ========== 各类型专用构造函数 ==========
 
@@ -94,15 +94,15 @@ public class ContentBannedEvent {
     }
 
     /** Roadmap 类型构造函数 */
-    public static ContentBannedEvent forRoadmap(Long creatorId, Long roadmapId, ContentState previousState, Long professionId,
-                                                String professionName, String reason) {
+    public static ContentBannedEvent forRoadmap(Long creatorId, Long roadmapId, ContentState previousState, Long roleId,
+                                                String roleName, String reason) {
         ContentBannedEvent event = new ContentBannedEvent();
         event.creatorId = creatorId;
         event.contentId = roadmapId;
         event.contentType = ContentType.roadmap;
         event.previousState = previousState;
-        event.professionId = professionId;
-        event.professionName = professionName;
+        event.roleId = roleId;
+        event.roleName = roleName;
         event.reason = reason;
         return event;
     }
@@ -147,13 +147,13 @@ public class ContentBannedEvent {
         return event;
     }
 
-    /** Profession 类型构造函数 */
-    public static ContentBannedEvent forProfession(Long creatorId, Long professionId, String professionName, String reason) {
+    /** Role 类型构造函数 */
+    public static ContentBannedEvent forRole(Long creatorId, Long roleId, String roleName, String reason) {
         ContentBannedEvent event = new ContentBannedEvent();
         event.creatorId = creatorId;
-        event.contentId = professionId;
-        event.contentType = ContentType.profession;
-        event.professionName = professionName;
+        event.contentId = roleId;
+        event.contentType = ContentType.role;
+        event.roleName = roleName;
         event.reason = reason;
         return event;
     }

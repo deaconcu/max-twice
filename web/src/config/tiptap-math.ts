@@ -9,6 +9,7 @@ import { defineComponent, h, ref, watch, onMounted } from 'vue'
 import { NodeViewWrapper } from '@tiptap/vue-3'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
+import i18n from '@/i18n'
 
 /**
  * 数学公式 Vue 组件
@@ -46,7 +47,7 @@ const MathBlockComponent = defineComponent({
       const displayMode = props.node.attrs.displayMode ?? true
 
       if (!formula.trim()) {
-        renderedHtml.value = '<span class="math-placeholder">输入公式...</span>'
+        renderedHtml.value = `<span class="math-placeholder">${i18n.global.t('editor.mathPlaceholder')}</span>`
         hasError.value = false
         return
       }

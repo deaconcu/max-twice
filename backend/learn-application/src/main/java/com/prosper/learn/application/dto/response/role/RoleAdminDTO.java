@@ -1,4 +1,4 @@
-package com.prosper.learn.application.dto.response.profession;
+package com.prosper.learn.application.dto.response.role;
 
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
@@ -8,7 +8,7 @@ import lombok.Data;
  * 包含管理员需要的字段（如状态、拒绝原因等）
  */
 @Data
-public class ProfessionAdminDTO {
+public class RoleAdminDTO {
 
     private Long id;
 

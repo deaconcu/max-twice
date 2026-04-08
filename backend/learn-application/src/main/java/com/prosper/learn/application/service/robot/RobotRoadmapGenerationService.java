@@ -3,8 +3,8 @@ package com.prosper.learn.application.service.robot;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.application.dto.response.RobotRoadmapDraftDTO;
 import com.prosper.learn.application.dto.response.RobotRoadmapTaskDTO;
-import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDO;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.infrastructure.ai.AIService;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RobotRoadmapGenerationService {
 
-    private final ProfessionDataService professionDataService;
+    private final RoleDataService roleDataService;
     private final AIService aiService;
     private final StringRedisTemplate redisTemplate;
     private final SystemProperties systemProperties;
@@ -55,9 +55,9 @@ public class RobotRoadmapGenerationService {
     /**
      * 提交生成任务
      */
-    public String submitGenerateTask(Long professionId, Long userId) {
+    public String submitGenerateTask(Long roleId, Long userId) {
         // 验证职业存在
-        professionDataService.validateAndGet(professionId);
+        roleDataService.validateAndGet(roleId);
 
         // 生成任务ID
         String taskId = "roadmap-" + UUID.randomUUID().toString();
@@ -65,7 +65,7 @@ public class RobotRoadmapGenerationService {
         // 保存任务初始状态到 Redis
         RobotRoadmapTaskDTO task = RobotRoadmapTaskDTO.builder()
             .taskId(taskId)
-            .professionId(professionId)
+            .roleId(roleId)
             .userId(userId)
             .status("PENDING")
             .createdAt(LocalDateTime.now().format(formatter))
@@ -86,7 +86,7 @@ public class RobotRoadmapGenerationService {
 
         // 异步执行生成（通过代理调用以确保 @Async 生效）
         RobotRoadmapGenerationService self = applicationContext.getBean(RobotRoadmapGenerationService.class);
-        self.executeGenerateAsync(taskId, professionId, userId);
+        self.executeGenerateAsync(taskId, roleId, userId);
 
         return taskId;
     }
@@ -95,15 +95,15 @@ public class RobotRoadmapGenerationService {
      * 异步执行路径生成
      */
     @Async
-    public void executeGenerateAsync(String taskId, Long professionId, Long userId) {
+    public void executeGenerateAsync(String taskId, Long roleId, Long userId) {
         try {
-            log.info("Robot 开始生成路径，taskId={}, professionId={}", taskId, professionId);
+            log.info("Robot 开始生成路径，taskId={}, roleId={}", taskId, roleId);
 
             // 查询职业信息
-            ProfessionDO profession = professionDataService.validateAndGet(professionId);
+            RoleDO roleDO = roleDataService.validateAndGet(roleId);
 
             // 构建提示词
-            String prompt = buildRoadmapPrompt(profession);
+            String prompt = buildRoadmapPrompt(roleDO);
             String systemPrompt = buildRoadmapSystemPrompt();
 
             // 调用 AI 生成
@@ -211,7 +211,7 @@ public class RobotRoadmapGenerationService {
     /**
      * 保存草稿
      */
-    public String saveDraft(Long professionId, Long userId, String draftContent) {
+    public String saveDraft(Long roleId, Long userId, String draftContent) {
         try {
             // 生成唯一的草稿ID
             String draftId = "draft-" + UUID.randomUUID().toString();
@@ -228,7 +228,7 @@ public class RobotRoadmapGenerationService {
             // 添加到用户的草稿列表
             String listKey = DRAFT_LIST_KEY_PREFIX + userId;
             long timestamp = System.currentTimeMillis();
-            String listValue = professionId + ":" + draftId;
+            String listValue = roleId + ":" + draftId;
             redisTemplate.opsForZSet().add(listKey, listValue, timestamp);
 
             // 保留最近100条草稿
@@ -245,7 +245,7 @@ public class RobotRoadmapGenerationService {
                 redisTemplate.opsForZSet().removeRange(listKey, 0, count - MAX_DRAFT_SIZE - 1);
             }
 
-            log.info("Robot 草稿 {} 已保存，职业: {}，用户: {}", draftId, professionId, userId);
+            log.info("Robot 草稿 {} 已保存，职业: {}，用户: {}", draftId, roleId, userId);
             return draftId;
         } catch (Exception e) {
             log.error("Robot 草稿保存失败", e);
@@ -299,7 +299,7 @@ public class RobotRoadmapGenerationService {
             .map(value -> {
                 try {
                     String[] parts = value.split(":");
-                    Long professionId = Long.parseLong(parts[0]);
+                    Long roleId = Long.parseLong(parts[0]);
                     String draftId = parts[1];
 
                     // 获取保存时间
@@ -312,7 +312,7 @@ public class RobotRoadmapGenerationService {
 
                     return RobotRoadmapDraftDTO.builder()
                         .draftId(draftId)
-                        .professionId(professionId)
+                        .roleId(roleId)
                         .userId(userId)
                         .createdAt(createdAt)
                         .build();
@@ -465,7 +465,7 @@ public class RobotRoadmapGenerationService {
     /**
      * 构建路径生成的提示词
      */
-    private String buildRoadmapPrompt(ProfessionDO profession) {
+    private String buildRoadmapPrompt(RoleDO roleDO) {
         return String.format("""
                 职业名称：%s
                 职业描述：%s
@@ -474,6 +474,6 @@ public class RobotRoadmapGenerationService {
 
                 请设计一个从零基础到精通的学习路径，包含必要的课程和知识点。
                 直接输出 JSON 格式的路径数据。
-                """, profession.getName(), profession.getDescription());
+                """, roleDO.getName(), roleDO.getDescription());
     }
 }

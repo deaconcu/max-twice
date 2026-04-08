@@ -20,13 +20,13 @@ public class UserStatsDO {
     // 学习统计（累计快照）
     private Integer learningCourseCount;
     private Integer completedCourseCount;
-    private Integer inProgressProfessionCount;
-    private Integer completedProfessionCount;
+    private Integer inProgressRoleCount;
+    private Integer completedRoleCount;
 
     // 社交统计（累计快照）
     private Integer followingUserCount;
     private Integer followingCourseCount;
-    private Integer followingProfessionCount;
+    private Integer followingRoleCount;
 
     // 创作统计（累计快照）
     private Integer createdArticleCount;

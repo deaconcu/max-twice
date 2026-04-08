@@ -19,7 +19,7 @@ public interface RoadmapConverter {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "content")
-    @Mapping(target = "professionId")
+    @Mapping(target = "roleId")
     @Mapping(target = "creatorId")
     @Mapping(target = "description")
     @Mapping(target = "state")
@@ -32,13 +32,13 @@ public interface RoadmapConverter {
     List<RoadmapSummaryDTO> toSummaryDTO(List<RoadmapDO> roadmapDOList);
 
     /**
-     * 转换为详情DTO（需要在 Service 层填充 profession 信息）
+     * 转换为详情DTO（需要在 Service 层填充 role 信息）
      */
     @Named("toDetailDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "content")
-    @Mapping(target = "professionId")
+    @Mapping(target = "roleId")
     @Mapping(target = "creatorId")
     @Mapping(target = "description")
     @Mapping(target = "state")
@@ -51,13 +51,13 @@ public interface RoadmapConverter {
     List<RoadmapDetailDTO> toDetailDTO(List<RoadmapDO> roadmapDOList);
 
     /**
-     * 转换为带状态的DTO（需要在 Service 层填充 creator, profession, liked, learning）
+     * 转换为带状态的DTO（需要在 Service 层填充 creator, role, liked, learning）
      */
     @Named("toWithStatusDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "content")
-    @Mapping(target = "professionId")
+    @Mapping(target = "roleId")
     @Mapping(target = "creatorId")
     @Mapping(target = "description")
     @Mapping(target = "state")
@@ -70,13 +70,13 @@ public interface RoadmapConverter {
     List<RoadmapWithStatusDTO> toWithStatusDTO(List<RoadmapDO> roadmapDOList);
 
     /**
-     * 转换为管理后台DTO（包含 reason，需要在 Service 层填充 profession 和 creator）
+     * 转换为管理后台DTO（包含 reason，需要在 Service 层填充 role 和 creator）
      */
     @Named("toAdminDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "content")
-    @Mapping(target = "professionId")
+    @Mapping(target = "roleId")
     @Mapping(target = "creatorId")
     @Mapping(target = "description")
     @Mapping(target = "state")

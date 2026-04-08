@@ -38,8 +38,12 @@ const loadScript = (): Promise<void> => {
     script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
     script.async = true
     script.defer = true
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('Failed to load Turnstile script'))
+    script.onload = () => {
+      resolve()
+    }
+    script.onerror = () => {
+      reject(new Error('Failed to load Turnstile script'))
+    }
     document.head.appendChild(script)
   })
 }
@@ -98,11 +102,14 @@ onUnmounted(() => {
 })
 
 // 监听 siteKey 变化，重新渲染
-watch(() => props.siteKey, () => {
-  if (isLoaded.value) {
-    renderWidget()
+watch(
+  () => props.siteKey,
+  () => {
+    if (isLoaded.value) {
+      renderWidget()
+    }
   }
-})
+)
 </script>
 
 <template>

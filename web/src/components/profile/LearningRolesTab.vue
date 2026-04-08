@@ -74,10 +74,10 @@
                 </div>
               </div>
               <div class="d-flex align-center justify-space-between mb-2">
-                <span class="text-caption text-medium-emphasis">{{ t('user.profile.progress') }}</span>
-                <span class="text-caption font-weight-bold text-grey">
-                  {{ role.progress }}%
-                </span>
+                <span class="text-caption text-medium-emphasis">{{
+                  t('user.profile.progress')
+                }}</span>
+                <span class="text-caption font-weight-bold text-grey"> {{ role.progress }}% </span>
               </div>
               <v-progress-linear
                 :model-value="role.progress"
@@ -97,7 +97,11 @@
           class="mb-3 mb-md-4"
         />
         <p class="text-body-2 text-md-body-1 text-grey-darken-2">
-          {{ statusTab === 'learning' ? t('user.profile.noLearningRoles') : t('user.profile.noCompletedRoles') }}
+          {{
+            statusTab === 'learning'
+              ? t('user.profile.noLearningRoles')
+              : t('user.profile.noCompletedRoles')
+          }}
         </p>
         <p class="text-caption text-md-body-2 text-grey">{{ t('learning.browseRoadmapsDesc') }}</p>
       </div>

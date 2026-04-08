@@ -123,13 +123,13 @@ export interface UserStatsDTO {
   // 学习进度统计
   learningCourseCount: number // 正在学习的课程数
   completedCourseCount: number // 已完成的课程数
-  inProgressProfessionCount: number // 正在学习的职业数
-  completedProfessionCount: number // 已完成的职业数
+  inProgressRoleCount: number // 正在学习的角色数
+  completedRoleCount: number // 已完成的角色数
 
   // 社交关系统计
   followingUserCount: number // 关注的用户数
   followingCourseCount: number // 关注的课程数
-  followingProfessionCount: number // 关注的职业数
+  followingRoleCount: number // 关注的角色数
 
   // 创作内容统计
   createdArticleCount: number // 创建的文章数

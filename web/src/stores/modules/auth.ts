@@ -4,6 +4,7 @@ import { authApi } from '@/api'
 import { useUserStore } from './user'
 import { logger } from '@/utils/logger'
 import type { LoginResponseData, User } from '@/types/user'
+import i18n from '@/i18n'
 
 /**
  * 认证 Store
@@ -26,7 +27,11 @@ export const useAuthStore = defineStore(
      * 登录
      * @throws {Error} 当登录失败时抛出错误，包含错误码和错误信息
      */
-    const login = async (email: string, password: string, turnstileToken?: string): Promise<boolean> => {
+    const login = async (
+      email: string,
+      password: string,
+      turnstileToken?: string
+    ): Promise<boolean> => {
       try {
         isLoggingIn.value = true
         const response = await authApi.login(email, password, turnstileToken)
@@ -52,7 +57,7 @@ export const useAuthStore = defineStore(
         }
 
         // 业务错误：后端返回非 200 的 code
-        const error: any = new Error(response.message || '登录失败')
+        const error: any = new Error(response.message || i18n.global.t('user.login.loginFailed'))
         error.code = response.code
         throw error
       } finally {
@@ -64,7 +69,11 @@ export const useAuthStore = defineStore(
      * 注册
      * @throws {Error} 当注册失败时抛出错误，错误信息为后端返回的 message
      */
-    const register = async (email: string, password: string, turnstileToken: string): Promise<boolean> => {
+    const register = async (
+      email: string,
+      password: string,
+      turnstileToken: string
+    ): Promise<boolean> => {
       try {
         isRegistering.value = true
         const response = await authApi.register(email, password, turnstileToken)
@@ -75,7 +84,7 @@ export const useAuthStore = defineStore(
         }
 
         // 业务错误：后端返回非 200 的 code
-        throw new Error(response.message || '注册失败')
+        throw new Error(response.message || i18n.global.t('user.register.registerFailed'))
       } finally {
         isRegistering.value = false
       }

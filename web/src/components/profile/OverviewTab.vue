@@ -10,17 +10,16 @@ import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import type { UserStatsDTO } from '@/types/user'
 
+const props = defineProps<Props>()
+
+const emit = defineEmits<(e: 'navigate', tab: string, mode: string) => void>()
+
 const { t } = useI18n()
 
 interface Props {
   userStats: UserStatsDTO | null
   isOwnProfile: boolean
 }
-
-const props = defineProps<Props>()
-const emit = defineEmits<{
-  (e: 'navigate', tab: string, mode: string): void
-}>()
 
 const router = useRouter()
 
@@ -82,7 +81,9 @@ const goToReview = () => {
                     <v-icon icon="mdi-briefcase-outline" color="white" />
                   </v-avatar>
                   <div>
-                    <div class="text-body-2 text-grey">{{ t('user.profile.overview.roleRoutes') }}</div>
+                    <div class="text-body-2 text-grey">
+                      {{ t('user.profile.overview.roleRoutes') }}
+                    </div>
                     <div class="text-h5 font-weight-bold">
                       {{ learningProgress.inProgressRoles + learningProgress.completedRoles }}
                     </div>
@@ -93,11 +94,17 @@ const goToReview = () => {
               <div class="d-flex ga-4 text-caption text-grey">
                 <span>
                   <v-icon icon="mdi-clock-outline" size="14" class="mr-1" />
-                  {{ t('user.profile.overview.inProgress', { count: learningProgress.inProgressRoles }) }}
+                  {{
+                    t('user.profile.overview.inProgress', {
+                      count: learningProgress.inProgressRoles,
+                    })
+                  }}
                 </span>
                 <span>
                   <v-icon icon="mdi-check-circle-outline" size="14" class="mr-1" />
-                  {{ t('user.profile.overview.completed', { count: learningProgress.completedRoles }) }}
+                  {{
+                    t('user.profile.overview.completed', { count: learningProgress.completedRoles })
+                  }}
                 </span>
               </div>
             </v-card-text>
@@ -119,7 +126,9 @@ const goToReview = () => {
                     <v-icon icon="mdi-book-open-page-variant-outline" color="white" />
                   </v-avatar>
                   <div>
-                    <div class="text-body-2 text-grey">{{ t('user.profile.overview.courses') }}</div>
+                    <div class="text-body-2 text-grey">
+                      {{ t('user.profile.overview.courses') }}
+                    </div>
                     <div class="text-h5 font-weight-bold">
                       {{ learningProgress.learningCourses + learningProgress.completedCourses }}
                     </div>
@@ -130,11 +139,19 @@ const goToReview = () => {
               <div class="d-flex ga-4 text-caption text-grey">
                 <span>
                   <v-icon icon="mdi-clock-outline" size="14" class="mr-1" />
-                  {{ t('user.profile.overview.inProgress', { count: learningProgress.learningCourses }) }}
+                  {{
+                    t('user.profile.overview.inProgress', {
+                      count: learningProgress.learningCourses,
+                    })
+                  }}
                 </span>
                 <span>
                   <v-icon icon="mdi-check-circle-outline" size="14" class="mr-1" />
-                  {{ t('user.profile.overview.completed', { count: learningProgress.completedCourses }) }}
+                  {{
+                    t('user.profile.overview.completed', {
+                      count: learningProgress.completedCourses,
+                    })
+                  }}
                 </span>
               </div>
             </v-card-text>
@@ -155,7 +172,9 @@ const goToReview = () => {
               <div class="text-h4 font-weight-bold text-primary mb-1">
                 {{ streakData.learningDays }}
               </div>
-              <div class="text-caption text-grey">{{ t('user.profile.overview.consecutiveLearning') }}</div>
+              <div class="text-caption text-grey">
+                {{ t('user.profile.overview.consecutiveLearning') }}
+              </div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -165,7 +184,9 @@ const goToReview = () => {
               <div class="text-h4 font-weight-bold text-success mb-1">
                 {{ streakData.reviewDays }}
               </div>
-              <div class="text-caption text-grey">{{ t('user.profile.overview.consecutiveReview') }}</div>
+              <div class="text-caption text-grey">
+                {{ t('user.profile.overview.consecutiveReview') }}
+              </div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -175,7 +196,9 @@ const goToReview = () => {
               <div class="text-h4 font-weight-bold text-grey-darken-2 mb-1">
                 {{ streakData.totalLearningDays }}
               </div>
-              <div class="text-caption text-grey">{{ t('user.profile.overview.totalLearning') }}</div>
+              <div class="text-caption text-grey">
+                {{ t('user.profile.overview.totalLearning') }}
+              </div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -193,12 +216,7 @@ const goToReview = () => {
 
       <!-- 去复习按钮 -->
       <div v-if="isOwnProfile" class="mt-4">
-        <v-btn
-          color="primary"
-          variant="tonal"
-          rounded="lg"
-          @click="goToReview"
-        >
+        <v-btn color="primary" variant="tonal" rounded="lg" @click="goToReview">
           <v-icon icon="mdi-cards-outline" class="mr-2" />
           {{ t('user.profile.overview.goReview') }}
         </v-btn>

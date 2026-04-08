@@ -4,7 +4,9 @@
     <v-card rounded="lg" border class="mb-4" elevation="0">
       <v-card-text class="pa-4">
         <div class="d-flex align-center justify-space-between mb-4">
-          <div class="text-body-1 font-weight-bold">{{ t('user.profile.creatorStats.overview') }}</div>
+          <div class="text-body-1 font-weight-bold">
+            {{ t('user.profile.creatorStats.overview') }}
+          </div>
           <v-btn
             icon
             variant="text"
@@ -21,19 +23,31 @@
         <div v-else-if="totalStatsData" class="stats-grid">
           <div class="stat-item">
             <div class="text-h5 font-weight-bold">{{ formatNumber(totalStatsData.viewCount) }}</div>
-            <div class="text-caption text-medium-emphasis">{{ t('user.profile.creatorStats.viewCount') }}</div>
+            <div class="text-caption text-medium-emphasis">
+              {{ t('user.profile.creatorStats.viewCount') }}
+            </div>
           </div>
           <div class="stat-item">
-            <div class="text-h5 font-weight-bold">{{ formatNumber(totalStatsData.twiceCount) }}</div>
-            <div class="text-caption text-medium-emphasis">{{ t('user.profile.creatorStats.twiceCount') }}</div>
+            <div class="text-h5 font-weight-bold">
+              {{ formatNumber(totalStatsData.twiceCount) }}
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              {{ t('user.profile.creatorStats.twiceCount') }}
+            </div>
           </div>
           <div class="stat-item">
             <div class="text-h5 font-weight-bold">{{ formatNumber(totalStatsData.likeCount) }}</div>
-            <div class="text-caption text-medium-emphasis">{{ t('user.profile.creatorStats.likeCount') }}</div>
+            <div class="text-caption text-medium-emphasis">
+              {{ t('user.profile.creatorStats.likeCount') }}
+            </div>
           </div>
           <div class="stat-item">
-            <div class="text-h5 font-weight-bold">{{ formatNumber(totalStatsData.commentCount) }}</div>
-            <div class="text-caption text-medium-emphasis">{{ t('user.profile.creatorStats.commentCount') }}</div>
+            <div class="text-h5 font-weight-bold">
+              {{ formatNumber(totalStatsData.commentCount) }}
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              {{ t('user.profile.creatorStats.commentCount') }}
+            </div>
           </div>
         </div>
       </v-card-text>
@@ -50,7 +64,10 @@
               size="small"
               rounded="lg"
               :color="selectedPeriod === '7' ? 'primary' : 'default'"
-              @click="selectedPeriod = '7'; onPeriodChange()"
+              @click="
+                selectedPeriod = '7'
+                onPeriodChange()
+              "
             >
               {{ t('user.profile.creatorStats.days7') }}
             </v-btn>
@@ -59,7 +76,10 @@
               size="small"
               rounded="lg"
               :color="selectedPeriod === '30' ? 'primary' : 'default'"
-              @click="selectedPeriod = '30'; onPeriodChange()"
+              @click="
+                selectedPeriod = '30'
+                onPeriodChange()
+              "
             >
               {{ t('user.profile.creatorStats.days30') }}
             </v-btn>
@@ -68,7 +88,10 @@
               size="small"
               rounded="lg"
               :color="selectedPeriod === '180' ? 'primary' : 'default'"
-              @click="selectedPeriod = '180'; onPeriodChange()"
+              @click="
+                selectedPeriod = '180'
+                onPeriodChange()
+              "
             >
               {{ t('user.profile.creatorStats.days180') }}
             </v-btn>
@@ -77,7 +100,10 @@
               size="small"
               rounded="lg"
               :color="selectedPeriod === '365' ? 'primary' : 'default'"
-              @click="selectedPeriod = '365'; onPeriodChange()"
+              @click="
+                selectedPeriod = '365'
+                onPeriodChange()
+              "
             >
               {{ t('user.profile.creatorStats.days365') }}
             </v-btn>
@@ -90,19 +116,27 @@
           <div class="stats-grid mb-4">
             <div class="stat-item">
               <div class="text-h5 font-weight-bold">{{ formatNumber(statsData.viewCount) }}</div>
-              <div class="text-caption text-medium-emphasis">{{ t('user.profile.creatorStats.viewCount') }}</div>
+              <div class="text-caption text-medium-emphasis">
+                {{ t('user.profile.creatorStats.viewCount') }}
+              </div>
             </div>
             <div class="stat-item">
               <div class="text-h5 font-weight-bold">{{ formatNumber(statsData.twiceCount) }}</div>
-              <div class="text-caption text-medium-emphasis">{{ t('user.profile.creatorStats.twiceCount') }}</div>
+              <div class="text-caption text-medium-emphasis">
+                {{ t('user.profile.creatorStats.twiceCount') }}
+              </div>
             </div>
             <div class="stat-item">
               <div class="text-h5 font-weight-bold">{{ formatNumber(statsData.likeCount) }}</div>
-              <div class="text-caption text-medium-emphasis">{{ t('user.profile.creatorStats.likeCount') }}</div>
+              <div class="text-caption text-medium-emphasis">
+                {{ t('user.profile.creatorStats.likeCount') }}
+              </div>
             </div>
             <div class="stat-item">
               <div class="text-h5 font-weight-bold">{{ formatNumber(statsData.commentCount) }}</div>
-              <div class="text-caption text-medium-emphasis">{{ t('user.profile.creatorStats.commentCount') }}</div>
+              <div class="text-caption text-medium-emphasis">
+                {{ t('user.profile.creatorStats.commentCount') }}
+              </div>
             </div>
           </div>
 
@@ -226,7 +260,11 @@ const tableHeaders = [
   { title: t('user.profile.creatorStats.viewCount'), key: 'viewCount', align: 'center' as const },
   { title: t('user.profile.creatorStats.twiceCount'), key: 'twiceCount', align: 'center' as const },
   { title: t('user.profile.creatorStats.likeCount'), key: 'likeCount', align: 'center' as const },
-  { title: t('user.profile.creatorStats.commentCount'), key: 'commentCount', align: 'center' as const },
+  {
+    title: t('user.profile.creatorStats.commentCount'),
+    key: 'commentCount',
+    align: 'center' as const,
+  },
 ]
 
 // 工具方法

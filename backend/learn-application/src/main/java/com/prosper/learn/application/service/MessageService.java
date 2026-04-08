@@ -10,8 +10,8 @@ import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
-import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDO;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.interaction.message.MessageDO;
@@ -72,7 +72,7 @@ public class MessageService {
     // 跨域依赖
     private final PostDataService postDataService;
     private final NodeDataService nodeDataService;
-    private final ProfessionDataService professionDataService;
+    private final RoleDataService roleDataService;
     private final MessageDataService messageDataService;
     private final UserDataService userDataService;
     private final RoadmapDataService roadmapDataService;
@@ -145,8 +145,8 @@ public class MessageService {
     /**
      * 创建路线图点赞消息
      */
-    public void createRoadmapUpvoteMessage(long receiverId, long voterId, long professionId, long roadmapId) {
-        messageDomainService.createRoadmapUpvoteMessage(receiverId, voterId, professionId, roadmapId);
+    public void createRoadmapUpvoteMessage(long receiverId, long voterId, long roleId, long roadmapId) {
+        messageDomainService.createRoadmapUpvoteMessage(receiverId, voterId, roleId, roadmapId);
     }
 
     /**
@@ -360,17 +360,17 @@ public class MessageService {
     /**
      * 发送职业审核通知
      */
-    public void sendProfessionModeration(long userId, long professionId, String professionName,
-                                         ModerationAction action, String reason) {
-        messageDomainService.sendProfessionModeration(userId, professionId, professionName, action, reason);
+    public void sendRoleModeration(long userId, long roleId, String roleName,
+                                   ModerationAction action, String reason) {
+        messageDomainService.sendRoleModeration(userId, roleId, roleName, action, reason);
     }
 
     /**
      * 发送路线图审核通知
      */
-    public void sendRoadmapModeration(long userId, long roadmapId, long professionId,
-                                      String professionName, ModerationAction action, String reason) {
-        messageDomainService.sendRoadmapModeration(userId, roadmapId, professionId, professionName, action, reason);
+    public void sendRoadmapModeration(long userId, long roadmapId, long roleId, String roleName,
+                                      ModerationAction action, String reason) {
+        messageDomainService.sendRoadmapModeration(userId, roadmapId, roleId, roleName, action, reason);
     }
 
     /**
@@ -391,7 +391,7 @@ public class MessageService {
         Set<Long> userIdSet = new HashSet<>();
         Set<Long> nodeIdSet = new HashSet<>();
         Set<Long> postingIdSet = new HashSet<>();
-        Set<Long> professionIdSet = new HashSet<>();
+        Set<Long> roleIdSet = new HashSet<>();
         Set<Long> roadmapIdSet = new HashSet<>();
 
         for (MessageDO messageDO : messageDOList) {
@@ -411,14 +411,14 @@ public class MessageService {
                 if (upvoterId != null) {
                     userIdSet.add(upvoterId);
                 }
-                // 路线图点赞：收集 voterId 和 professionId
+                // 路线图点赞：收集 voterId 和 roleId
                 Long voterId = Utils.getLong(map, "voterId");
                 if (voterId != null) {
                     userIdSet.add(voterId);
                 }
-                Long professionId = Utils.getLong(map, "professionId");
-                if (professionId != null) {
-                    professionIdSet.add(professionId);
+                Long roleId = Utils.getLong(map, "roleId");
+                if (roleId != null) {
+                    roleIdSet.add(roleId);
                 }
             } else if (messageDO.getType() == invite.value()) {
                 nodeIdSet.add(Utils.getLong(map, "nodeId"));
@@ -451,7 +451,7 @@ public class MessageService {
 
         Map<Long, UserDO> userDOMap = userIdSet.isEmpty() ? new HashMap<>() : userDataService.getMapByIds(userIdSet);
         Map<Long, PostDO> postingDOMap = postingIdSet.isEmpty() ? new HashMap<>() : postDataService.getMapByIds(postingIdSet);
-        Map<Long, ProfessionDO> professionDOMap = professionIdSet.isEmpty() ? new HashMap<>() : professionDataService.getMapByIds(professionIdSet);
+        Map<Long, RoleDO> roleDOMap = roleIdSet.isEmpty() ? new HashMap<>() : roleDataService.getMapByIds(roleIdSet);
         Map<Long, RoadmapDO> roadmapDOMap = roadmapIdSet.isEmpty() ? new HashMap<>() : roadmapDataService.getMapByIds(roadmapIdSet);
 
         // 从 post 收集 nodeId
@@ -459,23 +459,23 @@ public class MessageService {
             nodeIdSet.add(postDO.getNodeId());
         }
 
-        // 从 roadmap 收集 professionId
+        // 从 roadmap 收集 roleId
         for (RoadmapDO roadmapDO : roadmapDOMap.values()) {
-            professionIdSet.add(roadmapDO.getProfessionId());
+            roleIdSet.add(roadmapDO.getRoleId());
         }
 
         Map<Long, NodeDO> nodeDOMap = nodeIdSet.isEmpty() ? new HashMap<>() : nodeDataService.getMapByIds(nodeIdSet);
 
         List<MessageDTO> messageDTOList = new ArrayList<>();
         for (MessageDO messageDO : messageDOList) {
-            messageDTOList.add(convertMessage(messageDO, userDOMap, postingDOMap, nodeDOMap, professionDOMap, roadmapDOMap));
+            messageDTOList.add(convertMessage(messageDO, userDOMap, postingDOMap, nodeDOMap, roleDOMap, roadmapDOMap));
         }
         return messageDTOList;
     }
 
     private MessageDTO convertMessage(MessageDO messageDO, Map<Long, UserDO> userDOMap,
                                       Map<Long, PostDO> postingDOMap, Map<Long, NodeDO> nodeDOMap,
-                                      Map<Long, ProfessionDO> professionDOMap, Map<Long, RoadmapDO> roadmapDOMap) {
+                                      Map<Long, RoleDO> roleDOMap, Map<Long, RoadmapDO> roadmapDOMap) {
         MessageDTO messageDTO;
         Map<String, Object> content = Utils.readValueToMap(messageDO.getContent());
 
@@ -521,14 +521,14 @@ public class MessageService {
                     }
                 }
             } else if (messageDO.getType() == roadmapComment.value() || messageDO.getType() == replyRoadmapComment.value()) {
-                // 路线图评论：通过 roadmapId 找到 roadmap，再获取 professionId
+                // 路线图评论：通过 roadmapId 找到 roadmap，再获取 roleId
                 Long roadmapId = Utils.getLong(content, "roadmapId");
                 if (roadmapId != null) {
                     RoadmapDO roadmapDO = roadmapDOMap.get(roadmapId);
                     if (roadmapDO != null) {
-                        ProfessionDO professionDO = professionDOMap.get(roadmapDO.getProfessionId());
-                        if (professionDO != null) {
-                            enrichedContent.put("professionName", professionDO.getName());
+                        RoleDO roleDO = roleDOMap.get(roadmapDO.getRoleId());
+                        if (roleDO != null) {
+                            enrichedContent.put("roleName", roleDO.getName());
                         }
                     }
                 }
@@ -558,11 +558,11 @@ public class MessageService {
             }
 
             // 填充上下文名称
-            Long professionId = Utils.getLong(content, "professionId");
-            if (professionId != null) {
-                ProfessionDO profession = professionDOMap.get(professionId);
-                if (profession != null) {
-                    enrichedContent.put("professionName", profession.getName());
+            Long roleId = Utils.getLong(content, "roleId");
+            if (roleId != null) {
+                RoleDO role = roleDOMap.get(roleId);
+                if (role != null) {
+                    enrichedContent.put("roleName", role.getName());
                 }
             }
             Long nodeId = Utils.getLong(content, "nodeId");

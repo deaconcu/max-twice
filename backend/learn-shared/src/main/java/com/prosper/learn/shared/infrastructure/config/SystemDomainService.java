@@ -30,7 +30,7 @@ public class SystemDomainService {
     // 内存缓存 - 课程分类
     private volatile JsonNode courseCategoriesCache;
     // 内存缓存 - 职业分类
-    private volatile JsonNode professionCategoriesCache;
+    private volatile JsonNode roleCategoriesCache;
 
     // 课程主分类 ID 集合（用于快速验证）
     private volatile Set<Integer> courseMainCategoryIds;
@@ -38,9 +38,9 @@ public class SystemDomainService {
     private volatile Map<Integer, Set<Integer>> courseSubCategoryMap;
 
     // 职业主分类 ID 集合（用于快速验证）
-    private volatile Set<Integer> professionMainCategoryIds;
+    private volatile Set<Integer> roleMainCategoryIds;
     // 职业分类映射：mainCategoryId -> Set<subCategoryId>
-    private volatile Map<Integer, Set<Integer>> professionSubCategoryMap;
+    private volatile Map<Integer, Set<Integer>> roleSubCategoryMap;
 
     /**
      * 应用启动时加载配置到内存
@@ -49,7 +49,7 @@ public class SystemDomainService {
     public void init() {
         try {
             loadCourseCategories();
-            loadProfessionCategories();
+            loadRoleCategories();
             log.info("系统配置加载成功");
         } catch (Exception e) {
             log.error("系统配置加载失败", e);
@@ -90,9 +90,9 @@ public class SystemDomainService {
     /**
      * 加载职业分类配置
      */
-    private void loadProfessionCategories() {
+    private void loadRoleCategories() {
         try {
-            String configValue = systemDataService.getValue("professionCategories");
+            String configValue = systemDataService.getValue("role");
             if (configValue == null) {
                 log.warn("系统配置 职业分类配置未找到");
                 return;
@@ -100,17 +100,17 @@ public class SystemDomainService {
 
             JsonNode categoryNode = objectMapper.readTree(configValue);
 
-            // 处理嵌套的 professionCategories 结构
-            if (categoryNode.has("professionCategories")) {
-                categoryNode = categoryNode.get("professionCategories");
+            // 处理嵌套的 roleCategories 结构
+            if (categoryNode.has("roleCategories")) {
+                categoryNode = categoryNode.get("roleCategories");
             }
 
-            professionCategoriesCache = categoryNode;
+            roleCategoriesCache = categoryNode;
 
             // 构建快速查询索引
-            buildProfessionCategoryIndex(categoryNode);
+            buildRoleCategoryIndex(categoryNode);
 
-            log.info("系统配置 职业分类加载完成: {} 个主分类", professionMainCategoryIds.size());
+            log.info("系统配置 职业分类加载完成: {} 个主分类", roleMainCategoryIds.size());
         } catch (IOException e) {
             log.error("系统配置 职业分类配置解析失败", e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
@@ -179,7 +179,7 @@ public class SystemDomainService {
      *
      * 数据结构与课程分类相同
      */
-    private void buildProfessionCategoryIndex(JsonNode categoryNode) {
+    private void buildRoleCategoryIndex(JsonNode categoryNode) {
         Set<Integer> mainCategoryIds = new HashSet<>();
         Map<Integer, Set<Integer>> subCategoryMap = new HashMap<>();
 
@@ -213,8 +213,8 @@ public class SystemDomainService {
             }
 
             // 原子更新
-            this.professionMainCategoryIds = mainCategoryIds;
-            this.professionSubCategoryMap = subCategoryMap;
+            this.roleMainCategoryIds = mainCategoryIds;
+            this.roleSubCategoryMap = subCategoryMap;
 
         } catch (Exception e) {
             log.error("系统配置 构建职业分类索引失败", e);
@@ -235,11 +235,11 @@ public class SystemDomainService {
     /**
      * 获取职业分类数据（已解析的 JsonNode）
      */
-    public JsonNode getProfessionCategories() {
-        if (professionCategoriesCache == null) {
+    public JsonNode getRoleCategories() {
+        if (roleCategoriesCache == null) {
             throw StatusCode.SYSTEM_ERROR.exception("职业分类配置未加载");
         }
-        return professionCategoriesCache;
+        return roleCategoriesCache;
     }
 
     /**
@@ -274,20 +274,20 @@ public class SystemDomainService {
      * @param subCategoryId 子分类ID
      * @throws com.prosper.learn.shared.domain.exception.BizException 分类无效时抛出
      */
-    public void validateProfessionCategory(Integer mainCategoryId, Integer subCategoryId) {
-        if (professionMainCategoryIds == null || professionSubCategoryMap == null) {
+    public void validateRoleCategory(Integer mainCategoryId, Integer subCategoryId) {
+        if (roleMainCategoryIds == null || roleSubCategoryMap == null) {
             throw StatusCode.SYSTEM_ERROR.exception("职业分类配置未加载");
         }
 
         // 验证主分类
-        if (!professionMainCategoryIds.contains(mainCategoryId)) {
-            throw StatusCode.PROFESSION_CATEGORY_INVALID.exception("主分类不存在: " + mainCategoryId);
+        if (!roleMainCategoryIds.contains(mainCategoryId)) {
+            throw StatusCode.ROLE_CATEGORY_INVALID.exception("主分类不存在: " + mainCategoryId);
         }
 
         // 验证子分类
-        Set<Integer> subCategoryIds = professionSubCategoryMap.get(mainCategoryId);
+        Set<Integer> subCategoryIds = roleSubCategoryMap.get(mainCategoryId);
         if (subCategoryIds == null || !subCategoryIds.contains(subCategoryId)) {
-            throw StatusCode.PROFESSION_CATEGORY_INVALID.exception(
+            throw StatusCode.ROLE_CATEGORY_INVALID.exception(
                 "子分类不存在: mainCategoryId=" + mainCategoryId + ", subCategoryId=" + subCategoryId);
         }
     }
@@ -298,7 +298,7 @@ public class SystemDomainService {
     public void reload() {
         log.info("系统配置 重新加载中...");
         loadCourseCategories();
-        loadProfessionCategories();
+        loadRoleCategories();
         log.info("系统配置 重新加载完成");
     }
 }

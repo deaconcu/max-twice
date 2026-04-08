@@ -42,7 +42,7 @@ const isNodeCovered = (nodeKey: string): boolean => {
   if (!props.parentPath) return false
 
   // 获取从根到当前节点的路径上所有父节点
-  const pathParts = props.parentPath.split('-').filter(p => p)
+  const pathParts = props.parentPath.split('-').filter((p) => p)
 
   // 检查路径上的每个父节点是否已完成
   for (const part of pathParts) {
@@ -139,12 +139,7 @@ const scrollToTop = (): void => {
                       color="success"
                       size="16"
                     ></v-icon>
-                    <v-icon
-                      v-else
-                      icon="mdi-minus"
-                      color="grey-lighten-1"
-                      size="16"
-                    ></v-icon>
+                    <v-icon v-else icon="mdi-minus" color="grey-lighten-1" size="16"></v-icon>
                   </template>
                   <!-- 叶子节点 -->
                   <template v-else>
@@ -179,12 +174,7 @@ const scrollToTop = (): void => {
                 v-if="isLearning && nodeInfos[key]?.canComplete && tocIndex === 0"
                 class="d-inline-block"
               >
-                <v-icon
-                  icon="mdi-playlist-check"
-                  color="green"
-                  size="18"
-                  class="ml-2"
-                ></v-icon>
+                <v-icon icon="mdi-playlist-check" color="green" size="18" class="ml-2"></v-icon>
                 <v-tooltip activator="parent" location="top">
                   该目录下的所有节点都已完成，可以标记当前目录为已完成了！
                 </v-tooltip>

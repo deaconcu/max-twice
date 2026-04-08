@@ -1,8 +1,8 @@
 package com.prosper.learn.application.assembler;
 
 import com.prosper.learn.application.dto.response.roadmap.RoadmapBriefDTO;
-import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDO;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RoadmapAssembler {
 
-    private final ProfessionDataService professionDataService;
+    private final RoleDataService roleDataService;
 
     /**
      * 转换为简要 DTO（单个）
@@ -35,11 +35,11 @@ public class RoadmapAssembler {
         dto.setId(roadmapDO.getId());
         dto.setNodeCount(roadmapDO.getNodeCount());
 
-        if (roadmapDO.getProfessionId() != null) {
-            ProfessionDO profession = professionDataService.getById(roadmapDO.getProfessionId());
-            if (profession != null) {
-                dto.setProfessionName(profession.getName());
-                dto.setProfessionIcon(profession.getIcon());
+        if (roadmapDO.getRoleId() != null) {
+            RoleDO roleDO = roleDataService.getById(roadmapDO.getRoleId());
+            if (roleDO != null) {
+                dto.setRoleName(roleDO.getName());
+                dto.setRoleIcon(roleDO.getIcon());
             }
         }
 
@@ -47,26 +47,26 @@ public class RoadmapAssembler {
     }
 
     /**
-     * 批量转换为简要 DTO（优化：批量查询 Profession）
+     * 批量转换为简要 DTO（优化：批量查询 Role
      */
     public List<RoadmapBriefDTO> toBriefDTO(List<RoadmapDO> roadmapDOList) {
         if (roadmapDOList == null || roadmapDOList.isEmpty()) {
             return new ArrayList<>();
         }
 
-        // 提取所有 profession IDs
-        List<Long> professionIds = roadmapDOList.stream()
-            .map(RoadmapDO::getProfessionId)
+        // 提取所有 role IDs
+        List<Long> roleIds = roadmapDOList.stream()
+            .map(RoadmapDO::getRoleId)
             .filter(Objects::nonNull)
             .distinct()
             .collect(Collectors.toList());
 
-        // 批量查询 professions
-        Map<Long, ProfessionDO> professionMap = Map.of();
-        if (!professionIds.isEmpty()) {
-            List<ProfessionDO> professions = professionDataService.getByIds(professionIds);
-            professionMap = professions.stream()
-                .collect(Collectors.toMap(ProfessionDO::getId, p -> p));
+        // 批量查询 roles
+        Map<Long, RoleDO> roleDOMap = Map.of();
+        if (!roleIds.isEmpty()) {
+            List<RoleDO> roleDOS = roleDataService.getByIds(roleIds);
+            roleDOMap = roleDOS.stream()
+                .collect(Collectors.toMap(RoleDO::getId, p -> p));
         }
 
         // 组装 DTO
@@ -76,11 +76,11 @@ public class RoadmapAssembler {
             dto.setId(roadmapDO.getId());
             dto.setNodeCount(roadmapDO.getNodeCount());
 
-            if (roadmapDO.getProfessionId() != null) {
-                ProfessionDO profession = professionMap.get(roadmapDO.getProfessionId());
-                if (profession != null) {
-                    dto.setProfessionName(profession.getName());
-                    dto.setProfessionIcon(profession.getIcon());
+            if (roadmapDO.getRoleId() != null) {
+                RoleDO roleDO = roleDOMap.get(roadmapDO.getRoleId());
+                if (roleDO != null) {
+                    dto.setRoleName(roleDO.getName());
+                    dto.setRoleIcon(roleDO.getIcon());
                 }
             }
 

@@ -34,8 +34,8 @@ export const POST_VALIDATION = {
   CONTENT_MAX_LENGTH: 20000,
 } as const
 
-// ========== 专业相关 ==========
-export const PROFESSION_VALIDATION = {
+// ========== 角色相关 ==========
+export const ROLE_VALIDATION = {
   NAME_MIN_LENGTH: 2,
   NAME_MAX_LENGTH: 30,
   DESCRIPTION_MIN_LENGTH: 20,

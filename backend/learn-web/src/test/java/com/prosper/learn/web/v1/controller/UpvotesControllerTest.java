@@ -179,7 +179,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
         roadmap.setContent("{}");
         roadmap.setContentHash("test-hash");
         roadmap.setDescription("这是一个测试路线图");
-        roadmap.setProfessionId(0L);
+        roadmap.setRoleId(0L);
         roadmap.setState(ContentState.PUBLISHED.value());
         roadmap.setScore(0.0);
         roadmapDataService.insert(roadmap);

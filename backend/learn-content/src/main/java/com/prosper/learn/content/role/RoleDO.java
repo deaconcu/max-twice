@@ -1,10 +1,10 @@
-package com.prosper.learn.content.profession;
+package com.prosper.learn.content.role;
 
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class ProfessionDO {
+public class RoleDO {
 
     private Long id;
 

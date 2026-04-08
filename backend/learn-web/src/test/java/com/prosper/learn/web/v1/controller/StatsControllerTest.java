@@ -7,7 +7,7 @@ import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyMapper;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDataService;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.shared.domain.Enums.UserRole;
 import com.prosper.learn.shared.domain.Enums.UserState;
@@ -55,7 +55,7 @@ public class StatsControllerTest extends BaseControllerTest {
     private NodeDataService nodeDataService;
 
     @Autowired
-    private ProfessionDataService professionDataService;
+    private RoleDataService roleDataService;
 
     @Autowired
     private RoadmapDataService roadmapDataService;

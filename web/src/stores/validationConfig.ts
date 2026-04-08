@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { apiClient } from '@/api/client'
+import i18n from '@/i18n'
 
 export interface ValidationRule {
   minLength: number
@@ -109,18 +110,18 @@ export const useValidationConfigStore = defineStore(
     /**
      * 创建 Vuetify 验证规则
      */
-    function createRules(fieldKey: string): Array<(v: string) => boolean | string> {
+    function createRules(fieldKey: string): ((v: string) => boolean | string)[] {
       const rule = getRule(fieldKey)
       if (!rule) {
         console.warn(`[ValidationConfig] 未找到字段的验证规则: ${fieldKey}`)
         return []
       }
 
-      const rules: Array<(v: string) => boolean | string> = []
+      const rules: ((v: string) => boolean | string)[] = []
 
       // 必填验证
       if (rule.minLength > 0) {
-        rules.push((v) => !!v || `${rule.label}不能为空`)
+        rules.push((v) => !!v || i18n.global.t('validation.cannotBeEmpty', { label: rule.label }))
       }
 
       // 最小长度验证
@@ -128,15 +129,16 @@ export const useValidationConfigStore = defineStore(
         rules.push(
           (v) =>
             (v && v.length >= rule.minLength) ||
-            `${rule.label}长度必须至少${rule.minLength}个字符`
+            i18n.global.t('validation.minLength', { label: rule.label, min: rule.minLength })
         )
       }
 
       // 最大长度验证
       rules.push(
         (v) =>
-          (!v || v.length <= rule.maxLength) ||
-          `${rule.label}长度不能超过${rule.maxLength}个字符`
+          !v ||
+          v.length <= rule.maxLength ||
+          i18n.global.t('validation.maxLength', { label: rule.label, max: rule.maxLength })
       )
 
       return rules

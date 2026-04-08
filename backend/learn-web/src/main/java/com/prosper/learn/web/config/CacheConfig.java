@@ -53,7 +53,7 @@ public class CacheConfig extends CachingConfigurerSupport {
         cacheConfigurations.put("posts", defaultConfig.entryTtl(Duration.ofMinutes(5)));
         cacheConfigurations.put("comments", defaultConfig.entryTtl(Duration.ofMinutes(5)));
         cacheConfigurations.put("roadmaps", defaultConfig.entryTtl(Duration.ofMinutes(20)));
-        cacheConfigurations.put("professions", defaultConfig.entryTtl(Duration.ofMinutes(60)));
+        cacheConfigurations.put("roles", defaultConfig.entryTtl(Duration.ofMinutes(60)));
         
         // 查询缓存配置（较短TTL）
         cacheConfigurations.put("usersByEmail", defaultConfig.entryTtl(Duration.ofMinutes(15)));

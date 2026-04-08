@@ -53,7 +53,11 @@
               @click="selectSubCategory(undefined)"
             >
               <span class="text-grey-darken-3">
-                {{ t('roleCenter.difficulty.allCategory', { category: getCategoryName(selectedMainCategory) }) }}
+                {{
+                  t('roleCenter.difficulty.allCategory', {
+                    category: getCategoryName(selectedMainCategory),
+                  })
+                }}
               </span>
             </v-btn>
 
@@ -64,7 +68,7 @@
               :color="selectedSubCategory === sub.id ? 'grey' : 'white'"
               variant="tonal"
               rounded="xl"
-                            class="font-weight-medium subcategory-btn"
+              class="font-weight-medium subcategory-btn"
               @click="selectSubCategory(sub.id)"
             >
               <span class="text-grey-darken-3">

@@ -132,7 +132,11 @@
                 <v-icon icon="mdi-map-marker-path" size="80" color="grey-lighten-1" class="mb-4" />
                 <h3 class="text-h6 text-grey-darken-2 mb-2">{{ t('roleDetail.noRoadmaps') }}</h3>
                 <p class="text-body-2 text-grey mb-4">
-                  {{ filterStatus === 'all' ? t('roleDetail.noRoadmapsHint') : t('roleDetail.noFilteredRoadmaps') }}
+                  {{
+                    filterStatus === 'all'
+                      ? t('roleDetail.noRoadmapsHint')
+                      : t('roleDetail.noFilteredRoadmaps')
+                  }}
                 </p>
                 <v-btn
                   v-if="filterStatus === 'all'"
@@ -148,143 +152,182 @@
             </div>
 
             <!-- 路线图列表 -->
-            <v-infinite-scroll v-else-if="filteredRoadmaps.length > 0" :items="filteredRoadmaps" @load="onLoadMore">
+            <v-infinite-scroll
+              v-else-if="filteredRoadmaps.length > 0"
+              :items="filteredRoadmaps"
+              @load="onLoadMore"
+            >
               <template v-for="roadmap in filteredRoadmaps" :key="roadmap.id">
-                <v-card
-                  border
-                  rounded="xl"
-                  class="roadmap-card mb-4"
-                  hover
-                >
-              <v-card-text class="pa-4 pa-sm-5">
-                <div class="d-flex align-start">
-                  <!-- 左侧：投票区域 -->
-                  <div class="vote-section mr-3 mr-sm-4">
-                    <v-btn
-                      :color="roadmap.liked ? 'primary' : 'grey-lighten-1'"
-                      :variant="roadmap.liked ? 'flat' : 'outlined'"
-                      :disabled="roadmap.creator?.id === currentUserId"
-                      icon
-                      size="small"
-                      @click="handleVote(roadmap)"
-                    >
-                      <v-icon :icon="roadmap.liked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'" />
-                    </v-btn>
-                    <div class="vote-count text-center mt-1">
-                      <span
-                        class="text-caption font-weight-bold"
-                        :class="roadmap.liked ? 'text-primary' : 'text-grey-darken-2'"
-                      >
-                        {{ roadmap.likeCount }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <!-- 右侧：内容和操作区域 -->
-                  <div class="flex-grow-1">
-                    <!-- 内容区域（可点击跳转） -->
+                <v-card border rounded="xl" class="roadmap-card mb-4" hover>
+                  <v-card-text class="pa-4 pa-sm-5">
                     <div class="d-flex align-start">
-                      <div class="content-area flex-grow-1" @click="handleGoToRoadmap(roadmap)">
-                    <!-- 标签 -->
-                    <div class="d-flex align-center mb-2">
-                      <v-chip v-if="roadmap.pinned" color="warning" size="x-small" variant="flat" class="mr-2">
-                        <v-icon icon="mdi-pin" size="12" class="mr-1" />
-                        {{ t('roadmapCard.pin') }}
-                      </v-chip>
-                      <v-chip v-if="roadmap.learning" color="success" size="x-small" variant="flat">
-                        <v-icon icon="mdi-school" size="12" class="mr-1" />
-                        {{ t('roadmapCard.learning') }}
-                      </v-chip>
+                      <!-- 左侧：投票区域 -->
+                      <div class="vote-section mr-3 mr-sm-4">
+                        <v-btn
+                          :color="roadmap.liked ? 'primary' : 'grey-lighten-1'"
+                          :variant="roadmap.liked ? 'flat' : 'outlined'"
+                          :disabled="roadmap.creator?.id === currentUserId"
+                          icon
+                          size="small"
+                          @click="handleVote(roadmap)"
+                        >
+                          <v-icon :icon="roadmap.liked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'" />
+                        </v-btn>
+                        <div class="vote-count text-center mt-1">
+                          <span
+                            class="text-caption font-weight-bold"
+                            :class="roadmap.liked ? 'text-primary' : 'text-grey-darken-2'"
+                          >
+                            {{ roadmap.likeCount }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- 右侧：内容和操作区域 -->
+                      <div class="flex-grow-1">
+                        <!-- 内容区域（可点击跳转） -->
+                        <div class="d-flex align-start">
+                          <div class="content-area flex-grow-1" @click="handleGoToRoadmap(roadmap)">
+                            <!-- 标签 -->
+                            <div class="d-flex align-center mb-2">
+                              <v-chip
+                                v-if="roadmap.pinned"
+                                color="warning"
+                                size="x-small"
+                                variant="flat"
+                                class="mr-2"
+                              >
+                                <v-icon icon="mdi-pin" size="12" class="mr-1" />
+                                {{ t('roadmapCard.pin') }}
+                              </v-chip>
+                              <v-chip
+                                v-if="roadmap.learning"
+                                color="success"
+                                size="x-small"
+                                variant="flat"
+                              >
+                                <v-icon icon="mdi-school" size="12" class="mr-1" />
+                                {{ t('roadmapCard.learning') }}
+                              </v-chip>
+                            </div>
+
+                            <!-- 描述 -->
+                            <div class="text-body-1 text-grey-darken-4 mb-2">
+                              {{ roadmap.description }}
+                            </div>
+
+                            <!-- 详细描述 -->
+                            <p class="text-body-2 text-grey-darken-2 mb-3">
+                              {{ roadmap.detail }}
+                            </p>
+
+                            <!-- 统计信息 -->
+                            <div class="d-flex flex-wrap align-center gap-4 gap-sm-6 gap-md-8 mb-3">
+                              <div class="d-flex align-center">
+                                <v-icon icon="mdi-account" size="16" color="grey" class="mr-2" />
+                                <span class="text-caption text-grey-darken-2">
+                                  {{ roadmap.creator?.name || t('roadmapCard.unknownUser') }}
+                                </span>
+                              </div>
+                              <div class="d-flex align-center">
+                                <v-icon
+                                  icon="mdi-account-group"
+                                  size="16"
+                                  color="grey"
+                                  class="mr-2"
+                                />
+                                <span class="text-caption text-grey-darken-2">
+                                  {{ roadmap.learnerCount ?? 0 }}
+                                  <span class="d-none d-sm-inline">{{
+                                    t('roadmapCard.learners')
+                                  }}</span>
+                                </span>
+                              </div>
+                              <div class="d-flex align-center d-none d-sm-flex">
+                                <v-icon
+                                  icon="mdi-comment-outline"
+                                  size="16"
+                                  color="grey"
+                                  class="mr-2"
+                                />
+                                <span class="text-caption text-grey-darken-2">
+                                  {{ roadmap.commentCount ?? 0 }} {{ t('roleDetail.comments') }}
+                                </span>
+                              </div>
+                              <div class="d-flex align-center">
+                                <v-icon
+                                  icon="mdi-circle-medium"
+                                  size="16"
+                                  color="grey"
+                                  class="mr-2"
+                                />
+                                <span class="text-caption text-grey-darken-2">
+                                  {{ roadmap.nodeCount }}
+                                  <span class="d-none d-sm-inline">{{
+                                    t('roleDetail.nodeCountUnit')
+                                  }}</span
+                                  >{{ t('roadmap.nodes') }}
+                                </span>
+                              </div>
+                              <div class="d-flex align-center d-none d-md-flex">
+                                <v-icon
+                                  icon="mdi-clock-outline"
+                                  size="16"
+                                  color="grey"
+                                  class="mr-2"
+                                />
+                                <span class="text-caption text-grey-darken-2">
+                                  {{ getTimeDisplay(roadmap.createdAt) }}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- 右侧：路线图图标 -->
+                          <div class="ml-3 ml-sm-4 d-none d-sm-block roadmap-icon">
+                            <v-icon
+                              icon="mdi-graph-outline"
+                              :size="$vuetify.display.mdAndUp ? 80 : 60"
+                              color="grey-lighten-2"
+                            />
+                          </div>
+                        </div>
+
+                        <!-- 操作按钮区域（独立，不触发跳转） -->
+                        <div class="d-flex align-center gap-3 mt-3">
+                          <v-btn
+                            :color="roadmap.learning ? 'success' : 'primary'"
+                            :variant="roadmap.learning ? 'outlined' : 'flat'"
+                            size="small"
+                            rounded="lg"
+                            @click="handleStartLearning(roadmap)"
+                          >
+                            <v-icon
+                              :icon="roadmap.learning ? 'mdi-check' : 'mdi-play'"
+                              size="16"
+                              class="mr-1"
+                            />
+                            {{
+                              roadmap.learning
+                                ? t('roadmapCard.learning')
+                                : t('roadmapCard.startLearning')
+                            }}
+                          </v-btn>
+                          <v-btn
+                            color="grey-darken-2"
+                            variant="tonal"
+                            size="small"
+                            rounded="lg"
+                            @click="handleCopy(roadmap)"
+                          >
+                            <v-icon icon="mdi-content-copy" size="16" class="mr-1" />
+                            {{ t('roadmapCard.copyToEditor') }}
+                          </v-btn>
+                        </div>
+                      </div>
                     </div>
-
-                    <!-- 描述 -->
-                    <div class="text-body-1 text-grey-darken-4 mb-2">
-                      {{ roadmap.description }}
-                    </div>
-
-                    <!-- 详细描述 -->
-                    <p class="text-body-2 text-grey-darken-2 mb-3">
-                      {{ roadmap.detail }}
-                    </p>
-
-                    <!-- 统计信息 -->
-                    <div class="d-flex flex-wrap align-center gap-4 gap-sm-6 gap-md-8 mb-3">
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-account" size="16" color="grey" class="mr-2" />
-                        <span class="text-caption text-grey-darken-2">
-                        {{ roadmap.creator?.name || t('roadmapCard.unknownUser') }}
-                        </span>
-                      </div>
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-account-group" size="16" color="grey" class="mr-2" />
-                        <span class="text-caption text-grey-darken-2">
-                          {{ roadmap.learnerCount ?? 0 }}
-                          <span class="d-none d-sm-inline">{{ t('roadmapCard.learners') }}</span>
-                        </span>
-                      </div>
-                      <div class="d-flex align-center d-none d-sm-flex">
-                        <v-icon icon="mdi-comment-outline" size="16" color="grey" class="mr-2" />
-                        <span class="text-caption text-grey-darken-2">
-                          {{ roadmap.commentCount ?? 0 }} {{ t('roleDetail.comments') }}
-                        </span>
-                      </div>
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-circle-medium" size="16" color="grey" class="mr-2" />
-                        <span class="text-caption text-grey-darken-2">
-                          {{ roadmap.nodeCount }}
-                          <span class="d-none d-sm-inline">{{ t('roleDetail.nodeCountUnit') }}</span>{{ t('roadmap.nodes') }}
-                        </span>
-                      </div>
-                      <div class="d-flex align-center d-none d-md-flex">
-                        <v-icon icon="mdi-clock-outline" size="16" color="grey" class="mr-2" />
-                        <span class="text-caption text-grey-darken-2">
-                          {{ getTimeDisplay(roadmap.createdAt) }}
-                        </span>
-                      </div>
-                    </div>
-                      </div>
-
-                      <!-- 右侧：路线图图标 -->
-                      <div class="ml-3 ml-sm-4 d-none d-sm-block roadmap-icon">
-                        <v-icon
-                          icon="mdi-graph-outline"
-                          :size="$vuetify.display.mdAndUp ? 80 : 60"
-                          color="grey-lighten-2"
-                        />
-                      </div>
-                    </div>
-
-                    <!-- 操作按钮区域（独立，不触发跳转） -->
-                    <div class="d-flex align-center gap-3 mt-3">
-                    <v-btn
-                      :color="roadmap.learning ? 'success' : 'primary'"
-                      :variant="roadmap.learning ? 'outlined' : 'flat'"
-                      size="small"
-                      rounded="lg"
-                      @click="handleStartLearning(roadmap)"
-                    >
-                      <v-icon
-                        :icon="roadmap.learning ? 'mdi-check' : 'mdi-play'"
-                        size="16"
-                        class="mr-1"
-                      />
-                      {{ roadmap.learning ? t('roadmapCard.learning') : t('roadmapCard.startLearning') }}
-                    </v-btn>
-                    <v-btn
-                      color="grey-darken-2"
-                      variant="tonal"
-                      size="small"
-                      rounded="lg"
-                      @click="handleCopy(roadmap)"
-                    >
-                      <v-icon icon="mdi-content-copy" size="16" class="mr-1" />
-                      {{ t('roadmapCard.copyToEditor') }}
-                    </v-btn>
-                  </div>
-                </div>
-              </div>
-              </v-card-text>
-            </v-card>
+                  </v-card-text>
+                </v-card>
               </template>
 
               <!-- 自定义底部提示 -->
@@ -327,31 +370,67 @@
                     {{ t('roleDetail.howToUse') }}
                   </h3>
                   <div class="d-flex align-start mb-2">
-                    <v-icon icon="mdi-numeric-1-circle" size="20" color="primary" class="mr-2 mt-1" />
+                    <v-icon
+                      icon="mdi-numeric-1-circle"
+                      size="20"
+                      color="primary"
+                      class="mr-2 mt-1"
+                    />
                     <div>
-                      <p class="text-body-2 font-weight-medium text-grey-darken-3">{{ t('roleDetail.howToStep1') }}</p>
-                      <p class="text-caption text-grey-darken-1">{{ t('roleDetail.howToStep1Desc') }}</p>
+                      <p class="text-body-2 font-weight-medium text-grey-darken-3">
+                        {{ t('roleDetail.howToStep1') }}
+                      </p>
+                      <p class="text-caption text-grey-darken-1">
+                        {{ t('roleDetail.howToStep1Desc') }}
+                      </p>
                     </div>
                   </div>
                   <div class="d-flex align-start mb-2">
-                    <v-icon icon="mdi-numeric-2-circle" size="20" color="primary" class="mr-2 mt-1" />
+                    <v-icon
+                      icon="mdi-numeric-2-circle"
+                      size="20"
+                      color="primary"
+                      class="mr-2 mt-1"
+                    />
                     <div>
-                      <p class="text-body-2 font-weight-medium text-grey-darken-3">{{ t('roleDetail.howToStep2') }}</p>
-                      <p class="text-caption text-grey-darken-1">{{ t('roleDetail.howToStep2Desc') }}</p>
+                      <p class="text-body-2 font-weight-medium text-grey-darken-3">
+                        {{ t('roleDetail.howToStep2') }}
+                      </p>
+                      <p class="text-caption text-grey-darken-1">
+                        {{ t('roleDetail.howToStep2Desc') }}
+                      </p>
                     </div>
                   </div>
                   <div class="d-flex align-start mb-2">
-                    <v-icon icon="mdi-numeric-3-circle" size="20" color="primary" class="mr-2 mt-1" />
+                    <v-icon
+                      icon="mdi-numeric-3-circle"
+                      size="20"
+                      color="primary"
+                      class="mr-2 mt-1"
+                    />
                     <div>
-                      <p class="text-body-2 font-weight-medium text-grey-darken-3">{{ t('roleDetail.howToStep3') }}</p>
-                      <p class="text-caption text-grey-darken-1">{{ t('roleDetail.howToStep3Desc') }}</p>
+                      <p class="text-body-2 font-weight-medium text-grey-darken-3">
+                        {{ t('roleDetail.howToStep3') }}
+                      </p>
+                      <p class="text-caption text-grey-darken-1">
+                        {{ t('roleDetail.howToStep3Desc') }}
+                      </p>
                     </div>
                   </div>
                   <div class="d-flex align-start">
-                    <v-icon icon="mdi-numeric-4-circle" size="20" color="primary" class="mr-2 mt-1" />
+                    <v-icon
+                      icon="mdi-numeric-4-circle"
+                      size="20"
+                      color="primary"
+                      class="mr-2 mt-1"
+                    />
                     <div>
-                      <p class="text-body-2 font-weight-medium text-grey-darken-3">{{ t('roleDetail.howToStep4') }}</p>
-                      <p class="text-caption text-grey-darken-1">{{ t('roleDetail.howToStep4Desc') }}</p>
+                      <p class="text-body-2 font-weight-medium text-grey-darken-3">
+                        {{ t('roleDetail.howToStep4') }}
+                      </p>
+                      <p class="text-caption text-grey-darken-1">
+                        {{ t('roleDetail.howToStep4Desc') }}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -367,7 +446,13 @@
                   <p class="text-body-2 text-grey-darken-2 mb-3">
                     {{ t('roleDetail.createYourRoadmapDesc') }}
                   </p>
-                  <v-btn color="primary" variant="flat" block rounded="lg" @click="handleCreateRoadmap">
+                  <v-btn
+                    color="primary"
+                    variant="flat"
+                    block
+                    rounded="lg"
+                    @click="handleCreateRoadmap"
+                  >
                     <v-icon icon="mdi-plus" size="18" class="mr-1" />
                     {{ t('roleDetail.createNew') }}
                   </v-btn>
@@ -444,7 +529,11 @@ const {
   reset: resetRoadmaps,
 } = useInfiniteScroll({
   fetchFn: async (params) => {
-    const response = await roadmapApi.getProfessionRoadmaps(roleId.value, params.lastId, sortBy.value)
+    const response = await roadmapApi.getProfessionRoadmaps(
+      roleId.value,
+      params.lastId,
+      sortBy.value
+    )
     return {
       code: response.code,
       data: response.data || [],
@@ -590,9 +679,11 @@ const { execute: toggleUpvote } = useMutation(
   { showToast: false }
 )
 
-const handleVote = async (
-  roadmap: { id: number; liked: boolean; likeCount: number }
-): Promise<void> => {
+const handleVote = async (roadmap: {
+  id: number
+  liked: boolean
+  likeCount: number
+}): Promise<void> => {
   console.log('[点赞前] roadmap:', roadmap.id, 'likeCount:', roadmap.likeCount)
   const result = await toggleUpvote({ roadmapId: roadmap.id })
   console.log('[点赞后] result:', result)

@@ -91,7 +91,10 @@ export const pageApi = {
    * 仅返回 PostDetailPage 需要的数据，不包含 TOC 和帖子列表
    * 支持通过 postId 或 commentId 定位
    */
-  readPostDetail(params: { postId?: number; commentId?: number }): Promise<ApiResponse<ReadResponse>> {
+  readPostDetail(params: {
+    postId?: number
+    commentId?: number
+  }): Promise<ApiResponse<ReadResponse>> {
     return apiClient.get('/v1/pages/post', {
       params,
     })

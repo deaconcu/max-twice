@@ -7,8 +7,8 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
-import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDO;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.learning.enrollment.UserLearningDO;
@@ -64,7 +64,7 @@ public class ProgressControllerTest extends BaseControllerTest {
     private UserLearningDataService userLearningDataService;
 
     @Autowired
-    private ProfessionDataService professionDataService;
+    private RoleDataService roleDataService;
 
     @Autowired
     private RoadmapDataService roadmapDataService;
@@ -137,8 +137,8 @@ public class ProgressControllerTest extends BaseControllerTest {
     /**
      * 创建测试专业（简化版-直接插入数据库）
      */
-    private ProfessionDO createProfession(String name) {
-        ProfessionDO profession = new ProfessionDO();
+    private RoleDO createProfession(String name) {
+        RoleDO profession = new RoleDO();
         profession.setName(name);
         profession.setDescription("测试专业");
         profession.setCreatorId(1L);
@@ -147,7 +147,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         profession.setSkills("");
         profession.setMainCategory(1);
         profession.setSubCategory(1);
-        professionDataService.insert(profession);
+        roleDataService.insert(profession);
         return profession;
     }
 
@@ -162,7 +162,7 @@ public class ProgressControllerTest extends BaseControllerTest {
                 .collect(Collectors.joining(",", "[", "]")));
 
         RoadmapDO roadmap = new RoadmapDO();
-        roadmap.setProfessionId(professionId);
+        roadmap.setRoleId(professionId);
         roadmap.setContent(content);
         roadmap.setContentHash(String.valueOf(content.hashCode()));
         roadmap.setDescription("测试路线图");
@@ -624,7 +624,7 @@ public class ProgressControllerTest extends BaseControllerTest {
     void testStartRoadmap_Success() throws Exception {
         // 准备数据
         UserDO user = createUser("user20@test.com");
-        ProfessionDO profession = createProfession("后端开发");
+        RoleDO profession = createProfession("后端开发");
         RoadmapDO roadmap = createRoadmap(profession.getId(), 10);
         String token = generateToken(user.getId());
 
@@ -647,7 +647,7 @@ public class ProgressControllerTest extends BaseControllerTest {
     void testStartRoadmap_AlreadyStarted() throws Exception {
         // 准备数据
         UserDO user = createUser("user21@test.com");
-        ProfessionDO profession = createProfession("前端开发");
+        RoleDO profession = createProfession("前端开发");
         RoadmapDO roadmap = createRoadmap(profession.getId(), 8);
         String token = generateToken(user.getId());
 
@@ -668,7 +668,7 @@ public class ProgressControllerTest extends BaseControllerTest {
     void testCancelRoadmap_Success() throws Exception {
         // 准备数据
         UserDO user = createUser("user22@test.com");
-        ProfessionDO profession = createProfession("数据科学");
+        RoleDO profession = createProfession("数据科学");
         RoadmapDO roadmap = createRoadmap(profession.getId(), 12);
         String token = generateToken(user.getId());
 
@@ -694,7 +694,7 @@ public class ProgressControllerTest extends BaseControllerTest {
     void testCancelRoadmap_NotStarted() throws Exception {
         // 准备数据
         UserDO user = createUser("user23@test.com");
-        ProfessionDO profession = createProfession("移动开发");
+        RoleDO profession = createProfession("移动开发");
         RoadmapDO roadmap = createRoadmap(profession.getId(), 9);
         String token = generateToken(user.getId());
 
@@ -710,7 +710,7 @@ public class ProgressControllerTest extends BaseControllerTest {
     void testGetRoadmapProgress_Success() throws Exception {
         // 准备数据
         UserDO user = createUser("user24@test.com");
-        ProfessionDO profession = createProfession("网络安全");
+        RoleDO profession = createProfession("网络安全");
         RoadmapDO roadmap = createRoadmap(profession.getId(), 16);
         String token = generateToken(user.getId());
 
@@ -734,7 +734,7 @@ public class ProgressControllerTest extends BaseControllerTest {
     void testGetRoadmapProgress_NotFound() throws Exception {
         // 准备数据
         UserDO user = createUser("user25@test.com");
-        ProfessionDO profession = createProfession("DevOps");
+        RoleDO profession = createProfession("DevOps");
         RoadmapDO roadmap = createRoadmap(profession.getId(), 14);
         String token = generateToken(user.getId());
 
@@ -750,8 +750,8 @@ public class ProgressControllerTest extends BaseControllerTest {
     void testGetAllRoadmapsProgress_Multiple() throws Exception {
         // 准备数据
         UserDO user = createUser("user26@test.com");
-        ProfessionDO profession1 = createProfession("后端");
-        ProfessionDO profession2 = createProfession("前端");
+        RoleDO profession1 = createProfession("后端");
+        RoleDO profession2 = createProfession("前端");
         RoadmapDO roadmap1 = createRoadmap(profession1.getId(), 10);
         RoadmapDO roadmap2 = createRoadmap(profession2.getId(), 8);
         String token = generateToken(user.getId());
@@ -808,7 +808,7 @@ public class ProgressControllerTest extends BaseControllerTest {
     void testUpdateRoadmapProgress_Success() throws Exception {
         // 准备数据
         UserDO user = createUser("user28@test.com");
-        ProfessionDO profession = createProfession("云计算");
+        RoleDO profession = createProfession("云计算");
         RoadmapDO roadmap = createRoadmap(profession.getId(), 15);
         String token = generateToken(user.getId());
 
@@ -836,7 +836,7 @@ public class ProgressControllerTest extends BaseControllerTest {
     void testUpdateRoadmapProgress_Complete() throws Exception {
         // 准备数据
         UserDO user = createUser("user29@test.com");
-        ProfessionDO profession = createProfession("人工智能");
+        RoleDO profession = createProfession("人工智能");
         RoadmapDO roadmap = createRoadmap(profession.getId(), 20);
         String token = generateToken(user.getId());
 
@@ -868,7 +868,7 @@ public class ProgressControllerTest extends BaseControllerTest {
     void testUpdateRoadmapProgress_NotFound() throws Exception {
         // 准备数据
         UserDO user = createUser("user30@test.com");
-        ProfessionDO profession = createProfession("区块链");
+        RoleDO profession = createProfession("区块链");
         RoadmapDO roadmap = createRoadmap(profession.getId(), 10);
         String token = generateToken(user.getId());
 
@@ -887,7 +887,7 @@ public class ProgressControllerTest extends BaseControllerTest {
     void testUpdateRoadmapProgress_InvalidProgressPercent() throws Exception {
         // 准备数据
         UserDO user = createUser("user31@test.com");
-        ProfessionDO profession = createProfession("游戏开发");
+        RoleDO profession = createProfession("游戏开发");
         RoadmapDO roadmap = createRoadmap(profession.getId(), 18);
         String token = generateToken(user.getId());
 

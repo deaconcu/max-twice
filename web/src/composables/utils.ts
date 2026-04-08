@@ -1,4 +1,4 @@
-import { globalConfig } from './config'
+import { globalConfig, getDefaultErrorMessage } from './config'
 import type { ApiResponse } from './types'
 
 type ShowSnackbarFn = (message: string, type: string) => void
@@ -100,7 +100,7 @@ export async function handleApiCall<T>(
       }
 
       // 默认错误处理
-      const message = response.message ?? options.errorMessage ?? globalConfig.defaultErrorMessage
+      const message = response.message ?? options.errorMessage ?? getDefaultErrorMessage()
 
       if (globalConfig.showErrorToast && options.showToast !== false) {
         showSnackbar?.(message, 'error')
@@ -117,7 +117,7 @@ export async function handleApiCall<T>(
       throw err
     }
 
-    const message = options.errorMessage ?? globalConfig.defaultErrorMessage
+    const message = options.errorMessage ?? getDefaultErrorMessage()
     if (globalConfig.showErrorToast && options.showToast !== false) {
       showSnackbar?.(message, 'error')
     }

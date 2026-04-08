@@ -45,20 +45,20 @@
 import { computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { getColorByString } from '@/utils/color'
-import type { Profession } from '@/types/profession'
+import type { Role } from '@/types/role'
 
 interface Props {
-  role: Profession
+  role: Role
 }
 
-type Emits = (e: 'click', role: Profession) => void
+type Emits = (e: 'click', role: Role) => void
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
 
 /**
- * 获取职业图标
+ * 获取角色图标
  */
 const getRoleIcon = () => {
   return props.role.icon || 'mdi-briefcase-outline'

@@ -111,15 +111,15 @@ public class ValidationConfigService {
                 .build());
 
         // 职业相关
-        rules.put("profession-name", ValidationRuleDTO.builder()
-                .minLength(validation.getProfessionNameMinLength())
-                .maxLength(validation.getProfessionNameMaxLength())
+        rules.put("role-name", ValidationRuleDTO.builder()
+                .minLength(validation.getRoleNameMinLength())
+                .maxLength(validation.getRoleNameMaxLength())
                 .label("职业名称")
                 .build());
 
-        rules.put("profession-description", ValidationRuleDTO.builder()
-                .minLength(validation.getProfessionDescriptionMinLength())
-                .maxLength(validation.getProfessionDescriptionMaxLength())
+        rules.put("role-description", ValidationRuleDTO.builder()
+                .minLength(validation.getRoleDescriptionMinLength())
+                .maxLength(validation.getRoleDescriptionMaxLength())
                 .label("职业描述")
                 .build());
 

@@ -28,7 +28,21 @@
   "site": {
     "name": "Max Twice!",
     "slogan": "Learn most content on this site in at most two views, preferably once",
-    "about": "Why does this website exist?"
+    "about": "Why does this website exist?",
+    "rightsDeclaration": [
+      "The right to learn knowledge without getting into a prestigious university",
+      "The right to prove yourself through ability, not defined by credentials",
+      "The right to freely explore interests, unbounded by traditional education",
+      "The right to learn from anyone, regardless of their background",
+      "The right to start over after failure, not limited by past mistakes",
+      "The right to question authority, think independently and express opinions",
+      "The right to learn at your own pace, not judged by standardized tests",
+      "The right to receive honest feedback and grow through practice",
+      "The right to choose non-traditional paths, pursuing passion over profit",
+      "The right to believe in lifelong learning, it's never too late"
+    ],
+    "missionIntro": "Together with you, we strive to achieve:",
+    "missionQuote": "Any knowledge point here can be understood in just two reads"
   },
   "home": {
     "welcome": "Welcome to Max Twice",
@@ -140,9 +154,21 @@
     "settings": "Settings",
     "search": "Search",
     "searchPlaceholder": "Search courses, roles, articles...",
+    "searchPlaceholderFull": "Search courses, nodes, users, roles...",
+    "searching": "Searching...",
+    "noResults": "No results found",
+    "tryOtherKeywords": "Try other keywords",
+    "foundResults": "Found about {count} results",
+    "professions": "Roles",
+    "nodes": "Nodes",
+    "users": "Users",
+    "noMoreResults": "No more results",
+    "enterKeywords": "Enter keywords to search",
+    "searchHint": "Search users, roles, courses or nodes",
     "submit": "Submit",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "confirmAction": "Are you sure you want to perform this action?",
     "save": "Save",
     "edit": "Edit",
     "delete": "Delete",
@@ -172,7 +198,11 @@
     "notFound": "The content you are looking for does not exist or has been deleted",
     "inDevelopment": "Feature coming soon...",
     "viewAll": "View All",
-    "reachedEnd": "You've reached the end"
+    "reachedEnd": "You've reached the end",
+    "previewImage": "Preview image",
+    "user": "User",
+    "redirecting": "Redirecting...",
+    "all": "All"
   },
   "notification": {
     "title": "Notifications",
@@ -255,7 +285,33 @@
   },
   "error": {
     "loadFailed": "Load failed",
-    "operationFailed": "Operation failed"
+    "operationFailed": "Operation failed",
+    "pleaseLogin": "Please login first",
+    "noPermission": "Access denied",
+    "serverError": "Server error, please try again later",
+    "contentUnavailable": "This content is temporarily unavailable",
+    "retryLater": "Operation failed, please try again",
+    "networkError": "Network error: Unable to connect to server",
+    "1309": {
+      "title": "Content Temporarily Unavailable",
+      "message": "This content is temporarily unavailable"
+    },
+    "403": {
+      "title": "Access Denied",
+      "message": "You do not have permission to access this page"
+    },
+    "404": {
+      "title": "Page Not Found",
+      "message": "The page you are looking for does not exist"
+    },
+    "500": {
+      "title": "Server Error",
+      "message": "A server error occurred, please try again later"
+    },
+    "default": {
+      "title": "Error",
+      "message": "An unknown error occurred"
+    }
   },
   "nav": {
     "home": "Home",
@@ -395,15 +451,41 @@
       "captchaTooManyFailed": "Too many failed login attempts, please complete the captcha"
     },
     "register": {
-      "title": "Welcome to Join",
-      "subtitle": "Create your learning account",
+      "title": "Register",
+      "subtitle": "Start your learning journey",
       "instructions": "Please fill in the basic information to complete registration",
       "username": "Username",
       "email": "Email Address",
       "password": "Password",
       "confirmPassword": "Confirm Password",
       "registerButton": "Register",
-      "loginLink": "Already have an account? Login"
+      "registering": "Registering...",
+      "loginLink": "Already have an account?",
+      "loginNow": "Login now",
+      "registerSuccess": "Registration successful!",
+      "registerFailed": "Registration failed",
+      "captchaLoadFailed": "Captcha failed to load, please refresh the page",
+      "captchaRequired": "Please complete the captcha verification"
+    },
+    "verifyEmail": {
+      "title": "Verify Email",
+      "subtitle": "Please enter the verification code sent to your email",
+      "codeSentTo": "Verification code sent to:",
+      "codeLabel": "Verification Code",
+      "codePlaceholder": "Enter 6-digit verification code",
+      "verifyButton": "Verify Email",
+      "verifying": "Verifying...",
+      "resendButton": "Resend Code",
+      "resendCountdown": "Resend ({seconds}s)",
+      "alreadyVerified": "Already verified?",
+      "loginNow": "Login now",
+      "emailInvalid": "Invalid email address",
+      "verifySuccess": "Email verified successfully!",
+      "verifyFailed": "Verification failed",
+      "verifyFailedRetry": "Verification failed, please try again",
+      "codeSent": "Verification code sent, please check your email",
+      "sendFailed": "Failed to send, please try again later",
+      "emailInvalidRedirect": "Invalid email address, please register again"
     },
     "profile": {
       "title": "Profile",
@@ -469,7 +551,33 @@
         "avatarTypeError": "Only JPG, PNG, WebP formats are supported",
         "avatarSizeError": "Image size cannot exceed 5MB",
         "avatarUploadFailed": "Avatar upload failed",
-        "avatarUpdateSuccess": "Avatar updated successfully"
+        "avatarUpdateSuccess": "Avatar updated successfully",
+        "timezones": {
+          "datelineWest": "(UTC-12:00) International Date Line West",
+          "midway": "(UTC-11:00) Midway Island",
+          "hawaii": "(UTC-10:00) Hawaii",
+          "alaska": "(UTC-09:00) Alaska",
+          "pacific": "(UTC-08:00) Pacific Time (US & Canada)",
+          "mountain": "(UTC-07:00) Mountain Time (US & Canada)",
+          "central": "(UTC-06:00) Central Time (US & Canada)",
+          "eastern": "(UTC-05:00) Eastern Time (US & Canada)",
+          "atlantic": "(UTC-04:00) Atlantic Time (Canada)",
+          "brasilia": "(UTC-03:00) Brasilia",
+          "london": "(UTC+00:00) London, Dublin",
+          "paris": "(UTC+01:00) Paris, Berlin, Rome",
+          "athens": "(UTC+02:00) Cairo, Athens",
+          "moscow": "(UTC+03:00) Moscow, Istanbul",
+          "dubai": "(UTC+04:00) Dubai",
+          "karachi": "(UTC+05:00) Karachi",
+          "kolkata": "(UTC+05:30) Mumbai, New Delhi",
+          "dhaka": "(UTC+06:00) Dhaka",
+          "bangkok": "(UTC+07:00) Bangkok, Hanoi",
+          "shanghai": "(UTC+08:00) Beijing, Shanghai, Hong Kong, Taipei",
+          "singapore": "(UTC+08:00) Singapore",
+          "tokyo": "(UTC+09:00) Tokyo, Seoul",
+          "sydney": "(UTC+10:00) Sydney, Melbourne",
+          "auckland": "(UTC+12:00) Auckland"
+        }
       },
       "creatorStats": {
         "overview": "Creator Statistics Overview",
@@ -590,6 +698,7 @@
     "noSubCourses": "No subcourses yet",
     "applySubCourse": "Apply for Subcourse",
     "applySubCourseHint": "Click the button above to apply for adding subcourses",
+    "applyShort": "Apply",
     "learning": "Learning",
     "related": "Related Courses",
     "loadError": "Failed to load course",
@@ -614,7 +723,17 @@
     "learnersSuffix": "learners",
     "subCoursesCount": "{count} sub-courses",
     "learn": "Learn",
-    "clickToExit": "Click to exit learning"
+    "clickToExit": "Click to exit learning",
+    "subtitle": "Explore knowledge, achieve the future",
+    "noCoursesFound": "No courses found",
+    "tryOtherKeywords": "Please try other keywords",
+    "viewAllCourses": "View all courses",
+    "shareKnowledge": "Share your knowledge and experience",
+    "all": "All",
+    "createSuccess": "Course created successfully",
+    "applySuccess": "Application submitted, pending review",
+    "nodeMarkedComplete": "Node marked as complete",
+    "nodeUnmarkedComplete": "Node unmarked as complete"
   },
   "treeNode": {
     "node": "Node"
@@ -819,6 +938,12 @@
       "operationFailed": "Operation failed, please try again later",
       "startLearningSuccess": "Started learning successfully!",
       "stopLearningSuccess": "Stopped learning"
+    },
+    "toc": {
+      "enableNavigation": "Enable TOC Navigation",
+      "selectCatalog": "Select a catalog post from the article list to enable table of contents navigation",
+      "gotIt": "Got it",
+      "courseToc": "Course Table of Contents"
     }
   },
   "roleCenter": {
@@ -832,7 +957,8 @@
     "search": {
       "placeholder": "Search for roles, skills or companies you're interested in...",
       "button": "Search",
-      "applyJob": "Apply to Add Role"
+      "applyJob": "Apply to Add Role",
+      "applyJobHint": "Apply to add a new role direction"
     },
     "category": {
       "title": "Role Field Filter",
@@ -1187,7 +1313,18 @@
       "emptyRoadmap": "Roadmap cannot be empty",
       "circularDependency": "Roadmap contains circular dependencies, cannot form tree structure",
       "disconnectedGraph": "Roadmap is not connected, contains isolated nodes or subgraphs"
-    }
+    },
+    "format": {
+      "email": "Please enter a valid email address",
+      "phone": "Please enter a valid phone number",
+      "verificationCode": "Please enter a 6-digit verification code",
+      "passwordMismatch": "Passwords do not match",
+      "username": "Username can only contain letters, numbers and underscores"
+    },
+    "fieldLabel": "Field",
+    "cannotBeEmpty": "{label} cannot be empty",
+    "minLength": "{label} must be at least {min} characters",
+    "maxLength": "{label} cannot exceed {max} characters"
   },
   "message": {
     "center": "Message Center",
@@ -1618,6 +1755,8 @@
       "deleteColumn": "Delete Column",
       "deleteTable": "Delete Table"
     },
+    "mermaidPlaceholder": "Enter Mermaid code...",
+    "mathPlaceholder": "Enter formula...",
     "placeholder": "Enter your content here..."
   },
   "userCard": {
@@ -1741,5 +1880,21 @@
     "pending": "Pending",
     "approved": "Approved",
     "rejected": "Rejected"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{n} minutes ago",
+    "hoursAgo": "{n} hours ago",
+    "daysAgo": "{n} days ago",
+    "monthsAgo": "{n} months ago",
+    "yearsAgo": "{n} years ago"
+  },
+  "intro": {
+    "mainSlogan": "Life has no manual,<br />let's write one together.",
+    "subSlogan": "Become who you want to be by learning what you need.",
+    "brandMeaning": "— Master any concept in at most two reads"
+  },
+  "chart": {
+    "preview": "Chart Preview"
   }
 }

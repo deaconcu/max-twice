@@ -38,11 +38,11 @@ public class ContentApprovedEvent {
     /** 节点ID（post 类型使用）*/
     private Long nodeId;
 
-    /** 职业名称（profession/roadmap 类型使用）*/
-    private String professionName;
+    /** 职业名称（role/roadmap 类型使用）*/
+    private String roleName;
 
     /** 职业ID（roadmap 类型使用）*/
-    private Long professionId;
+    private Long roleId;
 
     /** 帖子ID（memory_card_deck 类型使用）*/
     private Long postId;
@@ -61,13 +61,13 @@ public class ContentApprovedEvent {
 
     // ========== 各类型专用构造函数 ==========
 
-    /** Profession 类型构造函数 */
-    public static ContentApprovedEvent forProfession(Long creatorId, Long professionId, String professionName) {
+    /** role 类型构造函数 */
+    public static ContentApprovedEvent forRole(Long creatorId, Long roleId, String roleName) {
         ContentApprovedEvent event = new ContentApprovedEvent();
         event.creatorId = creatorId;
-        event.contentId = professionId;
-        event.contentType = ContentType.profession;
-        event.professionName = professionName;
+        event.contentId = roleId;
+        event.contentType = ContentType.role;
+        event.roleName = roleName;
         return event;
     }
 
@@ -120,13 +120,13 @@ public class ContentApprovedEvent {
     }
 
     /** Roadmap 类型构造函数 */
-    public static ContentApprovedEvent forRoadmap(Long creatorId, Long roadmapId, Long professionId, String professionName) {
+    public static ContentApprovedEvent forRoadmap(Long creatorId, Long roadmapId, Long roleId, String roleName) {
         ContentApprovedEvent event = new ContentApprovedEvent();
         event.creatorId = creatorId;
         event.contentId = roadmapId;
         event.contentType = ContentType.roadmap;
-        event.professionId = professionId;
-        event.professionName = professionName;
+        event.roleId = roleId;
+        event.roleName = roleName;
         return event;
     }
 

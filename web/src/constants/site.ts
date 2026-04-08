@@ -1,7 +1,14 @@
+import i18n from '@/i18n'
+
 /**
- * 网站权利宣言常量
+ * 获取网站权利宣言
  * 用于登录/注册页面的轮播展示
  */
+export function getRightsDeclaration(): readonly string[] {
+  return i18n.global.t('site.rightsDeclaration') as unknown as readonly string[]
+}
+
+// 保留兼容性导出（静态数组，用于不支持动态语言切换的场景）
 export const RIGHTS_DECLARATION = [
   '没有考上好的大学仍有学习知识的权利',
   '不被学历和出身定义，用能力证明自己的权利',
@@ -16,7 +23,17 @@ export const RIGHTS_DECLARATION = [
 ] as const
 
 /**
- * 网站使命宣言
+ * 获取网站使命宣言
+ */
+export function getMissionStatement() {
+  return {
+    intro: i18n.global.t('site.missionIntro'),
+    quote: i18n.global.t('site.missionQuote'),
+  }
+}
+
+/**
+ * 网站使命宣言（静态版本）
  */
 export const MISSION_STATEMENT = {
   intro: '我们想和您一起，努力做到：',

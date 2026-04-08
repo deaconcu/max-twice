@@ -12,16 +12,16 @@ import { useFetch } from '@/composables'
 import { useUserStore } from '@/stores/modules/user'
 import type { HeatmapData } from '@/types/stats'
 
+const props = withDefaults(defineProps<Props>(), {
+  months: 12,
+})
+
 const { t, locale } = useI18n()
 
 interface Props {
   userId?: number // 用户ID，不传则使用当前登录用户
   months?: number // 显示几个月，默认12个月
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  months: 12,
-})
 
 const userStore = useUserStore()
 
@@ -170,7 +170,7 @@ const monthLabels = computed(() => {
 
   weeklyData.value.forEach((week, weekIndex) => {
     const firstValidDay = week.find((d) => d.date)
-    if (firstValidDay && firstValidDay.date) {
+    if (firstValidDay?.date) {
       const date = new Date(firstValidDay.date)
       const month = date.toLocaleDateString(dateLocale, { month: 'short' })
       if (month !== lastMonth) {
@@ -219,12 +219,20 @@ const formatValue = (day: DayData): string => {
   const parts: string[] = []
   if (day.completedNodes > 0 || day.cancelCompletedNodes > 0) {
     const net = day.completedNodes - day.cancelCompletedNodes
-    parts.push(t('user.profile.heatmap.completedNodes', { net, completed: day.completedNodes, cancelled: day.cancelCompletedNodes }))
+    parts.push(
+      t('user.profile.heatmap.completedNodes', {
+        net,
+        completed: day.completedNodes,
+        cancelled: day.cancelCompletedNodes,
+      })
+    )
   }
   if (day.reviewedCards > 0) {
     parts.push(t('user.profile.heatmap.reviewedCards', { count: day.reviewedCards }))
   }
-  return parts.length > 0 ? parts.join(locale.value === 'zh' ? '，' : ', ') : t('user.profile.heatmap.noActivity')
+  return parts.length > 0
+    ? parts.join(locale.value === 'zh' ? '，' : ', ')
+    : t('user.profile.heatmap.noActivity')
 }
 </script>
 
@@ -265,11 +273,7 @@ const formatValue = (day: DayData): string => {
             :disabled="day.value < 0 || !day.hasData"
           >
             <template #activator="{ props: tooltipProps }">
-              <div
-                v-bind="tooltipProps"
-                class="heatmap-cell"
-                :class="getColorLevel(day)"
-              />
+              <div v-bind="tooltipProps" class="heatmap-cell" :class="getColorLevel(day)" />
             </template>
             <div class="tooltip-content">
               <div class="tooltip-date">{{ formatDate(day.date) }}</div>
@@ -284,7 +288,12 @@ const formatValue = (day: DayData): string => {
     <div class="heatmap-footer">
       <div class="heatmap-summary">
         <span class="text-caption text-grey">
-          {{ t('user.profile.heatmap.yearSummary', { nodes: totalCompletedNodes, cards: totalReviewedCards.toLocaleString() }) }}
+          {{
+            t('user.profile.heatmap.yearSummary', {
+              nodes: totalCompletedNodes,
+              cards: totalReviewedCards.toLocaleString(),
+            })
+          }}
         </span>
       </div>
       <div class="heatmap-legend">

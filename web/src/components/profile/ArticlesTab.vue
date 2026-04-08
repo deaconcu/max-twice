@@ -51,151 +51,175 @@
     <LoadingSpinner v-if="loading && filteredArticles.length === 0" />
 
     <!-- 文章列表 -->
-    <v-infinite-scroll v-if="filteredArticles.length > 0" :items="filteredArticles" @load="onLoadMore">
+    <v-infinite-scroll
+      v-if="filteredArticles.length > 0"
+      :items="filteredArticles"
+      @load="onLoadMore"
+    >
       <div v-for="(article, index) in filteredArticles" :key="article.id">
-            <v-card
-              rounded="lg"
-              hover
-              border
-              class="article-card mb-5"
-              @click="goToArticle(article)"
-            >
-              <v-card-text class="pa-4 pb-2">
-                <!-- 顶部：课程 > 节点 + 状态 -->
-                <div class="d-flex align-center justify-space-between mb-3">
-                  <!-- 左侧：课程和节点路径 -->
-                  <div class="d-flex align-center text-body-2 text-medium-emphasis" style="min-width: 0">
-                    <span v-if="article.course" class="text-truncate" @click.stop="goToCourse(article.courseId)" style="cursor: pointer">
-                      {{ article.course }}
-                    </span>
-                    <v-icon v-if="article.course && article.node" icon="mdi-chevron-right" size="16" class="mx-1 flex-shrink-0" />
-                    <span v-if="article.node" class="text-truncate" @click.stop="goToNode(article.nodeId)" style="cursor: pointer">
-                      {{ article.node.name }}
-                    </span>
-                  </div>
-
-                  <!-- 右侧：状态标签 -->
-                  <v-chip
-                    v-if="article.state === 0"
-                    size="x-small"
-                    color="grey"
-                    variant="tonal"
-                    class="flex-shrink-0 ml-2"
-                  >
-                    {{ t('user.profile.draft') }}
-                  </v-chip>
-                  <v-chip
-                    v-else-if="article.state === 1"
-                    size="x-small"
-                    color="warning"
-                    variant="tonal"
-                    class="flex-shrink-0 ml-2"
-                  >
-                    {{ t('admin.pending') }}
-                  </v-chip>
-                  <v-chip
-                    v-else-if="article.state === 2"
-                    size="x-small"
-                    color="success"
-                    variant="tonal"
-                    class="flex-shrink-0 ml-2"
-                  >
-                    {{ t('user.profile.published') }}
-                  </v-chip>
-                  <v-chip
-                    v-else-if="article.state === 3"
-                    size="x-small"
-                    color="error"
-                    variant="tonal"
-                    class="flex-shrink-0 ml-2"
-                  >
-                    {{ t('admin.rejected') }}
-                  </v-chip>
-                  <v-chip
-                    v-else-if="article.state === 4"
-                    size="x-small"
-                    color="error"
-                    variant="tonal"
-                    class="flex-shrink-0 ml-2"
-                  >
-                    {{ t('admin.banned') }}
-                  </v-chip>
-                </div>
-
-                <!-- 文章内容缩略 -->
-                <div
-                  :ref="(el) => setContentRef(el, index)"
-                  class="article-content-preview mb-3"
-                  :class="{ 'has-overflow': article.hasOverflow }"
+        <v-card rounded="lg" hover border class="article-card mb-5" @click="goToArticle(article)">
+          <v-card-text class="pa-4 pb-2">
+            <!-- 顶部：课程 > 节点 + 状态 -->
+            <div class="d-flex align-center justify-space-between mb-3">
+              <!-- 左侧：课程和节点路径 -->
+              <div
+                class="d-flex align-center text-body-2 text-medium-emphasis"
+                style="min-width: 0"
+              >
+                <span
+                  v-if="article.course"
+                  class="text-truncate"
+                  style="cursor: pointer"
+                  @click.stop="goToCourse(article.courseId)"
                 >
-                  <div v-html="article.preview"></div>
-                </div>
+                  {{ article.course }}
+                </span>
+                <v-icon
+                  v-if="article.course && article.node"
+                  icon="mdi-chevron-right"
+                  size="16"
+                  class="mx-1 flex-shrink-0"
+                />
+                <span
+                  v-if="article.node"
+                  class="text-truncate"
+                  style="cursor: pointer"
+                  @click.stop="goToNode(article.nodeId)"
+                >
+                  {{ article.node.name }}
+                </span>
+              </div>
 
-                <!-- 底部：统计信息 + 操作按钮 -->
-                <div class="d-flex align-center justify-space-between">
-                  <div class="d-flex align-center text-caption text-grey" style="gap: 12px">
-                    <span>{{ article.viewCount }} {{ t('userStats.views') }}</span>
-                    <span>{{ article.likeCount }} {{ t('comment.upvote') }}</span>
-                    <span>{{ article.commentCount }} {{ t('notification.comment') }}</span>
-                    <span class="d-none d-sm-inline">{{ formatDate(article.publishedAt) }}</span>
-                  </div>
-                  <div v-if="isOwnProfile" class="d-flex align-center">
-                    <v-btn
-                      color="primary"
-                      variant="text"
-                      size="x-small"
-                      icon="mdi-pencil"
-                      @click.stop="editArticle(article)"
-                    />
-                    <v-btn
-                      color="grey"
-                      variant="text"
-                      size="x-small"
-                      icon="mdi-delete"
-                      @click.stop="deleteArticle(article.id)"
-                    />
-                  </div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </div>
-
-          <template #loading>
-            <div class="text-center py-4">
-              <v-progress-circular indeterminate color="primary" size="32" />
+              <!-- 右侧：状态标签 -->
+              <v-chip
+                v-if="article.state === 0"
+                size="x-small"
+                color="grey"
+                variant="tonal"
+                class="flex-shrink-0 ml-2"
+              >
+                {{ t('user.profile.draft') }}
+              </v-chip>
+              <v-chip
+                v-else-if="article.state === 1"
+                size="x-small"
+                color="warning"
+                variant="tonal"
+                class="flex-shrink-0 ml-2"
+              >
+                {{ t('admin.pending') }}
+              </v-chip>
+              <v-chip
+                v-else-if="article.state === 2"
+                size="x-small"
+                color="success"
+                variant="tonal"
+                class="flex-shrink-0 ml-2"
+              >
+                {{ t('user.profile.published') }}
+              </v-chip>
+              <v-chip
+                v-else-if="article.state === 3"
+                size="x-small"
+                color="error"
+                variant="tonal"
+                class="flex-shrink-0 ml-2"
+              >
+                {{ t('admin.rejected') }}
+              </v-chip>
+              <v-chip
+                v-else-if="article.state === 4"
+                size="x-small"
+                color="error"
+                variant="tonal"
+                class="flex-shrink-0 ml-2"
+              >
+                {{ t('admin.banned') }}
+              </v-chip>
             </div>
-          </template>
 
-          <template #empty>
-            <div class="text-center py-4">
-              <p class="text-body-2 text-grey">{{ t('postingList.reachedEnd') }}</p>
+            <!-- 文章内容缩略 -->
+            <div
+              :ref="(el) => setContentRef(el, index)"
+              class="article-content-preview mb-3"
+              :class="{ 'has-overflow': article.hasOverflow }"
+            >
+              <div v-html="article.preview"></div>
             </div>
-          </template>
-        </v-infinite-scroll>
 
-        <!-- 空状态 -->
-        <div v-else class="text-center py-8 py-md-12">
-          <v-icon
-            icon="mdi-file-document-multiple"
-            :size="$vuetify.display.mobile ? 48 : 64"
-            color="grey-lighten-2"
-            class="mb-3 mb-md-4"
-          />
-          <p class="text-body-2 text-md-body-1 text-grey-darken-2">
-            {{ searchQuery || statusFilter !== 'all' ? t('user.profile.noArticlesFound') : t('user.profile.noArticlesCreated') }}
-          </p>
-          <p class="text-caption text-md-body-2 text-grey">
-            {{ searchQuery || statusFilter !== 'all' ? t('user.profile.adjustFilters') : t('user.profile.shareExperience') }}
-          </p>
+            <!-- 底部：统计信息 + 操作按钮 -->
+            <div class="d-flex align-center justify-space-between">
+              <div class="d-flex align-center text-caption text-grey" style="gap: 12px">
+                <span>{{ article.viewCount }} {{ t('userStats.views') }}</span>
+                <span>{{ article.likeCount }} {{ t('comment.upvote') }}</span>
+                <span>{{ article.commentCount }} {{ t('notification.comment') }}</span>
+                <span class="d-none d-sm-inline">{{ formatDate(article.publishedAt) }}</span>
+              </div>
+              <div v-if="isOwnProfile" class="d-flex align-center">
+                <v-btn
+                  color="primary"
+                  variant="text"
+                  size="x-small"
+                  icon="mdi-pencil"
+                  @click.stop="editArticle(article)"
+                />
+                <v-btn
+                  color="grey"
+                  variant="text"
+                  size="x-small"
+                  icon="mdi-delete"
+                  @click.stop="deleteArticle(article.id)"
+                />
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </div>
+
+      <template #loading>
+        <div class="text-center py-4">
+          <v-progress-circular indeterminate color="primary" size="32" />
         </div>
+      </template>
 
-        <!-- 文章编辑对话框 -->
-        <ArticleEditModal
-          v-model="showEditModal"
-          :article="editingArticle"
-          @success="handleArticleSuccess"
-          @cancel="handleCancelEdit"
-        />
+      <template #empty>
+        <div class="text-center py-4">
+          <p class="text-body-2 text-grey">{{ t('postingList.reachedEnd') }}</p>
+        </div>
+      </template>
+    </v-infinite-scroll>
+
+    <!-- 空状态 -->
+    <div v-else class="text-center py-8 py-md-12">
+      <v-icon
+        icon="mdi-file-document-multiple"
+        :size="$vuetify.display.mobile ? 48 : 64"
+        color="grey-lighten-2"
+        class="mb-3 mb-md-4"
+      />
+      <p class="text-body-2 text-md-body-1 text-grey-darken-2">
+        {{
+          searchQuery || statusFilter !== 'all'
+            ? t('user.profile.noArticlesFound')
+            : t('user.profile.noArticlesCreated')
+        }}
+      </p>
+      <p class="text-caption text-md-body-2 text-grey">
+        {{
+          searchQuery || statusFilter !== 'all'
+            ? t('user.profile.adjustFilters')
+            : t('user.profile.shareExperience')
+        }}
+      </p>
+    </div>
+
+    <!-- 文章编辑对话框 -->
+    <ArticleEditModal
+      v-model="showEditModal"
+      :article="editingArticle"
+      @success="handleArticleSuccess"
+      @cancel="handleCancelEdit"
+    />
 
     <ConfirmDialog
       v-model="showDeleteDialog"
@@ -216,6 +240,11 @@ import { useI18n } from '@/composables/useI18n'
 import { userApi, postApi } from '@/api'
 import { PostType, ContentState } from '@/enums'
 
+const props = withDefaults(defineProps<Props>(), {
+  userId: null,
+  isOwnProfile: false,
+})
+
 const { t, locale } = useI18n()
 
 interface Props {
@@ -223,10 +252,6 @@ interface Props {
   isOwnProfile?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  userId: null,
-  isOwnProfile: false,
-})
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import ArticleEditModal from '@/components/profile/ArticleEditModal.vue'
@@ -397,7 +422,7 @@ const formatDate = (date: string) => {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: false
+    hour12: false,
   })
 }
 
@@ -514,11 +539,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 100px;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgb(var(--v-theme-surface)) 100%
-  );
+  background: linear-gradient(to bottom, transparent 0%, rgb(var(--v-theme-surface)) 100%);
   pointer-events: none;
 }
 

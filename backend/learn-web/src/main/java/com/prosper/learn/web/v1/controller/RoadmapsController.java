@@ -2,17 +2,14 @@ package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.CreateRoadmapRequest;
-import com.prosper.learn.application.dto.request.SetRoadmapProgressRequest;
 import com.prosper.learn.application.dto.request.UpdateRoadmapRequest;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapDetailDTO;
-import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
 import com.prosper.learn.application.service.RoadmapService;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
-import com.prosper.learn.web.v1.annotation.JsonParam;
 import com.prosper.learn.application.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,22 +38,22 @@ public class RoadmapsController {
 
     /**
      * 获取职业路线图
-     * 映射: GET /roadmap/list/{professionId} → GET /api/v1/professions/{professionId}/roadmaps?lastId=123&sortBy=latest
+     * 映射: GET /roadmap/list/{roleId} → GET /api/v1/roles/{roleId}/roadmaps?lastId=123&sortBy=latest
      */
-    @GetMapping("/professions/{professionId}/roadmaps")
+    @GetMapping("/roles/{roleId}/roadmaps")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<List<RoadmapWithStatusDTO>> getRoadmapsByProfession(
+    public ApiResponse<List<RoadmapWithStatusDTO>> getRoadmapsByRole(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
-            Long professionId,
+            Long roleId,
             @RequestParam(required = false)
             Long lastId,
             @RequestParam(required = false, defaultValue = "score")
             String sortBy,
             @CurrentUser UserDO currentUser) {
 
-        List<RoadmapWithStatusDTO> roadmaps = roadmapService.getRoadmapsByProfession(professionId, lastId, sortBy, currentUser);
+        List<RoadmapWithStatusDTO> roadmaps = roadmapService.getRoadmapsByRole(roleId, lastId, sortBy, currentUser);
 
         return ApiResponse.success(roadmaps);
     }
@@ -91,7 +88,7 @@ public class RoadmapsController {
             @CurrentUser UserDO currentUser) {
 
         Long roadmapId = roadmapService.createRoadmap(
-            request.getProfessionId(),
+            request.getRoleId(),
             request.getContent(),
             request.getDescription(),
             currentUser.getId(),

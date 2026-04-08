@@ -249,30 +249,30 @@ GET    /api/v1/messages/unread-count      # 获取未读消息数量
 POST   /api/v1/messages/mark-all-read     # 标记所有消息已读
 ```
 
-### 12. 职业/专业 (Professions)
+### 12. 职业/专业 (Roles)
 ```
-GET    /api/v1/professions                # 获取职业列表
+GET    /api/v1/roles                # 获取职业列表
        ?category=1&subcategory=2&page=0&size=20
-POST   /api/v1/professions                # 创建职业
-GET    /api/v1/professions/{id}           # 获取职业详情
-PUT    /api/v1/professions/{id}           # 修改职业
-DELETE /api/v1/professions/{id}           # 删除职业
+POST   /api/v1/roles                # 创建职业
+GET    /api/v1/roles/{id}           # 获取职业详情
+PUT    /api/v1/roles/{id}           # 修改职业
+DELETE /api/v1/roles/{id}           # 删除职业
 
 # 职业审核
-POST   /api/v1/professions/{id}/approve   # 批准职业
-POST   /api/v1/professions/{id}/reject    # 拒绝职业
+POST   /api/v1/roles/{id}/approve   # 批准职业
+POST   /api/v1/roles/{id}/reject    # 拒绝职业
 ```
 
 ### 13. 学习路线 (Roadmaps)
 ```
 GET    /api/v1/roadmaps                   # 获取路线列表
-       ?professionId=123&page=0&size=20&sort=hot
+       ?roleId=123&page=0&size=20&sort=hot
 POST   /api/v1/roadmaps                   # 创建路线
 GET    /api/v1/roadmaps/{id}              # 获取路线详情
 PUT    /api/v1/roadmaps/{id}              # 修改路线
 DELETE /api/v1/roadmaps/{id}              # 删除路线
 
-GET    /api/v1/professions/{id}/roadmaps  # 获取职业路线
+GET    /api/v1/roles/{id}/roadmaps  # 获取职业路线
 GET    /api/v1/users/{userId}/roadmaps    # 获取用户学习路线
 
 # 用户路线进度
@@ -306,7 +306,7 @@ PUT    /api/v1/admin/config               # 更新系统配置
 
 # 内容审核
 GET    /api/v1/admin/pending-courses      # 待审核课程
-GET    /api/v1/admin/pending-professions  # 待审核职业
+GET    /api/v1/admin/pending-roles  # 待审核职业
 GET    /api/v1/admin/reported-content     # 被举报内容
 
 # 用户管理

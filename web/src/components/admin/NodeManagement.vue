@@ -239,7 +239,11 @@ const handleConfirmAction = async (reason: string) => {
 
 // 初始化 Embedding
 const initializingEmbeddings = ref(false)
-const initEmbeddingResult = ref<{ successCount: number; failCount: number; totalProcessed: number } | null>(null)
+const initEmbeddingResult = ref<{
+  successCount: number
+  failCount: number
+  totalProcessed: number
+} | null>(null)
 
 const initializeEmbeddings = async () => {
   if (!confirm('确定要初始化所有节点的 embedding 吗？这可能需要几分钟时间。')) {
@@ -252,7 +256,10 @@ const initializeEmbeddings = async () => {
   try {
     const response = await postApi.initNodeEmbeddings(20)
     initEmbeddingResult.value = response.data
-    showSnackbar?.(`初始化完成！成功: ${response.data.successCount}, 失败: ${response.data.failCount}`, 'success')
+    showSnackbar?.(
+      `初始化完成！成功: ${response.data.successCount}, 失败: ${response.data.failCount}`,
+      'success'
+    )
   } catch (error) {
     console.error('初始化 embedding 失败', error)
     showSnackbar?.('初始化失败', 'error')

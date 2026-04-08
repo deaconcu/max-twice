@@ -21,7 +21,7 @@ public class UserRoadmapWithDetailDTO extends UserRoadmapSummaryDTO {
 
     /**
      * 路线图详细信息
-     * 说明：包含路线图的完整信息（id, content, profession, creator等）
+     * 说明：包含路线图的完整信息（id, content, role, creator等）
      */
     private RoadmapDetailDTO roadmap;
 }

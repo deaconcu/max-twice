@@ -6,9 +6,9 @@ import { tocApi } from '@/api'
 import { useMutation } from '@/composables'
 import { useI18n } from '@/composables/useI18n'
 
-const { t } = useI18n()
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -17,9 +17,7 @@ interface Props {
   contents: any[]
 }
 
-interface Emits {
-  (e: 'load-data'): void
-}
+type Emits = (e: 'load-data') => void
 
 const dialog = defineModel<boolean>({ default: false })
 const list = ref<number[]>([])
@@ -133,8 +131,12 @@ const resetList = () => {
                   </div>
 
                   <div class="flex-grow-1">
-                    <span v-if="element > 0" class="text-body-1">{{ t('configContents.contentItem', { number: element }) }}</span>
-                    <span v-if="element === 0" class="text-body-1 text-error">{{ t('configContents.newContent') }}</span>
+                    <span v-if="element > 0" class="text-body-1">{{
+                      t('configContents.contentItem', { number: element })
+                    }}</span>
+                    <span v-if="element === 0" class="text-body-1 text-error">{{
+                      t('configContents.newContent')
+                    }}</span>
                     <span v-if="element < 0" class="text-body-1 text-error">
                       {{ t('configContents.copyOfContent', { number: -element }) }}
                     </span>
@@ -178,8 +180,12 @@ const resetList = () => {
           </v-btn>
         </div>
         <div class="d-flex" style="gap: 8px">
-          <v-btn variant="text" color="grey-darken-2" @click="dialog = false">{{ t('common.cancel') }}</v-btn>
-          <v-btn color="primary" variant="flat" :loading="submitting" @click="submit"> {{ t('common.confirm') }} </v-btn>
+          <v-btn variant="text" color="grey-darken-2" @click="dialog = false">{{
+            t('common.cancel')
+          }}</v-btn>
+          <v-btn color="primary" variant="flat" :loading="submitting" @click="submit">
+            {{ t('common.confirm') }}
+          </v-btn>
         </div>
       </v-card-actions>
     </v-card>

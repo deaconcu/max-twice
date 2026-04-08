@@ -3,8 +3,8 @@ package com.prosper.learn.web.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.content.course.CourseDataService;
-import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDO;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.shared.domain.Enums.*;
@@ -48,7 +48,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     private UserDataService userDataService;
 
     @Autowired
-    private ProfessionDataService professionDataService;
+    private RoleDataService roleDataService;
 
     @Autowired
     private RoadmapDataService roadmapDataService;
@@ -73,8 +73,8 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     /**
      * 创建测试专业
      */
-    private ProfessionDO createProfession(String name, Long creatorId) {
-        ProfessionDO profession = new ProfessionDO();
+    private RoleDO createProfession(String name, Long creatorId) {
+        RoleDO profession = new RoleDO();
         profession.setName(name);
         profession.setDescription("专业描述");
         profession.setIcon("mdi-icon");
@@ -83,7 +83,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
         profession.setSubCategory(1);
         profession.setState(ContentState.PUBLISHED.value());
         profession.setCreatorId(creatorId);
-        professionDataService.insert(profession);
+        roleDataService.insert(profession);
         return profession;
     }
 
@@ -92,7 +92,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
      */
     private RoadmapDO createPublishedRoadmap(Long professionId, Long creatorId, String description) {
         RoadmapDO roadmap = new RoadmapDO();
-        roadmap.setProfessionId(professionId);
+        roadmap.setRoleId(professionId);
         roadmap.setCreatorId(creatorId);
         roadmap.setContent(getRoadmapContent());
         roadmap.setContentHash("test-hash-" + System.currentTimeMillis());
@@ -109,7 +109,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
      */
     private RoadmapDO createDraftRoadmap(Long professionId, Long creatorId, String description) {
         RoadmapDO roadmap = new RoadmapDO();
-        roadmap.setProfessionId(professionId);
+        roadmap.setRoleId(professionId);
         roadmap.setCreatorId(creatorId);
         roadmap.setContent(getRoadmapContent());
         roadmap.setContentHash("test-hash-" + System.currentTimeMillis());
@@ -138,7 +138,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     void testGetRoadmapsByProfession_WithRoadmaps_Success() throws Exception {
         // 准备数据
         UserDO user = createUser("user1@test.com");
-        ProfessionDO profession = createProfession("后端开发", user.getId());
+        RoleDO profession = createProfession("后端开发", user.getId());
         RoadmapDO roadmap1 = createPublishedRoadmap(profession.getId(), user.getId(), "路线图1");
         RoadmapDO roadmap2 = createPublishedRoadmap(profession.getId(), user.getId(), "路线图2");
         RoadmapDO roadmap3 = createPublishedRoadmap(profession.getId(), user.getId(), "路线图3");
@@ -173,7 +173,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("成功获取专业路线图列表 - 无路线图")
     void testGetRoadmapsByProfession_NoRoadmaps_Success() throws Exception {
         UserDO user = createUser("user2@test.com");
-        ProfessionDO profession = createProfession("前端开发", user.getId());
+        RoleDO profession = createProfession("前端开发", user.getId());
 
         StpUtil.login(user.getId());
 
@@ -192,7 +192,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
      */
     @Test
     @DisplayName("字段验证 - professionId 无效为0")
-    void testGetRoadmapsByProfession_ProfessionIdZero_Fail() throws Exception {
+    void testGetRoadmapsByProfession_RoleIdZero_Fail() throws Exception {
         UserDO user = createUser("user3@test.com");
         StpUtil.login(user.getId());
 
@@ -209,7 +209,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
      */
     @Test
     @DisplayName("字段验证 - professionId 无效为负数")
-    void testGetRoadmapsByProfession_ProfessionIdNegative_Fail() throws Exception {
+    void testGetRoadmapsByProfession_RoleIdNegative_Fail() throws Exception {
         UserDO user = createUser("user4@test.com");
         StpUtil.login(user.getId());
 
@@ -226,9 +226,9 @@ public class RoadmapsControllerTest extends BaseControllerTest {
      */
     @Test
     @DisplayName("权限验证 - 未登录获取专业路线图")
-    void testGetRoadmapsByProfession_NotLoggedIn_Fail() throws Exception {
+    void testGetRoadmapsByRole_NotLoggedIn_Fail() throws Exception {
         UserDO user = createUser("admin@test.com");
-        ProfessionDO profession = createProfession("测试专业", user.getId());
+        RoleDO profession = createProfession("测试专业", user.getId());
 
         mockMvc.perform(get("/api/v1/professions/" + profession.getId() + "/roadmaps"))
                 .andExpect(status().isOk())
@@ -244,7 +244,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("成功更新路线图 - 只更新内容")
     void testUpdateRoadmap_ContentOnly_Success() throws Exception {
         UserDO user = createUser("user5@test.com");
-        ProfessionDO profession = createProfession("专业1", user.getId());
+        RoleDO profession = createProfession("专业1", user.getId());
         RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), user.getId(), "原描述");
 
         String newContent = "[[[1,2],[2,3],[3,4]],[1,2,3,4]]";
@@ -276,7 +276,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("成功更新路线图 - 同时更新内容和描述")
     void testUpdateRoadmap_ContentAndDescription_Success() throws Exception {
         UserDO user = createUser("user6@test.com");
-        ProfessionDO profession = createProfession("专业2", user.getId());
+        RoleDO profession = createProfession("专业2", user.getId());
         RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), user.getId(), "原描述");
 
         String newContent = "[[[1,2]],[1,2]]";
@@ -308,7 +308,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("字段验证 - content 缺失")
     void testUpdateRoadmap_ContentMissing_Fail() throws Exception {
         UserDO user = createUser("user7@test.com");
-        ProfessionDO profession = createProfession("专业3", user.getId());
+        RoleDO profession = createProfession("专业3", user.getId());
         RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), user.getId(), "描述");
 
         StpUtil.login(user.getId());
@@ -368,7 +368,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("权限验证 - 修改他人的路线图")
     void testUpdateRoadmap_NotOwner_Fail() throws Exception {
         UserDO userA = createUser("userA@test.com");
-        ProfessionDO profession = createProfession("专业4", userA.getId());
+        RoleDO profession = createProfession("专业4", userA.getId());
         UserDO userB = createUser("userB@test.com");
         RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), userA.getId(), "描述");
 
@@ -406,7 +406,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("成功创建路线图")
     void testCreateRoadmap_Success() throws Exception {
         UserDO user = createUser("user10@test.com");
-        ProfessionDO profession = createProfession("专业5", user.getId());
+        RoleDO profession = createProfession("专业5", user.getId());
 
         StpUtil.login(user.getId());
 
@@ -452,7 +452,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("字段验证 - content 缺失")
     void testCreateRoadmap_ContentMissing_Fail() throws Exception {
         UserDO user = createUser("user12@test.com");
-        ProfessionDO profession = createProfession("专业6", user.getId());
+        RoleDO profession = createProfession("专业6", user.getId());
         StpUtil.login(user.getId());
 
         mockMvc.perform(post("/api/v1/roadmaps")
@@ -472,7 +472,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("字段验证 - description 缺失")
     void testCreateRoadmap_DescriptionMissing_Fail() throws Exception {
         UserDO user = createUser("user13@test.com");
-        ProfessionDO profession = createProfession("专业7", user.getId());
+        RoleDO profession = createProfession("专业7", user.getId());
         StpUtil.login(user.getId());
 
         mockMvc.perform(post("/api/v1/roadmaps")
@@ -499,7 +499,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"professionId\": 99999, \"content\": \"内容\", \"description\": \"描述\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.PROFESSION_NOT_FOUND.getCode()));
+                .andExpect(jsonPath("$.code").value(StatusCode.ROLE_NOT_FOUND.getCode()));
 
         StpUtil.logout();
     }
@@ -526,7 +526,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("成功获取路线图详情")
     void testGetRoadmap_Success() throws Exception {
         UserDO user = createUser("user15@test.com");
-        ProfessionDO profession = createProfession("专业8", user.getId());
+        RoleDO profession = createProfession("专业8", user.getId());
         RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), user.getId(), "详情测试");
 
         StpUtil.login(user.getId());
@@ -598,7 +598,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("成功获取当前用户路线图列表 - 包含所有状态")
     void testGetCurrentUserRoadmaps_AllStates_Success() throws Exception {
         UserDO user = createUser("user22@test.com");
-        ProfessionDO profession = createProfession("专业11", user.getId());
+        RoleDO profession = createProfession("专业11", user.getId());
 
         // 创建不同状态的路线图
         RoadmapDO published = createPublishedRoadmap(profession.getId(), user.getId(), "已发布");
@@ -658,7 +658,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("成功获取指定用户路线图列表 - 只返回已发布")
     void testGetUserRoadmaps_OnlyPublished_Success() throws Exception {
         UserDO user = createUser("user24@test.com");
-        ProfessionDO profession = createProfession("专业12", user.getId());
+        RoleDO profession = createProfession("专业12", user.getId());
 
         // 创建不同状态的路线图
         RoadmapDO published1 = createPublishedRoadmap(profession.getId(), user.getId(), "已发布1");
@@ -680,7 +680,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("成功获取指定用户路线图列表 - 无已发布路线图")
     void testGetUserRoadmaps_NoPublished_Success() throws Exception {
         UserDO user = createUser("user25@test.com");
-        ProfessionDO profession = createProfession("专业13", user.getId());
+        RoleDO profession = createProfession("专业13", user.getId());
 
         // 只创建草稿
         RoadmapDO draft = createDraftRoadmap(profession.getId(), user.getId(), "草稿");
@@ -723,7 +723,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("权限验证 - 不需要登录获取指定用户路线图")
     void testGetUserRoadmaps_NoLoginRequired_Success() throws Exception {
         UserDO user = createUser("user27@test.com");
-        ProfessionDO profession = createProfession("专业14", user.getId());
+        RoleDO profession = createProfession("专业14", user.getId());
         RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), user.getId(), "公开");
 
         // 不传token也能获取
@@ -742,7 +742,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("成功删除路线图")
     void testDeleteRoadmap_Success() throws Exception {
         UserDO user = createUser("user28@test.com");
-        ProfessionDO profession = createProfession("专业15", user.getId());
+        RoleDO profession = createProfession("专业15", user.getId());
         RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), user.getId(), "待删除");
 
         StpUtil.login(user.getId());
@@ -801,7 +801,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("权限验证 - 删除他人的路线图")
     void testDeleteRoadmap_NotOwner_Fail() throws Exception {
         UserDO userA = createUser("userA2@test.com");
-        ProfessionDO profession = createProfession("专业16", userA.getId());
+        RoleDO profession = createProfession("专业16", userA.getId());
         UserDO userB = createUser("userB2@test.com");
         RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), userA.getId(), "他人路线图");
 
@@ -835,7 +835,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("完整创建-修改-删除流程")
     void testRoadmapLifecycle_Success() throws Exception {
         UserDO user = createUser("user31@test.com");
-        ProfessionDO profession = createProfession("专业17", user.getId());
+        RoleDO profession = createProfession("专业17", user.getId());
 
         StpUtil.login(user.getId());
 
@@ -882,7 +882,7 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("跨用户隔离")
     void testCrossUserIsolation_Success() throws Exception {
         UserDO userA = createUser("userA3@test.com");
-        ProfessionDO profession = createProfession("专业18", userA.getId());
+        RoleDO profession = createProfession("专业18", userA.getId());
         UserDO userB = createUser("userB3@test.com");
 
         // 用户A创建路线图

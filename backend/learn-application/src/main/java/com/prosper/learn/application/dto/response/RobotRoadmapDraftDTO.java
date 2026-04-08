@@ -22,7 +22,7 @@ public class RobotRoadmapDraftDTO {
     /**
      * 职业ID
      */
-    private Long professionId;
+    private Long roleId;
 
     /**
      * 用户ID

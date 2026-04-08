@@ -125,25 +125,25 @@
 #### 2.10 路线图接口 (RoadmapsController)
 - [ ] 创建 `RoadmapsController.java`
 - [ ] 实现路线图功能
-  - [ ] `GET /api/v1/professions/{professionId}/roadmaps` - 获取职业路线图
+  - [ ] `GET /api/v1/roles/{roleId}/roadmaps` - 获取职业路线图
   - [ ] `PUT /api/v1/roadmaps/{id}` - 更新路线图
   - [ ] `PUT /api/v1/roadmaps/{id}/upvote` - 路线图点赞
   - [ ] `POST /api/v1/roadmaps` - 创建路线图
   - [ ] `GET /api/v1/roadmaps/{id}` - 获取路线图详情
   - [ ] `POST /api/v1/roadmaps/pin` - 置顶路线图
 
-#### 2.11 职业管理接口 (ProfessionsController)
-- [ ] 创建 `ProfessionsController.java`
+#### 2.11 职业管理接口 (RolesController)
+- [ ] 创建 `RolesController.java`
 - [ ] 实现职业基础功能
-  - [ ] `GET /api/v1/professions` - 获取职业列表（支持多种筛选）
-  - [ ] `GET /api/v1/professions/approved` - 获取已批准职业
-  - [ ] `GET /api/v1/professions/{id}` - 获取职业详情
-  - [ ] `GET /api/v1/professions/hot` - 热门职业
+  - [ ] `GET /api/v1/roles` - 获取职业列表（支持多种筛选）
+  - [ ] `GET /api/v1/roles/approved` - 获取已批准职业
+  - [ ] `GET /api/v1/roles/{id}` - 获取职业详情
+  - [ ] `GET /api/v1/roles/hot` - 热门职业
 - [ ] 实现职业管理功能
-  - [ ] `POST /api/v1/professions` - 创建职业
-  - [ ] `PUT /api/v1/professions/{id}` - 更新职业
-  - [ ] `DELETE /api/v1/professions/{id}` - 删除职业
-  - [ ] `POST /api/v1/professions/{id}/approve` - 职业审核操作
+  - [ ] `POST /api/v1/roles` - 创建职业
+  - [ ] `PUT /api/v1/roles/{id}` - 更新职业
+  - [ ] `DELETE /api/v1/roles/{id}` - 删除职业
+  - [ ] `POST /api/v1/roles/{id}/approve` - 职业审核操作
 
 #### 2.12 统计接口 (StatsController)
 - [ ] 创建 `StatsController.java`
@@ -234,7 +234,7 @@
 
 ### 低优先级（扩展功能）
 10. RoadmapsController - 路线图
-11. ProfessionsController - 职业管理
+11. RolesController - 职业管理
 12. MessagesController - 消息功能
 13. StatsController - 统计功能
 

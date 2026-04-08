@@ -81,37 +81,37 @@
       </div>
     </div>
 
-        <!-- 空状态 -->
-        <div v-else class="text-center py-8 py-md-12">
-          <v-icon
-            icon="mdi-cards"
-            :size="$vuetify.display.mobile ? 48 : 64"
-            color="grey-lighten-2"
-            class="mb-3 mb-md-4"
-          />
-          <p class="text-body-2 text-md-body-1 text-grey-darken-2">{{ t('review.noCards') }}</p>
-          <p class="text-caption text-md-body-2 text-grey">{{ t('review.description') }}</p>
-          <v-btn
-            color="primary"
-            variant="outlined"
-            rounded="md"
-            :size="$vuetify.display.mobile ? 'small' : 'default'"
-            class="mt-3 mt-md-4"
-            to="/memory-review"
-          >
-            <v-icon icon="mdi-brain" :size="$vuetify.display.mobile ? 16 : 18" class="mr-2" />
-            {{ t('review.title') }}
-          </v-btn>
-        </div>
+    <!-- 空状态 -->
+    <div v-else class="text-center py-8 py-md-12">
+      <v-icon
+        icon="mdi-cards"
+        :size="$vuetify.display.mobile ? 48 : 64"
+        color="grey-lighten-2"
+        class="mb-3 mb-md-4"
+      />
+      <p class="text-body-2 text-md-body-1 text-grey-darken-2">{{ t('review.noCards') }}</p>
+      <p class="text-caption text-md-body-2 text-grey">{{ t('review.description') }}</p>
+      <v-btn
+        color="primary"
+        variant="outlined"
+        rounded="md"
+        :size="$vuetify.display.mobile ? 'small' : 'default'"
+        class="mt-3 mt-md-4"
+        to="/memory-review"
+      >
+        <v-icon icon="mdi-brain" :size="$vuetify.display.mobile ? 16 : 18" class="mr-2" />
+        {{ t('review.title') }}
+      </v-btn>
+    </div>
 
-        <!-- 删除确认对话框 -->
-        <ConfirmDialog
-          v-model="showDeleteDialog"
-          :title="t('common.confirm')"
-          :message="t('common.delete') + '?'"
-          :confirm-text="t('common.confirm')"
-          @confirm="confirmDelete"
-        />
+    <!-- 删除确认对话框 -->
+    <ConfirmDialog
+      v-model="showDeleteDialog"
+      :title="t('common.confirm')"
+      :message="t('common.delete') + '?'"
+      :confirm-text="t('common.confirm')"
+      @confirm="confirmDelete"
+    />
 
     <DeckDetailDialog v-model="showDeckDetail" :deck="selectedDeck" />
   </div>
@@ -129,17 +129,17 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import DeckDetailDialog from '@/components/features/read/DeckDetailDialog.vue'
 
+const props = withDefaults(defineProps<Props>(), {
+  userId: null,
+  isOwnProfile: false,
+})
+
 const { t, locale } = useI18n()
 
 interface Props {
   userId?: number | null
   isOwnProfile?: boolean
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  userId: null,
-  isOwnProfile: false,
-})
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -166,15 +166,12 @@ const {
 })
 
 // 删除卡片组
-const { execute: removeDeck } = useMutation(
-  (deckId: number) => memoryApi.deleteDeck(deckId),
-  {
-    successMessage: t('user.profile.deckDeleted'),
-    onSuccess: () => {
-      fetchUserDecks()
-    },
-  }
-)
+const { execute: removeDeck } = useMutation((deckId: number) => memoryApi.deleteDeck(deckId), {
+  successMessage: t('user.profile.deckDeleted'),
+  onSuccess: () => {
+    fetchUserDecks()
+  },
+})
 
 // 转换为卡片组格式
 const decks = computed(() => {

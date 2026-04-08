@@ -9,8 +9,8 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
-import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDO;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
@@ -41,12 +41,12 @@ public class MeilisearchService {
     @Autowired
     private UserDataService userDataService;
     @Autowired
-    private ProfessionDataService professionDataService;
+    private RoleDataService roleDataService;
 
     private static final String INDEX_COURSES = "courses";
     private static final String INDEX_NODES = "nodes";
     private static final String INDEX_USERS = "users";
-    private static final String INDEX_PROFESSIONS = "professions";
+    private static final String INDEX_ROLES = "roles";
 
     // ========== 初始化 ==========
 
@@ -59,12 +59,12 @@ public class MeilisearchService {
             createIndexIfNotExists(INDEX_COURSES, "id");
             createIndexIfNotExists(INDEX_NODES, "id");
             createIndexIfNotExists(INDEX_USERS, "id");
-            createIndexIfNotExists(INDEX_PROFESSIONS, "id");
+            createIndexIfNotExists(INDEX_ROLES, "id");
 
             configureIndex(INDEX_COURSES, new String[]{"name", "description"});
             configureIndex(INDEX_NODES, new String[]{"name", "description"});
             configureIndex(INDEX_USERS, new String[]{"name"});
-            configureIndex(INDEX_PROFESSIONS, new String[]{"name", "description"});
+            configureIndex(INDEX_ROLES, new String[]{"name", "description"});
 
             log.info("Meilisearch 索引初始化完成");
         } catch (Exception e) {
@@ -105,10 +105,10 @@ public class MeilisearchService {
         int courses = syncAllCourses();
         int nodes = syncAllNodes();
         int users = syncAllUsers();
-        int professions = syncAllProfessions();
+        int roles = syncAllRoles();
 
         log.info("Meilisearch 全量同步完成，耗时 {}ms，课程: {}，节点: {}，用户: {}，职业: {}",
-            System.currentTimeMillis() - start, courses, nodes, users, professions);
+            System.currentTimeMillis() - start, courses, nodes, users, roles);
     }
 
     public int syncAllCourses() {
@@ -207,22 +207,22 @@ public class MeilisearchService {
         }
     }
 
-    public int syncAllProfessions() {
+    public int syncAllRoles() {
         if (meilisearchClient == null) return 0;
         try {
             log.info("Meilisearch 同步职业...");
-            meilisearchClient.deleteIndex(INDEX_PROFESSIONS);
-            createIndexIfNotExists(INDEX_PROFESSIONS, "id");
-            configureIndex(INDEX_PROFESSIONS, new String[]{"name", "description"});
+            meilisearchClient.deleteIndex(INDEX_ROLES);
+            createIndexIfNotExists(INDEX_ROLES, "id");
+            configureIndex(INDEX_ROLES, new String[]{"name", "description"});
 
             int total = 0;
             Long lastId = null;
             while (true) {
-                List<ProfessionDO> list = professionDataService.listByState(
+                List<RoleDO> list = roleDataService.listByState(
                         Enums.ContentState.PUBLISHED.value(), lastId, 1000);
                 if (list.isEmpty()) break;
 
-                bulkIndexProfessions(list);
+                bulkIndexRoles(list);
                 total += list.size();
                 lastId = list.get(list.size() - 1).getId();
 
@@ -272,16 +272,16 @@ public class MeilisearchService {
         meilisearchClient.index(INDEX_USERS).addDocuments(objectMapper.writeValueAsString(docs));
     }
 
-    private void bulkIndexProfessions(List<ProfessionDO> professions) throws Exception {
+    private void bulkIndexRoles(List<RoleDO> roles) throws Exception {
         List<Map<String, Object>> docs = new ArrayList<>();
-        for (ProfessionDO p : professions) {
+        for (RoleDO p : roles) {
             docs.add(Map.of(
                 "id", p.getId(),
                 "name", p.getName(),
                 "description", p.getDescription() != null ? p.getDescription() : ""
             ));
         }
-        meilisearchClient.index(INDEX_PROFESSIONS).addDocuments(objectMapper.writeValueAsString(docs));
+        meilisearchClient.index(INDEX_ROLES).addDocuments(objectMapper.writeValueAsString(docs));
     }
 
     // ========== 实时同步 ==========
@@ -366,29 +366,29 @@ public class MeilisearchService {
     }
 
     @Async
-    public void indexProfession(ProfessionDO profession) {
+    public void indexRole(RoleDO roleDO) {
         if (meilisearchClient == null) return;
-        if (profession.getState() != Enums.ContentState.PUBLISHED.value()) {
-            deleteProfession(profession.getId());
+        if (roleDO.getState() != Enums.ContentState.PUBLISHED.value()) {
+            deleteRole(roleDO.getId());
             return;
         }
         try {
             Map<String, Object> doc = Map.of(
-                "id", profession.getId(),
-                "name", profession.getName(),
-                "description", profession.getDescription() != null ? profession.getDescription() : ""
+                "id", roleDO.getId(),
+                "name", roleDO.getName(),
+                "description", roleDO.getDescription() != null ? roleDO.getDescription() : ""
             );
-            meilisearchClient.index(INDEX_PROFESSIONS).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
+            meilisearchClient.index(INDEX_ROLES).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
         } catch (Exception e) {
-            log.error("Meilisearch 索引职业失败: {}", profession.getId(), e);
+            log.error("Meilisearch 索引职业失败: {}", roleDO.getId(), e);
         }
     }
 
     @Async
-    public void deleteProfession(Long id) {
+    public void deleteRole(Long id) {
         if (meilisearchClient == null) return;
         try {
-            meilisearchClient.index(INDEX_PROFESSIONS).deleteDocument(String.valueOf(id));
+            meilisearchClient.index(INDEX_ROLES).deleteDocument(String.valueOf(id));
         } catch (Exception e) {
             log.error("Meilisearch 删除职业失败: {}", id, e);
         }
@@ -429,10 +429,10 @@ public class MeilisearchService {
         }
     }
 
-    public Searchable searchProfessions(String query, int limit, int offset) {
+    public Searchable searchRoles(String query, int limit, int offset) {
         if (meilisearchClient == null) return null;
         try {
-            return meilisearchClient.index(INDEX_PROFESSIONS)
+            return meilisearchClient.index(INDEX_ROLES)
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
             log.error("Meilisearch 搜索职业失败", e);

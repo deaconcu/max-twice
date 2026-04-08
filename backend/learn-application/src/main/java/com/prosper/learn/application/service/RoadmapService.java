@@ -6,7 +6,7 @@ import com.prosper.learn.analytics.dto.ContentStatsDTO;
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
-import com.prosper.learn.application.converter.ProfessionConverter;
+import com.prosper.learn.application.converter.RoleConverter;
 import com.prosper.learn.application.converter.RoadmapConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
@@ -15,12 +15,10 @@ import com.prosper.learn.application.dto.response.roadmap.RoadmapBriefDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapDetailDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
-import com.prosper.learn.content.course.CourseDO;
-import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
-import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDO;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.content.roadmap.RoadmapDomainService;
@@ -70,7 +68,7 @@ public class RoadmapService {
     private final UserDataService userDataService;
     private final UserDomainService userDomainService;
     private final UserLearningDomainService userLearningDomainService;
-    private final ProfessionDataService professionDataService;
+    private final RoleDataService roleDataService;
     private final UpvoteDomainService upvoteDomainService;
     private final ContentStatsDomainService contentStatsDomainService;
     private final ContentStatsDataService contentStatsDataService;
@@ -79,7 +77,7 @@ public class RoadmapService {
     private final ApplicationEventPublisher eventPublisher;
     private final RoadmapConverter roadmapConverter;
     private final UserConverter userConverter;
-    private final ProfessionConverter professionConverter;
+    private final RoleConverter roleConverter;
     private final SystemProperties systemProperties;
 
     // ========== DTO转换方法 ==========
@@ -99,7 +97,7 @@ public class RoadmapService {
     }
 
     /**
-     * 转换为简要DTO（包含profession name）
+     * 转换为简要DTO（包含role name）
      */
     public RoadmapBriefDTO toBriefDTO(RoadmapDO roadmapDO) {
         if (roadmapDO == null) {
@@ -110,11 +108,11 @@ public class RoadmapService {
         dto.setId(roadmapDO.getId());
         dto.setNodeCount(roadmapDO.getNodeCount());
 
-        // 填充profession name
-        if (roadmapDO.getProfessionId() != null) {
-            ProfessionDO profession = professionDataService.getById(roadmapDO.getProfessionId());
-            if (profession != null) {
-                dto.setProfessionName(profession.getName());
+        // 填充role name
+        if (roadmapDO.getRoleId() != null) {
+            RoleDO role = roleDataService.getById(roadmapDO.getRoleId());
+            if (role != null) {
+                dto.setRoleName(role.getName());
             }
         }
 
@@ -129,18 +127,18 @@ public class RoadmapService {
             return new ArrayList<>();
         }
 
-        // 提取所有 profession IDs
-        List<Long> professionIds = roadmapDOList.stream()
-            .map(RoadmapDO::getProfessionId)
+        // 提取所有 role IDs
+        List<Long> roleIds = roadmapDOList.stream()
+            .map(RoadmapDO::getRoleId)
             .filter(Objects::nonNull)
             .distinct()
             .collect(Collectors.toList());
 
-        // 批量查询 profession
-        Map<Long, String> professionNameMap = professionIds.isEmpty()
+        // 批量查询 role
+        Map<Long, String> roleNameMap = roleIds.isEmpty()
             ? Map.of()
-            : professionDataService.getByIds(professionIds).stream()
-                .collect(Collectors.toMap(ProfessionDO::getId, ProfessionDO::getName));
+            : roleDataService.getByIds(roleIds).stream()
+                .collect(Collectors.toMap(RoleDO::getId, RoleDO::getName));
 
         // 组装 DTO
         return roadmapDOList.stream()
@@ -148,8 +146,8 @@ public class RoadmapService {
                 RoadmapBriefDTO dto = new RoadmapBriefDTO();
                 dto.setId(roadmap.getId());
                 dto.setNodeCount(roadmap.getNodeCount());
-                if (roadmap.getProfessionId() != null) {
-                    dto.setProfessionName(professionNameMap.get(roadmap.getProfessionId()));
+                if (roadmap.getRoleId() != null) {
+                    dto.setRoleName(roleNameMap.get(roadmap.getRoleId()));
                 }
                 return dto;
             })
@@ -157,7 +155,7 @@ public class RoadmapService {
     }
 
     /**
-     * 转换列表为详情DTO列表（包含profession信息）
+     * 转换列表为详情DTO列表（包含role信息）
      */
     public List<RoadmapDetailDTO> toDetailDTO(List<RoadmapDO> roadmapDOList) {
         if (roadmapDOList == null || roadmapDOList.isEmpty()) {
@@ -166,22 +164,22 @@ public class RoadmapService {
 
         List<RoadmapDetailDTO> dtoList = roadmapConverter.toDetailDTO(roadmapDOList);
 
-        // 批量填充 profession 信息
-        Set<Long> professionIds = roadmapDOList.stream()
-            .map(RoadmapDO::getProfessionId)
+        // 批量填充 role 信息
+        Set<Long> roleIds = roadmapDOList.stream()
+            .map(RoadmapDO::getRoleId)
             .filter(Objects::nonNull)
             .collect(Collectors.toSet());
 
-        if (!professionIds.isEmpty()) {
-            List<ProfessionDO> professions = professionDataService.getByIds(new ArrayList<>(professionIds));
-            Map<Long, ProfessionDO> professionMap = professions.stream()
-                .collect(Collectors.toMap(ProfessionDO::getId, p -> p));
+        if (!roleIds.isEmpty()) {
+            List<RoleDO> roles = roleDataService.getByIds(new ArrayList<>(roleIds));
+            Map<Long, RoleDO> roleMap = roles.stream()
+                .collect(Collectors.toMap(RoleDO::getId, p -> p));
 
             for (RoadmapDetailDTO dto : dtoList) {
-                if (dto.getProfessionId() != null) {
-                    ProfessionDO profession = professionMap.get(dto.getProfessionId());
-                    if (profession != null) {
-                        dto.setProfession(professionConverter.toBriefDTO(profession));
+                if (dto.getRoleId() != null) {
+                    RoleDO role = roleMap.get(dto.getRoleId());
+                    if (role != null) {
+                        dto.setRole(roleConverter.toBriefDTO(role));
                     }
                 }
             }
@@ -192,7 +190,7 @@ public class RoadmapService {
 
     /**
      * 转换为路线图（包含完整业务信息）
-     * 包含：creator + profession + liked + learning + likeCount + commentCount + learnerCount + formatted content
+     * 包含：creator + role + liked + learning + likeCount + commentCount + learnerCount + formatted content
      */
     public RoadmapWithStatusDTO toRoadmapWithStatus(RoadmapDO roadmapDO, long userId) {
         if (roadmapDO == null) return null;
@@ -205,9 +203,9 @@ public class RoadmapService {
         }
 
         // 设置专业信息
-        if (roadmapDO.getProfessionId() != null) {
-            ProfessionDO professionDO = professionDataService.getById(roadmapDO.getProfessionId());
-            dto.setProfession(professionConverter.toBriefDTO(professionDO));
+        if (roadmapDO.getRoleId() != null) {
+            RoleDO roleDO = roleDataService.getById(roadmapDO.getRoleId());
+            dto.setRole(roleConverter.toBriefDTO(roleDO));
         }
 
         // 设置点赞状态
@@ -259,9 +257,9 @@ public class RoadmapService {
 
     /**
      * 转换为路线图（包含完整业务信息）
-     * 包含：creator + profession + liked + learning + formatted content + likes
+     * 包含：creator + role + liked + learning + formatted content + likes
      */
-    private List<RoadmapWithStatusDTO> toRoadmapWithFullInfo(List<RoadmapDO> roadmapList, long userId, Long professionId) {
+    private List<RoadmapWithStatusDTO> toRoadmapWithFullInfo(List<RoadmapDO> roadmapList, long userId, Long roleId) {
         List<RoadmapWithStatusDTO> dtoList = roadmapConverter.toWithStatusDTO(roadmapList);
 
         if (!dtoList.isEmpty()) {
@@ -277,7 +275,7 @@ public class RoadmapService {
             // 批量查询创建者信息
             Map<Long, UserDO> creatorMap = userDataService.getMapByIds(creatorIds);
 
-            ProfessionDO professionDO = professionDataService.getById(professionId);
+            RoleDO roleDO = roleDataService.getById(roleId);
             Set<Long> upvotedIds = upvoteDomainService.getUpvotedIds(roadmapIds, ContentType.roadmap.value(), userId);
             Set<Long> learningIds = getLearningIds(userId, roadmapIds);
             List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, roadmapIds, ContentType.roadmap);
@@ -294,7 +292,7 @@ public class RoadmapService {
                 RoadmapDO roadmapDO = roadmapDOMap.get(dto.getId());
                 UserDO creator = creatorMap.get(roadmapDO.getCreatorId());
 
-                dto.setProfession(professionConverter.toBriefDTO(professionDO));
+                dto.setRole(roleConverter.toBriefDTO(roleDO));
                 dto.setCreator(creator != null ? userConverter.toBriefDTO(creator) : null);
                 dto.setLiked(upvotedIds.contains(dto.getId()));
                 dto.setLearning(learningIds.contains(dto.getId()));
@@ -327,13 +325,13 @@ public class RoadmapService {
      * 获取职业路线图列表（公开接口，无个性化信息）
      * 用于匿名用户浏览
      */
-    public List<RoadmapSummaryDTO> getRoadmapsByProfessionPublic(Long professionId, Long lastId, Integer pageSize) {
-        validateProfessionId(professionId);
+    public List<RoadmapSummaryDTO> getRoadmapsByRolePublic(Long roleId, Long lastId, Integer pageSize) {
+        validateRoleId(roleId);
 
         int limit = pageSize != null && pageSize > 0 ? pageSize : systemProperties.getRoadmap().getDefaultPageSize();
 
         // 委托给 DomainService 查询
-        List<RoadmapDO> roadmapList = domainService.getRoadmapsByProfessionPublic(professionId, lastId, limit);
+        List<RoadmapDO> roadmapList = domainService.getRoadmapsByRolePublic(roleId, lastId, limit);
 
         // 转换为DTO，只包含基础信息
         return toSummaryDTO(roadmapList);
@@ -408,8 +406,8 @@ public class RoadmapService {
     /**
      * 获取职业路线图列表（带置顶和状态信息）
      */
-    public List<RoadmapWithStatusDTO> getRoadmapsByProfession(Long professionId, Long lastId, String sortBy, UserDO currentUser) {
-        validateProfessionId(professionId);
+    public List<RoadmapWithStatusDTO> getRoadmapsByRole(Long roleId, Long lastId, String sortBy, UserDO currentUser) {
+        validateRoleId(roleId);
 
         // 默认按 score 排序
         if (sortBy == null || sortBy.isEmpty() || (!sortBy.equals("latest") && !sortBy.equals("score"))) {
@@ -419,11 +417,11 @@ public class RoadmapService {
         int limit = systemProperties.getRoadmap().getDefaultPageSize();
 
         // 委托给 DomainService 查询路线图列表
-        List<RoadmapDO> roadmapList = domainService.getRoadmapsByProfession(
-            professionId, lastId, limit, sortBy);
+        List<RoadmapDO> roadmapList = domainService.getRoadmapsByRole(
+            roleId, lastId, limit, sortBy);
 
         // 转换为完整DTO（包含跨域信息）
-        return toRoadmapWithFullInfo(roadmapList, currentUser.getId(), professionId);
+        return toRoadmapWithFullInfo(roadmapList, currentUser.getId(), roleId);
     }
 
     /**
@@ -458,7 +456,7 @@ public class RoadmapService {
         // 从 DomainService 获取路线图列表
         List<RoadmapDO> roadmapList = domainService.getRoadmapsByIds(roadmapIds);
 
-        // 转换为完整DTO（包含跨域信息），professionId 为 null
+        // 转换为完整DTO（包含跨域信息），roleId 为 null
         return toRoadmapWithFullInfo(roadmapList, userId, null);
     }
 
@@ -544,13 +542,13 @@ public class RoadmapService {
      * 创建路线图
      */
     @Transactional
-    public Long createRoadmap(Long professionId, String content, String description, long userId, Byte state) {
-        validateProfessionId(professionId);
+    public Long createRoadmap(Long roleId, String content, String description, long userId, Byte state) {
+        validateRoleId(roleId);
         validateContent(content);
         validateUserId(userId);
 
         // 跨域验证：验证专业和用户存在
-        professionDataService.validateExists(professionId);
+        roleDataService.validateExists(roleId);
         userDataService.validateExists(userId);
 
         // 验证状态：只能是草稿或提交审核
@@ -611,7 +609,7 @@ public class RoadmapService {
         Integer nodeCount = countNodesInContent(content);
 
         // 委托给 DomainService
-        return domainService.createRoadmap(professionId, content, description, userId, nodeCount, state);
+        return domainService.createRoadmap(roleId, content, description, userId, nodeCount, state);
     }
 
     /**
@@ -644,8 +642,8 @@ public class RoadmapService {
         }
     }
     
-    private void validateProfessionId(Long professionId) {
-        if (professionId == null || professionId <= 0) {
+    private void validateRoleId(Long roleId) {
+        if (roleId == null || roleId <= 0) {
             throw StatusCode.INVALID_PARAMETER.exception();
         }
     }
@@ -676,8 +674,8 @@ public class RoadmapService {
     /**
      * Admin管理：高级筛选路线图列表
      */
-    public KeysetPageResponse<RoadmapAdminDTO> listByFilter(Long roadmapId, Long professionId, Long creatorId, Long lastId) {
-        List<RoadmapDO> roadmapDOList = domainService.listByFilter(roadmapId, professionId, creatorId, lastId, DEFAULT_PAGE_SIZE + 1);
+    public KeysetPageResponse<RoadmapAdminDTO> listByFilter(Long roadmapId, Long roleId, Long creatorId, Long lastId) {
+        List<RoadmapDO> roadmapDOList = domainService.listByFilter(roadmapId, roleId, creatorId, lastId, DEFAULT_PAGE_SIZE + 1);
         return buildAdminResponse(roadmapDOList);
     }
 
@@ -689,16 +687,16 @@ public class RoadmapService {
 
         List<RoadmapAdminDTO> items = roadmapConverter.toAdminDTO(roadmapDOList);
 
-        // 批量填充 profession 信息
-        Set<Long> professionIds = roadmapDOList.stream()
-            .map(RoadmapDO::getProfessionId)
+        // 批量填充 role 信息
+        Set<Long> roleIds = roadmapDOList.stream()
+            .map(RoadmapDO::getRoleId)
             .filter(Objects::nonNull)
             .collect(Collectors.toSet());
 
-        Map<Long, ProfessionDO> professionMap = professionIds.isEmpty()
+        Map<Long, RoleDO> roleMap = roleIds.isEmpty()
             ? Map.of()
-            : professionDataService.getByIds(new ArrayList<>(professionIds)).stream()
-                .collect(Collectors.toMap(ProfessionDO::getId, p -> p));
+            : roleDataService.getByIds(new ArrayList<>(roleIds)).stream()
+                .collect(Collectors.toMap(RoleDO::getId, p -> p));
 
         // 批量填充 creator 信息
         Set<Long> creatorIds = roadmapDOList.stream()
@@ -717,10 +715,10 @@ public class RoadmapService {
         for (RoadmapAdminDTO dto : items) {
             RoadmapDO roadmapDO = roadmapDOMap.get(dto.getId());
             if (roadmapDO != null) {
-                if (roadmapDO.getProfessionId() != null) {
-                    ProfessionDO profession = professionMap.get(roadmapDO.getProfessionId());
-                    if (profession != null) {
-                        dto.setProfession(professionConverter.toBriefDTO(profession));
+                if (roadmapDO.getRoleId() != null) {
+                    RoleDO role = roleMap.get(roadmapDO.getRoleId());
+                    if (role != null) {
+                        dto.setRole(roleConverter.toBriefDTO(role));
                     }
                 }
                 if (roadmapDO.getCreatorId() != null) {
@@ -772,14 +770,14 @@ public class RoadmapService {
         roadmap.setState(ContentState.PUBLISHED.value());
 
         // 获取职业信息
-        ProfessionDO profession = professionDataService.getById(roadmap.getProfessionId());
+        RoleDO role = roleDataService.getById(roadmap.getRoleId());
 
         // 发布审核通过事件，触发统计更新（不发送消息）
         eventPublisher.publishEvent(ContentApprovedEvent.forRoadmap(
             roadmap.getCreatorId(),
             roadmap.getId(),
-            profession != null ? profession.getId() : null,
-            profession != null ? profession.getName() : null
+            role != null ? role.getId() : null,
+            role != null ? role.getName() : null
         ));
 
         return toSummaryDTO(roadmap);
@@ -800,14 +798,14 @@ public class RoadmapService {
         roadmap.setState(ContentState.REJECTED.value());
 
         // 获取职业信息用于通知
-        ProfessionDO profession = professionDataService.getById(roadmap.getProfessionId());
+        RoleDO role = roleDataService.getById(roadmap.getRoleId());
 
         // 发布审核拒绝事件，触发消息通知
         eventPublisher.publishEvent(ContentRejectedEvent.forRoadmap(
             roadmap.getCreatorId(),
             roadmap.getId(),
-            profession != null ? profession.getId() : null,
-            profession != null ? profession.getName() : null,
+            role != null ? role.getId() : null,
+            role != null ? role.getName() : null,
             reason
         ));
 
@@ -828,7 +826,7 @@ public class RoadmapService {
         Byte previousState = roadmap.getState();
 
         // 获取职业信息用于通知
-        ProfessionDO profession = professionDataService.getById(roadmap.getProfessionId());
+        RoleDO role = roleDataService.getById(roadmap.getRoleId());
 
         // 委托给 DomainService 执行状态变更
         domainService.ban(id, reason);
@@ -838,8 +836,8 @@ public class RoadmapService {
             roadmap.getCreatorId(),
             roadmap.getId(),
             ContentState.getByValue(previousState),
-            roadmap.getProfessionId(),
-            profession != null ? profession.getName() : null,
+            roadmap.getRoleId(),
+            role != null ? role.getName() : null,
             reason
         ));
 
@@ -865,7 +863,7 @@ public class RoadmapService {
         }
 
         // 获取职业信息用于通知
-        ProfessionDO profession = professionDataService.getById(roadmap.getProfessionId());
+        RoleDO role = roleDataService.getById(roadmap.getRoleId());
 
         // 委托给 DomainService 执行状态变更
         domainService.reject(id, reason);
@@ -874,8 +872,8 @@ public class RoadmapService {
         eventPublisher.publishEvent(ContentRemovedEvent.forRoadmap(
             roadmap.getCreatorId(),
             roadmap.getId(),
-            roadmap.getProfessionId(),
-            profession != null ? profession.getName() : null,
+            roadmap.getRoleId(),
+            role != null ? role.getName() : null,
             reason
         ));
 
@@ -909,7 +907,7 @@ public class RoadmapService {
         }
 
         // 获取职业信息用于通知
-        ProfessionDO profession = professionDataService.getById(roadmap.getProfessionId());
+        RoleDO role = roleDataService.getById(roadmap.getRoleId());
 
         // 委托给 DomainService 执行状态变更
         domainService.approve(id);
@@ -920,8 +918,8 @@ public class RoadmapService {
             roadmap.getCreatorId(),
             roadmap.getId(),
             ContentState.getByValue(previousState),
-            roadmap.getProfessionId(),
-            profession != null ? profession.getName() : null,
+            roadmap.getRoleId(),
+            role != null ? role.getName() : null,
             reason
         ));
 

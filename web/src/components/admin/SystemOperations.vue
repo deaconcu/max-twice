@@ -213,47 +213,38 @@ const { execute: syncAllIndexes, loading: syncingAll } = useMutation(
   }
 )
 
-const { execute: syncCourses, loading: syncingCourses } = useMutation(
-  adminApi.syncCourseIndexes,
-  {
-    showToast: false,
-    onSuccess: (result) => {
-      showSnackbar?.(`同步了${result}个课程`, 'success')
-      addOperationToHistory('搜索索引', `同步${result}个课程`, true)
-    },
-    onError: (error) => {
-      addOperationToHistory('搜索索引', `课程同步失败: ${error.message}`, false)
-    },
-  }
-)
+const { execute: syncCourses, loading: syncingCourses } = useMutation(adminApi.syncCourseIndexes, {
+  showToast: false,
+  onSuccess: (result) => {
+    showSnackbar?.(`同步了${result}个课程`, 'success')
+    addOperationToHistory('搜索索引', `同步${result}个课程`, true)
+  },
+  onError: (error) => {
+    addOperationToHistory('搜索索引', `课程同步失败: ${error.message}`, false)
+  },
+})
 
-const { execute: syncNodes, loading: syncingNodes } = useMutation(
-  adminApi.syncNodeIndexes,
-  {
-    showToast: false,
-    onSuccess: (result) => {
-      showSnackbar?.(`同步了${result}个节点`, 'success')
-      addOperationToHistory('搜索索引', `同步${result}个节点`, true)
-    },
-    onError: (error) => {
-      addOperationToHistory('搜索索引', `节点同步失败: ${error.message}`, false)
-    },
-  }
-)
+const { execute: syncNodes, loading: syncingNodes } = useMutation(adminApi.syncNodeIndexes, {
+  showToast: false,
+  onSuccess: (result) => {
+    showSnackbar?.(`同步了${result}个节点`, 'success')
+    addOperationToHistory('搜索索引', `同步${result}个节点`, true)
+  },
+  onError: (error) => {
+    addOperationToHistory('搜索索引', `节点同步失败: ${error.message}`, false)
+  },
+})
 
-const { execute: syncUsers, loading: syncingUsers } = useMutation(
-  adminApi.syncUserIndexes,
-  {
-    showToast: false,
-    onSuccess: (result) => {
-      showSnackbar?.(`同步了${result}个用户`, 'success')
-      addOperationToHistory('搜索索引', `同步${result}个用户`, true)
-    },
-    onError: (error) => {
-      addOperationToHistory('搜索索引', `用户同步失败: ${error.message}`, false)
-    },
-  }
-)
+const { execute: syncUsers, loading: syncingUsers } = useMutation(adminApi.syncUserIndexes, {
+  showToast: false,
+  onSuccess: (result) => {
+    showSnackbar?.(`同步了${result}个用户`, 'success')
+    addOperationToHistory('搜索索引', `同步${result}个用户`, true)
+  },
+  onError: (error) => {
+    addOperationToHistory('搜索索引', `用户同步失败: ${error.message}`, false)
+  },
+})
 
 const { execute: syncProfessions, loading: syncingProfessions } = useMutation(
   adminApi.syncProfessionIndexes,
@@ -315,7 +306,9 @@ setTimeout(() => {
         统计数据同步
       </v-card-title>
       <v-card-text>
-        <p class="text-body-2 text-grey mb-4">将统计数据同步到数据库（包含 Redis 统计和学习热力图数据）</p>
+        <p class="text-body-2 text-grey mb-4">
+          将统计数据同步到数据库（包含 Redis 统计和学习热力图数据）
+        </p>
         <div class="d-flex ga-3 flex-wrap">
           <v-btn
             variant="tonal"
@@ -400,9 +393,7 @@ setTimeout(() => {
             <v-icon icon="mdi-sync" class="mr-2"></v-icon>
             全量同步
           </v-btn>
-          <v-btn variant="tonal" :loading="syncingCourses" @click="syncCourses">
-            课程
-          </v-btn>
+          <v-btn variant="tonal" :loading="syncingCourses" @click="syncCourses"> 课程 </v-btn>
           <v-btn variant="tonal" :loading="syncingNodes" @click="syncNodes"> 节点 </v-btn>
           <v-btn variant="tonal" :loading="syncingUsers" @click="syncUsers"> 用户 </v-btn>
           <v-btn variant="tonal" :loading="syncingProfessions" @click="syncProfessions">

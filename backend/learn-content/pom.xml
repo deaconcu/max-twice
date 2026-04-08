@@ -11,7 +11,7 @@
 
     <artifactId>learn-content</artifactId>
     <name>learn-content</name>
-    <description>内容域：Post、Course、Node、Profession、Roadmap</description>
+    <description>内容域：Post、Course、Node、Role、Roadmap</description>
 
     <dependencies>
         <!-- 依赖 learn-shared -->

@@ -28,7 +28,21 @@
   "site": {
     "name": "最多看两遍！",
     "slogan": "争取本站大部分内容最多看两次就会，最好看一次就会",
-    "about": "为什么有这个网站？"
+    "about": "为什么有这个网站？",
+    "rightsDeclaration": [
+      "没有考上好的大学仍有学习知识的权利",
+      "不被学历和出身定义，用能力证明自己的权利",
+      "自由探索兴趣，不受传统教育束缚的权利",
+      "向任何人学习，不论其背景和资历的权利",
+      "失败后重新开始，不被过去错误限制的权利",
+      "质疑权威，独立思考和表达观点的权利",
+      "按照自己的节奏学习，不被标准化考试评判的权利",
+      "获得真实反馈，在实践中成长的权利",
+      "选择非传统路径，追求热爱而非功利的权利",
+      "相信终身学习，永远不晚的权利"
+    ],
+    "missionIntro": "我们想和您一起，努力做到：",
+    "missionQuote": "这里的任何一个知识节点，都能只看两遍就懂"
   },
   "home": {
     "welcome": "欢迎来到 Max Twice",
@@ -143,9 +157,21 @@
     "help": "帮助",
     "search": "搜索",
     "searchPlaceholder": "搜索课程、职业、文章...",
+    "searchPlaceholderFull": "搜索课程、节点、用户、职业...",
+    "searching": "搜索中...",
+    "noResults": "未找到相关结果",
+    "tryOtherKeywords": "试试其他关键词",
+    "foundResults": "找到约 {count} 条结果",
+    "professions": "职业",
+    "nodes": "节点",
+    "users": "用户",
+    "noMoreResults": "没有更多结果了",
+    "enterKeywords": "输入关键词开始搜索",
+    "searchHint": "搜索用户、职业、课程或节点",
     "submit": "提交",
     "cancel": "取消",
     "confirm": "确认",
+    "confirmAction": "确定要执行此操作吗？",
     "save": "保存",
     "edit": "编辑",
     "delete": "删除",
@@ -184,7 +210,11 @@
     "notFound": "您访问的内容不存在或已被删除",
     "inDevelopment": "功能开发中...",
     "viewAll": "查看全部",
-    "reachedEnd": "已经到底了"
+    "reachedEnd": "已经到底了",
+    "previewImage": "预览图片",
+    "user": "用户",
+    "redirecting": "正在跳转...",
+    "all": "全部"
   },
   "notification": {
     "title": "消息通知",
@@ -274,6 +304,16 @@
   "error": {
     "loadFailed": "加载失败",
     "operationFailed": "操作失败",
+    "pleaseLogin": "请先登录",
+    "noPermission": "无权限访问",
+    "serverError": "服务器错误，请稍后重试",
+    "contentUnavailable": "该内容暂时无法访问",
+    "retryLater": "操作失败，请重试",
+    "networkError": "网络错误：无法连接到服务器",
+    "1309": {
+      "title": "内容暂时无法访问",
+      "message": "该内容暂时无法访问"
+    },
     "403": {
       "title": "权限不足",
       "message": "您没有权限访问此页面"
@@ -444,6 +484,26 @@
       "captchaLoadFailed": "人机验证加载失败，请刷新页面重试",
       "captchaRequired": "请完成人机验证"
     },
+    "verifyEmail": {
+      "title": "验证邮箱",
+      "subtitle": "请输入发送到您邮箱的验证码",
+      "codeSentTo": "验证码已发送至:",
+      "codeLabel": "验证码",
+      "codePlaceholder": "请输入6位数字验证码",
+      "verifyButton": "验证邮箱",
+      "verifying": "验证中...",
+      "resendButton": "重新发送验证码",
+      "resendCountdown": "重新发送 ({seconds}秒)",
+      "alreadyVerified": "已经验证？",
+      "loginNow": "立即登录",
+      "emailInvalid": "邮箱地址无效",
+      "verifySuccess": "邮箱验证成功！",
+      "verifyFailed": "验证失败",
+      "verifyFailedRetry": "验证失败，请重试",
+      "codeSent": "验证码已重新发送，请查收邮件",
+      "sendFailed": "发送失败，请稍后重试",
+      "emailInvalidRedirect": "邮箱地址无效，请重新注册"
+    },
     "profile": {
       "title": "个人资料",
       "personalInfo": "个人信息",
@@ -508,7 +568,33 @@
         "avatarTypeError": "只支持 JPG、PNG、WebP 格式的图片",
         "avatarSizeError": "图片大小不能超过 5MB",
         "avatarUploadFailed": "头像上传失败",
-        "avatarUpdateSuccess": "头像更新成功"
+        "avatarUpdateSuccess": "头像更新成功",
+        "timezones": {
+          "datelineWest": "(UTC-12:00) 国际日期变更线西",
+          "midway": "(UTC-11:00) 中途岛",
+          "hawaii": "(UTC-10:00) 夏威夷",
+          "alaska": "(UTC-09:00) 阿拉斯加",
+          "pacific": "(UTC-08:00) 太平洋时间 (美国/加拿大)",
+          "mountain": "(UTC-07:00) 山地时间 (美国/加拿大)",
+          "central": "(UTC-06:00) 中部时间 (美国/加拿大)",
+          "eastern": "(UTC-05:00) 东部时间 (美国/加拿大)",
+          "atlantic": "(UTC-04:00) 大西洋时间 (加拿大)",
+          "brasilia": "(UTC-03:00) 巴西利亚",
+          "london": "(UTC+00:00) 伦敦, 都柏林",
+          "paris": "(UTC+01:00) 巴黎, 柏林, 罗马",
+          "athens": "(UTC+02:00) 开罗, 雅典",
+          "moscow": "(UTC+03:00) 莫斯科, 伊斯坦布尔",
+          "dubai": "(UTC+04:00) 迪拜",
+          "karachi": "(UTC+05:00) 卡拉奇",
+          "kolkata": "(UTC+05:30) 孟买, 新德里",
+          "dhaka": "(UTC+06:00) 达卡",
+          "bangkok": "(UTC+07:00) 曼谷, 河内",
+          "shanghai": "(UTC+08:00) 北京, 上海, 香港, 台北",
+          "singapore": "(UTC+08:00) 新加坡",
+          "tokyo": "(UTC+09:00) 东京, 首尔",
+          "sydney": "(UTC+10:00) 悉尼, 墨尔本",
+          "auckland": "(UTC+12:00) 奥克兰"
+        }
       },
       "creatorStats": {
         "overview": "创作数据总览",
@@ -629,6 +715,7 @@
     "noSubCourses": "暂无子课程",
     "applySubCourse": "申请添加子课程",
     "applySubCourseHint": "点击上方按钮申请添加子课程",
+    "applyShort": "申请",
     "learning": "人在学",
     "related": "相关课程",
     "loadError": "加载课程失败",
@@ -653,7 +740,17 @@
     "learnersSuffix": "人学习",
     "subCoursesCount": "{count} 个子课程",
     "learn": "学习",
-    "clickToExit": "点击退出学习"
+    "clickToExit": "点击退出学习",
+    "subtitle": "探索知识，成就未来",
+    "noCoursesFound": "未找到相关课程",
+    "tryOtherKeywords": "请尝试其他搜索关键词",
+    "viewAllCourses": "查看全部课程",
+    "shareKnowledge": "分享你的知识与经验",
+    "all": "全部",
+    "createSuccess": "课程创建成功",
+    "applySuccess": "申请提交成功，等待审核",
+    "nodeMarkedComplete": "已标记节点完成",
+    "nodeUnmarkedComplete": "已取消节点完成"
   },
   "treeNode": {
     "node": "节点"
@@ -861,6 +958,12 @@
       "operationFailed": "操作失败，请稍后重试",
       "startLearningSuccess": "开始学习成功！",
       "stopLearningSuccess": "已停止学习"
+    },
+    "toc": {
+      "enableNavigation": "开启目录导航",
+      "selectCatalog": "在文章列表中选择一篇目录帖子，即可开启目录树导航功能",
+      "gotIt": "知道了",
+      "courseToc": "课程目录"
     }
   },
   "roleCenter": {
@@ -874,7 +977,8 @@
     "search": {
       "placeholder": "搜索你感兴趣的职业、技能或公司...",
       "button": "搜索",
-      "applyJob": "申请添加职业"
+      "applyJob": "申请添加职业",
+      "applyJobHint": "申请新的职业方向"
     },
     "category": {
       "title": "职业领域筛选",
@@ -1229,7 +1333,18 @@
       "emptyRoadmap": "课程表不能为空",
       "circularDependency": "课程表中存在环路，不能形成树结构",
       "disconnectedGraph": "课程表不是连通的，存在孤立的节点或子图"
-    }
+    },
+    "format": {
+      "email": "请输入有效的邮箱地址",
+      "phone": "请输入有效的手机号码",
+      "verificationCode": "请输入6位验证码",
+      "passwordMismatch": "两次输入的密码不一致",
+      "username": "用户名只能包含字母、数字和下划线"
+    },
+    "fieldLabel": "字段",
+    "cannotBeEmpty": "{label}不能为空",
+    "minLength": "{label}长度必须至少{min}个字符",
+    "maxLength": "{label}长度不能超过{max}个字符"
   },
   "message": {
     "center": "消息中心",
@@ -1661,6 +1776,8 @@
       "deleteColumn": "删除当前列",
       "deleteTable": "删除表格"
     },
+    "mermaidPlaceholder": "输入 Mermaid 代码...",
+    "mathPlaceholder": "输入公式...",
     "placeholder": "请在这里输入内容..."
   },
   "userCard": {
@@ -1784,5 +1901,21 @@
     "pending": "待审核",
     "approved": "已通过",
     "rejected": "已拒绝"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "minutesAgo": "{n}分钟前",
+    "hoursAgo": "{n}小时前",
+    "daysAgo": "{n}天前",
+    "monthsAgo": "{n}个月前",
+    "yearsAgo": "{n}年前"
+  },
+  "intro": {
+    "mainSlogan": "人生没有说明书，<br />我们一起写一本。",
+    "subSlogan": "想成为谁，就学什么。",
+    "brandMeaning": "— 每个知识点，最多看两遍就懂"
+  },
+  "chart": {
+    "preview": "图表预览"
   }
 }

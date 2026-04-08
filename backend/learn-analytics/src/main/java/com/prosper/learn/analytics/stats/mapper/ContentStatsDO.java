@@ -13,7 +13,7 @@ public class ContentStatsDO {
     /**
      * 内容类型（主键字段1）
      * 对应 Enums.ContentType 枚举值
-     * 1=post, 2=node, 3=comment, 4=roadmap, 5=memory_card_deck, 6=memory_card, 7=profession, 8=course
+     * 1=post, 2=node, 3=comment, 4=roadmap, 5=memory_card_deck, 6=memory_card, 7=role, 8=course
      */
     private Integer contentType;
 
@@ -101,7 +101,7 @@ public class ContentStatsDO {
 
     /**
      * 路线图数量
-     * 用于 Profession 统计其下的路线图数量
+     * 用于 Role 统计其下的路线图数量
      */
     private Integer roadmapCount;
 

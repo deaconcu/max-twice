@@ -4,13 +4,16 @@ import type { Roadmap } from '@/types/roadmap'
 
 /**
  * 路线图管理相关 API
- * 参考：web-ts/src/services/api/v1/apiServiceV1.ts (roadmapServiceV1)
  */
 export const roadmapApi = {
   /**
-   * 获取职业的路线图列表
+   * 获取角色的路线图列表
    */
-  getProfessionRoadmaps(professionId: number, lastId?: number, sortBy?: string): Promise<ApiResponse<Roadmap[]>> {
+  getRoleRoadmaps(
+    roleId: number,
+    lastId?: number,
+    sortBy?: string
+  ): Promise<ApiResponse<Roadmap[]>> {
     const params: Record<string, string | number> = {}
     if (lastId != null) {
       params.lastId = lastId
@@ -18,7 +21,7 @@ export const roadmapApi = {
     if (sortBy) {
       params.sortBy = sortBy
     }
-    return apiClient.get(`/v1/professions/${String(professionId)}/roadmaps`, { params })
+    return apiClient.get(`/v1/roles/${String(roleId)}/roadmaps`, { params })
   },
 
   /**
@@ -37,13 +40,13 @@ export const roadmapApi = {
    * 创建路线图
    */
   createRoadmap(
-    professionId: number,
+    roleId: number,
     content: string,
     description: string,
     state: number
   ): Promise<ApiResponse<Roadmap>> {
     return apiClient.post('/v1/roadmaps', {
-      professionId,
+      roleId,
       content,
       description,
       state,
@@ -60,9 +63,9 @@ export const roadmapApi = {
   /**
    * 置顶路线图
    */
-  pinRoadmap(professionId: number, roadmapId: number): Promise<ApiResponse<boolean>> {
+  pinRoadmap(roleId: number, roadmapId: number): Promise<ApiResponse<boolean>> {
     return apiClient.post('/v1/roadmaps/pin', {
-      professionId,
+      roleId,
       roadmapId,
     })
   },

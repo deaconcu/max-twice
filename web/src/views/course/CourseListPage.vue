@@ -1,187 +1,194 @@
 <template>
   <DefaultLayout>
     <div class="course-list-page">
-    <!-- 页面标题和搜索栏 -->
-    <div class="page-header mb-6 mb-md-10">
-      <div class="d-flex flex-column flex-sm-row align-start align-sm-end ga-4 header-wrapper">
-        <!-- 左侧：标题 -->
-        <div class="d-flex align-center title-container">
-          <v-avatar
-            :color="'rgb(var(--v-theme-surface-variant))'"
-            :size="$vuetify.display.mobile ? 48 : 64"
-            rounded="lg"
-            class="mr-3 flex-shrink-0"
-          >
-            <v-icon
-              icon="mdi-book-multiple"
-              :size="$vuetify.display.mobile ? 24 : 32"
-              color="grey-darken-1"
-            />
-          </v-avatar>
-          <div style="min-width: 0; overflow: hidden">
-            <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 text-truncate">
-              {{ t('course.center') }}
-            </h1>
-            <p class="text-caption text-md-body-2 text-grey-darken-2 mt-1 text-truncate">
-              探索知识，成就未来
-            </p>
-          </div>
-        </div>
-
-        <!-- 右侧：操作按钮 -->
-        <div class="d-flex align-center ga-3 actions-wrapper pb-1">
-          <!-- 创建课程按钮（仅在右侧栏隐藏时显示） -->
-          <v-btn
-            color="primary"
-            variant="flat"
-            rounded="lg"
-            class="d-lg-none flex-shrink-0"
-            @click="openCreateDialog"
-          >
-            <v-icon icon="mdi-plus" size="20" class="mr-1" />
-            创建
-          </v-btn>
-        </div>
-      </div>
-    </div>
-
-    <!-- 分类导航和课程网格 -->
-    <div class="content-layout">
-      <div class="main-content">
-        <!-- 页面初始加载状态 -->
-        <LoadingSpinner v-if="categoryStore.loading && categories.length === 0" />
-
-        <template v-else>
-          <!-- 分类导航 -->
-          <CourseFilter
-            v-model:main-category="selectedMainCategory"
-            v-model:sub-category="selectedSubCategory"
-            :categories="categories"
-            :sub-categories="subCategories"
-            @change="handleFilterChange"
-          />
-
-          <!-- 加载状态 -->
-          <LoadingSpinner v-if="loading" />
-
-          <!-- 空状态 -->
-          <div v-else-if="filteredCourses.length === 0" class="text-center py-12">
-          <v-card rounded="lg" class="pa-12 empty-state no-border">
-            <v-icon icon="mdi-book-open-variant" size="80" color="grey-lighten-1" class="mb-4" />
-            <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">未找到相关课程</h3>
-            <p class="text-body-1 text-grey-darken-1 mb-4">
-              {{ searchText ? '请尝试其他搜索关键词' : '该分类下暂时没有课程' }}
-            </p>
-            <v-btn
-              v-if="selectedMainCategory || searchText"
-              color="primary"
-              variant="outlined"
+      <!-- 页面标题和搜索栏 -->
+      <div class="page-header mb-6 mb-md-10">
+        <div class="d-flex flex-column flex-sm-row align-start align-sm-end ga-4 header-wrapper">
+          <!-- 左侧：标题 -->
+          <div class="d-flex align-center title-container">
+            <v-avatar
+              :color="'rgb(var(--v-theme-surface-variant))'"
+              :size="$vuetify.display.mobile ? 48 : 64"
               rounded="lg"
-              @click="clearAll"
+              class="mr-3 flex-shrink-0"
             >
-              查看全部课程
+              <v-icon
+                icon="mdi-book-multiple"
+                :size="$vuetify.display.mobile ? 24 : 32"
+                color="grey-darken-1"
+              />
+            </v-avatar>
+            <div style="min-width: 0; overflow: hidden">
+              <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 text-truncate">
+                {{ t('course.center') }}
+              </h1>
+              <p class="text-caption text-md-body-2 text-grey-darken-2 mt-1 text-truncate">
+                {{ t('course.subtitle') }}
+              </p>
+            </div>
+          </div>
+
+          <!-- 右侧：操作按钮 -->
+          <div class="d-flex align-center ga-3 actions-wrapper pb-1">
+            <!-- 创建课程按钮（仅在右侧栏隐藏时显示） -->
+            <v-btn
+              color="primary"
+              variant="flat"
+              rounded="lg"
+              class="d-lg-none flex-shrink-0"
+              @click="openCreateDialog"
+            >
+              <v-icon icon="mdi-plus" size="20" class="mr-1" />
+              创建
             </v-btn>
-          </v-card>
-        </div>
-
-        <!-- 课程列表 -->
-        <div v-else class="mt-6 mt-md-8">
-          <!-- 课程网格 -->
-          <div class="course-grid mb-16">
-            <CourseCard
-              v-for="course in displayedCourses"
-              :key="course.id"
-              :course="course"
-              @subscribe="handleSubscribe"
-              @unsubscribe="handleUnsubscribe"
-            />
-          </div>
-
-          <!-- 加载更多指示器 -->
-          <div v-if="hasMoreCourses" ref="loadMoreTrigger" class="text-center mt-6 py-4 mb-16">
-            <v-progress-circular v-if="loadingMore" indeterminate color="primary" size="32" />
           </div>
         </div>
-        </template>
       </div>
 
-      <!-- 右侧热门课程栏 -->
-      <div class="right-sidebar d-none d-lg-block">
-        <div class="sticky-wrapper">
-          <!-- 创建课程按钮 -->
-          <v-card
-            rounded="xl"
-            class="mb-4 create-course-card"
-            elevation="0"
-            @click="openCreateDialog"
-          >
-            <v-card-text class="pa-6">
-              <div class="d-flex align-center">
-                <v-avatar color="primary" size="40" class="mr-3">
-                  <v-icon icon="mdi-plus" size="22" color="white" />
-                </v-avatar>
-                <div class="flex-grow-1">
-                  <div class="text-subtitle-1 font-weight-bold text-grey-darken-4">
-                    {{ t('course.createNew') }}
-                  </div>
-                  <div class="text-caption text-grey">分享你的知识与经验</div>
-                </div>
-                <v-icon icon="mdi-chevron-right" size="20" color="grey-lighten-1" />
-              </div>
-            </v-card-text>
-          </v-card>
+      <!-- 分类导航和课程网格 -->
+      <div class="content-layout">
+        <div class="main-content">
+          <!-- 页面初始加载状态 -->
+          <LoadingSpinner v-if="categoryStore.loading && categories.length === 0" />
 
-          <v-card rounded="lg" class="popular-card no-border" flat>
-            <v-card-title class="py-4 px-0 pb-3">
-              <div class="d-flex align-center justify-space-between w-100">
-                <div class="d-flex align-center">
-                  <v-icon icon="mdi-fire" color="error" class="mr-2" />
-                  <span class="text-h6 font-weight-bold">热门课程</span>
-                </div>
+          <template v-else>
+            <!-- 分类导航 -->
+            <CourseFilter
+              v-model:main-category="selectedMainCategory"
+              v-model:sub-category="selectedSubCategory"
+              :categories="categories"
+              :sub-categories="subCategories"
+              @change="handleFilterChange"
+            />
+
+            <!-- 加载状态 -->
+            <LoadingSpinner v-if="loading" />
+
+            <!-- 空状态 -->
+            <div v-else-if="filteredCourses.length === 0" class="text-center py-12">
+              <v-card rounded="lg" class="pa-12 empty-state no-border">
+                <v-icon
+                  icon="mdi-book-open-variant"
+                  size="80"
+                  color="grey-lighten-1"
+                  class="mb-4"
+                />
+                <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
+                  {{ t('course.noCoursesFound') }}
+                </h3>
+                <p class="text-body-1 text-grey-darken-1 mb-4">
+                  {{ searchText ? t('course.tryOtherKeywords') : t('course.noCourses') }}
+                </p>
                 <v-btn
-                  variant="text"
-                  size="small"
+                  v-if="selectedMainCategory || searchText"
                   color="primary"
-                  class="text-caption"
+                  variant="outlined"
+                  rounded="lg"
                   @click="clearAll"
                 >
-                  全部
-                  <v-icon icon="mdi-chevron-right" size="14" class="ml-1" />
+                  {{ t('course.viewAllCourses') }}
                 </v-btn>
+              </v-card>
+            </div>
+
+            <!-- 课程列表 -->
+            <div v-else class="mt-6 mt-md-8">
+              <!-- 课程网格 -->
+              <div class="course-grid mb-16">
+                <CourseCard
+                  v-for="course in displayedCourses"
+                  :key="course.id"
+                  :course="course"
+                  @subscribe="handleSubscribe"
+                  @unsubscribe="handleUnsubscribe"
+                />
               </div>
-            </v-card-title>
-            <v-card-text class="px-0 popular-list pb-4">
-              <div
-                v-for="(course, index) in popularCourses"
-                :key="course.id"
-                class="popular-item rounded-lg"
-                @click="goToCourseDetail(course)"
-              >
-                <div class="rank-badge" :class="index < 3 ? 'rank-top' : ''">
-                  {{ index + 1 }}
+
+              <!-- 加载更多指示器 -->
+              <div v-if="hasMoreCourses" ref="loadMoreTrigger" class="text-center mt-6 py-4 mb-16">
+                <v-progress-circular v-if="loadingMore" indeterminate color="primary" size="32" />
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- 右侧热门课程栏 -->
+        <div class="right-sidebar d-none d-lg-block">
+          <div class="sticky-wrapper">
+            <!-- 创建课程按钮 -->
+            <v-card
+              rounded="xl"
+              class="mb-4 create-course-card"
+              elevation="0"
+              @click="openCreateDialog"
+            >
+              <v-card-text class="pa-6">
+                <div class="d-flex align-center">
+                  <v-avatar color="primary" size="40" class="mr-3">
+                    <v-icon icon="mdi-plus" size="22" color="white" />
+                  </v-avatar>
+                  <div class="flex-grow-1">
+                    <div class="text-subtitle-1 font-weight-bold text-grey-darken-4">
+                      {{ t('course.createNew') }}
+                    </div>
+                    <div class="text-caption text-grey">{{ t('course.shareKnowledge') }}</div>
+                  </div>
+                  <v-icon icon="mdi-chevron-right" size="20" color="grey-lighten-1" />
                 </div>
-                <div class="flex-grow-1">
-                  <div class="popular-name">{{ course.name }}</div>
-                  <div class="popular-count">
-                    <v-icon icon="mdi-account-group" size="12" color="grey" />
-                    {{ formatNumber(course.learnerCount) }}
+              </v-card-text>
+            </v-card>
+
+            <v-card rounded="lg" class="popular-card no-border" flat>
+              <v-card-title class="py-4 px-0 pb-3">
+                <div class="d-flex align-center justify-space-between w-100">
+                  <div class="d-flex align-center">
+                    <v-icon icon="mdi-fire" color="error" class="mr-2" />
+                    <span class="text-h6 font-weight-bold">{{ t('course.hot') }}</span>
+                  </div>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    color="primary"
+                    class="text-caption"
+                    @click="clearAll"
+                  >
+                    {{ t('course.all') }}
+                    <v-icon icon="mdi-chevron-right" size="14" class="ml-1" />
+                  </v-btn>
+                </div>
+              </v-card-title>
+              <v-card-text class="px-0 popular-list pb-4">
+                <div
+                  v-for="(course, index) in popularCourses"
+                  :key="course.id"
+                  class="popular-item rounded-lg"
+                  @click="goToCourseDetail(course)"
+                >
+                  <div class="rank-badge" :class="index < 3 ? 'rank-top' : ''">
+                    {{ index + 1 }}
+                  </div>
+                  <div class="flex-grow-1">
+                    <div class="popular-name">{{ course.name }}</div>
+                    <div class="popular-count">
+                      <v-icon icon="mdi-account-group" size="12" color="grey" />
+                      {{ formatNumber(course.learnerCount) }}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </v-card-text>
-          </v-card>
+              </v-card-text>
+            </v-card>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- 创建课程对话框 -->
-    <CourseCreateDialog
-      v-model="createDialog"
-      :categories="categories"
-      :sub-categories="subCategories"
-      :reset-form="resetCreateForm"
-      @submit="handleCreateCourse"
-    />
+      <!-- 创建课程对话框 -->
+      <CourseCreateDialog
+        v-model="createDialog"
+        :categories="categories"
+        :sub-categories="subCategories"
+        :reset-form="resetCreateForm"
+        @submit="handleCreateCourse"
+      />
     </div>
   </DefaultLayout>
 </template>
@@ -373,10 +380,7 @@ const clearAll = () => {
 /**
  * 根据分类加载课程（subCategory 可选）
  */
-const loadCoursesByCategory = async (
-  mainCategory: number,
-  subCategory?: number
-): Promise<void> => {
+const loadCoursesByCategory = async (mainCategory: number, subCategory?: number): Promise<void> => {
   currentCategory.value = { mainCategory, subCategory }
   await loadCourses(true) // 重置并加载
 }
@@ -573,7 +577,7 @@ const openCreateDialog = () => {
 const { execute: executeCreateCourse, loading: _creatingCourse } = useMutation(
   (payload: CreateCourseRequest) => courseApi.createCourse(payload),
   {
-    successMessage: '课程创建成功',
+    successMessage: t('course.createSuccess'),
     onSuccess: () => {
       createDialog.value = false
       resetCreateForm.value = true

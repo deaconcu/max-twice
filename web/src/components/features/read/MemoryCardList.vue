@@ -3,21 +3,24 @@
     <!-- 空状态 -->
     <div v-if="decks.length === 0 && !loading" class="text-center pa-12">
       <v-icon icon="mdi-cards-outline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
-      <h4 class="text-h6 font-weight-medium text-grey-darken-2 mb-2">{{ t('memoryCard.noDecks') }}</h4>
+      <h4 class="text-h6 font-weight-medium text-grey-darken-2 mb-2">
+        {{ t('memoryCard.noDecks') }}
+      </h4>
       <p class="text-body-2 text-grey-darken-1 mb-4">{{ t('memoryCard.noDecksHint') }}</p>
-      <v-btn color="primary" variant="tonal" rounded="lg" prepend-icon="mdi-plus" @click="emit('createDeck')">
+      <v-btn
+        color="primary"
+        variant="tonal"
+        rounded="lg"
+        prepend-icon="mdi-plus"
+        @click="emit('createDeck')"
+      >
         {{ t('memoryCard.createFirstDeck') }}
       </v-btn>
     </div>
 
     <!-- 卡片组列表 -->
     <div v-else class="deck-list">
-      <div
-        v-for="deck in decks"
-        :key="deck.id"
-        class="deck-item"
-        @click="viewDeckDetail(deck)"
-      >
+      <div v-for="deck in decks" :key="deck.id" class="deck-item" @click="viewDeckDetail(deck)">
         <!-- 左右两栏布局 -->
         <div class="d-flex align-stretch">
           <!-- 左侧：用户 / 简介 / 点赞收藏 -->
@@ -73,7 +76,9 @@
           <!-- 右侧：统计数字 -->
           <div class="d-flex flex-row align-center justify-center" style="gap: 16px">
             <div class="text-center">
-              <div class="text-h6 font-weight-bold text-grey-darken-2">{{ deck.cardCount || 0 }}</div>
+              <div class="text-h6 font-weight-bold text-grey-darken-2">
+                {{ deck.cardCount || 0 }}
+              </div>
               <div class="text-caption text-no-wrap text-grey">{{ t('memoryCard.cards') }}</div>
             </div>
             <div v-if="deck.studyingCardCount && deck.studyingCardCount > 0" class="text-center">
@@ -108,19 +113,21 @@ import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck } from '@/types/memory'
 import { useI18n } from '@/composables/useI18n'
 
+const props = defineProps<Props>()
+
+const emit = defineEmits<Emits>()
+
 const { t } = useI18n()
 
 interface Props {
   nodeId: number
 }
 
-type Emits = {
+interface Emits {
   (e: 'viewDeck', deck: MemoryCardDeck): void
   (e: 'createDeck'): void
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
 const userStore = useUserStore()
 
 const decks = ref<MemoryCardDeck[]>([])

@@ -22,12 +22,12 @@ public class RoadmapBriefDTO {
     /**
      * 专业名称
      */
-    private String professionName;
+    private String roleName;
 
     /**
      * 专业图标
      */
-    private String professionIcon;
+    private String roleIcon;
 
     /**
      * 节点数量

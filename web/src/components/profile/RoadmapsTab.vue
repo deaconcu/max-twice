@@ -142,17 +142,17 @@ import { userApi } from '@/api'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
+const props = withDefaults(defineProps<Props>(), {
+  userId: null,
+  isOwnProfile: false,
+})
+
 const { t } = useI18n()
 
 interface Props {
   userId?: number | null
   isOwnProfile?: boolean
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  userId: null,
-  isOwnProfile: false,
-})
 
 const router = useRouter()
 
@@ -227,12 +227,18 @@ const roadmaps = computed(() => {
     usageCount: roadmap.learnerCount || 0,
     starCount: roadmap.likeCount || 0,
     nodeCount: roadmap.nodeCount || 0,
-    status: roadmap.state === 0 ? 'draft'
-          : roadmap.state === 1 ? 'submitted'
-          : roadmap.state === 2 ? 'published'
-          : roadmap.state === 3 ? 'rejected'
-          : roadmap.state === 4 ? 'banned'
-          : 'unknown',
+    status:
+      roadmap.state === 0
+        ? 'draft'
+        : roadmap.state === 1
+          ? 'submitted'
+          : roadmap.state === 2
+            ? 'published'
+            : roadmap.state === 3
+              ? 'rejected'
+              : roadmap.state === 4
+                ? 'banned'
+                : 'unknown',
     createdAt: roadmap.createdAt || '',
   }))
 })

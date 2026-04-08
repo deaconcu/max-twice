@@ -1,6 +1,6 @@
 package com.prosper.learn.application.dto.response;
 
-import com.prosper.learn.application.dto.response.profession.ProfessionDTO;
+import com.prosper.learn.application.dto.response.role.RoleDTO;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
 
@@ -13,9 +13,9 @@ public class RoadmapDTO {
 
     private String content;
 
-    private Long professionId;
+    private Long roleId;
 
-    private ProfessionDTO profession;
+    private RoleDTO role;
 
     private String description;
 

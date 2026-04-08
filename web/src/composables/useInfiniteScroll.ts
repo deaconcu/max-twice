@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
+import i18n from '@/i18n'
 
 /**
  * 无限滚动响应数据格式
@@ -84,7 +85,7 @@ export function useInfiniteScroll<T>(options: InfiniteScrollOptions<T>): Infinit
           params.value = getNextParams(lastItem, params.value)
         }
       } else {
-        throw new Error(response.message || '加载失败')
+        throw new Error(response.message || i18n.global.t('error.loadFailed'))
       }
     } catch (error) {
       console.error('Load more error:', error)

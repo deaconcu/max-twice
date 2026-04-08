@@ -74,7 +74,7 @@ public class UserLearningDataService {
 
     /**
      * 根据用户、对象类型和父对象ID查询学习记录
-     * 用于查询：某个 profession 下正在学习的 roadmap
+     * 用于查询：某个 role 下正在学习的 roadmap
      *
      * @param state 状态过滤（null=全部, 1=进行中, 2=已完成）
      * @param lastId 分页游标（null 返回第一页）

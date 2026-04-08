@@ -5,14 +5,12 @@ import com.prosper.learn.application.dto.response.bookmark.BookmarkDTO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.content.post.PostDO;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.interaction.bookmark.BookmarkDataService;
 import com.prosper.learn.interaction.bookmark.BookmarkDO;
 import com.prosper.learn.interaction.bookmark.BookmarkDomainService;
-import com.prosper.learn.memory.card.MemoryCardDataService;
-import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.shared.domain.Enums;
@@ -32,7 +30,7 @@ public class BookmarkService {
     private final BookmarkDataService bookmarkDataService;
     private final BookmarkAssembler bookmarkAssembler;
     private final CourseDataService courseDataService;
-    private final ProfessionDataService professionDataService;
+    private final RoleDataService roleDataService;
     private final RoadmapDataService roadmapDataService;
     private final PostDataService postDataService;
     private final MemoryCardDeckDataService memoryCardDeckDataService;
@@ -76,13 +74,13 @@ public class BookmarkService {
      */
     private Long validateAndGetParentId(long objectId, Enums.ContentType contentType) {
         return switch (contentType) {
-            case profession -> {
-                professionDataService.validateAndGet(objectId);
+            case role -> {
+                roleDataService.validateAndGet(objectId);
                 yield null;
             }
             case roadmap -> {
                 RoadmapDO roadmap = roadmapDataService.validateAndGet(objectId);
-                yield roadmap.getProfessionId();
+                yield roadmap.getRoleId();
             }
             case course -> {
                 courseDataService.validateAndGet(objectId);

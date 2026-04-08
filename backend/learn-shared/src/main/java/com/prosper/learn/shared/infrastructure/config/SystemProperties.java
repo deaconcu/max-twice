@@ -50,7 +50,7 @@ public class SystemProperties {
     /**
      * 专业相关配置
      */
-    private Profession profession = new Profession();
+    private Role role = new Role();
 
     /**
      * 用户相关配置
@@ -261,7 +261,7 @@ public class SystemProperties {
     }
 
     @Data
-    public static class Profession {
+    public static class Role {
         /**
          * 分页查询默认页面大小
          */
@@ -275,12 +275,12 @@ public class SystemProperties {
         /**
          * 默认热门专业数量限制
          */
-        private int defaultHotProfessionsLimit = 20;
+        private int defaultHotRolesLimit = 20;
 
         /**
          * 最大热门专业数量限制
          */
-        private int maxHotProfessionsLimit = 100;
+        private int maxHotRolesLimit = 100;
 
         /**
          * 是否启用专业状态验证
@@ -588,13 +588,13 @@ public class SystemProperties {
 
         // ========== 专业相关 ==========
         /** 专业名称最小长度 */
-        private int professionNameMinLength = 2;
+        private int roleNameMinLength = 2;
         /** 专业名称最大长度 */
-        private int professionNameMaxLength = 30;
+        private int roleNameMaxLength = 30;
         /** 专业描述最小长度 */
-        private int professionDescriptionMinLength = 20;
+        private int roleDescriptionMinLength = 20;
         /** 专业描述最大长度 */
-        private int professionDescriptionMaxLength = 2000;
+        private int roleDescriptionMaxLength = 2000;
 
         // ========== 记忆卡片相关 ==========
         /** 卡片正面最小长度 */

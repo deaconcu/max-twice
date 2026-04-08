@@ -4,7 +4,7 @@ import com.prosper.learn.application.dto.response.PlatformStatsDTO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDataService;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 public class PlatformStatsService {
     
     private final CourseDataService courseDataService;
-    private final ProfessionDataService professionDataService;
+    private final RoleDataService roleDataService;
     private final RoadmapDataService roadmapDataService;
     private final NodeDataService nodeDataService;
     private final PostDataService postDataService;
@@ -46,7 +46,7 @@ public class PlatformStatsService {
             Long courseCount = courseDataService.countActiveCourses();
             
             // 统计职业路径总数（只统计已发布的职业）
-            Long careerPathCount = professionDataService.countActiveProfessions();
+            Long careerPathCount = roleDataService.countActiveRoles();
             
             // 统计学习路线图总数（只统计公开的路线图）
             Long roadmapCount = roadmapDataService.countPublicRoadmaps();

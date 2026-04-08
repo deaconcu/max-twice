@@ -144,7 +144,10 @@ const showBanDialog = (deck: DeckDetail) => {
 // 使用 useMutation 处理拒绝/屏蔽
 const { execute: executeRejectOrBan, loading: submitting } = useMutation(
   (data: { deckId: number; action: ApprovalAction; reason: string }) =>
-    adminApi.operateContent('memory_card_deck', data.deckId, { action: data.action.toLowerCase(), reason: data.reason }),
+    adminApi.operateContent('memory_card_deck', data.deckId, {
+      action: data.action.toLowerCase(),
+      reason: data.reason,
+    }),
   {
     onSuccess: (_, data) => {
       const message = data.action === ApprovalAction.BAN ? '卡片组已屏蔽' : '卡片组已拒绝'
@@ -529,9 +532,7 @@ const getStateColor = (state: number): string => {
                     color="grey-darken-2"
                     class="ml-3 mr-1"
                   ></v-icon>
-                  <span class="text-body-2 text-grey-darken-2"
-                    >{{ deck.likeCount || 0 }} 点赞</span
-                  >
+                  <span class="text-body-2 text-grey-darken-2">{{ deck.likeCount || 0 }} 点赞</span>
                 </div>
               </div>
 

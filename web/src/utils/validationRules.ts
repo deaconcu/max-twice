@@ -3,7 +3,7 @@ import {
   COMMENT_VALIDATION,
   COURSE_VALIDATION,
   POST_VALIDATION,
-  PROFESSION_VALIDATION,
+  ROLE_VALIDATION,
   CARD_VALIDATION,
   DECK_VALIDATION,
   MESSAGE_VALIDATION,
@@ -105,26 +105,26 @@ export const postContentRules = [
     `帖子内容不能超过 ${POST_VALIDATION.CONTENT_MAX_LENGTH} 个字符`,
 ]
 
-// ========== 专业相关验证规则 ==========
+// ========== 角色相关验证规则 ==========
 
-export const professionNameRules = [
-  (v: string) => !!v || '专业名称不能为空',
+export const roleNameRules = [
+  (v: string) => !!v || '角色名称不能为空',
   (v: string) =>
-    v.length >= PROFESSION_VALIDATION.NAME_MIN_LENGTH ||
-    `专业名称至少需要 ${PROFESSION_VALIDATION.NAME_MIN_LENGTH} 个字符`,
+    v.length >= ROLE_VALIDATION.NAME_MIN_LENGTH ||
+    `角色名称至少需要 ${ROLE_VALIDATION.NAME_MIN_LENGTH} 个字符`,
   (v: string) =>
-    v.length <= PROFESSION_VALIDATION.NAME_MAX_LENGTH ||
-    `专业名称不能超过 ${PROFESSION_VALIDATION.NAME_MAX_LENGTH} 个字符`,
+    v.length <= ROLE_VALIDATION.NAME_MAX_LENGTH ||
+    `角色名称不能超过 ${ROLE_VALIDATION.NAME_MAX_LENGTH} 个字符`,
 ]
 
-export const professionDescriptionRules = [
-  (v: string) => !!v || '专业描述不能为空',
+export const roleDescriptionRules = [
+  (v: string) => !!v || '角色描述不能为空',
   (v: string) =>
-    v.length >= PROFESSION_VALIDATION.DESCRIPTION_MIN_LENGTH ||
-    `专业描述至少需要 ${PROFESSION_VALIDATION.DESCRIPTION_MIN_LENGTH} 个字符`,
+    v.length >= ROLE_VALIDATION.DESCRIPTION_MIN_LENGTH ||
+    `角色描述至少需要 ${ROLE_VALIDATION.DESCRIPTION_MIN_LENGTH} 个字符`,
   (v: string) =>
-    v.length <= PROFESSION_VALIDATION.DESCRIPTION_MAX_LENGTH ||
-    `专业描述不能超过 ${PROFESSION_VALIDATION.DESCRIPTION_MAX_LENGTH} 个字符`,
+    v.length <= ROLE_VALIDATION.DESCRIPTION_MAX_LENGTH ||
+    `角色描述不能超过 ${ROLE_VALIDATION.DESCRIPTION_MAX_LENGTH} 个字符`,
 ]
 
 // ========== 记忆卡片相关验证规则 ==========

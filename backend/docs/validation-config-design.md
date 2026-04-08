@@ -103,10 +103,10 @@ system:
     post-content-max-length: 50000
 
     # 职业相关
-    profession-name-min-length: 2
-    profession-name-max-length: 50
-    profession-description-min-length: 10
-    profession-description-max-length: 500
+    role-name-min-length: 2
+    role-name-max-length: 50
+    role-description-min-length: 10
+    role-description-max-length: 500
 
     # 消息相关
     message-content-min-length: 1
@@ -306,15 +306,15 @@ public class ValidationConfigService {
                 .build());
 
         // 职业相关
-        rules.put("profession-name", ValidationRuleDTO.builder()
-                .minLength(validation.getProfessionNameMinLength())
-                .maxLength(validation.getProfessionNameMaxLength())
+        rules.put("role-name", ValidationRuleDTO.builder()
+                .minLength(validation.getRoleNameMinLength())
+                .maxLength(validation.getRoleNameMaxLength())
                 .label("职业名称")
                 .build());
 
-        rules.put("profession-description", ValidationRuleDTO.builder()
-                .minLength(validation.getProfessionDescriptionMinLength())
-                .maxLength(validation.getProfessionDescriptionMaxLength())
+        rules.put("role-description", ValidationRuleDTO.builder()
+                .minLength(validation.getRoleDescriptionMinLength())
+                .maxLength(validation.getRoleDescriptionMaxLength())
                 .label("职业描述")
                 .build());
 

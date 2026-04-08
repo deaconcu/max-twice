@@ -11,7 +11,7 @@ const userStore = useUserStore()
 
 // 用户信息
 const userInfo = computed(() => ({
-  name: userStore.userName || '用户',
+  name: userStore.userName || t('common.user'),
   avatar: userStore.currentUser?.avatar,
 }))
 
@@ -37,12 +37,7 @@ const handleLogout = () => {
   >
     <template #activator="{ props }">
       <button class="icon-btn" :title="t('userMenu.profileCenter')" v-bind="props">
-        <UserAvatar
-          :name="userInfo.name"
-          :avatar-url="userInfo.avatar"
-          size="28"
-          rounded="lg"
-        />
+        <UserAvatar :name="userInfo.name" :avatar-url="userInfo.avatar" size="28" rounded="lg" />
       </button>
     </template>
 

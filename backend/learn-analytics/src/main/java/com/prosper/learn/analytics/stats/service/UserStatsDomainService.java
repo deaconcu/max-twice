@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.analytics.dto.DailyStatsDTO;
 import com.prosper.learn.analytics.dto.UserDailyStatsDTO;
-import com.prosper.learn.analytics.dto.UserStatsDTO;
 import com.prosper.learn.analytics.dto.UserStatsWithDailyDTO;
 import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.UserStatsDO;
@@ -89,40 +88,6 @@ public class UserStatsDomainService {
         userStatsDataService.incrementComments(userId, delta);
     }
 
-    /**
-     * 设置字段绝对值（用于数据修复，内部使用，不暴露给外部）
-     */
-    @Transactional
-    private void setField(Long userId, String field, int newValue) {
-        // 根据field调用对应的专用方法
-        switch (field) {
-            case "following_users":
-                userStatsDataService.setFollowingUsers(userId, newValue);
-                break;
-            case "following_courses":
-                userStatsDataService.setFollowingCourses(userId, newValue);
-                break;
-            case "following_professions":
-                userStatsDataService.setFollowingProfessions(userId, newValue);
-                break;
-            case "learning_courses":
-                userStatsDataService.setLearningCourses(userId, newValue);
-                break;
-            case "completed_courses":
-                userStatsDataService.setCompletedCourses(userId, newValue);
-                break;
-            case "in_progress_professions":
-                userStatsDataService.setInProgressProfessions(userId, newValue);
-                break;
-            case "completed_professions":
-                userStatsDataService.setCompletedProfessions(userId, newValue);
-                break;
-            default:
-                log.warn("不支持的字段: {}", field);
-                throw new IllegalArgumentException("不支持的字段: " + field);
-        }
-    }
-
     // ==================== 社交关系统计 ====================
 
     /**
@@ -145,8 +110,8 @@ public class UserStatsDomainService {
      * 增量更新关注职业数
      */
     @Transactional
-    public void incrementFollowingProfessions(Long userId, int delta) {
-        userStatsDataService.incrementFollowingProfessions(userId, delta);
+    public void incrementFollowingRoles(Long userId, int delta) {
+        userStatsDataService.incrementFollowingRoles(userId, delta);
     }
 
     // ==================== 学习进度统计 ====================

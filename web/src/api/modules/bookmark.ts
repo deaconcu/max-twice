@@ -18,7 +18,7 @@ export interface Bookmark {
 /**
  * 内容类型
  */
-export type ContentType = 'profession' | 'roadmap' | 'course' | 'post' | 'memory_card_deck'
+export type ContentType = 'role' | 'roadmap' | 'course' | 'post' | 'memory_card_deck'
 
 /**
  * 收藏相关 API
@@ -43,7 +43,7 @@ export const bookmarkApi = {
   getBookmarks(
     contentType: ContentType,
     lastId?: number,
-    limit: number = 20
+    limit = 20
   ): Promise<ApiResponse<Bookmark[]>> {
     return apiClient.get(`/v1/bookmarks/${contentType}/list`, {
       params: { lastId, limit },

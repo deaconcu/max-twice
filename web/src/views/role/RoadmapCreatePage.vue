@@ -19,10 +19,20 @@
             </v-avatar>
             <div style="min-width: 0">
               <h1 class="text-h6 text-md-h5 font-weight-bold text-grey-darken-4 text-truncate">
-                {{ isEditMode ? t('roadmapCreate.editTitle') : (copyId ? t('roadmapCreate.copyTitle') : t('roadmapCreate.createTitle')) }}
+                {{
+                  isEditMode
+                    ? t('roadmapCreate.editTitle')
+                    : copyId
+                      ? t('roadmapCreate.copyTitle')
+                      : t('roadmapCreate.createTitle')
+                }}
               </h1>
               <p class="text-caption text-sm-body-2 text-grey-darken-2 text-truncate">
-                {{ isEditMode ? t('roadmapCreate.subtitleEdit', { name: roleName }) : t('roadmapCreate.subtitleCreate', { name: roleName }) }}
+                {{
+                  isEditMode
+                    ? t('roadmapCreate.subtitleEdit', { name: roleName })
+                    : t('roadmapCreate.subtitleCreate', { name: roleName })
+                }}
               </p>
             </div>
           </div>
@@ -40,7 +50,9 @@
               class="pa-3 pa-sm-4 d-flex flex-row align-center justify-space-between ga-2 ga-sm-3"
             >
               <div class="d-flex align-center">
-                <span class="text-h6 font-weight-bold me-4">{{ t('roadmapCreate.editorTitle') }}</span>
+                <span class="text-h6 font-weight-bold me-4">{{
+                  t('roadmapCreate.editorTitle')
+                }}</span>
                 <v-chip v-if="nodes.length > 1" size="small" color="primary" variant="tonal">
                   {{ nodes.length - 1 }} {{ t('roadmapCreate.nodeCount') }}
                 </v-chip>
@@ -100,7 +112,9 @@
                     :size="$vuetify.display.mobile ? 16 : 18"
                     class="mr-1"
                   />
-                  <span class="d-none d-sm-inline">{{ t('roadmapCreate.saveWithDescription') }}</span>
+                  <span class="d-none d-sm-inline">{{
+                    t('roadmapCreate.saveWithDescription')
+                  }}</span>
                 </v-btn>
                 <v-divider vertical class="mx-2 toolbar-divider" />
                 <v-btn
@@ -156,17 +170,16 @@
               <div v-if="savedDraftDescription" class="draft-description-section mb-4">
                 <div class="d-flex align-start justify-space-between">
                   <div class="flex-1" style="min-width: 0">
-                    <div class="text-caption text-grey-darken-1 mb-1">{{ t('roadmapCreate.draftDescription') }}</div>
-                    <div class="text-body-2 font-weight-medium text-grey-darken-3 draft-description-text">
+                    <div class="text-caption text-grey-darken-1 mb-1">
+                      {{ t('roadmapCreate.draftDescription') }}
+                    </div>
+                    <div
+                      class="text-body-2 font-weight-medium text-grey-darken-3 draft-description-text"
+                    >
                       {{ savedDraftDescription }}
                     </div>
                   </div>
-                  <v-btn
-                    icon
-                    size="small"
-                    variant="text"
-                    @click="showSaveDialog = true"
-                  >
+                  <v-btn icon size="small" variant="text" @click="showSaveDialog = true">
                     <v-icon icon="mdi-file-document-edit-outline" color="grey-darken-1" size="20" />
                   </v-btn>
                 </div>
@@ -191,7 +204,9 @@
               <div v-show="searchTab === 'course'">
                 <!-- 标题和统计 -->
                 <div class="d-flex align-center justify-space-between mb-3">
-                  <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">{{ t('roadmapCreate.searchCourses') }}</span>
+                  <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">{{
+                    t('roadmapCreate.searchCourses')
+                  }}</span>
                   <a
                     href="/courses"
                     target="_blank"
@@ -212,7 +227,10 @@
                   rounded="lg"
                   autocomplete="off"
                   @keydown.enter="handleSearch"
-                  @click:clear="searchText = ''; availableCourses = []"
+                  @click:clear="
+                    searchText = ''
+                    availableCourses = []
+                  "
                 >
                   <template #append-inner>
                     <v-btn icon size="small" variant="text" @click="handleSearch">
@@ -232,21 +250,25 @@
                   <div class="empty-icon-wrapper mb-3">
                     <v-icon icon="mdi-magnify" size="56" color="grey-lighten-1" />
                   </div>
-                  <p class="text-body-2 text-grey-darken-1 mb-1">{{ t('roadmapCreate.searchCoursesHint') }}</p>
-                  <p class="text-caption text-grey">{{ t('roadmapCreate.searchCoursesSubHint') }}</p>
+                  <p class="text-body-2 text-grey-darken-1 mb-1">
+                    {{ t('roadmapCreate.searchCoursesHint') }}
+                  </p>
+                  <p class="text-caption text-grey">
+                    {{ t('roadmapCreate.searchCoursesSubHint') }}
+                  </p>
                 </div>
 
                 <!-- 课程列表 -->
                 <div v-else class="course-list-wrapper">
                   <div v-if="filteredCourses.length > 0" class="course-list">
-                    <div
-                      v-for="course in filteredCourses"
-                      :key="course.id"
-                      class="course-item"
-                    >
+                    <div v-for="course in filteredCourses" :key="course.id" class="course-item">
                       <v-tooltip location="left" max-width="300" content-class="rounded-lg">
                         <template #activator="{ props }">
-                          <div class="course-name" v-bind="props" @click="goToCourseDetail(course.id)">
+                          <div
+                            class="course-name"
+                            v-bind="props"
+                            @click="goToCourseDetail(course.id)"
+                          >
                             <v-icon icon="mdi-book-outline" size="16" class="mr-1" />
                             {{ course.name }}
                           </div>
@@ -254,9 +276,16 @@
                         <div class="tooltip-content pa-1">
                           <div class="text-subtitle-2 mb-1">{{ course.name }}</div>
                           <div class="text-caption text-grey-lighten-1 mb-2">
-                            {{ categoryStore.getCourseFullCategoryText(course.mainCategory, course.subCategory) }}
+                            {{
+                              categoryStore.getCourseFullCategoryText(
+                                course.mainCategory,
+                                course.subCategory
+                              )
+                            }}
                           </div>
-                          <div class="text-caption">{{ course.description || t('common.noDescription') }}</div>
+                          <div class="text-caption">
+                            {{ course.description || t('common.noDescription') }}
+                          </div>
                         </div>
                       </v-tooltip>
                       <v-btn
@@ -267,12 +296,19 @@
                         :disabled="isNodeAdded(course.rootNodeId)"
                         @click.stop="addCourseNode(course)"
                       >
-                        <v-icon size="14">{{ isNodeAdded(course.rootNodeId) ? 'mdi-check' : 'mdi-plus' }}</v-icon>
+                        <v-icon size="14">{{
+                          isNodeAdded(course.rootNodeId) ? 'mdi-check' : 'mdi-plus'
+                        }}</v-icon>
                       </v-btn>
                     </div>
                   </div>
                   <div v-else class="text-center py-6">
-                    <v-icon icon="mdi-book-off-outline" size="48" color="grey-lighten-1" class="mb-2" />
+                    <v-icon
+                      icon="mdi-book-off-outline"
+                      size="48"
+                      color="grey-lighten-1"
+                      class="mb-2"
+                    />
                     <p class="text-body-2 text-grey">{{ t('roadmapCreate.noCoursesFound') }}</p>
                   </div>
                 </div>
@@ -282,7 +318,9 @@
               <div v-show="searchTab === 'node'">
                 <!-- 标题 -->
                 <div class="mb-3">
-                  <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">{{ t('roadmapCreate.searchNodes') }}</span>
+                  <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">{{
+                    t('roadmapCreate.searchNodes')
+                  }}</span>
                 </div>
 
                 <!-- 搜索框 -->
@@ -296,7 +334,10 @@
                   rounded="lg"
                   autocomplete="off"
                   @keydown.enter="handleNodeSearch"
-                  @click:clear="nodeSearchText = ''; availableNodes = []"
+                  @click:clear="
+                    nodeSearchText = ''
+                    availableNodes = []
+                  "
                 >
                   <template #append-inner>
                     <v-btn icon size="small" variant="text" @click="handleNodeSearch">
@@ -316,23 +357,26 @@
                   <div class="empty-icon-wrapper mb-3">
                     <v-icon icon="mdi-magnify" size="56" color="grey-lighten-1" />
                   </div>
-                  <p class="text-body-2 text-grey-darken-1 mb-1">{{ t('roadmapCreate.searchNodesHint') }}</p>
+                  <p class="text-body-2 text-grey-darken-1 mb-1">
+                    {{ t('roadmapCreate.searchNodesHint') }}
+                  </p>
                   <p class="text-caption text-grey">{{ t('roadmapCreate.searchNodesSubHint') }}</p>
                 </div>
 
                 <!-- 节点列表 -->
                 <div v-else class="course-list-wrapper">
                   <div v-if="filteredNodes.length > 0" class="course-list">
-                    <div
-                      v-for="node in filteredNodes"
-                      :key="node.id"
-                      class="course-item"
-                    >
+                    <div v-for="node in filteredNodes" :key="node.id" class="course-item">
                       <v-tooltip location="left" max-width="300" content-class="rounded-lg">
                         <template #activator="{ props }">
                           <div class="node-content" v-bind="props">
                             <div class="course-name" @click="goToNodeDetail(node.id)">
-                              <v-icon icon="mdi-file-document-outline" size="16" class="mr-1" color="success" />
+                              <v-icon
+                                icon="mdi-file-document-outline"
+                                size="16"
+                                class="mr-1"
+                                color="success"
+                              />
                               {{ node.name }}
                             </div>
                             <div v-if="node.courseName" class="text-caption text-grey ps-6">
@@ -345,7 +389,9 @@
                           <div v-if="node.courseName" class="text-caption text-success mb-2">
                             {{ t('roadmapCreate.fromCourse', { name: node.courseName }) }}
                           </div>
-                          <div class="text-caption">{{ node.description || t('common.noDescription') }}</div>
+                          <div class="text-caption">
+                            {{ node.description || t('common.noDescription') }}
+                          </div>
                         </div>
                       </v-tooltip>
                       <v-btn
@@ -356,12 +402,19 @@
                         :disabled="isNodeAdded(node.id)"
                         @click.stop="addNode(node)"
                       >
-                        <v-icon size="14">{{ isNodeAdded(node.id) ? 'mdi-check' : 'mdi-plus' }}</v-icon>
+                        <v-icon size="14">{{
+                          isNodeAdded(node.id) ? 'mdi-check' : 'mdi-plus'
+                        }}</v-icon>
                       </v-btn>
                     </div>
                   </div>
                   <div v-else class="text-center py-6">
-                    <v-icon icon="mdi-file-document-off-outline" size="48" color="grey-lighten-1" class="mb-2" />
+                    <v-icon
+                      icon="mdi-file-document-off-outline"
+                      size="48"
+                      color="grey-lighten-1"
+                      class="mb-2"
+                    />
                     <p class="text-body-2 text-grey">{{ t('roadmapCreate.noNodesFound') }}</p>
                   </div>
                 </div>
@@ -370,8 +423,15 @@
               <!-- 操作指南 -->
               <div class="tips-section">
                 <div class="tips-header">
-                  <v-icon icon="mdi-information-outline" size="16" class="mr-1" color="grey-darken-1" />
-                  <span class="text-caption text-grey-darken-1">{{ t('roadmapCreate.operationGuide') }}</span>
+                  <v-icon
+                    icon="mdi-information-outline"
+                    size="16"
+                    class="mr-1"
+                    color="grey-darken-1"
+                  />
+                  <span class="text-caption text-grey-darken-1">{{
+                    t('roadmapCreate.operationGuide')
+                  }}</span>
                 </div>
                 <div class="tips-list-simple">
                   <div class="tip-simple">{{ t('roadmapCreate.tip1') }}</div>
@@ -504,7 +564,7 @@ const route = useRoute()
 const categoryStore = useCategoryStore()
 
 // 注入全局 snackbar
-const showSnackbar = inject('showSnackbar') as (message: string, type?: string) => void
+const showSnackbar = inject('showSnackbar')!
 
 // 获取 VueFlow 实例
 const { fitView, setCenter } = useVueFlow()
@@ -841,12 +901,16 @@ const deleteSelectedNodes = () => {
   }
 
   const itemsText = []
-  if (selectedNodes.length > 0) itemsText.push(t('roadmapCreate.messages.nodeCount', { count: selectedNodes.length }))
-  if (selectedEdges.length > 0) itemsText.push(t('roadmapCreate.messages.edgeCount', { count: selectedEdges.length }))
+  if (selectedNodes.length > 0)
+    itemsText.push(t('roadmapCreate.messages.nodeCount', { count: selectedNodes.length }))
+  if (selectedEdges.length > 0)
+    itemsText.push(t('roadmapCreate.messages.edgeCount', { count: selectedEdges.length }))
 
   confirmDialogConfig.value = {
     title: t('roadmapCreate.messages.deleteConfirmTitle'),
-    message: t('roadmapCreate.messages.deleteConfirmMsg', { items: itemsText.join(t('roadmapCreate.messages.and')) }),
+    message: t('roadmapCreate.messages.deleteConfirmMsg', {
+      items: itemsText.join(t('roadmapCreate.messages.and')),
+    }),
     confirmText: t('common.delete'),
     cancelText: t('common.cancel'),
     confirmColor: 'error',
@@ -861,10 +925,18 @@ const deleteSelectedNodes = () => {
       // 删除选中的边，以及与被删除节点相关的边
       const selectedEdgeIds = new Set(selectedEdges.map((e) => e.id))
       edges.value = edges.value.filter(
-        (e) => !selectedEdgeIds.has(e.id) && !selectedNodeIds.has(e.source) && !selectedNodeIds.has(e.target)
+        (e) =>
+          !selectedEdgeIds.has(e.id) &&
+          !selectedNodeIds.has(e.source) &&
+          !selectedNodeIds.has(e.target)
       )
 
-      showSnackbar(t('roadmapCreate.messages.deleted', { items: itemsText.join(t('roadmapCreate.messages.and')) }), 'success')
+      showSnackbar(
+        t('roadmapCreate.messages.deleted', {
+          items: itemsText.join(t('roadmapCreate.messages.and')),
+        }),
+        'success'
+      )
     },
   }
   confirmDialogVisible.value = true
@@ -1002,7 +1074,11 @@ const saveRoadmap = async (type: 'draft' | 'publish') => {
       // 验证树结构：边数 = 节点数 - 1
       if (edgeArray.length !== nodeArray.length - 1) {
         showSnackbar(
-          t('roadmapCreate.messages.invalidTreeStructure', { nodes: nodeArray.length, edges: edgeArray.length, expectedEdges: nodeArray.length - 1 }),
+          t('roadmapCreate.messages.invalidTreeStructure', {
+            nodes: nodeArray.length,
+            edges: edgeArray.length,
+            expectedEdges: nodeArray.length - 1,
+          }),
           'error'
         )
         return
@@ -1046,14 +1122,17 @@ const saveRoadmap = async (type: 'draft' | 'publish') => {
     }
 
     if (response.code === 200) {
-      const message = type === 'draft' ? t('roadmapCreate.messages.draftSaved') : t('roadmapCreate.messages.published')
+      const message =
+        type === 'draft'
+          ? t('roadmapCreate.messages.draftSaved')
+          : t('roadmapCreate.messages.published')
       showSnackbar(message, 'success')
       showSaveDialog.value = false
 
       // 草稿模式：保存描述和ID，留在当前页面
       if (type === 'draft') {
         savedDraftDescription.value = roadmapDescription.value.trim()
-        if (response.data && response.data.id) {
+        if (response.data?.id) {
           draftRoadmapId.value = response.data.id
         }
       } else {
@@ -1214,20 +1293,14 @@ const resetAll = () => {
 }
 
 // 编辑模式：加载已有路线图数据
-const {
-  data: roadmapData,
-  loading: roadmapLoading,
-} = useFetch({
+const { data: roadmapData, loading: roadmapLoading } = useFetch({
   fetchFn: () => roadmapApi.getRoadmap(roadmapId.value!),
   immediate: isEditMode.value,
   defaultValue: null,
 })
 
 // 复制模式：加载要复制的路线图数据
-const {
-  data: copyRoadmapData,
-  loading: copyRoadmapLoading,
-} = useFetch({
+const { data: copyRoadmapData, loading: copyRoadmapLoading } = useFetch({
   fetchFn: () => roadmapApi.getRoadmap(copyId.value!),
   immediate: !!copyId.value,
   defaultValue: null,
@@ -1256,9 +1329,8 @@ watch(roadmapData, (newData) => {
     // 解析 content 并设置节点和边
     try {
       // content 是 JSON 字符串，格式为 {nodes: [], edges: []}
-      const contentData = typeof newData.content === 'string'
-        ? JSON.parse(newData.content)
-        : newData.content
+      const contentData =
+        typeof newData.content === 'string' ? JSON.parse(newData.content) : newData.content
 
       console.log('解析后的 content:', contentData)
 
@@ -1322,9 +1394,8 @@ watch(copyRoadmapData, (newData) => {
 
     // 解析 content 并设置节点和边
     try {
-      const contentData = typeof newData.content === 'string'
-        ? JSON.parse(newData.content)
-        : newData.content
+      const contentData =
+        typeof newData.content === 'string' ? JSON.parse(newData.content) : newData.content
 
       console.log('解析后的 content:', contentData)
 
@@ -1332,9 +1403,10 @@ watch(copyRoadmapData, (newData) => {
         // 重新生成节点ID，避免ID冲突
         const idMap = new Map<string, string>()
         const newNodes = contentData.nodes.map((node: any) => {
-          const newId = node.id === '0' || node.id === 0
-            ? '0'
-            : `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          const newId =
+            node.id === '0' || node.id === 0
+              ? '0'
+              : `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
           idMap.set(node.id.toString(), newId)
 
           if (node.id === '0' || node.id === 0) {

@@ -69,11 +69,11 @@ backend/
 │   │   ├── NodeDataService.java
 │   │   ├── NodeMapper.java
 │   │   └── NodeDO.java
-│   ├── profession/       # 职业子域（扁平结构）
-│   │   ├── ProfessionService.java
-│   │   ├── ProfessionDataService.java
-│   │   ├── ProfessionMapper.java
-│   │   └── ProfessionDO.java
+│   ├── role/       # 职业子域（扁平结构）
+│   │   ├── RoleService.java
+│   │   ├── RoleDataService.java
+│   │   ├── RoleMapper.java
+│   │   └── RoleDO.java
 │   └── roadmap/          # 路线图子域（扁平结构）
 │       ├── RoadmapService.java
 │       ├── RoadmapDataService.java
@@ -236,7 +236,7 @@ backend/
 
 #### 核心域
 1. **learn-content**：内容管理域
-   - 职业(Profession) → 路线图(Roadmap) → 课程(Course) → 节点(Node) → 文章(Post)
+   - 职业(Role) → 路线图(Roadmap) → 课程(Course) → 节点(Node) → 文章(Post)
    - 内容的创建、编辑、发布、管理
 
 2. **learn-learning**：学习行为域
@@ -382,7 +382,7 @@ api ← service ← dataservice ← mapper ← dataobject
 - 定义共享基础组件
 
 #### 第2周：核心域迁移
-- **learn-content**：迁移Post、Course、Node、Profession等
+- **learn-content**：迁移Post、Course、Node、Role等
 - **learn-interaction**：迁移Upvote、Comment、Follow等
 - 建立域间事件通信机制
 

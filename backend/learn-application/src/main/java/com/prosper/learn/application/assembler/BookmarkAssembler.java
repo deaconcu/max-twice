@@ -3,12 +3,12 @@ package com.prosper.learn.application.assembler;
 import com.prosper.learn.application.converter.BookmarkConverter;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.MemoryCardDeckConverter;
-import com.prosper.learn.application.converter.ProfessionConverter;
+import com.prosper.learn.application.converter.RoleConverter;
 import com.prosper.learn.application.dto.response.bookmark.BookmarkDTO;
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.deck.DeckFullDTO;
 import com.prosper.learn.application.dto.response.post.PostDetailDTO;
-import com.prosper.learn.application.dto.response.profession.ProfessionBriefDTO;
+import com.prosper.learn.application.dto.response.role.RoleBriefDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapBriefDTO;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
@@ -16,8 +16,8 @@ import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
-import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDO;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.interaction.bookmark.BookmarkDO;
@@ -45,8 +45,8 @@ import java.util.stream.Collectors;
 public class BookmarkAssembler {
 
     private final BookmarkConverter bookmarkConverter;
-    private final ProfessionDataService professionDataService;
-    private final ProfessionConverter professionConverter;
+    private final RoleDataService roleDataService;
+    private final RoleConverter roleConverter;
     private final RoadmapDataService roadmapDataService;
     private final RoadmapAssembler roadmapAssembler;
     private final CourseDataService courseDataService;
@@ -66,7 +66,7 @@ public class BookmarkAssembler {
         }
 
         return switch (contentType) {
-            case profession -> toProfessionBookmarks(bookmarks);
+            case role -> toRoleBookmarks(bookmarks);
             case roadmap -> toRoadmapBookmarks(bookmarks);
             case course -> toCourseBookmarks(bookmarks);
             case post -> toPostBookmarks(bookmarks);
@@ -77,16 +77,16 @@ public class BookmarkAssembler {
 
     // ========== 私有辅助方法 ==========
 
-    private List<BookmarkDTO<Object>> toProfessionBookmarks(List<BookmarkDO> bookmarks) {
+    private List<BookmarkDTO<Object>> toRoleBookmarks(List<BookmarkDO> bookmarks) {
         List<Long> objectIds = bookmarks.stream().map(BookmarkDO::getObjectId).collect(Collectors.toList());
-        List<ProfessionDO> professions = professionDataService.getByIds(objectIds);
-        Map<Long, ProfessionBriefDTO> professionMap = professions.stream()
-            .collect(Collectors.toMap(ProfessionDO::getId, professionConverter::toBriefDTO));
+        List<RoleDO> roleDOList = roleDataService.getByIds(objectIds);
+        Map<Long, RoleBriefDTO> roleBriefDTOMap = roleDOList.stream()
+            .collect(Collectors.toMap(RoleDO::getId, roleConverter::toBriefDTO));
 
         List<BookmarkDTO<Object>> result = new ArrayList<>();
         for (BookmarkDO bookmark : bookmarks) {
             BookmarkDTO<Object> dto = bookmarkConverter.toDTO(bookmark);
-            dto.setObject(professionMap.get(bookmark.getObjectId()));
+            dto.setObject(roleBriefDTOMap.get(bookmark.getObjectId()));
             result.add(dto);
         }
         return result;

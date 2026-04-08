@@ -5,7 +5,10 @@
       <div class="shape shape-1"></div>
       <div class="shape shape-2"></div>
       <svg class="shape shape-3" viewBox="0 0 100 90" width="70" height="63">
-        <path d="M50 8 Q50 0 56 8 L92 76 Q100 90 86 90 L14 90 Q0 90 8 76 L44 8 Q50 0 50 8 Z" fill="#66BB6A"/>
+        <path
+          d="M50 8 Q50 0 56 8 L92 76 Q100 90 86 90 L14 90 Q0 90 8 76 L44 8 Q50 0 50 8 Z"
+          fill="#66BB6A"
+        />
       </svg>
       <div class="shape shape-4"></div>
       <div class="shape shape-5"></div>
@@ -116,9 +119,14 @@
                   <!-- 用户协议 -->
                   <p class="text-caption text-center text-medium-emphasis mb-4">
                     {{ t('user.login.agreementPrefix') }}
-                    <a href="#" class="text-primary text-decoration-none">{{ t('user.login.userAgreement') }}</a>
+                    <a href="#" class="text-primary text-decoration-none">{{
+                      t('user.login.userAgreement')
+                    }}</a>
                     {{ t('user.login.agreementMiddle') }}
-                    <a href="#" class="text-primary text-decoration-none">{{ t('user.login.privacyPolicy') }}</a>。
+                    <a href="#" class="text-primary text-decoration-none">{{
+                      t('user.login.privacyPolicy')
+                    }}</a
+                    >。
                   </p>
 
                   <v-divider class="my-6" />
@@ -323,7 +331,7 @@ const goToRegister = () => {
 .shape-1 {
   width: 80px;
   height: 80px;
-  background-color: #FF7043;
+  background-color: #ff7043;
   border-radius: 50%;
   top: 8%;
   right: 12%;
@@ -333,7 +341,7 @@ const goToRegister = () => {
 .shape-2 {
   width: 60px;
   height: 60px;
-  background-color: #26C6DA;
+  background-color: #26c6da;
   border-radius: 8px;
   top: 20%;
   left: 8%;
@@ -351,7 +359,7 @@ const goToRegister = () => {
 .shape-4 {
   width: 40px;
   height: 40px;
-  background-color: #26C6DA;
+  background-color: #26c6da;
   border-radius: 50%;
   top: 35%;
   right: 6%;
@@ -361,7 +369,7 @@ const goToRegister = () => {
 .shape-5 {
   width: 50px;
   height: 50px;
-  background-color: #FF7043;
+  background-color: #ff7043;
   border-radius: 6px;
   bottom: 15%;
   right: 10%;
@@ -383,7 +391,7 @@ const goToRegister = () => {
 .shape-7 {
   width: 30px;
   height: 30px;
-  background-color: #FF7043;
+  background-color: #ff7043;
   border-radius: 50%;
   top: 45%;
   left: 20%;
@@ -393,7 +401,7 @@ const goToRegister = () => {
 .shape-8 {
   width: 45px;
   height: 45px;
-  background-color: #26C6DA;
+  background-color: #26c6da;
   border-radius: 10px;
   bottom: 35%;
   right: 18%;

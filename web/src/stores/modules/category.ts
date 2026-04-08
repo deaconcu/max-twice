@@ -12,9 +12,9 @@ export interface CourseCategory {
 }
 
 /**
- * 职业分类数据结构
+ * 角色分类数据结构
  */
-export interface ProfessionCategory {
+export interface RoleCategory {
   id: number
   title: string
   description?: string
@@ -25,22 +25,22 @@ export interface ProfessionCategory {
  */
 export interface CourseCategoryMapping {
   mainCategoryId: number
-  subCategories: Array<{
+  subCategories: {
     id: number
     name: string
-  }>
+  }[]
 }
 
 /**
- * 职业分类映射数据结构
+ * 角色分类映射数据结构
  */
-export interface ProfessionCategoryMapping {
+export interface RoleCategoryMapping {
   mainCategoryId: number
-  subcategories: Array<{
+  subcategories: {
     // 注意：小写 c
     id: number
     name: string
-  }>
+  }[]
 }
 
 /**
@@ -52,16 +52,16 @@ export interface CourseCategoriesData {
 }
 
 /**
- * 职业分类响应数据
+ * 角色分类响应数据
  */
-export interface ProfessionCategoriesData {
-  mainCategories: ProfessionCategory[]
-  categoryMapping: ProfessionCategoryMapping[]
+export interface RoleCategoriesData {
+  mainCategories: RoleCategory[]
+  categoryMapping: RoleCategoryMapping[]
 }
 
 /**
  * 分类数据 Store
- * 从后端获取课程和职业分类数据，统一管理并缓存
+ * 从后端获取课程和角色分类数据，统一管理并缓存
  * 参考 validationConfig.ts 的实现模式
  */
 export const useCategoryStore = defineStore(
@@ -69,8 +69,8 @@ export const useCategoryStore = defineStore(
   () => {
     // 课程分类数据
     const courseCategories = ref<CourseCategoriesData | null>(null)
-    // 职业分类数据
-    const professionCategories = ref<ProfessionCategoriesData | null>(null)
+    // 角色分类数据
+    const roleCategories = ref<RoleCategoriesData | null>(null)
     // 最后检查时间
     const lastChecked = ref<number>(0)
     // 加载状态
@@ -92,7 +92,7 @@ export const useCategoryStore = defineStore(
         )
         return {
           courseCategories: courseCategories.value,
-          professionCategories: professionCategories.value,
+          roleCategories: roleCategories.value,
         }
       }
 
@@ -103,21 +103,21 @@ export const useCategoryStore = defineStore(
 
       return {
         courseCategories: courseCategories.value,
-        professionCategories: professionCategories.value,
+        roleCategories: roleCategories.value,
       }
     }
 
     /**
      * 加载分类数据（内部方法）
-     * 同时加载课程和职业分类
+     * 同时加载课程和角色分类
      */
     async function loadCategories() {
       loading.value = true
       try {
-        // 并行加载课程和职业分类
-        const [courseResponse, professionResponse] = await Promise.all([
+        // 并行加载课程和角色分类
+        const [courseResponse, roleResponse] = await Promise.all([
           systemApi.getCourseCategories(),
-          systemApi.getProfessionCategories(),
+          systemApi.getRoleCategories(),
         ])
 
         // 更新课程分类
@@ -133,16 +133,16 @@ export const useCategoryStore = defineStore(
           }
         }
 
-        // 更新职业分类
-        if (professionResponse.data) {
-          const oldProfessionConfig = JSON.stringify(professionCategories.value)
-          const newProfessionConfig = JSON.stringify(professionResponse.data)
+        // 更新角色分类
+        if (roleResponse.data) {
+          const oldRoleConfig = JSON.stringify(roleCategories.value)
+          const newRoleConfig = JSON.stringify(roleResponse.data)
 
-          if (oldProfessionConfig !== newProfessionConfig) {
-            console.log('[CategoryStore] ✅ 职业分类已更新')
-            professionCategories.value = professionResponse.data
+          if (oldRoleConfig !== newRoleConfig) {
+            console.log('[CategoryStore] ✅ 角色分类已更新')
+            roleCategories.value = roleResponse.data
           } else {
-            console.log('[CategoryStore] 职业分类无变化')
+            console.log('[CategoryStore] 角色分类无变化')
           }
         }
       } catch (error) {
@@ -171,7 +171,7 @@ export const useCategoryStore = defineStore(
     /**
      * 获取课程子分类列表
      */
-    function getCourseSubCategories(mainCategoryId?: number): Array<{ id: number; name: string }> {
+    function getCourseSubCategories(mainCategoryId?: number): { id: number; name: string }[] {
       if (!courseCategories.value?.categoryMapping) return []
       if (!mainCategoryId) return []
 
@@ -182,22 +182,20 @@ export const useCategoryStore = defineStore(
     }
 
     /**
-     * 获取职业主分类列表
+     * 获取角色主分类列表
      */
-    function getProfessionMainCategories(): ProfessionCategory[] {
-      return professionCategories.value?.mainCategories || []
+    function getRoleMainCategories(): RoleCategory[] {
+      return roleCategories.value?.mainCategories || []
     }
 
     /**
-     * 获取职业子分类列表
+     * 获取角色子分类列表
      */
-    function getProfessionSubCategories(
-      mainCategoryId?: number
-    ): Array<{ id: number; name: string }> {
-      if (!professionCategories.value?.categoryMapping) return []
+    function getRoleSubCategories(mainCategoryId?: number): { id: number; name: string }[] {
+      if (!roleCategories.value?.categoryMapping) return []
       if (!mainCategoryId) return []
 
-      const mapping = professionCategories.value.categoryMapping.find(
+      const mapping = roleCategories.value.categoryMapping.find(
         (m) => m.mainCategoryId === mainCategoryId
       )
       return mapping?.subcategories || [] // 注意：小写 c
@@ -213,11 +211,11 @@ export const useCategoryStore = defineStore(
     }
 
     /**
-     * 根据 ID 获取职业主分类名称
+     * 根据 ID 获取角色主分类名称
      */
-    function getProfessionMainCategoryName(id?: number): string {
+    function getRoleMainCategoryName(id?: number): string {
       if (!id) return ''
-      const category = getProfessionMainCategories().find((c) => c.id === id)
+      const category = getRoleMainCategories().find((c) => c.id === id)
       return category?.title || ''
     }
 
@@ -247,24 +245,24 @@ export const useCategoryStore = defineStore(
      */
     function clearCache() {
       courseCategories.value = null
-      professionCategories.value = null
+      roleCategories.value = null
       lastChecked.value = 0
       console.log('[CategoryStore] 缓存已清除')
     }
 
     return {
       courseCategories,
-      professionCategories,
+      roleCategories,
       lastChecked,
       loading,
       checkAndLoad,
       refresh,
       getCourseMainCategories,
       getCourseSubCategories,
-      getProfessionMainCategories,
-      getProfessionSubCategories,
+      getRoleMainCategories,
+      getRoleSubCategories,
       getCourseMainCategoryName,
-      getProfessionMainCategoryName,
+      getRoleMainCategoryName,
       getSubCategoryName,
       getCourseFullCategoryText,
       clearCache,
@@ -273,7 +271,7 @@ export const useCategoryStore = defineStore(
   {
     persist: {
       key: 'categoryStore',
-      paths: ['courseCategories', 'professionCategories', 'lastChecked'], // 持久化分类数据和最后检查时间
+      paths: ['courseCategories', 'roleCategories', 'lastChecked'], // 持久化分类数据和最后检查时间
     },
   }
 )

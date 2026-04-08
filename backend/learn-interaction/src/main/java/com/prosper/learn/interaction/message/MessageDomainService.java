@@ -1,6 +1,5 @@
 package com.prosper.learn.interaction.message;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.shared.common.utils.Utils;
 import lombok.RequiredArgsConstructor;
@@ -142,10 +141,10 @@ public class MessageDomainService {
     /**
      * 创建路线图点赞消息
      */
-    public void createRoadmapUpvoteMessage(long receiverId, long voterId, long professionId, long roadmapId) {
+    public void createRoadmapUpvoteMessage(long receiverId, long voterId, long roleId, long roadmapId) {
         Map<String, Object> messageMap = new HashMap<>();
         messageMap.put("voterId", voterId);
-        messageMap.put("professionId", professionId);
+        messageMap.put("roleId", roleId);
         messageMap.put("roadmapId", roadmapId);
         messageMap.put("contentType", "roadmap");
 
@@ -234,25 +233,25 @@ public class MessageDomainService {
     /**
      * 发送职业审核通知
      */
-    public void sendProfessionModeration(long userId, long professionId, String professionName,
-                                         ModerationAction action, String reason) {
+    public void sendRoleModeration(long userId, long roleId, String roleName,
+                                   ModerationAction action, String reason) {
         Map<String, Object> data = new HashMap<>();
-        data.put("professionId", professionId);
-        data.put("professionName", professionName);
+        data.put("roleId", roleId);
+        data.put("roleName", roleName);
 
         int type;
         switch (action) {
             case APPROVED -> {
-                data.put("linkUrl", "/roadmap/" + professionId);
-                type = MessageType.professionApproved.value();
+                data.put("linkUrl", "/roadmap/" + roleId);
+                type = MessageType.roleApproved.value();
             }
             case REJECTED -> {
                 data.put("reason", reason != null ? reason : "");
-                type = MessageType.professionRejected.value();
+                type = MessageType.roleRejected.value();
             }
             case BANNED -> {
                 data.put("reason", reason != null ? reason : "");
-                type = MessageType.professionBanned.value();
+                type = MessageType.roleBanned.value();
             }
             default -> throw new RuntimeException("无效的审核操作: " + action);
         }
@@ -263,12 +262,12 @@ public class MessageDomainService {
     /**
      * 发送路线图审核通知
      */
-    public void sendRoadmapModeration(long userId, long roadmapId, long professionId,
-                                      String professionName, ModerationAction action, String reason) {
+    public void sendRoadmapModeration(long userId, long roadmapId, long roleId,
+                                      String roleName, ModerationAction action, String reason) {
         Map<String, Object> data = new HashMap<>();
         data.put("roadmapId", roadmapId);
-        data.put("professionId", professionId);
-        data.put("professionName", professionName);
+        data.put("roleId", roleId);
+        data.put("roleName", roleName);
         data.put("reason", reason != null ? reason : "");
         data.put("linkUrl", "/self?tab=roadmaps");
 

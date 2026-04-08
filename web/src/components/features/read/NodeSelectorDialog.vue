@@ -8,14 +8,6 @@ import { PostType } from '@/enums'
 import type { Node } from '@/types/node'
 import { useI18n } from '@/composables/useI18n'
 
-const { t } = useI18n()
-
-interface Props {
-  courseId?: number
-  nodeId?: number // 当前节点ID，用于创建 index post
-  draftPost?: any // 已有的草稿post，用于编辑模式
-}
-
 const props = withDefaults(defineProps<Props>(), {
   courseId: 0,
   nodeId: 0,
@@ -27,6 +19,14 @@ const emit = defineEmits<{
   'load-data': []
 }>()
 
+const { t } = useI18n()
+
+interface Props {
+  courseId?: number
+  nodeId?: number // 当前节点ID，用于创建 index post
+  draftPost?: any // 已有的草稿post，用于编辑模式
+}
+
 const dialog = defineModel<boolean>({ default: false })
 const router = useRouter()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
@@ -34,7 +34,7 @@ const showSnackbar = inject<(message: string, type?: string) => void>('showSnack
 // 搜索相关
 const searchResults = ref<Node[]>([])
 const loading = ref(false)
-const hasSearched = ref(false)  // 是否已执行搜索
+const hasSearched = ref(false) // 是否已执行搜索
 
 // 创建表单
 const newNode = ref({ name: '', description: '' })
@@ -80,7 +80,7 @@ const { execute: executeSaveDraft, loading: savingDraft } = useMutation(
     } else {
       // 创建模式：创建新草稿
       return await postApi.createPost({
-        nodeId: props.nodeId!,
+        nodeId: props.nodeId,
         type: PostType.INDEX,
         content: JSON.stringify(jsonContent),
         state: 0, // DRAFT
@@ -120,7 +120,7 @@ const { execute: executeSubmit, loading: submitting } = useMutation(
     } else {
       // 创建模式：直接创建并提交审核
       return await postApi.createPost({
-        nodeId: props.nodeId!,
+        nodeId: props.nodeId,
         type: PostType.INDEX,
         content: JSON.stringify(jsonContent),
         state: 1, // SUBMITTED
@@ -129,7 +129,10 @@ const { execute: executeSubmit, loading: submitting } = useMutation(
   },
   {
     onSuccess: () => {
-      showSnackbar?.(isEditMode.value ? t('nodeSelector.submitUpdated') : t('nodeSelector.submitSuccess'), 'success')
+      showSnackbar?.(
+        isEditMode.value ? t('nodeSelector.submitUpdated') : t('nodeSelector.submitSuccess'),
+        'success'
+      )
 
       // 只有编辑模式（从个人页进入）才需要刷新列表
       // 创建模式（从 read 页进入）不需要刷新
@@ -150,15 +153,21 @@ const canConfirm = computed(() => selectedNodes.value.length >= 2)
 const isSubmitting = computed(() => savingDraft.value || submitting.value)
 
 // 监听输入框变化，清空搜索结果
-watch(() => newNode.value.name, () => {
-  searchResults.value = []
-  hasSearched.value = false
-})
+watch(
+  () => newNode.value.name,
+  () => {
+    searchResults.value = []
+    hasSearched.value = false
+  }
+)
 
-watch(() => newNode.value.description, () => {
-  searchResults.value = []
-  hasSearched.value = false
-})
+watch(
+  () => newNode.value.description,
+  () => {
+    searchResults.value = []
+    hasSearched.value = false
+  }
+)
 
 // 搜索节点
 const handleSearch = async () => {
@@ -216,10 +225,7 @@ const addNewNode = async () => {
     try {
       const response = await postApi.checkDuplicateNode(props.courseId, newNode.value.name)
       if (response.data === true) {
-        showSnackbar?.(
-          `${t('nodeSelector.nodeExists', { name: newNode.value.name })}`,
-          'error'
-        )
+        showSnackbar?.(t('nodeSelector.nodeExists', { name: newNode.value.name }), 'error')
         return
       }
     } catch (error) {
@@ -261,7 +267,7 @@ const open = () => {
 
   // 加载草稿的节点列表（优先使用 currentDraft，其次是 props.draftPost）
   const draft = getCurrentDraft.value
-  if (draft && draft.content) {
+  if (draft?.content) {
     try {
       const nodes = JSON.parse(draft.content)
       selectedNodes.value = nodes.map((node: any) => ({
@@ -284,7 +290,9 @@ defineExpose({ open })
       <v-card-title class="pa-4 d-flex align-center justify-space-between border-b">
         <div class="d-flex align-center">
           <v-icon icon="mdi-format-list-group-plus" color="primary" class="mr-2" />
-          <span class="text-h6 font-weight-bold">{{ isEditMode ? t('nodeSelector.editDraft') : t('nodeSelector.addCatalog') }}</span>
+          <span class="text-h6 font-weight-bold">{{
+            isEditMode ? t('nodeSelector.editDraft') : t('nodeSelector.addCatalog')
+          }}</span>
         </div>
         <v-btn icon="mdi-close" variant="text" size="small" @click="close" />
       </v-card-title>
@@ -329,7 +337,11 @@ defineExpose({ open })
                   <v-btn
                     color="primary"
                     variant="tonal"
-                    :disabled="!newNode.name.trim() || !newNode.description.trim() || newNode.description.length < 20"
+                    :disabled="
+                      !newNode.name.trim() ||
+                      !newNode.description.trim() ||
+                      newNode.description.length < 20
+                    "
                     @click="handleSearch"
                   >
                     <v-icon start>mdi-magnify</v-icon>
@@ -381,10 +393,16 @@ defineExpose({ open })
                               variant="tonal"
                               class="ml-2"
                             >
-                              {{ t('nodeSelector.similarity', { score: Math.round(node.similarityScore * 100) }) }}
+                              {{
+                                t('nodeSelector.similarity', {
+                                  score: Math.round(node.similarityScore * 100),
+                                })
+                              }}
                             </v-chip>
                             <v-chip
-                              v-if="node.nodeReferenceCount !== undefined && node.nodeReferenceCount > 0"
+                              v-if="
+                                node.nodeReferenceCount !== undefined && node.nodeReferenceCount > 0
+                              "
                               size="x-small"
                               color="grey"
                               variant="tonal"
@@ -420,11 +438,13 @@ defineExpose({ open })
                   </v-card>
                 </div>
 
-                <div
-                  v-else-if="hasSearched && searchResults.length === 0"
-                  class="text-center py-6"
-                >
-                  <v-icon icon="mdi-file-search-outline" size="48" color="grey-lighten-1" class="mb-2" />
+                <div v-else-if="hasSearched && searchResults.length === 0" class="text-center py-6">
+                  <v-icon
+                    icon="mdi-file-search-outline"
+                    size="48"
+                    color="grey-lighten-1"
+                    class="mb-2"
+                  />
                   <p class="text-body-2 text-grey">{{ t('nodeSelector.noResults') }}</p>
                 </div>
               </div>
@@ -451,9 +471,7 @@ defineExpose({ open })
                     </div>
 
                     <div class="catalog-content">
-                      <div class="catalog-title">
-                        {{ index + 1 }}. {{ element.name }}
-                      </div>
+                      <div class="catalog-title">{{ index + 1 }}. {{ element.name }}</div>
                       <div class="catalog-desc">{{ element.description }}</div>
                     </div>
 
@@ -474,7 +492,9 @@ defineExpose({ open })
 
       <v-card-actions class="pa-4 border-t d-flex ga-3">
         <v-spacer />
-        <v-btn variant="tonal" color="grey" class="px-6" @click="close">{{ t('common.cancel') }}</v-btn>
+        <v-btn variant="tonal" color="grey" class="px-6" @click="close">{{
+          t('common.cancel')
+        }}</v-btn>
         <v-btn
           variant="tonal"
           color="grey-darken-1"
@@ -495,7 +515,9 @@ defineExpose({ open })
           @click="executeSubmit"
         >
           <v-icon start>mdi-send</v-icon>
-          {{ selectedNodes.length < 2 ? t('nodeSelector.submitWithMin') : t('nodeSelector.submit') }}
+          {{
+            selectedNodes.length < 2 ? t('nodeSelector.submitWithMin') : t('nodeSelector.submit')
+          }}
         </v-btn>
       </v-card-actions>
     </v-card>

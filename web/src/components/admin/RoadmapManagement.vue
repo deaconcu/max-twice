@@ -601,7 +601,10 @@ const showBanDialog = (roadmap: Roadmap): void => {
 // 使用 useMutation 处理拒绝/屏蔽操作
 const { execute: executeRejectOrBan, loading: submitting } = useMutation(
   (payload: { id: number; action: string; reason: string }) =>
-    adminApi.operateContent('roadmap', payload.id, { action: payload.action, reason: payload.reason }),
+    adminApi.operateContent('roadmap', payload.id, {
+      action: payload.action,
+      reason: payload.reason,
+    }),
   {
     successMessage: '操作成功',
     onSuccess: (result) => {

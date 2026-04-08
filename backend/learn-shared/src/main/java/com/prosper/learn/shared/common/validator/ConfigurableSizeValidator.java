@@ -74,15 +74,15 @@ public class ConfigurableSizeValidator implements ConstraintValidator<Configurab
                 this.maxLength = validation.getPostContentMaxLength();
                 this.fieldName = "帖子内容";
                 break;
-            case "profession-name":
-                this.minLength = validation.getProfessionNameMinLength();
-                this.maxLength = validation.getProfessionNameMaxLength();
-                this.fieldName = "职业名称";
+            case "role-name":
+                this.minLength = validation.getRoleNameMinLength();
+                this.maxLength = validation.getRoleNameMaxLength();
+                this.fieldName = "角色名称";
                 break;
-            case "profession-description":
-                this.minLength = validation.getProfessionDescriptionMinLength();
-                this.maxLength = validation.getProfessionDescriptionMaxLength();
-                this.fieldName = "职业描述";
+            case "role-description":
+                this.minLength = validation.getRoleDescriptionMinLength();
+                this.maxLength = validation.getRoleDescriptionMaxLength();
+                this.fieldName = "角色描述";
                 break;
             case "card-front":
                 this.minLength = validation.getCardFrontMinLength();

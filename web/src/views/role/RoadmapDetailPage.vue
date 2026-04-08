@@ -45,7 +45,9 @@
                       size="18"
                       class="mr-1"
                     />
-                    {{ roadmap.learning ? t('roadmapCard.learning') : t('roadmapCard.startLearning') }}
+                    {{
+                      roadmap.learning ? t('roadmapCard.learning') : t('roadmapCard.startLearning')
+                    }}
                   </v-btn>
 
                   <!-- 分隔线 -->
@@ -78,7 +80,11 @@
                         @click="handleToggleBookmark"
                       />
                     </template>
-                    {{ roadmap.bookmarked ? t('roadmapDetail.unbookmark') : t('roadmapDetail.bookmark') }}
+                    {{
+                      roadmap.bookmarked
+                        ? t('roadmapDetail.unbookmark')
+                        : t('roadmapDetail.bookmark')
+                    }}
                   </v-tooltip>
                 </div>
               </div>
@@ -87,7 +93,9 @@
             <!-- 流程图 -->
             <v-card border rounded="xl" class="flow-card">
               <v-card-title class="pa-3 pa-sm-4 d-flex align-center justify-space-between">
-                <span class="text-body-1 font-weight-bold ps-2">{{ t('roadmapDetail.learningPath') }}</span>
+                <span class="text-body-1 font-weight-bold ps-2">{{
+                  t('roadmapDetail.learningPath')
+                }}</span>
                 <v-btn
                   color="grey-darken-2"
                   variant="outlined"
@@ -187,7 +195,8 @@
                         <v-icon icon="mdi-graph-outline" size="18" color="grey" class="mr-2" />
                         <span class="text-body-2 text-grey-darken-2">
                           {{ roadmap.nodeCount }}
-                          <span class="d-none d-sm-inline">{{ t('roleDetail.nodeCountUnit') }}</span>{{ t('roadmap.nodes') }}
+                          <span class="d-none d-sm-inline">{{ t('roleDetail.nodeCountUnit') }}</span
+                          >{{ t('roadmap.nodes') }}
                         </span>
                       </div>
                     </div>
@@ -300,7 +309,7 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
           id: nodeId,
           type: 'default',
           data: {
-        label: roadmap.value?.profession?.name || t('roadmapDetail.currentRole'),
+            label: roadmap.value?.profession?.name || t('roadmapDetail.currentRole'),
             ...node.data,
           },
           position: node.position || { x: 0, y: 0 },
@@ -415,8 +424,8 @@ const applyAutoLayout = (
   dagreGraph.setDefaultEdgeLabel(() => ({}))
   dagreGraph.setGraph({
     rankdir: direction,
-    nodesep: 25,     // 上下间距
-    ranksep: 150,    // 左右间距
+    nodesep: 25, // 上下间距
+    ranksep: 150, // 左右间距
     marginx: 20,
     marginy: 20,
   })
@@ -605,7 +614,7 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   if (node.id === '0') return
 
   // 根据节点类型跳转不同的页面
-  const nodeData = node.data as any
+  const nodeData = node.data
   if (nodeData.isCourseRoot && nodeData.courseId) {
     // 课程根节点：跳转课程页面
     window.open(`/read?courseId=${nodeData.courseId}`, '_blank')

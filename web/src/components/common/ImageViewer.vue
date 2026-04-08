@@ -1,16 +1,10 @@
 <template>
   <v-dialog v-model="visible" fullscreen @click:outside="close">
     <div class="image-viewer-container">
-      <v-btn
-        icon="mdi-close"
-        color="white"
-        variant="text"
-        class="close-btn"
-        @click="close"
-      ></v-btn>
+      <v-btn icon="mdi-close" color="white" variant="text" class="close-btn" @click="close"></v-btn>
       <div class="image-content" @click="close">
         <div v-if="isSvg" class="svg-container" v-html="imageSrc"></div>
-        <img v-else :src="imageSrc" alt="预览图片" class="preview-image" />
+        <img v-else :src="imageSrc" :alt="t('common.previewImage')" class="preview-image" />
       </div>
     </div>
   </v-dialog>
@@ -18,6 +12,9 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue: boolean

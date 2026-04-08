@@ -4,13 +4,16 @@
  */
 import { useValidationConfigStore } from '@/stores/validationConfig'
 import { computed, type ComputedRef } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 
 /**
  * 创建基于配置的验证规则
  * @param fieldKey 字段键（如：'card-front', 'comment-content'）
  * @returns 验证规则数组
  */
-export function useValidationRules(fieldKey: string): ComputedRef<Array<(v: string) => boolean | string>> {
+export function useValidationRules(
+  fieldKey: string
+): ComputedRef<((v: string) => boolean | string)[]> {
   const validationStore = useValidationConfigStore()
 
   return computed(() => validationStore.createRules(fieldKey))
@@ -39,7 +42,8 @@ export function useValidationRule(fieldKey: string) {
   const rules = computed(() => validationStore.createRules(fieldKey))
   const maxLength = computed(() => rule.value?.maxLength || 500)
   const minLength = computed(() => rule.value?.minLength || 0)
-  const label = computed(() => rule.value?.label || '字段')
+  const { t } = useI18n()
+  const label = computed(() => rule.value?.label || t('validation.fieldLabel'))
 
   return {
     rule,
@@ -55,66 +59,77 @@ export function useValidationRule(fieldKey: string) {
 /**
  * 邮箱格式验证
  */
-export const emailFormatRule = (v: string) => {
-  if (!v) return true
-  const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return pattern.test(v) || '请输入有效的邮箱地址'
+export function useEmailFormatRule() {
+  const { t } = useI18n()
+  return (v: string) => {
+    if (!v) return true
+    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return pattern.test(v) || t('validation.format.email')
+  }
 }
 
 /**
  * 手机号格式验证
  */
-export const phoneFormatRule = (v: string) => {
-  if (!v) return true
-  const pattern = /^1[3-9]\d{9}$/
-  return pattern.test(v) || '请输入有效的手机号码'
+export function usePhoneFormatRule() {
+  const { t } = useI18n()
+  return (v: string) => {
+    if (!v) return true
+    const pattern = /^1[3-9]\d{9}$/
+    return pattern.test(v) || t('validation.format.phone')
+  }
 }
 
 /**
  * 验证码格式验证（6位数字）
  */
-export const verificationCodeRule = (v: string) => {
-  if (!v) return true
-  const pattern = /^\d{6}$/
-  return pattern.test(v) || '请输入6位验证码'
+export function useVerificationCodeRule() {
+  const { t } = useI18n()
+  return (v: string) => {
+    if (!v) return true
+    const pattern = /^\d{6}$/
+    return pattern.test(v) || t('validation.format.verificationCode')
+  }
 }
 
 /**
  * 确认密码验证
  */
-export const confirmPasswordRule = (password: string) => (v: string) => {
-  return !v || v === password || '两次输入的密码不一致'
+export function useConfirmPasswordRule() {
+  const { t } = useI18n()
+  return (password: string) => (v: string) => {
+    return !v || v === password || t('validation.format.passwordMismatch')
+  }
 }
 
 /**
  * 用户名格式验证（字母、数字、下划线）
  */
-export const usernameFormatRule = (v: string) => {
-  if (!v) return true
-  const pattern = /^[a-zA-Z0-9_]+$/
-  return pattern.test(v) || '用户名只能包含字母、数字和下划线'
+export function useUsernameFormatRule() {
+  const { t } = useI18n()
+  return (v: string) => {
+    if (!v) return true
+    const pattern = /^[a-zA-Z0-9_]+$/
+    return pattern.test(v) || t('validation.format.username')
+  }
 }
 
 /**
  * 创建带格式验证的邮箱规则
  */
-export function useEmailRules(): ComputedRef<Array<(v: string) => boolean | string>> {
+export function useEmailRules(): ComputedRef<((v: string) => boolean | string)[]> {
   const baseRules = useValidationRules('email')
+  const emailFormatRule = useEmailFormatRule()
 
-  return computed(() => [
-    ...baseRules.value,
-    emailFormatRule
-  ])
+  return computed(() => [...baseRules.value, emailFormatRule])
 }
 
 /**
  * 创建带格式验证的用户名规则
  */
-export function useUsernameRules(): ComputedRef<Array<(v: string) => boolean | string>> {
+export function useUsernameRules(): ComputedRef<((v: string) => boolean | string)[]> {
   const baseRules = useValidationRules('username')
+  const usernameFormatRule = useUsernameFormatRule()
 
-  return computed(() => [
-    ...baseRules.value,
-    usernameFormatRule
-  ])
+  return computed(() => [...baseRules.value, usernameFormatRule])
 }

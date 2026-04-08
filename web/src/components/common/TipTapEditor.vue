@@ -225,7 +225,13 @@
           :title="t('editor.toolbar.insertLink')"
           @click="toggleLink"
         />
-        <v-btn variant="text" size="small" icon="mdi-image" :title="t('editor.toolbar.insertImage')" @click="addImage" />
+        <v-btn
+          variant="text"
+          size="small"
+          icon="mdi-image"
+          :title="t('editor.toolbar.insertImage')"
+          @click="addImage"
+        />
         <v-btn
           :color="editor.isActive('code') ? 'primary' : undefined"
           variant="text"
@@ -259,7 +265,13 @@
         />
         <v-menu location="bottom" offset="4">
           <template #activator="{ props }">
-            <v-btn v-bind="props" variant="text" size="small" icon="mdi-table" :title="t('editor.toolbar.table')" />
+            <v-btn
+              v-bind="props"
+              variant="text"
+              size="small"
+              icon="mdi-table"
+              :title="t('editor.toolbar.table')"
+            />
           </template>
           <v-card rounded="lg" class="table-menu" width="180">
             <div class="table-menu-items py-1">
@@ -623,7 +635,7 @@ type Emits = (e: 'update:modelValue', value: string) => void
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
-  placeholder: '请在这里输入内容...',
+  placeholder: '',
   editable: true,
   autofocus: false,
   minHeight: '300px',
@@ -632,6 +644,9 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
+
+// 计算实际的 placeholder（支持 i18n 默认值）
+const actualPlaceholder = computed(() => props.placeholder || t('editor.placeholder'))
 
 // 注入全局 showSnackbar
 const showSnackbar = inject<(message: string, type: string) => void>('showSnackbar')
@@ -649,7 +664,7 @@ const { execute: uploadImage, loading: uploadingImage } = useMutation(
 
 // 编辑器实例
 const editor = useEditor({
-  extensions: getTipTapExtensions(props.placeholder),
+  extensions: getTipTapExtensions(actualPlaceholder.value),
   content: props.modelValue,
   editable: props.editable,
   autofocus: props.autofocus,

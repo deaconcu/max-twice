@@ -3,12 +3,12 @@ package com.prosper.learn.web.v1.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
-import com.prosper.learn.application.dto.response.profession.ProfessionDTO;
+import com.prosper.learn.application.dto.response.role.RoleDTO;
 import com.prosper.learn.application.dto.response.course.CourseFullDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.service.CourseService;
 import com.prosper.learn.application.service.PageService;
-import com.prosper.learn.application.service.ProfessionService;
+import com.prosper.learn.application.service.RoleService;
 import com.prosper.learn.application.service.RoadmapService;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemDataService;
@@ -49,7 +49,7 @@ public class PublicController {
     private final SystemDataService systemDataService;
     private final SystemDomainService systemDomainService;
     private final ObjectMapper objectMapper;
-    private final ProfessionService professionService;
+    private final RoleService roleService;
     private final RoadmapService roadmapService;
     private final PageService pageService;
     private final CourseService courseService;
@@ -89,14 +89,14 @@ public class PublicController {
 
     /**
      * 获取职业分类数据（公开接口，支持 ETag 缓存）
-     * GET /api/v1/public/profession-categories
+     * GET /api/v1/public/role-categories
      */
-    @GetMapping("/profession-categories")
+    @GetMapping("/role-categories")
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ResponseEntity<ApiResponse<JsonNode>> getProfessionCategories(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<JsonNode>> getRoleCategories(HttpServletRequest request) {
         try {
             // 从领域服务获取解析好的数据
-            JsonNode categoryNode = systemDomainService.getProfessionCategories();
+            JsonNode categoryNode = systemDomainService.getRoleCategories();
 
             // Web层处理 ETag 缓存
             String etag = generateETag(categoryNode.toString());
@@ -157,20 +157,20 @@ public class PublicController {
 
     /**
      * 获取职业详情（公开接口，无需登录）
-     * GET /api/v1/public/professions/{id}
+     * GET /api/v1/public/roles/{id}
      */
-    @GetMapping("/professions/{id}")
+    @GetMapping("/roles/{id}")
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<ProfessionDTO> getProfession(
+    public ApiResponse<RoleDTO> getRole(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
             Long id) {
         try {
-            ProfessionDTO profession = professionService.getById(id, true, null);
-            if (profession == null) {
-                return ApiResponse.fail(StatusCode.PROFESSION_NOT_FOUND.getCode(), "职业不存在");
+            RoleDTO roleDTO = roleService.getById(id, true, null);
+            if (roleDTO == null) {
+                return ApiResponse.fail(StatusCode.ROLE_NOT_FOUND.getCode(), "职业不存在");
             }
-            return ApiResponse.success(profession);
+            return ApiResponse.success(roleDTO);
         } catch (Exception e) {
             log.error("公开接口 获取职业详情失败: {}", id, e);
             throw e;
@@ -179,21 +179,21 @@ public class PublicController {
 
     /**
      * 获取职业的路线图列表（公开接口，无需登录）
-     * GET /api/v1/public/professions/{professionId}/roadmaps?lastId=123&pageSize=20
+     * GET /api/v1/public/roles/{roleId}/roadmaps?lastId=123&pageSize=20
      */
-    @GetMapping("/professions/{professionId}/roadmaps")
+    @GetMapping("/roles/{roleId}/roadmaps")
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<List<RoadmapSummaryDTO>> getRoadmapsByProfession(
+    public ApiResponse<List<RoadmapSummaryDTO>> getRoadmapsByRole(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
-            Long professionId,
+            Long roleId,
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false, defaultValue = "20") Integer pageSize) {
         try {
-            List<RoadmapSummaryDTO> roadmaps = roadmapService.getRoadmapsByProfessionPublic(professionId, lastId, pageSize);
+            List<RoadmapSummaryDTO> roadmaps = roadmapService.getRoadmapsByRolePublic(roleId, lastId, pageSize);
             return ApiResponse.success(roadmaps);
         } catch (Exception e) {
-            log.error("公开接口 获取职业路线图列表失败: {}", professionId, e);
+            log.error("公开接口 获取职业路线图列表失败: {}", roleId, e);
             throw e;
         }
     }

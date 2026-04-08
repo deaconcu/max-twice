@@ -29,7 +29,10 @@ export const courseApi = {
    * 根据状态获取课程列表（已废弃 - 普通用户不应查询任意状态）
    * @deprecated 请使用 getCoursesByCategory() 获取已发布课程
    */
-  getCoursesByState(state: number, lastId?: number): Promise<ApiResponse<KeysetPageResponse<Course>>> {
+  getCoursesByState(
+    state: number,
+    lastId?: number
+  ): Promise<ApiResponse<KeysetPageResponse<Course>>> {
     return apiClient.get('/v1/courses', {
       params: { state, lastId },
     })
@@ -101,11 +104,7 @@ export const courseApi = {
    * 审核课程（管理员操作）
    * 使用统一的内容管理接口
    */
-  approveCourse(
-    id: number,
-    action: string,
-    reason?: string
-  ): Promise<ApiResponse<void>> {
+  approveCourse(id: number, action: string, reason?: string): Promise<ApiResponse<void>> {
     return apiClient.post(`/v1/admin/contents/course/${String(id)}/operate`, {
       action,
       reason,

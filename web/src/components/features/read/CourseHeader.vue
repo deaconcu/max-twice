@@ -4,6 +4,17 @@ import { useRouter } from 'vue-router'
 import { getColorByString } from '@/utils/color'
 import { useI18n } from '@/composables/useI18n'
 
+const props = withDefaults(defineProps<Props>(), {
+  parentCourseInfo: null,
+  currentCourse: () => ({}),
+  subCourseList: () => [],
+  isMainCourse: true,
+  isLearning: false,
+  courseProgress: 0,
+})
+
+const emit = defineEmits<Emits>()
+
 const { t } = useI18n()
 
 interface Props {
@@ -17,16 +28,6 @@ interface Props {
 
 type Emits = (e: 'start-learning', data: any) => void
 
-const props = withDefaults(defineProps<Props>(), {
-  parentCourseInfo: null,
-  currentCourse: () => ({}),
-  subCourseList: () => [],
-  isMainCourse: true,
-  isLearning: false,
-  courseProgress: 0,
-})
-
-const emit = defineEmits<Emits>()
 const router = useRouter()
 
 const progressPercent = computed(() => {
@@ -62,20 +63,21 @@ const toggleSubscribe = () => {
     <div class="course-row">
       <v-icon :icon="courseIcon" size="35" :color="courseColor"></v-icon>
       <div class="course-info">
-        <span class="course-name" @click="goToCourse">{{ parentCourseInfo?.name || currentCourse?.name }}</span>
-        <span class="course-meta">{{ t('course.learnersCount', { count: currentCourse?.learnerCount?.toLocaleString() || 0 }) }}</span>
+        <span class="course-name" @click="goToCourse">{{
+          parentCourseInfo?.name || currentCourse?.name
+        }}</span>
+        <span class="course-meta">{{
+          t('course.learnersCount', { count: currentCourse?.learnerCount?.toLocaleString() || 0 })
+        }}</span>
       </div>
-      <v-btn
-        variant="text"
-        size="small"
-        icon
-        @click.stop="toggleSubscribe"
-      >
+      <v-btn variant="text" size="small" icon @click.stop="toggleSubscribe">
         <v-icon
           :icon="parentCourseInfo?.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
           :color="parentCourseInfo?.bookmarked ? 'amber-darken-2' : 'grey-lighten-1'"
         ></v-icon>
-        <v-tooltip activator="parent" location="bottom">{{ parentCourseInfo?.bookmarked ? t('common.unbookmark') : t('common.bookmark') }}</v-tooltip>
+        <v-tooltip activator="parent" location="bottom">{{
+          parentCourseInfo?.bookmarked ? t('common.unbookmark') : t('common.bookmark')
+        }}</v-tooltip>
       </v-btn>
       <v-btn
         v-if="!isLearning"

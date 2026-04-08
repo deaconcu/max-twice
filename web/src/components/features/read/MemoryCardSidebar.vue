@@ -138,21 +138,24 @@
       <!-- 空状态 -->
       <div v-if="decks.length === 0 && !loading" class="text-center pa-6">
         <v-icon icon="mdi-cards-outline" size="48" color="grey-lighten-2" class="mb-3"></v-icon>
-        <h4 class="text-body-1 font-weight-medium text-grey-darken-2 mb-2">{{ t('memoryCardSidebar.noDecks') }}</h4>
+        <h4 class="text-body-1 font-weight-medium text-grey-darken-2 mb-2">
+          {{ t('memoryCardSidebar.noDecks') }}
+        </h4>
         <p class="text-body-2 text-grey-darken-1 mb-4">{{ t('memoryCardSidebar.noDecksHint') }}</p>
-        <v-btn color="primary" variant="tonal" rounded="lg" size="small" @click="emit('createDeck')">
+        <v-btn
+          color="primary"
+          variant="tonal"
+          rounded="lg"
+          size="small"
+          @click="emit('createDeck')"
+        >
           {{ t('memoryCardSidebar.createDeck') }}
         </v-btn>
       </div>
 
       <!-- 卡片组列表 -->
       <div v-else>
-        <div
-          v-for="deck in decks"
-          :key="deck.id"
-          class="deck-item"
-          @click="viewDeckDetail(deck)"
-        >
+        <div v-for="deck in decks" :key="deck.id" class="deck-item" @click="viewDeckDetail(deck)">
           <div class="d-flex align-stretch">
             <!-- 左侧：头像 + 作者 · 时间 / 点赞 -->
             <div class="d-flex flex-column justify-space-between flex-grow-1 min-width-0 mr-3">
@@ -217,12 +220,18 @@
             <!-- 右侧：统计数字 -->
             <div class="d-flex flex-row align-center justify-center" style="gap: 12px">
               <div class="text-center">
-                <div class="text-body-1 font-weight-bold text-grey-darken-2">{{ deck.cardCount || 0 }}</div>
+                <div class="text-body-1 font-weight-bold text-grey-darken-2">
+                  {{ deck.cardCount || 0 }}
+                </div>
                 <div class="text-caption text-no-wrap text-grey">{{ t('memoryCard.cards') }}</div>
               </div>
               <div v-if="deck.studyingCardCount && deck.studyingCardCount > 0" class="text-center">
-                <div class="text-body-1 font-weight-bold text-success">{{ deck.studyingCardCount }}</div>
-                <div class="text-caption text-no-wrap text-grey">{{ t('memoryCard.studying') }}</div>
+                <div class="text-body-1 font-weight-bold text-success">
+                  {{ deck.studyingCardCount }}
+                </div>
+                <div class="text-caption text-no-wrap text-grey">
+                  {{ t('memoryCard.studying') }}
+                </div>
               </div>
             </div>
           </div>
@@ -252,6 +261,10 @@ import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck } from '@/types/memory'
 import { useI18n } from '@/composables/useI18n'
 
+const props = defineProps<Props>()
+
+const emit = defineEmits<Emits>()
+
 const { t } = useI18n()
 
 interface Props {
@@ -264,8 +277,6 @@ interface Emits {
   (e: 'viewDeck', deck: MemoryCardDeck): void
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
 const userStore = useUserStore()
 
 const sortBy = ref<'score' | 'createdAt' | 'upvoteCount'>('score')

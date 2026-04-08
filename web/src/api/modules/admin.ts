@@ -19,7 +19,14 @@ export interface OperateRequest {
 /**
  * 内容类型
  */
-export type ContentType = 'post' | 'roadmap' | 'memory_card_deck' | 'comment' | 'course' | 'profession' | 'node'
+export type ContentType =
+  | 'post'
+  | 'roadmap'
+  | 'memory_card_deck'
+  | 'comment'
+  | 'course'
+  | 'role'
+  | 'node'
 
 /**
  * 管理后台 API
@@ -33,7 +40,11 @@ export const adminApi = {
    * @param state 状态值（数字）
    * @param lastId 分页游标
    */
-  getContentsByState(contentType: ContentType, state?: number, lastId?: number): Promise<ApiResponse<any[]>> {
+  getContentsByState(
+    contentType: ContentType,
+    state?: number,
+    lastId?: number
+  ): Promise<ApiResponse<any[]>> {
     const params: Record<string, unknown> = {}
     if (state !== undefined && state !== null) params.state = state
     if (lastId !== undefined && lastId !== null) params.lastId = lastId
@@ -46,7 +57,11 @@ export const adminApi = {
    * @param id 内容ID
    * @param request 操作请求
    */
-  operateContent(contentType: ContentType, id: number, request: OperateRequest): Promise<ApiResponse<void>> {
+  operateContent(
+    contentType: ContentType,
+    id: number,
+    request: OperateRequest
+  ): Promise<ApiResponse<void>> {
     return apiClient.post(`/v1/admin/contents/${contentType}/${id}/operate`, request)
   },
 
@@ -144,23 +159,23 @@ export const adminApi = {
     return apiClient.put(`/v1/admin/contents/course/${id}`, request)
   },
 
-  // ========== 职业管理 ==========
+  // ========== 角色管理 ==========
 
   /**
-   * 根据筛选条件获取职业
+   * 根据筛选条件获取角色
    */
-  getProfessionsByFilter(state?: number, lastId?: number): Promise<ApiResponse<any[]>> {
+  getRolesByFilter(state?: number, lastId?: number): Promise<ApiResponse<any[]>> {
     const params: Record<string, unknown> = {}
     if (state !== undefined) params.state = state
     if (lastId !== undefined) params.lastId = lastId
-    return apiClient.get('/v1/admin/contents/profession', { params })
+    return apiClient.get('/v1/admin/contents/role', { params })
   },
 
   /**
-   * 更新职业信息
+   * 更新角色信息
    */
-  updateProfession(id: number, request: any): Promise<ApiResponse<void>> {
-    return apiClient.put(`/v1/admin/contents/profession/${id}`, request)
+  updateRole(id: number, request: any): Promise<ApiResponse<void>> {
+    return apiClient.put(`/v1/admin/contents/role/${id}`, request)
   },
 
   // ========== 路线图管理 ==========
@@ -170,13 +185,13 @@ export const adminApi = {
    */
   getRoadmapsByFilter(
     state?: number,
-    professionId?: number,
+    roleId?: number,
     creatorId?: number,
     lastId?: number
   ): Promise<ApiResponse<any[]>> {
     const params: Record<string, unknown> = {}
     if (state !== undefined) params.state = state
-    if (professionId !== undefined) params.professionId = professionId
+    if (roleId !== undefined) params.roleId = roleId
     if (creatorId !== undefined) params.creatorId = creatorId
     if (lastId !== undefined) params.lastId = lastId
     return apiClient.get('/v1/admin/contents/roadmap/filter', { params })
@@ -406,7 +421,9 @@ export const adminApi = {
   /**
    * 重新计算节点引用数统计
    */
-  recalculateNodeReferences(): Promise<ApiResponse<{ processedPosts: number; updatedNodes: number }>> {
+  recalculateNodeReferences(): Promise<
+    ApiResponse<{ processedPosts: number; updatedNodes: number }>
+  > {
     return apiClient.post('/v1/admin/contents/nodes/recalculate-references')
   },
 
@@ -441,9 +458,9 @@ export const adminApi = {
   },
 
   /**
-   * 同步职业索引
+   * 同步角色索引
    */
-  syncProfessionIndexes(): Promise<ApiResponse<number>> {
-    return apiClient.post('/v1/admin/search/sync-professions')
+  syncRoleIndexes(): Promise<ApiResponse<number>> {
+    return apiClient.post('/v1/admin/search/sync-roles')
   },
 }

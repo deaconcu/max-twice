@@ -1,4 +1,4 @@
-package com.prosper.learn.content.profession;
+package com.prosper.learn.content.role;
 
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.common.utils.ValidationUtils;
@@ -27,9 +27,9 @@ import static com.prosper.learn.shared.domain.Enums.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ProfessionDomainService {
+public class RoleDomainService {
 
-    private final ProfessionDataService professionDataService;
+    private final RoleDataService roleDataService;
     private final SystemDomainService systemDomainService;
 
     // ========== Command 方法（写操作）==========
@@ -49,32 +49,30 @@ public class ProfessionDomainService {
     public Long create(long creatorId, String name, String description, String skills,
                        int mainCategory, int subCategory) {
         // 验证分类是否有效
-        systemDomainService.validateProfessionCategory(mainCategory, subCategory);
+        systemDomainService.validateRoleCategory(mainCategory, subCategory);
 
-        ProfessionDO professionDO = new ProfessionDO();
-        professionDO.setName(name);
-        professionDO.setDescription(description);
-        professionDO.setSkills(skills);
-        professionDO.setMainCategory(mainCategory);
-        professionDO.setSubCategory(subCategory);
-        professionDO.setCreatorId(creatorId);
-        professionDO.setState(ContentState.SUBMITTED.value());
-        professionDO.setReason("");
-        professionDO.setIcon("");
+        RoleDO roleDO = new RoleDO();
+        roleDO.setName(name);
+        roleDO.setDescription(description);
+        roleDO.setSkills(skills);
+        roleDO.setMainCategory(mainCategory);
+        roleDO.setSubCategory(subCategory);
+        roleDO.setCreatorId(creatorId);
+        roleDO.setState(ContentState.SUBMITTED.value());
+        roleDO.setReason("");
+        roleDO.setIcon("");
 
-        professionDataService.insert(professionDO);
+        roleDataService.insert(roleDO);
 
-        log.info("职业 创建成功: professionId={}，name={}，creatorId={}",
-                professionDO.getId(), name, creatorId);
-        return professionDO.getId();
+        log.info("职业 创建成功: roleId={}，name={}，creatorId={}",
+                roleDO.getId(), name, creatorId);
+        return roleDO.getId();
     }
 
     /**
      * 更新职业
      *
      * @param id 职业ID
-     * @param operatorId 操作者ID
-     * @param operatorRole 操作者角色
      * @param name 职业名称
      * @param description 描述
      * @param price 价格
@@ -91,27 +89,27 @@ public class ProfessionDomainService {
         ValidationUtils.requireNonBlank(name, "职业名称");
 
         // 验证分类是否有效
-        systemDomainService.validateProfessionCategory(mainCategory, subCategory);
+        systemDomainService.validateRoleCategory(mainCategory, subCategory);
 
         // 验证职业是否存在并获取
-        ProfessionDO professionDO = professionDataService.getById(id);
-        if (professionDO == null) {
-            throw StatusCode.PROFESSION_NOT_FOUND.exception();
+        RoleDO roleDO = roleDataService.getById(id);
+        if (roleDO == null) {
+            throw StatusCode.ROLE_NOT_FOUND.exception();
         }
 
         // 更新字段
-        professionDO.setName(name);
-        professionDO.setDescription(description);
-        professionDO.setPrice(price);
-        professionDO.setSkills(skills);
-        professionDO.setMainCategory(mainCategory);
-        professionDO.setSubCategory(subCategory);
-        professionDO.setIcon(icon);
-        professionDO.setReason(reason);
+        roleDO.setName(name);
+        roleDO.setDescription(description);
+        roleDO.setPrice(price);
+        roleDO.setSkills(skills);
+        roleDO.setMainCategory(mainCategory);
+        roleDO.setSubCategory(subCategory);
+        roleDO.setIcon(icon);
+        roleDO.setReason(reason);
 
-        professionDataService.update(professionDO);
+        roleDataService.update(roleDO);
 
-        log.info("职业 更新成功: professionId={}", id);
+        log.info("职业 更新成功: roleId={}", id);
     }
 
     /**
@@ -124,22 +122,22 @@ public class ProfessionDomainService {
      */
     @Transactional
     public int approve(long id, boolean enableStateValidation, boolean enableConcurrencyCheck) {
-        ProfessionDO profession = professionDataService.validateAndGet(id);
+        RoleDO roleDO = roleDataService.validateAndGet(id);
 
         // 状态验证：只有已批准的职业不能重复批准，已拒绝和已屏蔽的可以重新批准
         if (enableStateValidation) {
-            Utils.validateStateTransition(profession.getState(), ContentState.PUBLISHED);
+            Utils.validateStateTransition(roleDO.getState(), ContentState.PUBLISHED);
         }
 
         // 执行审核
-        int rowsAffected = professionDataService.approve(id);
+        int rowsAffected = roleDataService.approve(id);
 
         // 并发检查
         if (enableConcurrencyCheck && rowsAffected == 0) {
-            throw StatusCode.PROFESSION_STATE_CONFLICT.exception();
+            throw StatusCode.ROLE_STATE_CONFLICT.exception();
         }
 
-        log.info("职业 审核通过: professionId={}", id);
+        log.info("职业 审核通过: roleId={}", id);
         return rowsAffected;
     }
 
@@ -154,24 +152,24 @@ public class ProfessionDomainService {
      */
     @Transactional
     public int reject(long id, String reason, boolean enableStateValidation, boolean enableConcurrencyCheck) {
-        ProfessionDO profession = professionDataService.validateAndGet(id);
+        RoleDO roleDO = roleDataService.validateAndGet(id);
 
         // 状态验证：已拒绝和已屏蔽的不能重复拒绝
         if (enableStateValidation) {
-            Utils.validateStateTransition(profession.getState(), ContentState.REJECTED);
+            Utils.validateStateTransition(roleDO.getState(), ContentState.REJECTED);
         }
 
         String reasonValue = reason != null ? reason : "";
 
         // 执行拒绝
-        int rowsAffected = professionDataService.reject(id, reasonValue);
+        int rowsAffected = roleDataService.reject(id, reasonValue);
 
         // 并发检查
         if (enableConcurrencyCheck && rowsAffected == 0) {
-            throw StatusCode.PROFESSION_STATE_CONFLICT.exception();
+            throw StatusCode.ROLE_STATE_CONFLICT.exception();
         }
 
-        log.info("职业 审核拒绝: professionId={}，reason={}", id, reasonValue);
+        log.info("职业 审核拒绝: roleId={}，reason={}", id, reasonValue);
         return rowsAffected;
     }
 
@@ -186,24 +184,24 @@ public class ProfessionDomainService {
      */
     @Transactional
     public int ban(long id, String reason, boolean enableStateValidation, boolean enableConcurrencyCheck) {
-        ProfessionDO profession = professionDataService.validateAndGet(id);
+        RoleDO roleDO = roleDataService.validateAndGet(id);
 
         // 状态验证：已屏蔽的不能重复屏蔽
         if (enableStateValidation) {
-            Utils.validateStateTransition(profession.getState(), ContentState.BANNED);
+            Utils.validateStateTransition(roleDO.getState(), ContentState.BANNED);
         }
 
         String reasonValue = reason != null ? reason : "";
 
         // 执行封禁
-        int rowsAffected = professionDataService.ban(id, reasonValue);
+        int rowsAffected = roleDataService.ban(id, reasonValue);
 
         // 并发检查
         if (enableConcurrencyCheck && rowsAffected == 0) {
-            throw StatusCode.PROFESSION_STATE_CONFLICT.exception();
+            throw StatusCode.ROLE_STATE_CONFLICT.exception();
         }
 
-        log.info("职业 封禁: professionId={}，reason={}", id, reasonValue);
+        log.info("职业 封禁: roleId={}，reason={}", id, reasonValue);
         return rowsAffected;
     }
 
@@ -214,15 +212,15 @@ public class ProfessionDomainService {
      */
     @Transactional
     public void delete(long id) {
-        ProfessionDO professionDO = professionDataService.getById(id);
-        if (professionDO == null) {
-            throw StatusCode.PROFESSION_NOT_FOUND.exception();
+        RoleDO roleDO = roleDataService.getById(id);
+        if (roleDO == null) {
+            throw StatusCode.ROLE_NOT_FOUND.exception();
         }
 
         // 执行删除
-        professionDataService.delete(id);
+        roleDataService.delete(id);
 
-        log.info("职业 删除成功: professionId={}", id);
+        log.info("职业 删除成功: roleId={}", id);
     }
 
     // ========== Query 方法（读操作）==========
@@ -230,63 +228,63 @@ public class ProfessionDomainService {
     /**
      * 根据ID获取职业
      */
-    public ProfessionDO getById(Long id) {
-        return professionDataService.getById(id);
+    public RoleDO getById(Long id) {
+        return roleDataService.getById(id);
     }
 
     /**
      * 验证并获取职业
      */
-    public ProfessionDO validateAndGet(Long id) {
-        return professionDataService.validateAndGet(id);
+    public RoleDO validateAndGet(Long id) {
+        return roleDataService.validateAndGet(id);
     }
 
     /**
      * 根据状态获取职业列表
      */
-    public List<ProfessionDO> listByState(Byte state, Long lastId, int limit) {
-        return professionDataService.listByState(state, lastId, limit);
+    public List<RoleDO> listByState(Byte state, Long lastId, int limit) {
+        return roleDataService.listByState(state, lastId, limit);
     }
 
     /**
      * 根据主分类和最后ID获取职业列表
      */
-    public List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, Long lastId, int limit) {
-        return professionDataService.listByMainCategoryAndLastId(mainCategory, lastId, limit);
+    public List<RoleDO> listByMainCategoryAndLastId(int mainCategory, Long lastId, int limit) {
+        return roleDataService.listByMainCategoryAndLastId(mainCategory, lastId, limit);
     }
 
     /**
      * 根据子分类和最后ID获取职业列表
      */
-    public List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, Long lastId, int limit) {
-        return professionDataService.listBySubCategoryAndLastId(subCategory, lastId, limit);
+    public List<RoleDO> listBySubCategoryAndLastId(int subCategory, Long lastId, int limit) {
+        return roleDataService.listBySubCategoryAndLastId(subCategory, lastId, limit);
     }
 
     /**
      * 根据主分类和子分类获取职业列表
      */
-    public List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId, int limit) {
-        return professionDataService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId, limit);
+    public List<RoleDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId, int limit) {
+        return roleDataService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId, limit);
     }
 
     /**
      * 搜索职业（按关键词，用户端）
      */
-    public List<ProfessionDO> searchByKeyword(String keyword) {
-        return professionDataService.searchByKeyword(keyword);
+    public List<RoleDO> searchByKeyword(String keyword) {
+        return roleDataService.searchByKeyword(keyword);
     }
 
     /**
      * 管理后台按名称搜索职业（搜索所有状态，支持分页）
      */
-    public List<ProfessionDO> searchByName(String name, Long lastId, int limit) {
-        return professionDataService.searchByName(name, lastId, limit);
+    public List<RoleDO> searchByName(String name, Long lastId, int limit) {
+        return roleDataService.searchByName(name, lastId, limit);
     }
 
     /**
      * 根据ID列表批量获取职业
      */
-    public List<ProfessionDO> getByIds(List<Long> ids) {
-        return professionDataService.getByIds(ids);
+    public List<RoleDO> getByIds(List<Long> ids) {
+        return roleDataService.getByIds(ids);
     }
 }

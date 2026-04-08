@@ -1,4 +1,4 @@
-package com.prosper.learn.application.dto.response.profession;
+package com.prosper.learn.application.dto.response.role;
 
 import lombok.Data;
 
@@ -7,7 +7,7 @@ import lombok.Data;
  * 用于路线图、课程等列表展示
  */
 @Data
-public class ProfessionBriefDTO {
+public class RoleBriefDTO {
 
     private Long id;
 

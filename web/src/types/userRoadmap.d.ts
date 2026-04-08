@@ -51,7 +51,7 @@ export interface ProcessedUserRoadmap {
   startedAt?: string
   completedAt?: string
   tags: string[]
-  profession?: { name: string }
+  role?: { name: string }
   nodes: Node[]
   edges: Edge[]
   content: string

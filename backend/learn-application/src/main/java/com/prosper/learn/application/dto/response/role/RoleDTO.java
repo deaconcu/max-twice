@@ -1,10 +1,10 @@
-package com.prosper.learn.application.dto.response.profession;
+package com.prosper.learn.application.dto.response.role;
 
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class ProfessionDTO {
+public class RoleDTO {
 
     private Long id;
 

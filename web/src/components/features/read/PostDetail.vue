@@ -16,6 +16,11 @@ import { ObjectType } from '@/enums'
 import { convertVoteType } from '@/utils/postUtils'
 import { useI18n } from '@/composables/useI18n'
 
+const props = withDefaults(defineProps<Props>(), {
+  showNodeHeader: true,
+  showRightSidebar: true,
+})
+
 const { t } = useI18n()
 
 interface Props {
@@ -24,11 +29,6 @@ interface Props {
   // 是否显示右侧工具栏（在 ContentReadPage 中由父组件控制）
   showRightSidebar?: boolean
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  showNodeHeader: true,
-  showRightSidebar: true,
-})
 
 const router = useRouter()
 const route = useRoute()
@@ -190,7 +190,10 @@ defineExpose({
         <!-- 中间内容区 -->
         <div class="center-content">
           <!-- 节点标题行 -->
-          <div v-if="showNodeHeader && data.node" :class="isInCourseMode ? 'node-header-sticky node-header-compact' : 'node-header'">
+          <div
+            v-if="showNodeHeader && data.node"
+            :class="isInCourseMode ? 'node-header-sticky node-header-compact' : 'node-header'"
+          >
             <div class="d-flex align-center">
               <!-- 返回按钮（仅在课程模式下显示） -->
               <v-btn
@@ -206,7 +209,7 @@ defineExpose({
               <v-icon
                 icon="mdi-list-box-outline"
                 color="primary-darken-1"
-                :size="isInCourseMode ? 18 : ($vuetify.display.mobile ? 20 : 24)"
+                :size="isInCourseMode ? 18 : $vuetify.display.mobile ? 20 : 24"
               ></v-icon>
               <h2
                 class="font-weight-bold text-grey-darken-4 ms-2 ms-md-3"
@@ -218,7 +221,10 @@ defineExpose({
           </div>
 
           <!-- 节点描述（仅在非课程模式下显示） -->
-          <div v-if="showNodeHeader && !isInCourseMode && data.node?.description" class="node-description mb-4 mb-md-6">
+          <div
+            v-if="showNodeHeader && !isInCourseMode && data.node?.description"
+            class="node-description mb-4 mb-md-6"
+          >
             <p class="text-body-2 text-md-body-1 text-grey-darken-1 mb-0">
               {{ data.node.description }}
             </p>
@@ -297,12 +303,7 @@ defineExpose({
             />
             <span class="text-h6 font-weight-bold">{{ t('postDetail.aiAssistant') }}</span>
           </div>
-          <v-btn
-            icon="mdi-close"
-            variant="text"
-            size="small"
-            @click="assistantSheetOpen = false"
-          />
+          <v-btn icon="mdi-close" variant="text" size="small" @click="assistantSheetOpen = false" />
         </v-card-title>
 
         <v-divider />
@@ -329,7 +330,9 @@ defineExpose({
               class="mr-2"
               :size="$vuetify.display.mobile ? 18 : 20"
             />
-            <span class="text-h6 text-md-h5 font-weight-bold">{{ t('postDetail.memoryDecks') }}</span>
+            <span class="text-h6 text-md-h5 font-weight-bold">{{
+              t('postDetail.memoryDecks')
+            }}</span>
           </div>
           <div class="d-flex align-center" style="gap: 8px">
             <v-btn

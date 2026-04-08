@@ -11,7 +11,7 @@ const { t } = useI18n()
 const code = computed(() => route.params.code as string)
 // 优先从 history state 读取 message，这样不会显示在 URL 中
 const customMessage = computed(() => {
-  const stateMessage = (history.state as any)?.message
+  const stateMessage = history.state?.message
   const queryMessage = route.query.message as string | undefined
   return stateMessage || queryMessage
 })
@@ -22,36 +22,36 @@ const errorConfig = computed(() => {
       return {
         icon: 'mdi-lock-outline',
         color: 'error',
-        title: t('error.403.title') || '权限不足',
-        message: customMessage.value || t('error.403.message') || '您没有权限访问此页面',
+        title: t('error.403.title'),
+        message: customMessage.value || t('error.403.message'),
       }
     case '404':
       return {
         icon: 'mdi-file-question-outline',
         color: 'warning',
-        title: t('error.404.title') || '页面不存在',
-        message: customMessage.value || t('error.404.message') || '您访问的页面不存在',
+        title: t('error.404.title'),
+        message: customMessage.value || t('error.404.message'),
       }
     case '500':
       return {
         icon: 'mdi-alert-circle-outline',
         color: 'error',
-        title: t('error.500.title') || '服务器错误',
-        message: customMessage.value || t('error.500.message') || '服务器出现错误，请稍后再试',
+        title: t('error.500.title'),
+        message: customMessage.value || t('error.500.message'),
       }
     case '1309':
       return {
         icon: 'mdi-cancel',
         color: 'warning',
-        title: '内容暂时无法访问',
-        message: customMessage.value || '该内容暂时无法访问',
+        title: t('error.1309.title'),
+        message: customMessage.value || t('error.1309.message'),
       }
     default:
       return {
         icon: 'mdi-alert-outline',
         color: 'grey',
-        title: t('error.default.title') || '出错了',
-        message: customMessage.value || t('error.default.message') || '发生了未知错误',
+        title: t('error.default.title'),
+        message: customMessage.value || t('error.default.message'),
       }
   }
 })

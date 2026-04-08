@@ -2,6 +2,14 @@ import { inject } from 'vue'
 import type { Router } from 'vue-router'
 import type { ApiResponse } from './types'
 import { HTTP_STATUS, BUSINESS_ERROR } from '@/constants/errorCode'
+import i18n from '@/i18n'
+
+/**
+ * 获取翻译文本（用于模块级代码）
+ */
+function t(key: string): string {
+  return i18n.global.t(key)
+}
 
 /**
  * 全局 router 实例引用
@@ -49,7 +57,7 @@ export const defaultConfig: ApiComposableConfig = {
     [HTTP_STATUS.UNAUTHORIZED]: (_response) => {
       const showSnackbar = inject<ShowSnackbarFn>('showSnackbar')
 
-      showSnackbar?.('请先登录', 'error')
+      showSnackbar?.(t('error.pleaseLogin'), 'error')
       globalRouter?.push('/login')
 
       return true // 返回 true 表示已处理
@@ -58,14 +66,14 @@ export const defaultConfig: ApiComposableConfig = {
     // 403 无权限
     [HTTP_STATUS.FORBIDDEN]: (_response) => {
       const showSnackbar = inject<ShowSnackbarFn>('showSnackbar')
-      showSnackbar?.('无权限访问', 'error')
+      showSnackbar?.(t('error.noPermission'), 'error')
       return true
     },
 
     // 500 服务器错误
     [HTTP_STATUS.INTERNAL_SERVER_ERROR]: (_response) => {
       const showSnackbar = inject<ShowSnackbarFn>('showSnackbar')
-      showSnackbar?.('服务器错误，请稍后重试', 'error')
+      showSnackbar?.(t('error.serverError'), 'error')
       return true
     },
 
@@ -85,7 +93,7 @@ export const defaultConfig: ApiComposableConfig = {
             code: String(response.code),
           },
           state: {
-            message: response.message || '该内容暂时无法访问',
+            message: response.message ?? t('error.contentUnavailable'),
           },
         })
       } else {
@@ -95,8 +103,15 @@ export const defaultConfig: ApiComposableConfig = {
     },
   },
 
-  defaultErrorMessage: '操作失败，请重试',
+  defaultErrorMessage: '',
   showErrorToast: true,
+}
+
+/**
+ * 获取默认错误消息
+ */
+export function getDefaultErrorMessage(): string {
+  return t('error.retryLater')
 }
 
 /**

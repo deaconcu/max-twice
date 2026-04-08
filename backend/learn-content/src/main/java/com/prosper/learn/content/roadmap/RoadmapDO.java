@@ -12,7 +12,7 @@ public class RoadmapDO {
 
     private String contentHash;
 
-    private Long professionId;
+    private Long roleId;
 
     private Long creatorId;
 

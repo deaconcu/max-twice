@@ -6,6 +6,10 @@ import { useMutation } from '@/composables'
 import { useValidationConfigStore } from '@/stores/validationConfig'
 import { useI18n } from '@/composables/useI18n'
 
+const props = defineProps<Props>()
+
+const emit = defineEmits<Emits>()
+
 const { t } = useI18n()
 
 interface Card {
@@ -19,9 +23,6 @@ interface Props {
 }
 
 type Emits = (e: 'created', deck: MemoryCardDeck) => void
-
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
 
 const dialog = defineModel<boolean>({ default: false })
 const step = ref(1) // 1: 添加卡片, 2: 填写说明
@@ -43,13 +44,15 @@ const descriptionMaxLength = computed(
 const frontError = computed(() => {
   const val = cardForm.value.front.trim()
   if (!val) return ''
-  if (val.length < frontMinLength.value) return t('createDeck.needMoreChars', { count: frontMinLength.value - val.length })
+  if (val.length < frontMinLength.value)
+    return t('createDeck.needMoreChars', { count: frontMinLength.value - val.length })
   return ''
 })
 const backError = computed(() => {
   const val = cardForm.value.back.trim()
   if (!val) return ''
-  if (val.length < backMinLength.value) return t('createDeck.needMoreChars', { count: backMinLength.value - val.length })
+  if (val.length < backMinLength.value)
+    return t('createDeck.needMoreChars', { count: backMinLength.value - val.length })
   return ''
 })
 
@@ -287,7 +290,9 @@ const closeDialog = () => {
                 <v-chip size="small" variant="outlined" color="primary" class="mr-2">
                   {{ index + 1 }}
                 </v-chip>
-                <span class="text-body-2 font-weight-medium text-grey-darken-2">{{ t('createDeck.card') }}</span>
+                <span class="text-body-2 font-weight-medium text-grey-darken-2">{{
+                  t('createDeck.card')
+                }}</span>
               </div>
               <v-btn
                 icon="mdi-close"
@@ -300,14 +305,18 @@ const closeDialog = () => {
             </div>
 
             <div class="mb-3">
-              <div class="text-caption font-weight-medium text-primary mb-1">{{ t('createDeck.question') }}</div>
+              <div class="text-caption font-weight-medium text-primary mb-1">
+                {{ t('createDeck.question') }}
+              </div>
               <div class="text-body-2 text-grey-darken-3 pa-2 rounded card-content">
                 {{ card.front }}
               </div>
             </div>
 
             <div>
-              <div class="text-caption font-weight-medium text-primary mb-1">{{ t('createDeck.answer') }}</div>
+              <div class="text-caption font-weight-medium text-primary mb-1">
+                {{ t('createDeck.answer') }}
+              </div>
               <div class="text-body-2 text-grey-darken-3 pa-2 rounded card-content">
                 {{ card.back }}
               </div>
@@ -359,7 +368,9 @@ const closeDialog = () => {
 
         <v-spacer></v-spacer>
 
-        <v-btn variant="outlined" rounded="lg" class="mr-3" @click="closeDialog"> {{ t('common.cancel') }} </v-btn>
+        <v-btn variant="outlined" rounded="lg" class="mr-3" @click="closeDialog">
+          {{ t('common.cancel') }}
+        </v-btn>
 
         <v-btn
           v-if="step === 1"

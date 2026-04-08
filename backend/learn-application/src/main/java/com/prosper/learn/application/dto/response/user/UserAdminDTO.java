@@ -119,12 +119,12 @@ public class UserAdminDTO {
     /**
      * 正在学习职业数
      */
-    private Integer inProgressProfessionCount;
+    private Integer inProgressRoleCount;
 
     /**
      * 已完成职业数
      */
-    private Integer completedProfessionCount;
+    private Integer completedRoleCount;
 
     /**
      * 关注用户数
@@ -139,7 +139,7 @@ public class UserAdminDTO {
     /**
      * 关注职业数
      */
-    private Integer followingProfessionCount;
+    private Integer followingRoleCount;
 
     /**
      * 创建文章数

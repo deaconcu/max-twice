@@ -21,7 +21,10 @@
                 {{ formatNumber(course.learnerCount) }} {{ t('course.learnersSuffix') }}
               </span>
             </div>
-            <div v-if="course.subCourseCount && course.subCourseCount > 0" class="d-flex align-center">
+            <div
+              v-if="course.subCourseCount && course.subCourseCount > 0"
+              class="d-flex align-center"
+            >
               <v-icon icon="mdi-book-multiple" size="14" color="grey" class="mr-1" />
               <span class="text-caption text-grey-darken-2">
                 {{ t('course.subCoursesCount', { count: course.subCourseCount }) }}
@@ -45,6 +48,10 @@ import type { Course } from '@/types/course'
 import { getColorByString } from '@/utils/color'
 import DynamicIcon from '@/components/common/DynamicIcon.vue'
 
+const props = defineProps<Props>()
+
+defineEmits<Emits>()
+
 const { t } = useI18n()
 
 interface Props {
@@ -52,9 +59,6 @@ interface Props {
 }
 
 type Emits = (e: 'subscribe' | 'unsubscribe', courseId: number) => void
-
-const props = defineProps<Props>()
-defineEmits<Emits>()
 
 const router = useRouter()
 

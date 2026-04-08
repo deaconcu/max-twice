@@ -81,18 +81,18 @@ public class AdminSearchController {
         return ApiResponse.success(count);
     }
 
-    @PostMapping("/sync-professions")
+    @PostMapping("/sync-roles")
     @Transactional
     @OperationLog(
         module = "系统维护",
         type = "同步职业搜索",
         level = OperationLevel.MEDIUM,
-        targetType = "Profession",
+        targetType = "Role",
         targetId = "0"
     )
-    public ApiResponse<Integer> syncProfessions() {
+    public ApiResponse<Integer> syncRoles() {
         log.info("管理后台 触发职业同步");
-        int count = meilisearchService.syncAllProfessions();
+        int count = meilisearchService.syncAllRoles();
         return ApiResponse.success(count);
     }
 }

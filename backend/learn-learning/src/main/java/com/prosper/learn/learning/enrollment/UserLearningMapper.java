@@ -91,7 +91,7 @@ public interface UserLearningMapper {
 
     /**
      * 根据用户、对象类型和父对象ID查询学习记录（支持滚动分页和状态过滤）
-     * 用于查询：某个 profession 下正在学习的 roadmap
+     * 用于查询：某个 role 下正在学习的 roadmap
      * state 通过 progress_percent 判断：1=进行中(progress<10000), 2=已完成(progress>=10000)
      * lastId 为 null 时返回第一页
      */

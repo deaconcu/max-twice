@@ -44,6 +44,19 @@
 import { computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 
+const props = withDefaults(defineProps<Props>(), {
+  confirmColor: 'error',
+  icon: 'mdi-alert-circle-outline',
+  iconColor: 'error-lighten-4',
+  iconForeground: 'error',
+})
+
+const emit = defineEmits<{
+  'update:modelValue': [value: boolean]
+  confirm: []
+  cancel: []
+}>()
+
 const { t } = useI18n()
 
 interface Props {
@@ -58,22 +71,9 @@ interface Props {
   iconForeground?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  confirmColor: 'error',
-  icon: 'mdi-alert-circle-outline',
-  iconColor: 'error-lighten-4',
-  iconForeground: 'error',
-})
-
 // 按钮文案默认值
-const displayConfirmText = computed(() => props.confirmText || t('common.confirm'))
-const displayCancelText = computed(() => props.cancelText || t('common.cancel'))
-
-const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  confirm: []
-  cancel: []
-}>()
+const displayConfirmText = computed(() => props.confirmText ?? t('common.confirm'))
+const displayCancelText = computed(() => props.cancelText ?? t('common.cancel'))
 
 const isOpen = computed({
   get: () => props.modelValue,

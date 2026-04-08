@@ -156,7 +156,10 @@ const showBanDialog = (post: Post) => {
 // 使用 useMutation 处理拒绝/屏蔽
 const { execute: executeRejectOrBan, loading: submitting } = useMutation(
   (data: { postId: number; action: string; reason: string }) =>
-    adminApi.operateContent('post', data.postId, { action: data.action.toLowerCase(), reason: data.reason }),
+    adminApi.operateContent('post', data.postId, {
+      action: data.action.toLowerCase(),
+      reason: data.reason,
+    }),
   {
     onSuccess: (_, data) => {
       const message = data.action === 'BAN' ? '已屏蔽' : '已拒绝'

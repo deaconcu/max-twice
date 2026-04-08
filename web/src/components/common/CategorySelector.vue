@@ -18,7 +18,9 @@
           <template #prepend>
             <v-icon icon="mdi-folder-outline" class="mr-3"></v-icon>
           </template>
-          <v-list-item-title class="font-weight-bold">{{ t('categorySelector.selectMainCategory') }}</v-list-item-title>
+          <v-list-item-title class="font-weight-bold">{{
+            t('categorySelector.selectMainCategory')
+          }}</v-list-item-title>
         </v-list-item>
         <v-divider></v-divider>
       </template>
@@ -42,7 +44,9 @@
           <template #prepend>
             <v-icon icon="mdi-folder-multiple-outline" class="mr-3"></v-icon>
           </template>
-          <v-list-item-title class="font-weight-bold">{{ t('categorySelector.selectSubCategory') }}</v-list-item-title>
+          <v-list-item-title class="font-weight-bold">{{
+            t('categorySelector.selectSubCategory')
+          }}</v-list-item-title>
         </v-list-item>
         <v-divider></v-divider>
       </template>
@@ -53,16 +57,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { systemApi } from '@/api'
-import type { ProfessionCategory, CategoryMapping } from '@/types/profession.d'
+import type { RoleCategory, CategoryMapping } from '@/types/role.d'
 import { useFetch } from '@/composables/useFetch'
 import { useI18n } from '@/composables/useI18n'
-
-const { t } = useI18n()
-
-interface Props {
-  modelMainCategory?: number | string | null
-  modelSubCategory?: number | string | null
-}
 
 // Props
 const props = withDefaults(defineProps<Props>(), {
@@ -72,6 +69,13 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Emits
 const emit = defineEmits<Emits>()
+
+const { t } = useI18n()
+
+interface Props {
+  modelMainCategory?: number | string | null
+  modelSubCategory?: number | string | null
+}
 
 interface Emits {
   (e: 'update:modelMainCategory', value: number | string | null): void
@@ -94,15 +98,15 @@ const selectedSubCategory = computed({
 })
 
 // 动态数据
-const mainCategories = ref<ProfessionCategory[]>([])
+const mainCategories = ref<RoleCategory[]>([])
 const categoryMapping = ref<CategoryMapping[]>([])
 
-// 使用 useFetch 加载职业类别数据
+// 使用 useFetch 加载角色类别数据
 const { loading } = useFetch({
-  fetchFn: systemApi.getProfessionCategories,
+  fetchFn: systemApi.getRoleCategories,
   immediate: true,
   onSuccess: (data) => {
-    console.log('Loaded profession categories:', data)
+    console.log('Loaded role categories:', data)
     mainCategories.value = data.mainCategories || []
     categoryMapping.value = data.categoryMapping || []
   },

@@ -1,11 +1,19 @@
 <template>
-  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" width="800" height="1200px" persistent>
+  <v-dialog
+    :model-value="modelValue"
+    width="800"
+    height="1200px"
+    persistent
+    @update:model-value="$emit('update:modelValue', $event)"
+  >
     <v-card rounded="xl">
       <v-card-item class="px-4 py-3">
         <v-card-title class="d-flex align-center justify-space-between pa-0">
           <div class="d-flex align-center">
             <v-icon size="small" class="px-4" icon="mdi-account"></v-icon>
-            <span class="ps-2 font-weight-medium">{{ isEditMode ? t('addArticle.editArticle') : t('addArticle.createArticle') }}</span>
+            <span class="ps-2 font-weight-medium">{{
+              isEditMode ? t('addArticle.editArticle') : t('addArticle.createArticle')
+            }}</span>
           </div>
           <v-btn icon="mdi-close" variant="text" size="small" @click="handleCancel"></v-btn>
         </v-card-title>
@@ -22,7 +30,9 @@
       <div class="px-4 pb-4 pt-4 action-bottom">
         <div class="d-flex align-center justify-space-between">
           <div class="d-flex align-center gap-2">
-            <span class="text-caption text-grey">{{ contentLength }} {{ t('addArticle.characters') }}</span>
+            <span class="text-caption text-grey"
+              >{{ contentLength }} {{ t('addArticle.characters') }}</span
+            >
             <span v-if="contentLength < MIN_LENGTH" class="text-caption text-warning">
               （{{ t('addArticle.needMore', { n: MIN_LENGTH - contentLength }) }}）
             </span>
@@ -56,13 +66,7 @@
               </v-btn>
             </template>
             <!-- 编辑模式 - 如果不是草稿，只显示"保存" -->
-            <v-btn
-              v-else
-              color="primary"
-              variant="flat"
-              :loading="savingDraft"
-              @click="handleSave"
-            >
+            <v-btn v-else color="primary" variant="flat" :loading="savingDraft" @click="handleSave">
               {{ t('addArticle.save') }}
             </v-btn>
           </div>
@@ -79,6 +83,13 @@ import { ContentState, PostType } from '@/enums'
 import { postApi } from '@/api'
 import { useMutation } from '@/composables/useMutation'
 import { useI18n } from '@/composables/useI18n'
+
+const props = withDefaults(defineProps<Props>(), {
+  loading: false,
+  nodeId: 0,
+})
+
+const emit = defineEmits<Emits>()
 
 const { t } = useI18n()
 
@@ -97,26 +108,19 @@ interface Props {
   modelValue: boolean
   article: Article | null
   loading?: boolean
-  nodeId?: number  // 创建新文章时需要的 nodeId
+  nodeId?: number // 创建新文章时需要的 nodeId
 }
 
 interface Emits {
   (e: 'update:modelValue', value: boolean): void
-  (e: 'success', article: Article | null): void  // 传递更新后的文章数据
+  (e: 'success', article: Article | null): void // 传递更新后的文章数据
   (e: 'cancel'): void
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  loading: false,
-  nodeId: 0,
-})
-
-const emit = defineEmits<Emits>()
 
 // 编辑器引用和字符统计
 const editorRef = ref<InstanceType<typeof TipTapEditor> | null>(null)
 const contentLength = ref(0)
-const currentArticle = ref<Article | null>(null)  // 当前编辑的文章（用于创建后转编辑模式）
+const currentArticle = ref<Article | null>(null) // 当前编辑的文章（用于创建后转编辑模式）
 
 // 字符限制
 const MIN_LENGTH = 100
@@ -198,8 +202,8 @@ const { execute: executeUpdate, loading: updating } = useMutation(
 )
 
 const submitting = computed(() => creating.value || updating.value)
-const savingDraft = ref(false)  // 保存草稿的 loading 状态
-const publishing = ref(false)   // 发布文章的 loading 状态
+const savingDraft = ref(false) // 保存草稿的 loading 状态
+const publishing = ref(false) // 发布文章的 loading 状态
 
 // 保存文章
 const handleSave = async () => {
@@ -254,7 +258,10 @@ const handlePublish = async () => {
   const article = getCurrentArticle.value
 
   if (!isFormValid.value) {
-    showSnackbar?.(t('addArticle.contentLengthError', { min: MIN_LENGTH, max: MAX_LENGTH }), 'warning')
+    showSnackbar?.(
+      t('addArticle.contentLengthError', { min: MIN_LENGTH, max: MAX_LENGTH }),
+      'warning'
+    )
     return
   }
 
@@ -295,25 +302,28 @@ const handleCancel = () => {
 }
 
 // 监听对话框打开，初始化字符计数
-watch(() => props.modelValue, (newVal) => {
-  if (newVal) {
-    // 对话框打开时，延迟更新字符计数（等待编辑器初始化）
-    nextTick(() => {
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal) {
+      // 对话框打开时，延迟更新字符计数（等待编辑器初始化）
+      nextTick(() => {
+        setTimeout(() => {
+          updateContentLength()
+        }, 100)
+      })
+    } else {
+      // 对话框关闭时，重置状态
       setTimeout(() => {
-        updateContentLength()
-      }, 100)
-    })
-  } else {
-    // 对话框关闭时，重置状态
-    setTimeout(() => {
-      currentArticle.value = null
-      contentLength.value = 0
-      if (editorRef.value?.editor) {
-        editorRef.value.editor.commands.setContent('')
-      }
-    }, 300)
+        currentArticle.value = null
+        contentLength.value = 0
+        if (editorRef.value?.editor) {
+          editorRef.value.editor.commands.setContent('')
+        }
+      }, 300)
+    }
   }
-})
+)
 </script>
 
 <style scoped>

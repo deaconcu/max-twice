@@ -5,21 +5,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.analytics.stats.mapper.UserStatsDO;
 import com.prosper.learn.analytics.stats.service.UserStatsDomainService;
 import com.prosper.learn.application.converter.CourseConverter;
-import com.prosper.learn.application.converter.ProfessionConverter;
+import com.prosper.learn.application.converter.RoleConverter;
 import com.prosper.learn.application.converter.RoadmapConverter;
 import com.prosper.learn.application.dto.response.ReviewSummaryDTO;
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.course.CourseFullDTO;
 import com.prosper.learn.application.dto.response.home.HomePageDTO;
 import com.prosper.learn.application.dto.response.home.UserLearningStatsDTO;
-import com.prosper.learn.application.dto.response.profession.ProfessionBriefDTO;
-import com.prosper.learn.application.dto.response.profession.ProfessionDTO;
+import com.prosper.learn.application.dto.response.role.RoleBriefDTO;
+import com.prosper.learn.application.dto.response.role.RoleDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.dto.response.userlearning.UserLearningDTO;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
-import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.role.RoleDO;
+import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.interaction.bookmark.BookmarkDO;
@@ -54,23 +54,23 @@ public class HomePageService {
     private final UserStatsDomainService userStatsDomainService;
     private final UserLearningService userLearningService;
     private final CourseService courseService;
-    private final ProfessionService professionService;
+    private final RoleService roleService;
     private final MemoryBankService memoryBankService;
     private final BookmarkDataService bookmarkDataService;
-    private final ProfessionDataService professionDataService;
+    private final RoleDataService roleDataService;
     private final RoadmapDataService roadmapDataService;
     private final CourseDataService courseDataService;
     private final SystemDataService systemDataService;
-    private final ProfessionConverter professionConverter;
+    private final RoleConverter roleConverter;
     private final RoadmapConverter roadmapConverter;
     private final CourseConverter courseConverter;
 
     // 首页展示的数量限制
-    private static final int LEARNING_PROFESSIONS_LIMIT = 8;
+    private static final int LEARNING_ROLES_LIMIT = 8;
     private static final int LEARNING_COURSES_LIMIT = 8;
-    private static final int HOT_PROFESSIONS_LIMIT = 10;
+    private static final int HOT_ROLES_LIMIT = 10;
     private static final int HOT_COURSES_LIMIT = 30;
-    private static final int BOOKMARKED_PROFESSIONS_LIMIT = 10;
+    private static final int BOOKMARKED_ROLES_LIMIT = 10;
 
     /**
      * 获取首页聚合数据
@@ -89,10 +89,10 @@ public class HomePageService {
         homePageDTO.setUserStats(getUserLearningStats(user));
 
         // 3. 收藏的职业（最新收藏的在前，最多10个）
-        homePageDTO.setBookmarkedProfessions(getBookmarkedProfessions(userId));
+        homePageDTO.setBookmarkedRoles(getBookmarkedRoles(userId));
 
         // 4. 正在学习的职业路线
-        homePageDTO.setLearningProfessions(getLearningProfessions(userId));
+        homePageDTO.setLearningRoles(getLearningRoles(userId));
 
         // 5. 正在学习的课程
         homePageDTO.setLearningCourses(getLearningCourses(userId));
@@ -101,7 +101,7 @@ public class HomePageService {
         homePageDTO.setReviewSummary(getReviewSummary(userId));
 
         // 7. 热门职业榜单
-        homePageDTO.setHotProfessions(getHotProfessions());
+        homePageDTO.setHotRoles(getHotRoles());
 
         // 8. 热门课程榜单
         homePageDTO.setHotCourses(getHotCourses());
@@ -124,8 +124,8 @@ public class HomePageService {
             if (userStats != null) {
                 stats.setCoursesInProgress(userStats.getLearningCourseCount() != null
                         ? userStats.getLearningCourseCount() : 0);
-                stats.setProfessionsInProgress(userStats.getInProgressProfessionCount() != null
-                        ? userStats.getInProgressProfessionCount() : 0);
+                stats.setRolesInProgress(userStats.getInProgressRoleCount() != null
+                        ? userStats.getInProgressRoleCount() : 0);
             }
             // 获取连续学习天数
             LocalDate userToday = TimeZoneUtil.getUserToday(user.getTimezone());
@@ -141,14 +141,14 @@ public class HomePageService {
     /**
      * 获取正在学习的职业路线
      */
-    private List<UserLearningDTO<Object>> getLearningProfessions(Long userId) {
+    private List<UserLearningDTO<Object>> getLearningRoles(Long userId) {
         try {
             return userLearningService.getByUserWithObjects(
                     userId,
                     Enums.ContentType.roadmap,
                     Enums.UserProgressState.IN_PROGRESS.value(),
                     null,
-                    LEARNING_PROFESSIONS_LIMIT
+                    LEARNING_ROLES_LIMIT
             );
         } catch (Exception e) {
             log.error("获取正在学习的职业路线失败, userId={}", userId, e);
@@ -183,9 +183,9 @@ public class HomePageService {
     /**
      * 获取热门职业榜单
      */
-    private List<ProfessionDTO> getHotProfessions() {
+    private List<RoleDTO> getHotRoles() {
         try {
-            return professionService.getHotProfessions(HOT_PROFESSIONS_LIMIT);
+            return roleService.getHotRoles(HOT_ROLES_LIMIT);
         } catch (Exception e) {
             log.error("获取热门职业失败", e);
             return new ArrayList<>();
@@ -207,34 +207,34 @@ public class HomePageService {
     /**
      * 获取收藏的职业（最新收藏的在前，最多10个）
      */
-    private List<ProfessionDTO> getBookmarkedProfessions(Long userId) {
+    private List<RoleDTO> getBookmarkedRoles(Long userId) {
         try {
             // 分页查询第一页（按收藏时间倒序）
             List<BookmarkDO> bookmarks = bookmarkDataService.listByUserAndLastId(
                     userId,
-                    Enums.ContentType.profession.value(),
+                    Enums.ContentType.role.value(),
                     null,
-                    BOOKMARKED_PROFESSIONS_LIMIT
+                    BOOKMARKED_ROLES_LIMIT
             );
             if (bookmarks.isEmpty()) {
                 return new ArrayList<>();
             }
 
             // 提取职业ID
-            List<Long> professionIds = bookmarks.stream()
+            List<Long> roleIds = bookmarks.stream()
                     .map(BookmarkDO::getObjectId)
                     .toList();
 
             // 批量获取职业信息
-            List<ProfessionDO> professions = professionDataService.getByIds(professionIds);
-            Map<Long, ProfessionDO> professionMap = professions.stream()
-                    .collect(Collectors.toMap(ProfessionDO::getId, p -> p));
+            List<RoleDO> roleDOList = roleDataService.getByIds(roleIds);
+            Map<Long, RoleDO> roleDOMap = roleDOList.stream()
+                    .collect(Collectors.toMap(RoleDO::getId, p -> p));
 
             // 按收藏顺序返回
-            return professionIds.stream()
-                    .map(professionMap::get)
+            return roleIds.stream()
+                    .map(roleDOMap::get)
                     .filter(p -> p != null)
-                    .map(professionConverter::toDTO)
+                    .map(roleConverter::toDTO)
                     .toList();
         } catch (Exception e) {
             log.error("获取收藏的职业失败, userId={}", userId, e);
@@ -249,7 +249,7 @@ public class HomePageService {
         try {
             String configValue = systemDataService.getValue(CONFIG_KEY_HOMEPAGE_RECOMMENDATIONS);
             if (configValue == null || configValue.isBlank()) {
-                homePageDTO.setBeginnerProfessions(new ArrayList<>());
+                homePageDTO.setBeginnerRoles(new ArrayList<>());
                 homePageDTO.setBeginnerRoadmaps(new ArrayList<>());
                 homePageDTO.setBeginnerCourses(new ArrayList<>());
                 return;
@@ -262,8 +262,8 @@ public class HomePageService {
             );
 
             // 获取新手推荐职业
-            List<Long> professionIds = config.getOrDefault("professions", new ArrayList<>());
-            homePageDTO.setBeginnerProfessions(getBeginnerProfessions(professionIds));
+            List<Long> roleIds = config.getOrDefault("roles", new ArrayList<>());
+            homePageDTO.setBeginnerRoles(getBeginnerRoles(roleIds));
 
             // 获取新手推荐路线图
             List<Long> roadmapIds = config.getOrDefault("roadmaps", new ArrayList<>());
@@ -275,7 +275,7 @@ public class HomePageService {
 
         } catch (Exception e) {
             log.error("加载新手推荐数据失败", e);
-            homePageDTO.setBeginnerProfessions(new ArrayList<>());
+            homePageDTO.setBeginnerRoles(new ArrayList<>());
             homePageDTO.setBeginnerRoadmaps(new ArrayList<>());
             homePageDTO.setBeginnerCourses(new ArrayList<>());
         }
@@ -284,18 +284,18 @@ public class HomePageService {
     /**
      * 获取新手推荐职业
      */
-    private List<ProfessionBriefDTO> getBeginnerProfessions(List<Long> professionIds) {
-        if (professionIds == null || professionIds.isEmpty()) {
+    private List<RoleBriefDTO> getBeginnerRoles(List<Long> roleIds) {
+        if (roleIds == null || roleIds.isEmpty()) {
             return new ArrayList<>();
         }
-        List<ProfessionDO> professions = professionDataService.getByIds(professionIds);
-        Map<Long, ProfessionDO> professionMap = professions.stream()
-                .collect(Collectors.toMap(ProfessionDO::getId, p -> p));
+        List<RoleDO> roleDOList = roleDataService.getByIds(roleIds);
+        Map<Long, RoleDO> roleDOMap = roleDOList.stream()
+                .collect(Collectors.toMap(RoleDO::getId, p -> p));
         // 按配置顺序返回
-        return professionIds.stream()
-                .map(professionMap::get)
+        return roleIds.stream()
+                .map(roleDOMap::get)
                 .filter(p -> p != null)
-                .map(professionConverter::toBriefDTO)
+                .map(roleConverter::toBriefDTO)
                 .toList();
     }
 
@@ -311,12 +311,12 @@ public class HomePageService {
                 .collect(Collectors.toMap(RoadmapDO::getId, r -> r));
 
         // 获取关联的职业信息
-        List<Long> professionIds = roadmaps.stream()
-                .map(RoadmapDO::getProfessionId)
+        List<Long> roleIds = roadmaps.stream()
+                .map(RoadmapDO::getRoleId)
                 .distinct()
                 .toList();
-        Map<Long, ProfessionDO> professionMap = professionDataService.getByIds(professionIds).stream()
-                .collect(Collectors.toMap(ProfessionDO::getId, p -> p));
+        Map<Long, RoleDO> roleMap = roleDataService.getByIds(roleIds).stream()
+                .collect(Collectors.toMap(RoleDO::getId, p -> p));
 
         // 按配置顺序返回，并填充职业信息
         return roadmapIds.stream()
@@ -324,9 +324,9 @@ public class HomePageService {
                 .filter(r -> r != null)
                 .map(r -> {
                     RoadmapSummaryDTO dto = roadmapConverter.toSummaryDTO(r);
-                    ProfessionDO profession = professionMap.get(r.getProfessionId());
-                    if (profession != null) {
-                        dto.setProfession(professionConverter.toBriefDTO(profession));
+                    RoleDO roleDO = roleMap.get(r.getRoleId());
+                    if (roleDO != null) {
+                        dto.setRole(roleConverter.toBriefDTO(roleDO));
                     }
                     return dto;
                 })

@@ -1,17 +1,17 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.analytics.ranking.service.ProfessionRankingDomainService;
+import com.prosper.learn.analytics.ranking.service.RoleRankingDomainService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
-import com.prosper.learn.application.converter.ProfessionConverter;
-import com.prosper.learn.application.dto.request.CreateProfessionRequest;
-import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
+import com.prosper.learn.application.converter.RoleConverter;
+import com.prosper.learn.application.dto.request.CreateRoleRequest;
+import com.prosper.learn.application.dto.request.UpdateRoleRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
-import com.prosper.learn.application.dto.response.profession.ProfessionAdminDTO;
-import com.prosper.learn.application.dto.response.profession.ProfessionDTO;
+import com.prosper.learn.application.dto.response.role.RoleAdminDTO;
+import com.prosper.learn.application.dto.response.role.RoleDTO;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
-import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.profession.ProfessionDomainService;
+import com.prosper.learn.content.role.RoleDO;
+import com.prosper.learn.content.role.RoleDomainService;
 import com.prosper.learn.shared.common.utils.ValidationUtils;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
@@ -39,21 +39,21 @@ import static com.prosper.learn.shared.domain.Enums.*;
  * 负责协调跨领域逻辑、事件发布、DTO转换
  *
  * 核心功能：
- * - DTO 转换（ProfessionDTO ↔ ProfessionDO）
+ * - DTO 转换（RoleDTO ↔ RoleDO）
  * - 事件发布（ContentApprovedEvent、ContentRejectedEvent）
- * - 跨域数据聚合（getHotProfessions - 聚合 Ranking 数据）
+ * - 跨域数据聚合（getHotRole- 聚合 Ranking 数据）
  * - 配置管理（SystemProperties）
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ProfessionService {
+public class RoleService {
 
     // 领域服务
-    private final ProfessionDomainService professionDomainService;
+    private final RoleDomainService roleDomainService;
 
     // 跨域服务依赖
-    private final ProfessionRankingDomainService professionRankingService;
+    private final RoleRankingDomainService roleRankingService;
     private final ContentStatsDataService contentStatsDataService;
     private final BookmarkService bookmarkService;
     private final UserService userService;
@@ -65,7 +65,7 @@ public class ProfessionService {
     private final SystemProperties systemProperties;
 
     // DTO转换器
-    private final ProfessionConverter professionConverter;
+    private final RoleConverter roleConverter;
     
     // ========== 常量定义 ==========
     
@@ -77,40 +77,40 @@ public class ProfessionService {
      * 返回正常状态的职业信息
      * 职业被拒绝或屏蔽时抛出异常
      */
-    public ProfessionDTO getById(long id, boolean published, Long userId) {
-        ProfessionDO professionDO = professionDomainService.validateAndGet(id);
-        if (professionDO == null) return null;
+    public RoleDTO getById(long id, boolean published, Long userId) {
+        RoleDO roleDO = roleDomainService.validateAndGet(id);
+        if (roleDO == null) return null;
         if (published &&
-            (professionDO.getState() == ContentState.REJECTED.value() ||
-             professionDO.getState() == ContentState.BANNED.value())) {
-            throw StatusCode.PROFESSION_BLOCKED.exception();
+            (roleDO.getState() == ContentState.REJECTED.value() ||
+             roleDO.getState() == ContentState.BANNED.value())) {
+            throw StatusCode.ROLE_BLOCKED.exception();
         }
-        return toDTO(professionDO, userId);
+        return toDTO(roleDO, userId);
     }
 
     /**
      * 获取职业列表（管理后台专用，包含状态和原因）
      */
-    public KeysetPageResponse<ProfessionAdminDTO> listByState(ContentState state, Long lastId, int limit) {
+    public KeysetPageResponse<RoleAdminDTO> listByState(ContentState state, Long lastId, int limit) {
         Byte stateValue = state != null ? state.value() : null;
-        List<ProfessionDO> professionDOList = professionDomainService.listByState(stateValue, lastId, limit + 1);
+        List<RoleDO> roleDOList = roleDomainService.listByState(stateValue, lastId, limit + 1);
 
-        boolean hasMore = professionDOList.size() > limit;
+        boolean hasMore = roleDOList.size() > limit;
         if (hasMore) {
-            professionDOList = professionDOList.subList(0, limit);
+            roleDOList = roleDOList.subList(0, limit);
         }
 
-        List<ProfessionAdminDTO> dtoList = professionConverter.toAdminDTO(professionDOList);
+        List<RoleAdminDTO> dtoList = roleConverter.toAdminDTO(roleDOList);
 
         // 填充 creator
-        Set<Long> creatorIds = professionDOList.stream()
-                .map(ProfessionDO::getCreatorId)
+        Set<Long> creatorIds = roleDOList.stream()
+                .map(RoleDO::getCreatorId)
                 .filter(id -> id != null)
                 .collect(Collectors.toSet());
         if (!creatorIds.isEmpty()) {
             Map<Long, UserBriefDTO> creatorMap = userService.getUserBriefMapByIds(creatorIds);
             for (int i = 0; i < dtoList.size(); i++) {
-                Long creatorId = professionDOList.get(i).getCreatorId();
+                Long creatorId = roleDOList.get(i).getCreatorId();
                 if (creatorId != null) {
                     dtoList.get(i).setCreator(creatorMap.get(creatorId));
                 }
@@ -119,14 +119,14 @@ public class ProfessionService {
 
         // 填充统计数据
         if (!dtoList.isEmpty()) {
-            List<Long> professionIds = dtoList.stream()
-                    .map(ProfessionAdminDTO::getId)
+            List<Long> roleIds = dtoList.stream()
+                    .map(RoleAdminDTO::getId)
                     .collect(Collectors.toList());
             List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(
-                    ContentType.profession, professionIds);
+                    ContentType.role, roleIds);
             Map<Long, ContentStatsDO> statsMap = statsList.stream()
                     .collect(Collectors.toMap(ContentStatsDO::getContentId, s -> s));
-            for (ProfessionAdminDTO dto : dtoList) {
+            for (RoleAdminDTO dto : dtoList) {
                 ContentStatsDO stats = statsMap.get(dto.getId());
                 if (stats != null) {
                     dto.setRoadmapCount(stats.getRoadmapCount() != null ? stats.getRoadmapCount() : 0);
@@ -145,16 +145,16 @@ public class ProfessionService {
     /**
      * 获取职业详情（管理后台专用，任意状态）
      */
-    public ProfessionAdminDTO getAdminById(Long id) {
-        ProfessionDO professionDO = professionDomainService.getById(id);
-        if (professionDO == null) {
+    public RoleAdminDTO getAdminById(Long id) {
+        RoleDO roleDO = roleDomainService.getById(id);
+        if (roleDO == null) {
             return null;
         }
-        ProfessionAdminDTO dto = professionConverter.toAdminDTO(professionDO);
-        dto.setCreator(userService.getUserBriefById(professionDO.getCreatorId()));
+        RoleAdminDTO dto = roleConverter.toAdminDTO(roleDO);
+        dto.setCreator(userService.getUserBriefById(roleDO.getCreatorId()));
 
         // 填充统计数据
-        contentStatsDataService.getByContent(ContentType.profession, id).ifPresent(stats -> {
+        contentStatsDataService.getByContent(ContentType.role, id).ifPresent(stats -> {
             dto.setRoadmapCount(stats.getRoadmapCount() != null ? stats.getRoadmapCount() : 0);
             dto.setBookmarkCount(stats.getBookmarkCount() != null ? stats.getBookmarkCount() : 0);
         });
@@ -165,49 +165,49 @@ public class ProfessionService {
     /**
      * 获取已发布的职业列表（公开接口，只返回已发布状态）
      */
-    public List<ProfessionDTO> getApprovedByLastId(Long lastId, int limit) {
-        List<ProfessionDO> professionDOList = professionDomainService.listByState(ContentState.PUBLISHED.value(), lastId, limit);
-        return toDTO(professionDOList);
+    public List<RoleDTO> getApprovedByLastId(Long lastId, int limit) {
+        List<RoleDO> roleDOList = roleDomainService.listByState(ContentState.PUBLISHED.value(), lastId, limit);
+        return toDTO(roleDOList);
     }
 
-    public List<ProfessionDTO> getListByMainCategoryAndLastId(int mainCategory, Long lastId, int limit) {
-        List<ProfessionDO> professionDOList = professionDomainService.listByMainCategoryAndLastId(mainCategory, lastId, limit);
-        return toDTO(professionDOList);
+    public List<RoleDTO> getListByMainCategoryAndLastId(int mainCategory, Long lastId, int limit) {
+        List<RoleDO> roleDOList = roleDomainService.listByMainCategoryAndLastId(mainCategory, lastId, limit);
+        return toDTO(roleDOList);
     }
 
-    public List<ProfessionDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, Long lastId, int limit) {
-        List<ProfessionDO> professionDOList = professionDomainService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId, limit);
-        return toDTO(professionDOList);
+    public List<RoleDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, Long lastId, int limit) {
+        List<RoleDO> roleDOList = roleDomainService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId, limit);
+        return toDTO(roleDOList);
     }
 
-    public List<ProfessionDTO> searchByKeyword(String keyword) {
-        List<ProfessionDO> professionDOList = professionDomainService.searchByKeyword(keyword);
-        return toDTO(professionDOList);
+    public List<RoleDTO> searchByKeyword(String keyword) {
+        List<RoleDO> roleDOList = roleDomainService.searchByKeyword(keyword);
+        return toDTO(roleDOList);
     }
 
     /**
      * 管理后台按名称搜索职业（搜索所有状态，支持滚动分页）
      */
-    public KeysetPageResponse<ProfessionAdminDTO> searchByName(String name, Long lastId) {
+    public KeysetPageResponse<RoleAdminDTO> searchByName(String name, Long lastId) {
         int pageSize = 20;
-        List<ProfessionDO> professionDOList = professionDomainService.searchByName(name, lastId, pageSize + 1);
+        List<RoleDO> roleDOList = roleDomainService.searchByName(name, lastId, pageSize + 1);
 
-        boolean hasMore = professionDOList.size() > pageSize;
+        boolean hasMore = roleDOList.size() > pageSize;
         if (hasMore) {
-            professionDOList = professionDOList.subList(0, pageSize);
+            roleDOList = roleDOList.subList(0, pageSize);
         }
 
-        List<ProfessionAdminDTO> dtoList = professionConverter.toAdminDTO(professionDOList);
+        List<RoleAdminDTO> dtoList = roleConverter.toAdminDTO(roleDOList);
 
         // 填充 creator
-        Set<Long> creatorIds = professionDOList.stream()
-                .map(ProfessionDO::getCreatorId)
+        Set<Long> creatorIds = roleDOList.stream()
+                .map(RoleDO::getCreatorId)
                 .filter(id -> id != null)
                 .collect(Collectors.toSet());
         if (!creatorIds.isEmpty()) {
             Map<Long, UserBriefDTO> creatorMap = userService.getUserBriefMapByIds(creatorIds);
             for (int i = 0; i < dtoList.size(); i++) {
-                Long creatorId = professionDOList.get(i).getCreatorId();
+                Long creatorId = roleDOList.get(i).getCreatorId();
                 if (creatorId != null) {
                     dtoList.get(i).setCreator(creatorMap.get(creatorId));
                 }
@@ -221,9 +221,9 @@ public class ProfessionService {
     // ========== Command 方法 ==========
 
     @Transactional
-    public Long create(CreateProfessionRequest request, UserDO creator) {
+    public Long create(CreateRoleRequest request, UserDO creator) {
         // 调用 DomainService 创建职业
-        return professionDomainService.create(
+        return roleDomainService.create(
             creator.getId(),
             request.getName(),
             request.getDescription(),
@@ -234,14 +234,14 @@ public class ProfessionService {
     }
 
     @Transactional
-    public void update(Long id, UpdateProfessionRequest request, UserDO operator) {
+    public void update(Long id, UpdateRoleRequest request, UserDO operator) {
         // 参数验证
         if (request == null) {
             throw StatusCode.INVALID_PARAMETER.exception("更新请求不能为空");
         }
 
         // 调用 DomainService 更新职业
-        professionDomainService.update(
+        roleDomainService.update(
             id,
             request.getName(),
             request.getDescription(),
@@ -257,42 +257,42 @@ public class ProfessionService {
     @Transactional
     public void approve(long id, UserDO operator) {
         // 调用 DomainService 执行审核通过
-        professionDomainService.approve(
+        roleDomainService.approve(
             id,
-            systemProperties.getProfession().isEnableStateValidation(),
-            systemProperties.getProfession().isEnableConcurrencyCheck()
+            systemProperties.getRole().isEnableStateValidation(),
+            systemProperties.getRole().isEnableConcurrencyCheck()
         );
 
         // 获取职业信息
-        ProfessionDO profession = professionDomainService.getById(id);
+        RoleDO roleDO = roleDomainService.getById(id);
 
         // 发布审核通过事件，触发消息通知
-        eventPublisher.publishEvent(ContentApprovedEvent.forProfession(
-            profession.getCreatorId(),
-            profession.getId(),
-            profession.getName()
+        eventPublisher.publishEvent(ContentApprovedEvent.forRole(
+            roleDO.getCreatorId(),
+            roleDO.getId(),
+            roleDO.getName()
         ));
     }
 
     @Transactional
     public void reject(long id, String reason, UserDO operator) {
         // 调用 DomainService 执行拒绝
-        professionDomainService.reject(
+        roleDomainService.reject(
             id,
             reason,
-            systemProperties.getProfession().isEnableStateValidation(),
-            systemProperties.getProfession().isEnableConcurrencyCheck()
+            systemProperties.getRole().isEnableStateValidation(),
+            systemProperties.getRole().isEnableConcurrencyCheck()
         );
 
         // 获取职业信息
-        ProfessionDO profession = professionDomainService.getById(id);
+        RoleDO role = roleDomainService.getById(id);
         String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
 
         // 发布审核拒绝事件，触发消息通知
-        eventPublisher.publishEvent(ContentRejectedEvent.forProfession(
-            profession.getCreatorId(),
-            profession.getId(),
-            profession.getName(),
+        eventPublisher.publishEvent(ContentRejectedEvent.forRole(
+            role.getCreatorId(),
+            role.getId(),
+            role.getName(),
             reasonValue
         ));
     }
@@ -300,11 +300,11 @@ public class ProfessionService {
     @Transactional
     public void ban(long id, String reason, UserDO operator) {
         // 调用 DomainService 执行封禁
-        professionDomainService.ban(
+        roleDomainService.ban(
             id,
             reason,
-            systemProperties.getProfession().isEnableStateValidation(),
-            systemProperties.getProfession().isEnableConcurrencyCheck()
+            systemProperties.getRole().isEnableStateValidation(),
+            systemProperties.getRole().isEnableConcurrencyCheck()
         );
 
         String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
@@ -319,49 +319,49 @@ public class ProfessionService {
     @Transactional
     public void delete(long id, UserDO operator) {
         // 调用 DomainService 执行删除
-        professionDomainService.delete(id);
+        roleDomainService.delete(id);
     }
 
     /**
      * 获取热门职业列表
-     * 跨域查询：聚合 profession 数据和 ranking 数据
+     * 跨域查询：聚合 role 数据和 ranking 数据
      */
-    public List<ProfessionDTO> getHotProfessions(int limit) {
-        validateHotProfessionsLimit(limit);
+    public List<RoleDTO> getHotRoles(int limit) {
+        validateHotRolesLimit(limit);
 
         try {
             // 从 Ranking 域获取热门职业ID列表
-            List<Long> hotProfessionIds = professionRankingService.getHotProfessionIds(limit);
+            List<Long> hotRoleIds = roleRankingService.getHotRoleIds(limit);
 
-            if (hotProfessionIds.isEmpty()) {
+            if (hotRoleIds.isEmpty()) {
                 return new ArrayList<>();
             }
 
-            // 从 Profession 域获取职业信息
-            List<ProfessionDO> professionDOList = professionDomainService.getByIds(hotProfessionIds);
+            // 从 Role 域获取职业信息
+            List<RoleDO> roleDOList = roleDomainService.getByIds(hotRoleIds);
 
-            List<ProfessionDTO> result = new ArrayList<>();
-            for (ProfessionDO professionDO : professionDOList) {
+            List<RoleDTO> result = new ArrayList<>();
+            for (RoleDO roleDO : roleDOList) {
                 // 只返回已发布状态的职业
-                if (professionDO.getState() != ContentState.PUBLISHED.value()) {
+                if (roleDO.getState() != ContentState.PUBLISHED.value()) {
                     continue;
                 }
 
                 // 转换为 DTO
-                ProfessionDTO professionDTO = toDTO(professionDO);
+                RoleDTO roleDTO = toDTO(roleDO);
 
                 // 从 Ranking 域获取学习人数
-                long learningCount = professionRankingService.getProfessionLearningCount(professionDO.getId());
-                professionDTO.setLearnerCount((int) learningCount);
+                long learningCount = roleRankingService.getRoleLearningCount(roleDO.getId());
+                roleDTO.setLearnerCount((int) learningCount);
 
-                result.add(professionDTO);
+                result.add(roleDTO);
             }
 
             return result;
 
         } catch (Exception e) {
             log.error("获取热门专业失败，limit: {}", limit, e);
-            throw StatusCode.PROFESSION_HOT_LIST_FAILED.exception(e);
+            throw StatusCode.ROLE_HOT_LIST_FAILED.exception(e);
         }
     }
 
@@ -370,19 +370,19 @@ public class ProfessionService {
     /**
      * 转换单个对象为DTO
      */
-    public ProfessionDTO toDTO(ProfessionDO professionDO) {
-        return professionConverter.toDTO(professionDO);
+    public RoleDTO toDTO(RoleDO roleDO) {
+        return roleConverter.toDTO(roleDO);
     }
 
     /**
      * 转换单个对象为DTO（含收藏状态）
      */
-    public ProfessionDTO toDTO(ProfessionDO professionDO, Long userId) {
-        ProfessionDTO dto = professionConverter.toDTO(professionDO);
+    public RoleDTO toDTO(RoleDO roleDO, Long userId) {
+        RoleDTO dto = roleConverter.toDTO(roleDO);
 
         // 填充收藏状态
         if (userId != null) {
-            dto.setBookmarked(bookmarkService.isBookmarked(userId, professionDO.getId(), ContentType.profession));
+            dto.setBookmarked(bookmarkService.isBookmarked(userId, roleDO.getId(), ContentType.role));
         } else {
             dto.setBookmarked(false);
         }
@@ -393,20 +393,20 @@ public class ProfessionService {
     /**
      * 转换列表为DTO列表
      */
-    public List<ProfessionDTO> toDTO(List<ProfessionDO> professionDOList) {
-        return professionConverter.toDTO(professionDOList);
+    public List<RoleDTO> toDTO(List<RoleDO> roleDOList) {
+        return roleConverter.toDTO(roleDOList);
     }
 
     /**
      * 转换列表为DTO列表（含收藏状态）
      */
-    public List<ProfessionDTO> toDTO(List<ProfessionDO> professionDOList, Long userId) {
-        List<ProfessionDTO> dtos = professionConverter.toDTO(professionDOList);
+    public List<RoleDTO> toDTO(List<RoleDO> roleDOList, Long userId) {
+        List<RoleDTO> dtos = roleConverter.toDTO(roleDOList);
 
         // 批量填充收藏状态
         if (userId != null && !dtos.isEmpty()) {
-            List<Long> ids = dtos.stream().map(ProfessionDTO::getId).collect(Collectors.toList());
-            List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, ids, ContentType.profession);
+            List<Long> ids = dtos.stream().map(RoleDTO::getId).collect(Collectors.toList());
+            List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, ids, ContentType.role);
             Set<Long> bookmarkedSet = new HashSet<>(bookmarkedIds);
 
             dtos.forEach(dto -> dto.setBookmarked(bookmarkedSet.contains(dto.getId())));
@@ -419,10 +419,10 @@ public class ProfessionService {
 
     // ========== Private 辅助方法 ==========
 
-    private void validateHotProfessionsLimit(int limit) {
+    private void validateHotRolesLimit(int limit) {
         ValidationUtils.require(limit > 0, "限制数量必须大于0");
         ValidationUtils.require(
-            limit <= systemProperties.getProfession().getMaxHotProfessionsLimit(),
+            limit <= systemProperties.getRole().getMaxHotRolesLimit(),
             "限制数量超过最大值"
         );
     }

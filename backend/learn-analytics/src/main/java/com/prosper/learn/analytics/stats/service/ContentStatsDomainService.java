@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.prosper.learn.shared.domain.Enums.ContentState;
 import static com.prosper.learn.shared.domain.Enums.ContentType;
 import static com.prosper.learn.shared.domain.Enums.PostType;
 
@@ -221,18 +220,18 @@ public class ContentStatsDomainService {
     // ==================== Roadmap 处理 ====================
 
     public void handleRoadmapApproved(ContentApprovedEvent event) {
-        if (event.getProfessionId() == null) return;
-        contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), 1);
+        if (event.getRoleId() == null) return;
+        contentStatsDataService.incrementRoadmaps(ContentType.role, event.getRoleId(), 1);
     }
 
     public void handleRoadmapRemoved(ContentRemovedEvent event) {
-        if (event.getProfessionId() == null) return;
-        contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), -1);
+        if (event.getRoleId() == null) return;
+        contentStatsDataService.incrementRoadmaps(ContentType.role, event.getRoleId(), -1);
     }
 
     public void handleRoadmapBanned(ContentBannedEvent event) {
-        if (event.getProfessionId() == null) return;
-        contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), -1);
+        if (event.getRoleId() == null) return;
+        contentStatsDataService.incrementRoadmaps(ContentType.role, event.getRoleId(), -1);
     }
 
     // ==================== MemoryCardDeck 处理 ====================
@@ -282,8 +281,8 @@ public class ContentStatsDomainService {
                 }
             }
             case roadmap -> {
-                if (event.getProfessionId() != null) {
-                    contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), 1);
+                if (event.getRoleId() != null) {
+                    contentStatsDataService.incrementRoadmaps(ContentType.role, event.getRoleId(), 1);
                 }
             }
             case memory_card_deck -> {

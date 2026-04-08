@@ -20,6 +20,13 @@ import ImageViewer from '@/components/common/ImageViewer.vue'
 import ChartViewer from '@/components/common/ChartViewer.vue'
 import { useI18n } from '@/composables/useI18n'
 
+const props = withDefaults(defineProps<Props>(), {
+  detail: false,
+  isLearning: false,
+})
+
+const emit = defineEmits<Emits>()
+
 const { t } = useI18n()
 
 interface NodeInfo {
@@ -43,12 +50,6 @@ interface Emits {
   (e: 'text-selected', text: string): void
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  detail: false,
-  isLearning: false,
-})
-
-const emit = defineEmits<Emits>()
 const router = useRouter()
 const route = useRoute()
 
@@ -578,7 +579,15 @@ watch(
         <!-- 列表模式：使用 router-link 包裹，浏览器自动保存滚动位置 -->
         <router-link
           v-if="!detail && posting.id"
-          :to="{ path: '/read', query: { ...(route.query.courseId ? { courseId: route.query.courseId } : {}), ...(route.query.nodeId ? { nodeId: route.query.nodeId } : {}), ...(route.query.path ? { path: route.query.path } : {}), postId: String(posting.id) } }"
+          :to="{
+            path: '/read',
+            query: {
+              ...(route.query.courseId ? { courseId: route.query.courseId } : {}),
+              ...(route.query.nodeId ? { nodeId: route.query.nodeId } : {}),
+              ...(route.query.path ? { path: route.query.path } : {}),
+              postId: String(posting.id),
+            },
+          }"
           class="text-decoration-none d-block"
         >
           <div ref="contentRef" class="text-limited clickable-content cursor-pointer w-100">
@@ -595,7 +604,13 @@ watch(
         </router-link>
 
         <!-- 详情模式：普通div -->
-        <div v-else ref="contentRef" class="w-100" @click="handleContentClick" @mouseup="handleArticleTextSelection">
+        <div
+          v-else
+          ref="contentRef"
+          class="w-100"
+          @click="handleContentClick"
+          @mouseup="handleArticleTextSelection"
+        >
           <div class="article-content full-article">
             <div v-html="posting.content"></div>
           </div>
@@ -616,7 +631,10 @@ watch(
           rounded="pill"
           size="default"
           :color="posting.voteType === 'helpful' ? 'primary' : 'grey-lighten-2'"
-          :class="['px-4', posting.voteType === 'helpful' ? 'core-btn-active' : 'core-btn-inactive']"
+          :class="[
+            'px-4',
+            posting.voteType === 'helpful' ? 'core-btn-active' : 'core-btn-inactive',
+          ]"
           @click="handleUpvote('helpful')"
         >
           <v-icon
@@ -654,7 +672,10 @@ watch(
             rounded="pill"
             size="default"
             :color="posting.voteType === 'twice' ? 'primary' : 'grey-lighten-2'"
-            :class="['px-4', posting.voteType === 'twice' ? 'core-btn-active' : 'core-btn-inactive']"
+            :class="[
+              'px-4',
+              posting.voteType === 'twice' ? 'core-btn-active' : 'core-btn-inactive',
+            ]"
             @click="handleUpvote('twice')"
           >
             <v-icon
@@ -676,9 +697,7 @@ watch(
               v-if="posting.twiceCount > 0"
               :class="[
                 'vote-count ml-2',
-                posting.voteType === 'twice'
-                  ? 'text-white'
-                  : 'text-grey-darken-1'
+                posting.voteType === 'twice' ? 'text-white' : 'text-grey-darken-1',
               ]"
             >
               {{ posting.twiceCount }}
@@ -716,9 +735,7 @@ watch(
               v-if="posting.likeCount > 0"
               :class="[
                 'vote-count ml-2',
-                posting.voteType === 'helpful'
-                  ? 'text-white'
-                  : 'text-grey-darken-1'
+                posting.voteType === 'helpful' ? 'text-white' : 'text-grey-darken-1',
               ]"
             >
               {{ posting.likeCount }}
@@ -811,7 +828,7 @@ watch(
 
       <!-- 记忆卡片数量按钮 -->
       <v-tooltip location="top">
-        <template v-slot:activator="{ props: tooltipProps }">
+        <template #activator="{ props: tooltipProps }">
           <v-btn
             v-bind="tooltipProps"
             variant="text"
@@ -820,7 +837,12 @@ watch(
             size="default"
             class="px-3 ms-2"
           >
-            <v-icon icon="mdi-cards-outline" size="18" class="mr-2" color="purple-darken-2"></v-icon>
+            <v-icon
+              icon="mdi-cards-outline"
+              size="18"
+              class="mr-2"
+              color="purple-darken-2"
+            ></v-icon>
             <span class="font-weight-medium text-purple-darken-2">
               {{ posting.deckCount || 0 }}
             </span>

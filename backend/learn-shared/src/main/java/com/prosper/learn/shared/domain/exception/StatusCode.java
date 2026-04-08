@@ -120,15 +120,15 @@ public enum StatusCode {
     MESSAGE_NOT_FOUND(2001, "消息不存在"),
 
     // 专业相关 21xx
-    PROFESSION_NOT_FOUND(2101, "专业不存在"),
-    PROFESSION_NAME_REQUIRED(2102, "专业名称不能为空"),
-    PROFESSION_ALREADY_APPROVED(2103, "专业状态已是批准状态，无需重复操作"),
-    PROFESSION_ALREADY_REJECTED(2104, "专业状态已是拒绝状态，无需重复操作"),
-    PROFESSION_STATE_CONFLICT(2105, "专业状态已被其他操作修改，请刷新后重试"),
-    PROFESSION_HOT_LIST_FAILED(2106, "获取热门专业失败"),
-    PROFESSION_INVALID_LIMIT(2107, "专业查询数量超出限制"),
-    PROFESSION_BLOCKED(2108, "该职业已被屏蔽，暂时无法访问"),
-    PROFESSION_CATEGORY_INVALID(2109, "职业分类无效"),
+    ROLE_NOT_FOUND(2101, "专业不存在"),
+    ROLE_NAME_REQUIRED(2102, "专业名称不能为空"),
+    ROLE_ALREADY_APPROVED(2103, "专业状态已是批准状态，无需重复操作"),
+    ROLE_ALREADY_REJECTED(2104, "专业状态已是拒绝状态，无需重复操作"),
+    ROLE_STATE_CONFLICT(2105, "专业状态已被其他操作修改，请刷新后重试"),
+    ROLE_HOT_LIST_FAILED(2106, "获取热门专业失败"),
+    ROLE_INVALID_LIMIT(2107, "专业查询数量超出限制"),
+    ROLE_BLOCKED(2108, "该职业已被屏蔽，暂时无法访问"),
+    ROLE_CATEGORY_INVALID(2109, "职业分类无效"),
 
     // 记忆卡片相关 22xx
     MEMORY_CARD_DECK_NOT_FOUND(2201, "卡片组不存在"),

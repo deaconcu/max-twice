@@ -48,7 +48,7 @@ const getMainCategoryName = (mainCategoryId?: number): string | null => {
 const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): string | null => {
   if (!mainCategoryId || !subCategoryId || !props.categoryMapping) return null
   const mapping = props.categoryMapping.find((m) => m.mainCategoryId === mainCategoryId)
-  if (!mapping || !mapping.subCategories) return null
+  if (!mapping?.subCategories) return null
   const subCategory = mapping.subCategories.find((sub) => sub.id === subCategoryId)
   return subCategory ? subCategory.name : null
 }

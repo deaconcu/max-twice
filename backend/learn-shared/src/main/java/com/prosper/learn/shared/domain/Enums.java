@@ -141,7 +141,7 @@ public class Enums {
         roadmap(4),
         memory_card_deck(5),
         memory_card(6),
-        profession(7),
+        role(7),
         course(8);
 
         // 静态常量用于 MyBatis 注解（注解需要编译时常量）
@@ -151,7 +151,7 @@ public class Enums {
         public static final byte ROADMAP_VALUE = 4;
         public static final byte MEMORY_CARD_DECK_VALUE = 5;
         public static final byte MEMORY_CARD_VALUE = 6;
-        public static final byte PROFESSION_VALUE = 7;
+        public static final byte ROLE_VALUE = 7;
         public static final byte COURSE_VALUE = 8;
 
         private final int value;
@@ -352,8 +352,8 @@ public class Enums {
         postBanned(14, 2),           // 帖子被封禁 - 系统消息
         commentRejected(15, 2),      // 评论被拒绝 - 系统消息
         commentBanned(16, 2),        // 评论被封禁 - 系统消息
-        professionRejected(17, 2),   // 职业被拒绝 - 系统消息
-        professionBanned(18, 2),     // 职业被封禁 - 系统消息
+        roleRejected(17, 2),   // 职业被拒绝 - 系统消息
+        roleBanned(18, 2),     // 职业被封禁 - 系统消息
         roadmapRejected(19, 2),      // 路线图被拒绝 - 系统消息
         roadmapBanned(20, 2),        // 路线图被封禁 - 系统消息
         memoryDeckRejected(21, 2),   // 卡片组被拒绝 - 系统消息
@@ -361,7 +361,7 @@ public class Enums {
         nodeRejected(23, 2),         // 节点被拒绝 - 系统消息
         nodeBanned(24, 2),           // 节点被封禁 - 系统消息
         courseApproved(25, 2),       // 课程审核通过 - 系统消息
-        professionApproved(26, 2),   // 职业审核通过 - 系统消息
+        roleApproved(26, 2),   // 职业审核通过 - 系统消息
 
         system(99, 2),               // 其他系统消息 - 系统消息
         other(100, 4);               // 私信 - 私信（category=4）
@@ -927,13 +927,13 @@ public class Enums {
         // 学习统计
         LEARNING_COURSES("learning_courses", "正在学习课程数"),
         COMPLETED_COURSES("completed_courses", "已完成课程数"),
-        IN_PROGRESS_PROFESSIONS("in_progress_professions", "正在进行职业数"),
-        COMPLETED_PROFESSIONS("completed_professions", "已完成职业数"),
+        IN_PROGRESS_ROLES("in_progress_roles", "正在进行职业数"),
+        COMPLETED_ROLES("completed_roles", "已完成职业数"),
 
         // 社交统计
         FOLLOWING_USERS("following_users", "关注的人数"),
         FOLLOWING_COURSES("following_courses", "关注的课程数"),
-        FOLLOWING_PROFESSIONS("following_professions", "关注的职业数"),
+        FOLLOWING_ROLES("following_roles", "关注的职业数"),
 
         // 创作统计
         CREATED_ARTICLES("created_articles", "创建的文章数"),

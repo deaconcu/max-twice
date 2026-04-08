@@ -7,19 +7,19 @@ import { useMutation } from '@/composables/useMutation'
 import { useI18n } from '@/composables/useI18n'
 import { PostType } from '@/enums'
 
-const { t } = useI18n()
-
-interface Props {
-  nodeId?: number
-  pathText?: string
-}
-
 const props = withDefaults(defineProps<Props>(), {
   nodeId: 0,
   pathText: '',
 })
 
 const emit = defineEmits<Emits>()
+
+const { t } = useI18n()
+
+interface Props {
+  nodeId?: number
+  pathText?: string
+}
 
 type Emits = (e: 'load-data', data: any[]) => void
 
@@ -98,7 +98,7 @@ const { execute: executeSubmit, loading: submitting } = useMutation(
 
     // 调用创建 contents 类型帖子的接口
     const response = await postApi.createPost({
-      nodeId: props.nodeId!,
+      nodeId: props.nodeId,
       type: PostType.INDEX,
       content: JSON.stringify(jsonContent),
     })
@@ -211,12 +211,16 @@ const submitCatalog = async () => {
 
               <!-- Tab 2: 选择现有 -->
               <v-tabs-window-item value="two">
-                <div class="text-body-2 text-grey pa-4 text-center">{{ t('systemOperations.cacheManagement.inDevelopment') }}</div>
+                <div class="text-body-2 text-grey pa-4 text-center">
+                  {{ t('systemOperations.cacheManagement.inDevelopment') }}
+                </div>
               </v-tabs-window-item>
 
               <!-- Tab 3: 我的节点 -->
               <v-tabs-window-item value="three">
-                <div class="text-body-2 text-grey pa-4 text-center">{{ t('systemOperations.cacheManagement.inDevelopment') }}</div>
+                <div class="text-body-2 text-grey pa-4 text-center">
+                  {{ t('systemOperations.cacheManagement.inDevelopment') }}
+                </div>
               </v-tabs-window-item>
             </v-tabs-window>
           </v-card-text>

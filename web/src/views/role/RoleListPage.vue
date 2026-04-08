@@ -66,48 +66,52 @@
 
             <!-- 空状态 -->
             <div v-else-if="filteredRoles.length === 0" class="text-center py-12">
-            <v-card rounded="lg" class="pa-12 empty-state no-border">
-              <v-icon icon="mdi-briefcase-outline" size="80" color="grey-lighten-1" class="mb-4" />
-              <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
-                {{ t('roleCenter.empty.noJobs') }}
-              </h3>
-              <p class="text-body-1 text-grey-darken-1 mb-4">
-                {{
-                  searchText
-                    ? t('roleCenter.empty.noSearchResultsDesc')
-                    : t('roleCenter.empty.noRelatedJobsDesc')
-                }}
-              </p>
-              <v-btn
-                v-if="selectedMainCategory || searchText"
-                color="primary"
-                variant="outlined"
-                rounded="lg"
-                @click="clearAll"
-              >
-                查看全部职业
-              </v-btn>
-            </v-card>
-          </div>
-
-          <!-- 职业列表 -->
-          <div v-else class="mt-6 mt-md-8">
-
-            <!-- 职业网格 -->
-            <div class="role-grid">
-              <RoleCard
-                v-for="role in displayedRoles"
-                :key="role.id"
-                :role="role"
-                @click="goToRoleDetail"
-              />
+              <v-card rounded="lg" class="pa-12 empty-state no-border">
+                <v-icon
+                  icon="mdi-briefcase-outline"
+                  size="80"
+                  color="grey-lighten-1"
+                  class="mb-4"
+                />
+                <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
+                  {{ t('roleCenter.empty.noJobs') }}
+                </h3>
+                <p class="text-body-1 text-grey-darken-1 mb-4">
+                  {{
+                    searchText
+                      ? t('roleCenter.empty.noSearchResultsDesc')
+                      : t('roleCenter.empty.noRelatedJobsDesc')
+                  }}
+                </p>
+                <v-btn
+                  v-if="selectedMainCategory || searchText"
+                  color="primary"
+                  variant="outlined"
+                  rounded="lg"
+                  @click="clearAll"
+                >
+                  查看全部职业
+                </v-btn>
+              </v-card>
             </div>
 
-            <!-- 加载更多指示器 -->
-            <div v-if="hasMore" ref="loadMoreTrigger" class="text-center mt-6 py-4 mb-16">
-              <v-progress-circular v-if="loadingMore" indeterminate color="primary" size="32" />
+            <!-- 职业列表 -->
+            <div v-else class="mt-6 mt-md-8">
+              <!-- 职业网格 -->
+              <div class="role-grid">
+                <RoleCard
+                  v-for="role in displayedRoles"
+                  :key="role.id"
+                  :role="role"
+                  @click="goToRoleDetail"
+                />
+              </div>
+
+              <!-- 加载更多指示器 -->
+              <div v-if="hasMore" ref="loadMoreTrigger" class="text-center mt-6 py-4 mb-16">
+                <v-progress-circular v-if="loadingMore" indeterminate color="primary" size="32" />
+              </div>
             </div>
-          </div>
           </template>
         </div>
 
@@ -130,7 +134,7 @@
                     <div class="text-subtitle-1 font-weight-bold text-grey-darken-4">
                       {{ t('roleCenter.search.applyJob') }}
                     </div>
-                    <div class="text-caption text-grey">申请新的职业方向</div>
+                  <div class="text-caption text-grey">{{ t('roleCenter.search.applyJobHint') }}</div>
                   </div>
                   <v-icon icon="mdi-chevron-right" size="20" color="grey-lighten-1" />
                 </div>
@@ -142,7 +146,7 @@
                 <div class="d-flex align-center justify-space-between w-100">
                   <div class="d-flex align-center">
                     <v-icon icon="mdi-fire" color="error" class="mr-2" />
-                    <span class="text-h6 font-weight-bold">热门职业</span>
+                    <span class="text-h6 font-weight-bold">{{ t('rightSidebar.hotRoles') }}</span>
                   </div>
                   <v-btn
                     variant="text"
@@ -151,7 +155,7 @@
                     class="text-caption"
                     @click="clearAll"
                   >
-                    全部
+                    {{ t('common.all') }}
                     <v-icon icon="mdi-chevron-right" size="14" class="ml-1" />
                   </v-btn>
                 </div>
@@ -186,9 +190,7 @@
           <v-card-title class="pa-6">
             <div class="d-flex align-center">
               <v-icon icon="mdi-plus-circle" color="primary" size="32" class="mr-3" />
-              <span class="text-h6 font-weight-bold">{{
-                t('roleCenter.application.title')
-              }}</span>
+              <span class="text-h6 font-weight-bold">{{ t('roleCenter.application.title') }}</span>
             </div>
           </v-card-title>
 
@@ -439,7 +441,7 @@ const loadRoles = async (reset = false) => {
       },
     })
 
-    if (result && result.items && result.items.length > 0) {
+    if (result?.items && result.items.length > 0) {
       roles.value = [...roles.value, ...result.items]
       lastId.value = result.items[result.items.length - 1].id
       hasMore.value = result.hasMore
@@ -476,7 +478,7 @@ const loadMore = async () => {
       },
     })
 
-    if (result && result.items && result.items.length > 0) {
+    if (result?.items && result.items.length > 0) {
       roles.value = [...roles.value, ...result.items]
       lastId.value = result.items[result.items.length - 1].id
       hasMore.value = result.hasMore
@@ -684,7 +686,7 @@ const closeApplicationDialog = () => {
  */
 const jobNameRules = professionNameRules
 
-const categoryRules = [(v: number) => !!v || '请选择分类']
+const categoryRules = [(v: number) => !!v || t('validation.required.mainCategory')]
 
 const descriptionRules = professionDescriptionRules
 

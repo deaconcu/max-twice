@@ -83,30 +83,30 @@ public class RoadmapDataService {
     /**
      * 高级筛选路线图列表
      */
-    public List<RoadmapDO> listByFilter(Long roadmapId, Long professionId, Long creatorId, Long lastId, int limit) {
-        return roadmapMapper.listByFilter(roadmapId, professionId, creatorId, lastId, limit);
+    public List<RoadmapDO> listByFilter(Long roadmapId, Long roleId, Long creatorId, Long lastId, int limit) {
+        return roadmapMapper.listByFilter(roadmapId, roleId, creatorId, lastId, limit);
     }
 
     /**
      * 根据职业获取路线图列表（支持动态排序）
      */
-    public List<RoadmapDO> getListByProfessionOrderBy(long professionId, int limit, String sortBy) {
+    public List<RoadmapDO> getListByRoleOrderBy(long roleId, int limit, String sortBy) {
         if ("latest".equals(sortBy)) {
-            return roadmapMapper.getListByProfessionOrderByLatest(professionId, limit);
+            return roadmapMapper.getListByRoleOrderByLatest(roleId, limit);
         } else {
-            return roadmapMapper.getListByProfessionOrderByScore(professionId, limit);
+            return roadmapMapper.getListByRoleOrderByScore(roleId, limit);
         }
     }
 
     /**
      * 根据职业分页获取路线图列表（支持动态排序，使用游标）
      */
-    public List<RoadmapDO> getListByProfessionAfterCursorOrderBy(long professionId, Double lastScore,
-            LocalDateTime lastCreatedAt, long lastId, int limit, String sortBy) {
+    public List<RoadmapDO> getListByRoleAfterCursorOrderBy(long roleId, Double lastScore,
+                                                           LocalDateTime lastCreatedAt, long lastId, int limit, String sortBy) {
         if ("latest".equals(sortBy)) {
-            return roadmapMapper.getListByProfessionAfterCreatedAt(professionId, lastCreatedAt, lastId, limit);
+            return roadmapMapper.getListByRoleAfterCreatedAt(roleId, lastCreatedAt, lastId, limit);
         } else {
-            return roadmapMapper.getListByProfessionAfterScore(professionId, lastScore, lastId, limit);
+            return roadmapMapper.getListByRoleAfterScore(roleId, lastScore, lastId, limit);
         }
     }
 

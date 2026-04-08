@@ -64,7 +64,7 @@ public class UserLearningDomainService {
 
     /**
      * 根据用户、对象类型和父对象查询学习记录
-     * 用于查询：某个 profession 下正在学习的 roadmap
+     * 用于查询：某个 role 下正在学习的 roadmap
      *
      * @param lastId 分页游标（null 返回第一页）
      */

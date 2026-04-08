@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { handleApiCall, debounce, throttle } from './utils'
 import type { ApiResponse } from './types'
+import i18n from '@/i18n'
 
 /**
  * useMutation 配置选项
@@ -98,7 +99,7 @@ export function useMutation<TPayload, TResult>(
     onError,
     showToast = true,
     confirm = false,
-    confirmMessage = '确定要执行此操作吗？',
+    confirmMessage = i18n.global.t('common.confirmAction'),
     debounce: debounceDelay,
     throttle: throttleDelay,
     allowConcurrent = false,

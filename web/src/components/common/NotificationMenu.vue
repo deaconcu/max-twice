@@ -167,15 +167,15 @@ const getMessageTitle = (message: Message): string => {
   if (type === MessageType.INVITE) return t('notification.inviteNotice')
 
   if (type === MessageType.COURSE_APPROVED) return t('notification.courseApproved')
-  if (type === MessageType.PROFESSION_APPROVED) return t('notification.professionApproved')
+  if (type === MessageType.ROLE_APPROVED) return t('notification.roleApproved')
   if (type === MessageType.COURSE_REJECTED) return t('notification.courseRejected')
   if (type === MessageType.COURSE_BANNED) return t('notification.courseBanned')
   if (type === MessageType.POST_REJECTED) return t('notification.postRejected')
   if (type === MessageType.POST_BANNED) return t('notification.postBanned')
   if (type === MessageType.COMMENT_REJECTED) return t('notification.commentRejected')
   if (type === MessageType.COMMENT_BANNED) return t('notification.commentBanned')
-  if (type === MessageType.PROFESSION_REJECTED) return t('notification.professionRejected')
-  if (type === MessageType.PROFESSION_BANNED) return t('notification.professionBanned')
+  if (type === MessageType.ROLE_REJECTED) return t('notification.roleRejected')
+  if (type === MessageType.ROLE_BANNED) return t('notification.roleBanned')
   if (type === MessageType.ROADMAP_REJECTED) return t('notification.roadmapRejected')
   if (type === MessageType.ROADMAP_BANNED) return t('notification.roadmapBanned')
   if (type === MessageType.MEMORY_DECK_REJECTED) return t('notification.deckRejected')
@@ -192,7 +192,12 @@ const getMessageContent = (message: Message): string => {
     const data = message.content ? JSON.parse(message.content) : {}
     const type = message.type
     // 优先使用 JSON 中的名称，然后使用 sender.name，最后使用默认值
-    const senderName = data.commenterName || data.voterName || data.inviterName || message.sender?.name || t('notification.user')
+    const senderName =
+      data.commenterName ||
+      data.voterName ||
+      data.inviterName ||
+      message.sender?.name ||
+      t('notification.user')
 
     // 互动消息
     if (type === MessageType.FOLLOW) {
@@ -205,8 +210,8 @@ const getMessageContent = (message: Message): string => {
       if (contentType === 'roadmap') {
         // 路线图点赞
         const voterName = data.voterName || t('notification.user')
-        const professionName = data.professionName || t('notification.profession')
-        return t('notification.upvotedRoadmap', { name: voterName, profession: professionName })
+        const roleName = data.roleName || t('notification.role')
+        return t('notification.upvotedRoadmap', { name: voterName, role: roleName })
       }
 
       // 原有逻辑：帖子和评论
@@ -256,28 +261,37 @@ const getMessageContent = (message: Message): string => {
     }
 
     if (type === MessageType.REPLY_ROADMAP_COMMENT) {
-      const professionName = data.professionName || t('notification.roadmap')
-      return t('notification.repliedRoadmapComment', { name: senderName, profession: professionName })
+      const roleName = data.roleName || t('notification.roadmap')
+      return t('notification.repliedRoadmapComment', {
+        name: senderName,
+        role: roleName,
+      })
     }
 
     if (type === MessageType.ROADMAP_COMMENT) {
-      const professionName = data.professionName || t('notification.roadmap')
-      return t('notification.commentedOnRoadmap', { name: senderName, profession: professionName })
+      const roleName = data.roleName || t('notification.roadmap')
+      return t('notification.commentedOnRoadmap', { name: senderName, role: roleName })
     }
 
     // 审核消息
     if (type === MessageType.COURSE_APPROVED) {
       return t('notification.courseApprovedContent', { name: data.courseName || '' })
     }
-    if (type === MessageType.PROFESSION_APPROVED) {
-      return t('notification.professionApprovedContent', { name: data.professionName || '' })
+    if (type === MessageType.ROLE_APPROVED) {
+      return t('notification.roleApprovedContent', { name: data.roleName || '' })
     }
 
     if (type === MessageType.COURSE_REJECTED) {
-      return t('notification.courseRejectedContent', { name: data.courseName || '', reason: data.reason || '' })
+      return t('notification.courseRejectedContent', {
+        name: data.courseName || '',
+        reason: data.reason || '',
+      })
     }
     if (type === MessageType.COURSE_BANNED) {
-      return t('notification.courseBannedContent', { name: data.courseName || '', reason: data.reason || '' })
+      return t('notification.courseBannedContent', {
+        name: data.courseName || '',
+        reason: data.reason || '',
+      })
     }
 
     if (type === MessageType.POST_REJECTED) {
@@ -293,41 +307,75 @@ const getMessageContent = (message: Message): string => {
       const objectTypeName = getObjectTypeName(data.objectType)
       const objectTitle = data.objectTitle || ''
       const commentPreview = data.commentPreview || t('notification.comment')
-      return t('notification.commentRejectedContent', { type: objectTypeName, title: objectTitle, preview: commentPreview, reason: data.reason || '' })
+      return t('notification.commentRejectedContent', {
+        type: objectTypeName,
+        title: objectTitle,
+        preview: commentPreview,
+        reason: data.reason || '',
+      })
     }
     if (type === MessageType.COMMENT_BANNED) {
       const objectTypeName = getObjectTypeName(data.objectType)
       const objectTitle = data.objectTitle || ''
       const commentPreview = data.commentPreview || t('notification.comment')
-      return t('notification.commentBannedContent', { type: objectTypeName, title: objectTitle, preview: commentPreview, reason: data.reason || '' })
+      return t('notification.commentBannedContent', {
+        type: objectTypeName,
+        title: objectTitle,
+        preview: commentPreview,
+        reason: data.reason || '',
+      })
     }
 
-    if (type === MessageType.PROFESSION_REJECTED) {
-      return t('notification.professionRejectedContent', { name: data.professionName || '', reason: data.reason || '' })
+    if (type === MessageType.ROLE_REJECTED) {
+      return t('notification.roleRejectedContent', {
+        name: data.roleName || '',
+        reason: data.reason || '',
+      })
     }
-    if (type === MessageType.PROFESSION_BANNED) {
-      return t('notification.professionBannedContent', { name: data.professionName || '', reason: data.reason || '' })
+    if (type === MessageType.ROLE_BANNED) {
+      return t('notification.roleBannedContent', {
+        name: data.roleName || '',
+        reason: data.reason || '',
+      })
     }
 
     if (type === MessageType.ROADMAP_REJECTED) {
-      return t('notification.roadmapRejectedContent', { profession: data.professionName || '', reason: data.reason || '' })
+      return t('notification.roadmapRejectedContent', {
+        role: data.roleName || '',
+        reason: data.reason || '',
+      })
     }
     if (type === MessageType.ROADMAP_BANNED) {
-      return t('notification.roadmapBannedContent', { profession: data.professionName || '', reason: data.reason || '' })
+      return t('notification.roadmapBannedContent', {
+        role: data.roleName || '',
+        reason: data.reason || '',
+      })
     }
 
     if (type === MessageType.MEMORY_DECK_REJECTED) {
-      return t('notification.deckRejectedContent', { node: data.postTitle || '', reason: data.reason || '' })
+      return t('notification.deckRejectedContent', {
+        node: data.postTitle || '',
+        reason: data.reason || '',
+      })
     }
     if (type === MessageType.MEMORY_DECK_BANNED) {
-      return t('notification.deckBannedContent', { node: data.postTitle || '', reason: data.reason || '' })
+      return t('notification.deckBannedContent', {
+        node: data.postTitle || '',
+        reason: data.reason || '',
+      })
     }
 
     if (type === MessageType.NODE_REJECTED) {
-      return t('notification.nodeRejectedContent', { name: data.nodeName || '', reason: data.reason || '' })
+      return t('notification.nodeRejectedContent', {
+        name: data.nodeName || '',
+        reason: data.reason || '',
+      })
     }
     if (type === MessageType.NODE_BANNED) {
-      return t('notification.nodeBannedContent', { name: data.nodeName || '', reason: data.reason || '' })
+      return t('notification.nodeBannedContent', {
+        name: data.nodeName || '',
+        reason: data.reason || '',
+      })
     }
 
     return message.content || t('notification.systemNotice')
@@ -348,7 +396,7 @@ const getObjectTypeName = (objectType: number): string => {
     case 4:
       return t('notification.objectTypeCourse')
     case 5:
-      return t('notification.profession')
+      return t('notification.role')
     case 6:
       return t('notification.objectTypeRoadmap')
     default:
@@ -426,7 +474,7 @@ const loadMessages = async (reset = false) => {
     }
   } catch (error) {
     console.error('Error loading messages:', error)
-    showSnackbar?.('加载消息失败', 'error')
+    showSnackbar?.(t('error.loadFailed'), 'error')
   } finally {
     loading.value = false
   }
@@ -435,7 +483,7 @@ const loadMessages = async (reset = false) => {
 // 标记新消息（id > sessionLastId 显示 NEW 标签）
 const markNewMessages = () => {
   messages.value.forEach((msg) => {
-    msg.isNew = msg.id! > sessionLastId.value
+    msg.isNew = msg.id > sessionLastId.value
 
     // 30秒后移除 NEW 标签
     if (msg.isNew) {
@@ -577,20 +625,20 @@ const handleMessageClick = (message: Message) => {
         url = `/read?commentId=${commentId}`
       }
     } else if (
-      type === MessageType.PROFESSION_APPROVED ||
-      type === MessageType.PROFESSION_REJECTED ||
-      type === MessageType.PROFESSION_BANNED
+      type === MessageType.ROLE_APPROVED ||
+      type === MessageType.ROLE_REJECTED ||
+      type === MessageType.ROLE_BANNED
     ) {
-      // 职业审核 - 跳转到职业
-      const professionId = data.professionId
-      if (professionId) {
-        url = `/profession/${professionId}`
+      // 角色审核 - 跳转到角色
+      const roleId = data.roleId
+      if (roleId) {
+        url = `/role/${roleId}`
       }
     } else if (type === MessageType.ROADMAP_REJECTED || type === MessageType.ROADMAP_BANNED) {
-      // 路线图审核 - 跳转到职业/路线图
-      const professionId = data.professionId
-      if (professionId) {
-        url = `/profession/${professionId}`
+      // 路线图审核 - 跳转到角色/路线图
+      const roleId = data.roleId
+      if (roleId) {
+        url = `/role/${roleId}`
       }
     } else if (
       type === MessageType.MEMORY_DECK_REJECTED ||
@@ -673,7 +721,9 @@ defineExpose({
       <div class="filter-bar">
         <v-chip-group v-model="filterCategory" mandatory>
           <v-chip value="all" size="small" variant="flat">{{ t('notification.all') }}</v-chip>
-          <v-chip value="interaction" size="small" variant="flat">{{ t('notification.interaction') }}</v-chip>
+          <v-chip value="interaction" size="small" variant="flat">{{
+            t('notification.interaction')
+          }}</v-chip>
           <v-chip value="system" size="small" variant="flat">{{ t('notification.system') }}</v-chip>
         </v-chip-group>
         <v-btn
@@ -688,11 +738,7 @@ defineExpose({
         </v-btn>
       </div>
 
-      <div
-        ref="notificationList"
-        class="notification-list"
-        @scroll="handleScroll"
-      >
+      <div ref="notificationList" class="notification-list" @scroll="handleScroll">
         <!-- 消息列表 -->
         <div
           v-for="message in filteredMessages"
@@ -708,7 +754,9 @@ defineExpose({
             <div class="flex-grow-1">
               <div class="d-flex align-center mb-1">
                 <div class="notification-title">{{ getMessageTitle(message) }}</div>
-                <v-chip v-if="message.isNew" size="x-small" color="error" class="ml-2">{{ t('notification.new') }}</v-chip>
+                <v-chip v-if="message.isNew" size="x-small" color="error" class="ml-2">{{
+                  t('notification.new')
+                }}</v-chip>
               </div>
               <div class="notification-content">{{ getMessageContent(message) }}</div>
               <div class="notification-time">{{ formatTime(message.createdAt) }}</div>

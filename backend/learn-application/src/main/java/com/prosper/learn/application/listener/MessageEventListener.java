@@ -2,8 +2,6 @@ package com.prosper.learn.application.listener;
 
 import com.prosper.learn.application.service.MessageService;
 import com.prosper.learn.content.post.PostDO;
-import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
@@ -12,11 +10,9 @@ import com.prosper.learn.shared.domain.event.content.voting.TwiceUpvotedEvent;
 import com.prosper.learn.shared.domain.event.content.voting.UpvoteTypeSwitchedEvent;
 import com.prosper.learn.shared.domain.event.user.relationship.UserFollowedEvent;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
-import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import static com.prosper.learn.shared.domain.Enums.*;
@@ -259,7 +255,7 @@ public class MessageEventListener {
 
     /**
      * 内容审核通过通知
-     * 只有 profession 和 course 需要发送审核通过消息
+     * 只有 oooooooooo 和 course 需要发送审核通过消息
      * 其他内容类型（post, roadmap, memory_card_deck）不发送，用户可以看到内容已发布
      */
     @EventListener
@@ -272,15 +268,15 @@ public class MessageEventListener {
             }
 
             switch (event.getContentType()) {
-                case profession -> {
-                    messageService.sendProfessionModeration(
+                case role -> {
+                    messageService.sendRoleModeration(
                         event.getCreatorId(),
                         event.getContentId(),
-                        event.getProfessionName(),
+                        event.getRoleName(),
                         ModerationAction.APPROVED,
                         null
                     );
-                    log.debug("发送职业审核通过通知: professionId={}, creatorId={}",
+                    log.debug("发送角色审核通过通知: roleId={}, creatorId={}",
                         event.getContentId(), event.getCreatorId());
                 }
                 case course -> {
@@ -317,15 +313,15 @@ public class MessageEventListener {
             }
 
             switch (event.getContentType()) {
-                case profession -> {
-                    messageService.sendProfessionModeration(
+                case role -> {
+                    messageService.sendRoleModeration(
                         event.getCreatorId(),
                         event.getContentId(),
-                        event.getProfessionName(),
+                        event.getRoleName(),
                         ModerationAction.REJECTED,
                         event.getReason()
                     );
-                    log.debug("发送职业审核拒绝通知: professionId={}, creatorId={}, reason={}",
+                    log.debug("发送职业审核拒绝通知: role={}, creatorId={}, reason={}",
                         event.getContentId(), event.getCreatorId(), event.getReason());
                 }
                 case course -> {
@@ -357,8 +353,8 @@ public class MessageEventListener {
                     messageService.sendRoadmapModeration(
                         event.getCreatorId(),
                         event.getContentId(),
-                        event.getProfessionId(),
-                        event.getProfessionName(),
+                        event.getRoleId(),
+                        event.getRoleName(),
                         ModerationAction.REJECTED,
                         event.getReason()
                     );
