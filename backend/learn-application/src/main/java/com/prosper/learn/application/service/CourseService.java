@@ -42,6 +42,8 @@ public class CourseService {
     private final ApplicationEventPublisher eventPublisher;
     private final SystemDomainService systemDomainService;
     private final CourseAssembler courseAssembler;
+    private final ContentVisibilityService contentVisibilityService;
+    private final MeilisearchService meilisearchService;
 
     private static final int DEFAULT_PAGE_SIZE = 20;
 
@@ -61,6 +63,10 @@ public class CourseService {
      */
     public CourseFullDTO getCourseById(Long id, Long userId) {
         CourseDO course = courseDataService.validateAndGet(id);
+
+        // 检查课程及其父课程的可见性
+        contentVisibilityService.validateVisibility(ContentType.course, id, userId);
+
         return courseAssembler.toFullDTO(course, userId);
     }
 
@@ -273,6 +279,10 @@ public class CourseService {
             courseDO.getId(),
             courseDO.getName()
         ));
+
+        // 异步更新搜索索引
+        courseDO.setState(ContentState.PUBLISHED.value());
+        meilisearchService.indexCourse(courseDO);
     }
 
     /**
@@ -297,6 +307,10 @@ public class CourseService {
             courseDO.getName(),
             reason
         ));
+
+        // 异步更新搜索索引（从索引中移除）
+        courseDO.setState(ContentState.REJECTED.value());
+        meilisearchService.indexCourse(courseDO);
     }
 
     /**
@@ -324,6 +338,10 @@ public class CourseService {
 
         // ban 不发送任何消息或事件
         log.info("课程 {} 被封禁，操作者: {}, 原因: {}", id, operator.getId(), reason);
+
+        // 异步更新搜索索引（从索引中移除）
+        courseDO.setState(ContentState.BANNED.value());
+        meilisearchService.indexCourse(courseDO);
     }
 
     /**
@@ -340,6 +358,9 @@ public class CourseService {
         }
 
         courseDomainService.deleteCourse(id);
+
+        // 异步从搜索索引中移除
+        meilisearchService.deleteCourse(id);
     }
 
     @Transactional

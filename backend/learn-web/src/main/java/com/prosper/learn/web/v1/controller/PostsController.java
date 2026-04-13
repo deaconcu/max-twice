@@ -126,12 +126,14 @@ public class PostsController {
      * 映射: GET /posting/{id} → GET /api/v1/posts/{id}
      */
     @GetMapping("/posts/{id}")
+    @SaCheckLogin
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<PostSummaryDTO> getPost(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
-            Long id) {
-        PostSummaryDTO post = postService.getDTO(id);
+            Long id,
+            @CurrentUser UserDO currentUser) {
+        PostSummaryDTO post = postService.getDTO(id, currentUser.getId());
         return ApiResponse.success(post);
     }
 
@@ -157,22 +159,33 @@ public class PostsController {
     }
 
     /**
-     * 获取当前登录用户所有状态的文章或目录（用于个人中心内容管理）
-     * 包含：待审核、已发布、审核拒绝、已屏蔽
-     * GET /api/v1/users/me/posts?lastId=0&type=2
+     * 获取当前登录用户的文章或目录（用于个人中心内容管理）
+     * 包含：草稿、待审核、已发布、审核拒绝（不含已屏蔽）
+     * GET /api/v1/users/me/posts?lastId=0&type=2&state=2
      */
     @GetMapping("/users/me/posts")
     @SaCheckLogin
     public ApiResponse<KeysetPageResponse<PostFullDTO>> getCurrentUserAllPosts(
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false, defaultValue = "2") Integer type,
+            @RequestParam(required = false) Integer state,
             @CurrentUser UserDO currentUser) {
 
         Enums.PostType postType = Enums.PostType.getByValue(type);
         if (postType == null) {
             return ApiResponse.fail(400, "无效的帖子类型");
         }
-        KeysetPageResponse<PostFullDTO> result = postService.getUserPostsWithPagination(currentUser.getId(), lastId, postType, null);
+
+        // 验证 state 参数：不能传 BANNED
+        Byte stateValue = null;
+        if (state != null) {
+            if (state.byteValue() == Enums.ContentState.BANNED.value()) {
+                return ApiResponse.fail(400, "无效的状态参数");
+            }
+            stateValue = state.byteValue();
+        }
+
+        KeysetPageResponse<PostFullDTO> result = postService.getUserPostsWithPagination(currentUser.getId(), lastId, postType, stateValue);
         return ApiResponse.success(result);
     }
 

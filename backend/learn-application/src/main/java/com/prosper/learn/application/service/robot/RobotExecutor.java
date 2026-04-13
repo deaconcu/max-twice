@@ -31,8 +31,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RobotExecutor {
 
-    private final PostQueueService queueService;
-    private final PostGenerationService generationService;
+    private final RobotQueueService queueService;
+    private final PostAndCardGenerationService generationService;
     private final PostDataService postDataService;
     private final PostService postService;
     private final UserDataService userDataService;

@@ -35,8 +35,8 @@ public interface UserMapper {
     @Select("SELECT * FROM user WHERE name = #{name} limit 1")
     UserDO getByName(String name);
 
-    @Insert("INSERT INTO user(name, password, phone, email, email_validated, biography, avatar, role, state, last_viewed_message_id) " +
-            "VALUES (#{name}, #{password}, #{phone}, #{email}, #{emailValidated}, #{biography}, #{avatar}, #{role}, #{state}, #{lastViewedMessageId})")
+    @Insert("INSERT INTO user(name, password, phone, email, email_validated, biography, avatar, role, state) " +
+            "VALUES (#{name}, #{password}, #{phone}, #{email}, #{emailValidated}, #{biography}, #{avatar}, #{role}, #{state})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserDO user);
 
@@ -57,15 +57,6 @@ public interface UserMapper {
 
     @Update("UPDATE user SET email_validated = #{emailValidated}, updated_at = #{updatedAt} WHERE id = #{userId}")
     void updateEmailValidated(@Param("userId") long userId, @Param("emailValidated") boolean emailValidated, @Param("updatedAt") LocalDateTime updatedAt);
-
-    @Update("UPDATE user SET last_viewed_message_id = #{lastViewedMessageId} WHERE id = #{userId}")
-    void updateLastViewedMessageId(@Param("userId") long userId, @Param("lastViewedMessageId") long lastViewedMessageId);
-
-    /**
-     * 原子递增复习卡片计数器并返回新值
-     */
-    @Update("UPDATE user SET review_card_count = COALESCE(review_card_count, 0) + 1 WHERE id = #{userId}")
-    int incrementReviewCardCount(@Param("userId") long userId);
 
     @Select("SELECT * FROM user ORDER BY id DESC LIMIT #{count}")
     List<UserDO> getList(int count);

@@ -1,5 +1,54 @@
 <template>
   <div class="pa-0 pa-sm-1">
+    <!-- 顶部筛选栏（仅自己的 profile 显示）-->
+    <div v-if="isOwnProfile" class="d-flex align-center mb-4">
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'all' ? 'primary' : 'default'"
+        @click="statusFilter = 'all'"
+      >
+        {{ t('user.profile.all') }}
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'draft' ? 'primary' : 'default'"
+        @click="statusFilter = 'draft'"
+      >
+        {{ t('user.profile.draft') }}
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'pending' ? 'primary' : 'default'"
+        @click="statusFilter = 'pending'"
+      >
+        {{ t('user.profile.pending') }}
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'published' ? 'primary' : 'default'"
+        @click="statusFilter = 'published'"
+      >
+        {{ t('user.profile.published') }}
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'rejected' ? 'primary' : 'default'"
+        @click="statusFilter = 'rejected'"
+      >
+        {{ t('user.profile.rejected') }}
+      </v-btn>
+    </div>
+
     <!-- 加载状态 -->
     <LoadingSpinner v-if="loading && roadmaps.length === 0" />
 
@@ -41,6 +90,7 @@
                     {{ roadmap.name }}
                   </span>
                   <v-chip
+                    v-if="isOwnProfile"
                     :color="getStatusColor(roadmap.status)"
                     size="x-small"
                     variant="tonal"
@@ -110,15 +160,19 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-else class="text-center py-8 py-md-12">
+    <div v-else-if="!loading" class="text-center py-8 py-md-12">
       <v-icon
         icon="mdi-map-marker-path"
         :size="$vuetify.display.mobile ? 48 : 64"
         color="grey-lighten-2"
         class="mb-3 mb-md-4"
       />
-      <p class="text-body-2 text-md-body-1 text-grey-darken-2">{{ t('learning.noRoadmaps') }}</p>
-      <p class="text-caption text-md-body-2 text-grey">{{ t('roadmap.systematicLearning') }}</p>
+      <p class="text-body-2 text-md-body-1 text-grey-darken-2">
+        {{ statusFilter !== 'all' ? t('user.profile.noArticlesFound') : t('learning.noRoadmaps') }}
+      </p>
+      <p class="text-caption text-md-body-2 text-grey">
+        {{ statusFilter !== 'all' ? t('user.profile.adjustFilters') : t('roadmap.systematicLearning') }}
+      </p>
     </div>
 
     <!-- 删除确认对话框 -->
@@ -133,12 +187,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
 import { useI18n } from '@/composables/useI18n'
 import { userApi } from '@/api'
+import { ContentState } from '@/enums'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
@@ -156,17 +211,37 @@ interface Props {
 
 const router = useRouter()
 
+// 搜索和筛选
+const statusFilter = ref<'all' | 'draft' | 'pending' | 'published' | 'rejected'>('all')
+
+// 将 statusFilter 转换为后端 state 值
+const getStateValue = (): number | undefined => {
+  switch (statusFilter.value) {
+    case 'draft':
+      return ContentState.DRAFT
+    case 'pending':
+      return ContentState.SUBMITTED
+    case 'published':
+      return ContentState.PUBLISHED
+    case 'rejected':
+      return ContentState.REJECTED
+    default:
+      return undefined // all - 后端返回除 BANNED 外的所有状态
+  }
+}
+
 // 使用无限滚动加载路线图
 const {
   items: roadmapsData,
   loading,
   hasMore,
   loadMore: loadMoreRoadmaps,
+  reset: resetRoadmaps,
 } = useInfiniteScroll({
   fetchFn: async (params) => {
     if (props.isOwnProfile || props.userId === null) {
       // 获取当前用户的路线图
-      const response = await userApi.getCurrentUserRoadmaps(params.lastId)
+      const response = await userApi.getCurrentUserRoadmaps(params.lastId, getStateValue())
       return {
         code: response.code,
         data: response.data || [],
@@ -188,6 +263,12 @@ const {
     lastId: lastItem.id,
   }),
   initialParams: { lastId: undefined },
+})
+
+// 监听 statusFilter 变化，重新加载列表
+watch(statusFilter, () => {
+  resetRoadmaps()
+  loadMoreRoadmaps()
 })
 
 // 首次加载数据
@@ -246,8 +327,8 @@ const roadmaps = computed(() => {
 // 获取状态颜色
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
-    draft: 'warning',
-    submitted: 'info',
+    draft: 'grey',
+    submitted: 'warning',
     published: 'success',
     rejected: 'error',
     banned: 'error',

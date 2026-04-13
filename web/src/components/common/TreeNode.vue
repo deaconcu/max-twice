@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
+import { ContentState } from '@/enums'
 
 interface NodeInfo {
   name?: string
   isCompleted?: boolean
+  state?: number
 }
 
 type NodeData = Record<string, any>
@@ -84,6 +86,11 @@ watch(
   { immediate: true }
 )
 
+// 判断节点是否被封禁
+const isNodeBanned = (nodeKey: string): boolean => {
+  return props.nodeInfos[nodeKey]?.state === ContentState.BANNED
+}
+
 // 滚动到页面顶部
 const scrollToTop = (): void => {
   window.scrollTo({
@@ -101,9 +108,23 @@ const scrollToTop = (): void => {
           class="d-flex align-center tree-node-item"
           :class="{
             'active-node': calculatePath(currPath, key as string) == path,
+            'banned-node': isNodeBanned(key as string),
           }"
         >
-          <router-link
+          <!-- 被封禁的节点：显示为不可点击的文本 -->
+          <template v-if="isNodeBanned(key as string)">
+            <div class="banned-link">
+              <div class="d-flex align-center flex-grow-1">
+                <v-icon icon="mdi-cancel" color="grey-lighten-1" size="16" class="mr-2"></v-icon>
+                <span class="tree-node-text text-grey">
+                  {{ nodeInfos[key]?.name || key }}
+                </span>
+              </div>
+            </div>
+          </template>
+          <!-- 正常节点：可点击跳转 -->
+          <template v-else>
+            <router-link
             :to="{
               path: '/read',
               query: courseId
@@ -181,6 +202,7 @@ const scrollToTop = (): void => {
               </div>
             </div>
           </router-link>
+          </template>
           <v-btn
             v-if="Object.keys(node).filter((key) => key !== '^').length > 0"
             icon="mdi-chevron-down"
@@ -267,5 +289,19 @@ const scrollToTop = (): void => {
   flex-shrink: 0;
   margin-left: auto;
   margin-right: 8px;
+}
+
+/* 被封禁节点样式 */
+.banned-node {
+  opacity: 0.6;
+}
+
+.banned-link {
+  display: flex;
+  align-items: center;
+  padding: 6px 4px;
+  gap: 8px;
+  flex: 1;
+  cursor: not-allowed;
 }
 </style>

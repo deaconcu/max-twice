@@ -323,13 +323,6 @@ public class MemoryCardDeckDomainService {
     }
 
     /**
-     * 根据创建者获取卡片组列表
-     */
-    public List<MemoryCardDeckDO> getListByCreator(Long creatorId, Integer limit) {
-        return deckDataService.getListByCreator(creatorId, limit);
-    }
-
-    /**
      * 根据创建者获取卡片组列表 - ID分页
      */
     public List<MemoryCardDeckDO> getListByCreatorWithIdPaging(Long creatorId, Long lastId, Integer limit) {

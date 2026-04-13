@@ -98,6 +98,10 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
 
+    // 添加语言头，让后端返回对应语言的错误信息
+    const locale = i18n.global.locale.value || 'zh'
+    config.headers['Accept-Language'] = locale
+
     // 添加 ETag 缓存头（If-None-Match）
     if (config.url) {
       const cachedETag = etagCache.getETag(config.url)

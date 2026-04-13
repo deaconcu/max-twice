@@ -65,7 +65,14 @@
             <v-card class="login-card" rounded="xl" elevation="0">
               <!-- Logo Section -->
               <v-card-text class="text-center pt-10 pb-2 px-8">
-                <v-icon size="40" color="primary" class="mb-4">mdi-infinity</v-icon>
+                <div
+                  class="logo-with-slogan"
+                  @mouseenter="showSlogan = true"
+                  @mouseleave="showSlogan = false"
+                >
+                  <IcosahedronLogo :size="72" />
+                  <span class="logo-slogan" :class="{ visible: showSlogan }">{{ t('intro.logoSlogan') }}</span>
+                </div>
                 <h2 class="text-h4 font-weight-bold mb-2">
                   {{ t('user.login.title') }}
                 </h2>
@@ -196,6 +203,8 @@ import { BUSINESS_ERROR } from '@/constants/errorCode'
 import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 import IntroSection from '@/components/common/IntroSection.vue'
 import TurnstileWidget from '@/components/common/TurnstileWidget.vue'
+import TetrahedronLogo from '@/components/common/TetrahedronLogo.vue'
+import IcosahedronLogo from '@/components/common/IcosahedronLogo.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -209,6 +218,9 @@ const passwordMaxLength = useMaxLength('password')
 
 // 表单引用
 const loginFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
+
+// Logo slogan
+const showSlogan = ref(false)
 
 // 表单数据
 const formData = ref({
@@ -778,12 +790,19 @@ const goToRegister = () => {
 }
 
 .login-card {
-  background-color: rgb(var(--v-theme-surface));
+  background-color: rgba(var(--v-theme-surface), 0.5) !important;
+  backdrop-filter: blur(10px);
   border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
 }
 
 .logo-circle {
   display: none;
+}
+
+.logo-icon {
+  width: 56px;
+  height: 56px;
+  color: rgb(var(--v-theme-primary));
 }
 
 /* 表单圆角 */
@@ -811,5 +830,30 @@ a:hover {
     text-align: center;
     padding: 20px;
   }
+}
+
+/* Logo with slogan */
+.logo-with-slogan {
+  display: inline-block;
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.logo-slogan {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(-8px);
+  margin-left: 16px;
+  font-size: 12px;
+  color: #999;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  white-space: nowrap;
+}
+
+.logo-slogan.visible {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
 }
 </style>

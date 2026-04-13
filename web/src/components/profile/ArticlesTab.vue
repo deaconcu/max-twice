@@ -1,62 +1,64 @@
 <template>
   <div class="pa-0 pa-sm-1">
-    <!-- 顶部筛选栏 -->
-    <div class="d-flex align-center justify-space-between mb-4 flex-wrap ga-3">
-      <!-- 左侧：状态筛选 -->
-      <div class="d-flex align-center">
-        <v-btn
-          variant="text"
-          size="small"
-          rounded="lg"
-          :color="statusFilter === 'all' ? 'primary' : 'default'"
-          @click="statusFilter = 'all'"
-        >
-          {{ t('user.profile.all') }}
-        </v-btn>
-        <v-btn
-          variant="text"
-          size="small"
-          rounded="lg"
-          :color="statusFilter === 'draft' ? 'primary' : 'default'"
-          @click="statusFilter = 'draft'"
-        >
-          {{ t('user.profile.draft') }}
-        </v-btn>
-        <v-btn
-          variant="text"
-          size="small"
-          rounded="lg"
-          :color="statusFilter === 'published' ? 'primary' : 'default'"
-          @click="statusFilter = 'published'"
-        >
-          {{ t('user.profile.published') }}
-        </v-btn>
-      </div>
-
-      <!-- 右侧：搜索框 -->
-      <v-text-field
-        v-model="searchQuery"
-        :placeholder="t('user.profile.searchPlaceholder')"
-        prepend-inner-icon="mdi-magnify"
-        variant="outlined"
-        density="compact"
+    <!-- 顶部筛选栏（仅自己的 profile 显示）-->
+    <div v-if="isOwnProfile" class="d-flex align-center mb-4">
+      <v-btn
+        variant="text"
+        size="small"
         rounded="lg"
-        clearable
-        hide-details
-        style="max-width: 200px"
-      />
+        :color="statusFilter === 'all' ? 'primary' : 'default'"
+        @click="statusFilter = 'all'"
+      >
+        {{ t('user.profile.all') }}
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'draft' ? 'primary' : 'default'"
+        @click="statusFilter = 'draft'"
+      >
+        {{ t('user.profile.draft') }}
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'pending' ? 'primary' : 'default'"
+        @click="statusFilter = 'pending'"
+      >
+        {{ t('user.profile.pending') }}
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'published' ? 'primary' : 'default'"
+        @click="statusFilter = 'published'"
+      >
+        {{ t('user.profile.published') }}
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'rejected' ? 'primary' : 'default'"
+        @click="statusFilter = 'rejected'"
+      >
+        {{ t('user.profile.rejected') }}
+      </v-btn>
     </div>
 
     <!-- 加载状态 -->
-    <LoadingSpinner v-if="loading && filteredArticles.length === 0" />
+    <LoadingSpinner v-if="loading && articles.length === 0" />
 
     <!-- 文章列表 -->
     <v-infinite-scroll
-      v-if="filteredArticles.length > 0"
-      :items="filteredArticles"
+      v-if="articles.length > 0"
+      :items="articles"
       @load="onLoadMore"
     >
-      <div v-for="(article, index) in filteredArticles" :key="article.id">
+      <div v-for="(article, index) in articles" :key="article.id">
         <v-card rounded="lg" hover border class="article-card mb-5" @click="goToArticle(article)">
           <v-card-text class="pa-4 pb-2">
             <!-- 顶部：课程 > 节点 + 状态 -->
@@ -90,52 +92,54 @@
                 </span>
               </div>
 
-              <!-- 右侧：状态标签 -->
-              <v-chip
-                v-if="article.state === 0"
-                size="x-small"
-                color="grey"
-                variant="tonal"
-                class="flex-shrink-0 ml-2"
-              >
-                {{ t('user.profile.draft') }}
-              </v-chip>
-              <v-chip
-                v-else-if="article.state === 1"
-                size="x-small"
-                color="warning"
-                variant="tonal"
-                class="flex-shrink-0 ml-2"
-              >
-                {{ t('admin.pending') }}
-              </v-chip>
-              <v-chip
-                v-else-if="article.state === 2"
-                size="x-small"
-                color="success"
-                variant="tonal"
-                class="flex-shrink-0 ml-2"
-              >
-                {{ t('user.profile.published') }}
-              </v-chip>
-              <v-chip
-                v-else-if="article.state === 3"
-                size="x-small"
-                color="error"
-                variant="tonal"
-                class="flex-shrink-0 ml-2"
-              >
-                {{ t('admin.rejected') }}
-              </v-chip>
-              <v-chip
-                v-else-if="article.state === 4"
-                size="x-small"
-                color="error"
-                variant="tonal"
-                class="flex-shrink-0 ml-2"
-              >
-                {{ t('admin.banned') }}
-              </v-chip>
+              <!-- 右侧：状态标签（仅自己的 profile 显示）-->
+              <template v-if="isOwnProfile">
+                <v-chip
+                  v-if="article.state === 0"
+                  size="x-small"
+                  color="grey"
+                  variant="tonal"
+                  class="flex-shrink-0 ml-2"
+                >
+                  {{ t('user.profile.draft') }}
+                </v-chip>
+                <v-chip
+                  v-else-if="article.state === 1"
+                  size="x-small"
+                  color="warning"
+                  variant="tonal"
+                  class="flex-shrink-0 ml-2"
+                >
+                  {{ t('admin.pending') }}
+                </v-chip>
+                <v-chip
+                  v-else-if="article.state === 2"
+                  size="x-small"
+                  color="success"
+                  variant="tonal"
+                  class="flex-shrink-0 ml-2"
+                >
+                  {{ t('user.profile.published') }}
+                </v-chip>
+                <v-chip
+                  v-else-if="article.state === 3"
+                  size="x-small"
+                  color="error"
+                  variant="tonal"
+                  class="flex-shrink-0 ml-2"
+                >
+                  {{ t('admin.rejected') }}
+                </v-chip>
+                <v-chip
+                  v-else-if="article.state === 4"
+                  size="x-small"
+                  color="error"
+                  variant="tonal"
+                  class="flex-shrink-0 ml-2"
+                >
+                  {{ t('admin.banned') }}
+                </v-chip>
+              </template>
             </div>
 
             <!-- 文章内容缩略 -->
@@ -190,7 +194,7 @@
     </v-infinite-scroll>
 
     <!-- 空状态 -->
-    <div v-else class="text-center py-8 py-md-12">
+    <div v-else-if="!loading" class="text-center py-8 py-md-12">
       <v-icon
         icon="mdi-file-document-multiple"
         :size="$vuetify.display.mobile ? 48 : 64"
@@ -198,18 +202,10 @@
         class="mb-3 mb-md-4"
       />
       <p class="text-body-2 text-md-body-1 text-grey-darken-2">
-        {{
-          searchQuery || statusFilter !== 'all'
-            ? t('user.profile.noArticlesFound')
-            : t('user.profile.noArticlesCreated')
-        }}
+        {{ statusFilter !== 'all' ? t('user.profile.noArticlesFound') : t('user.profile.noArticlesCreated') }}
       </p>
       <p class="text-caption text-md-body-2 text-grey">
-        {{
-          searchQuery || statusFilter !== 'all'
-            ? t('user.profile.adjustFilters')
-            : t('user.profile.shareExperience')
-        }}
+        {{ statusFilter !== 'all' ? t('user.profile.adjustFilters') : t('user.profile.shareExperience') }}
       </p>
     </div>
 
@@ -258,9 +254,24 @@ import ArticleEditModal from '@/components/profile/ArticleEditModal.vue'
 
 const router = useRouter()
 
-// 搜索和筛选
-const searchQuery = ref('')
-const statusFilter = ref('all')
+// 状态筛选
+const statusFilter = ref<'all' | 'draft' | 'pending' | 'published' | 'rejected'>('all')
+
+// 将 statusFilter 转换为后端 state 值
+const getStateValue = (): number | undefined => {
+  switch (statusFilter.value) {
+    case 'draft':
+      return ContentState.DRAFT
+    case 'pending':
+      return ContentState.SUBMITTED
+    case 'published':
+      return ContentState.PUBLISHED
+    case 'rejected':
+      return ContentState.REJECTED
+    default:
+      return undefined // all - 后端返回除 BANNED 外的所有状态
+  }
+}
 
 // 编辑功能状态
 const showEditModal = ref(false)
@@ -281,7 +292,11 @@ const {
   fetchFn: async (params) => {
     if (props.isOwnProfile || props.userId === null) {
       // 获取当前用户的文章
-      const response = await userApi.getCurrentUserAllPosts(params.lastId, PostType.ARTICLE)
+      const response = await userApi.getCurrentUserAllPosts(
+        params.lastId,
+        PostType.ARTICLE,
+        getStateValue()
+      )
       return {
         code: response.code,
         data: response.data?.items || [],
@@ -303,6 +318,12 @@ const {
     lastId: lastItem.id,
   }),
   initialParams: { lastId: undefined },
+})
+
+// 监听 statusFilter 变化，重新加载列表
+watch(statusFilter, () => {
+  resetPosts()
+  loadMorePosts()
 })
 
 // 删除文章
@@ -373,39 +394,14 @@ const articles = computed(() => {
   }))
 })
 
-// 根据搜索关键词和状态过滤文章
-const filteredArticles = computed(() => {
-  let result = articles.value
-
-  // 状态筛选
-  if (statusFilter.value === 'draft') {
-    result = result.filter((article) => article.state === 0)
-  } else if (statusFilter.value === 'published') {
-    result = result.filter((article) => article.state === 2)
-  }
-
-  // 搜索筛选
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter((article) => {
-      const matchNode = article.node?.name.toLowerCase().includes(query)
-      const matchCourse = article.course?.toLowerCase().includes(query)
-      const matchContent = article.preview?.toLowerCase().includes(query)
-      return matchNode || matchCourse || matchContent
-    })
-  }
-
-  return result
-})
-
 // 检测内容是否溢出
 const setContentRef = (el: any, index: number) => {
-  if (!el || !filteredArticles.value[index]) return
+  if (!el || !articles.value[index]) return
 
   nextTick(() => {
     // 检测整个容器的 scrollHeight 是否超过 max-height (300px)
     if (el.scrollHeight > 300) {
-      const articleId = filteredArticles.value[index].id
+      const articleId = articles.value[index].id
       overflowStates.value[articleId] = true
     }
   })
@@ -484,7 +480,7 @@ const handleCancelEdit = () => {
 type LoadMoreCallback = (status: 'ok' | 'empty') => void
 
 const onLoadMore = async ({ done }: { done: LoadMoreCallback }): Promise<void> => {
-  if (!hasMore.value || loading.value || searchQuery.value || statusFilter.value !== 'all') {
+  if (!hasMore.value || loading.value) {
     done('empty')
     return
   }

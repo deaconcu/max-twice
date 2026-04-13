@@ -1,6 +1,7 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
 import com.prosper.learn.application.dto.request.CreateNotificationRequest;
 import com.prosper.learn.application.dto.response.message.MessageListResponse;
 import com.prosper.learn.application.service.MessageService;
@@ -31,6 +32,7 @@ public class MessagesController {
 
     private final MessageService messageService;
     private final UserDataService userDataService;
+    private final UserStatsDataService userStatsDataService;
 
     /**
      * 按分类获取消息列表
@@ -51,16 +53,10 @@ public class MessagesController {
             @RequestParam(required = false) Integer type,
             @CurrentUser UserDO currentUser) {
 
-        // 获取消息列表（支持 category=3 查询全部）
+        // 获取消息列表（内部会处理 lastViewedMessageId 的读取和更新）
         MessageListResponse response = messageService.getListByCategoryWithLastViewed(
             category, currentUser.getId(), lastId, type, currentUser
         );
-
-        // 只在第一页更新 lastViewedMessageId（取第一条消息ID，因为是降序排列）
-        if (lastId == null && !response.getMessages().isEmpty()) {
-            long maxId = response.getMessages().get(0).getId();
-            userDataService.updateLastViewedMessageId(currentUser.getId(), maxId);
-        }
 
         return ApiResponse.success(response);
     }
@@ -73,11 +69,7 @@ public class MessagesController {
     @SaCheckLogin
     @RateLimit(capacity = 200, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Integer> getUnreadCount(@CurrentUser UserDO currentUser) {
-        Long lastViewedMessageId = currentUser.getLastViewedMessageId();
-        if (lastViewedMessageId == null) {
-            lastViewedMessageId = 0L;
-        }
-
+        long lastViewedMessageId = userStatsDataService.getLastViewedMessageId(currentUser.getId());
         int count = messageService.getUnreadCount(currentUser.getId(), lastViewedMessageId);
         return ApiResponse.success(count);
     }

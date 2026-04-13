@@ -115,6 +115,7 @@ public class PostService {
     private final NodeService nodeService;
     private final UserService userService;
     private final ImageUploadService imageUploadService;
+    private final ContentVisibilityService contentVisibilityService;
 
     // =========== 公共方法 DTO ==========
 
@@ -128,7 +129,24 @@ public class PostService {
     }
 
     /**
-     * 获取单个帖子DTO
+     * 获取单个帖子DTO（带权限检查）
+     * @param id 帖子ID
+     * @param currentUserId 当前用户ID（可为null，表示未登录）
+     */
+    public PostSummaryDTO getDTO(long id, Long currentUserId) {
+        PostDO post = domainService.getWithIdToName(id);
+        if (post == null) {
+            throw StatusCode.POST_NOT_FOUND.exception();
+        }
+
+        // 检查帖子及其祖先链的可见性
+        contentVisibilityService.validateVisibility(ContentType.post, id, currentUserId);
+
+        return postConverter.toSummaryDTO(post);
+    }
+
+    /**
+     * 获取单个帖子DTO（无权限检查，内部使用）
      */
     public PostSummaryDTO getDTO(long id) {
         PostDO post = domainService.getWithIdToName(id);
@@ -142,27 +160,6 @@ public class PostService {
         nodeDataService.validateAndGet(nodeId);
         return domainService.getListByNodeAndScore(
                 nodeId, systemProperties.getPosting().getDefaultNodePostCount(), ContentState.PUBLISHED.value());
-    }
-
-    /**
-     * 获取用户文章或目录
-     * @param userId 用户ID
-     * @param lastId 分页游标
-     * @param postType 帖子类型
-     * @param state 状态过滤（null表示所有状态，否则只返回指定状态）
-     */
-    public List<PostFullDTO> getUserPosts(Long userId, Long lastId, PostType postType, Byte state) {
-        userDataService.validateAndGet(userId);
-
-        int count = systemProperties.getPosting().getUserContentsPageSize();
-
-        // 调用 DomainService 查询（包含 idToName 处理）
-        List<PostDO> postings = domainService.getUserPosts(userId, postType.value(), lastId, state, count);
-        if (postings == null || postings.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        return postAssembler.toFullDTO(postings, userId);
     }
 
     /**
@@ -426,6 +423,9 @@ public class PostService {
         if (postType == null) {
             throw StatusCode.INVALID_PARAMETER.exception("无效的帖子类型");
         }
+
+        // 验证节点链是否全部 PUBLISHED
+        contentVisibilityService.validateCanCreateOn(ContentType.node, request.getNodeId());
 
         // 根据类型调用不同的 DomainService 方法
         Long postId;

@@ -27,7 +27,7 @@ import java.util.Set;
  */
 @Service
 @RequiredArgsConstructor
-public class PostQueueService {
+public class RobotQueueService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final SystemProperties systemProperties;

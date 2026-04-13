@@ -81,4 +81,18 @@ public interface UserStatsMapper {
     int updateLearningStreak(@Param("userId") long userId,
                              @Param("streakDays") int streakDays,
                              @Param("lastLearningDate") LocalDate lastLearningDate);
+
+    // ===== 站点状态字段操作 =====
+
+    @Select("SELECT last_viewed_message_id FROM user_stats WHERE user_id = #{userId}")
+    Long getLastViewedMessageId(@Param("userId") long userId);
+
+    @Update("UPDATE user_stats SET last_viewed_message_id = #{lastViewedMessageId}, updated_at = NOW() WHERE user_id = #{userId}")
+    int updateLastViewedMessageId(@Param("userId") long userId, @Param("lastViewedMessageId") long lastViewedMessageId);
+
+    @Select("SELECT review_card_count FROM user_stats WHERE user_id = #{userId}")
+    Long getReviewCardCount(@Param("userId") long userId);
+
+    @Update("UPDATE user_stats SET review_card_count = COALESCE(review_card_count, 0) + 1, updated_at = NOW() WHERE user_id = #{userId}")
+    int incrementReviewCardCount(@Param("userId") long userId);
 }

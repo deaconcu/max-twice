@@ -25,7 +25,7 @@ public class RobotScanner {
     // ========= 依赖 =========
 
     private final NodeDataService nodeDataService;
-    private final PostQueueService queueService;
+    private final RobotQueueService queueService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final SystemProperties systemProperties;
 

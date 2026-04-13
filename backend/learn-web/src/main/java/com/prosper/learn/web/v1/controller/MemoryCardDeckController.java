@@ -8,6 +8,7 @@ import com.prosper.learn.application.dto.response.deck.DeckAndCardsDTO;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.deck.DeckFullDTO;
 import com.prosper.learn.application.service.MemoryCardDeckService;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
@@ -99,8 +100,8 @@ public class MemoryCardDeckController {
     }
 
     /**
-     * 获取当前用户自己的所有卡片组（所有状态）
-     * GET /api/v1/memory/users/me/memory-decks
+     * 获取当前用户自己的所有卡片组（所有状态或指定状态）
+     * GET /api/v1/memory/users/me/memory-decks?state=2
      * 按ID逆序排序，固定每页20条
      */
     @GetMapping("/users/me/memory-decks")
@@ -108,16 +109,26 @@ public class MemoryCardDeckController {
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<KeysetPageResponse<DeckFullDTO>> getCurrentUserAllDecks(
             @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
+            @RequestParam(required = false) Integer state,
             @CurrentUser UserDO currentUser) {
 
+        // 验证 state 参数：不能传 BANNED
+        Byte stateValue = null;
+        if (state != null) {
+            if (state.byteValue() == Enums.ContentState.BANNED.value()) {
+                return ApiResponse.fail(400, "无效的状态参数");
+            }
+            stateValue = state.byteValue();
+        }
+
         KeysetPageResponse<DeckFullDTO> result = deckService.getUserDecks(
-                currentUser.getId(), currentUser.getId(), lastId, 20);
+                currentUser.getId(), currentUser.getId(), lastId, 20, stateValue);
 
         return ApiResponse.success(result);
     }
 
     /**
-     * 获取指定用户的卡片组（所有状态）
+     * 获取指定用户的卡片组（仅已发布）
      * GET /api/v1/memory/users/{userId}/memory-decks
      * 按ID逆序排序，固定每页20条
      */
@@ -129,8 +140,9 @@ public class MemoryCardDeckController {
             @RequestParam(required = false) Long lastId,
             @CurrentUser UserDO currentUser) {
 
+        // 查看其他用户的卡片组，只能看已发布的
         KeysetPageResponse<DeckFullDTO> result = deckService.getUserDecks(
-            userId, currentUser.getId(), lastId, 20);
+            userId, currentUser.getId(), lastId, 20, Enums.ContentState.PUBLISHED.value());
 
         return ApiResponse.success(result);
     }

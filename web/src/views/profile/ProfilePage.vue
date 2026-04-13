@@ -476,7 +476,10 @@ const handleNavigate = (tab: string, mode: string) => {
               :user-id="profileUser?.id"
               :is-own-profile="isOwnProfile"
             />
-            <CatalogsTab v-else-if="activeTab === 'catalogs'" />
+            <CatalogsTab
+              v-else-if="activeTab === 'catalogs'"
+              :is-own-profile="isOwnProfile"
+            />
             <RoadmapsTab
               v-else-if="activeTab === 'roadmaps'"
               :user-id="profileUser?.id"

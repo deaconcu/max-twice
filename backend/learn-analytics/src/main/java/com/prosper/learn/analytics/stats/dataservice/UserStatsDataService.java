@@ -337,4 +337,41 @@ public class UserStatsDataService {
         log.warn("更新学习连续天数失败: userId={}", userId);
         return false;
     }
+
+    // ==================== 站点状态字段操作 ====================
+
+    /**
+     * 获取最后查看的消息ID
+     */
+    public long getLastViewedMessageId(long userId) {
+        Long id = userStatsMapper.getLastViewedMessageId(userId);
+        return id != null ? id : 0L;
+    }
+
+    /**
+     * 更新最后查看的消息ID
+     */
+    public void updateLastViewedMessageId(long userId, long lastViewedMessageId) {
+        getOrCreate(userId);
+        userStatsMapper.updateLastViewedMessageId(userId, lastViewedMessageId);
+        log.debug("更新最后查看消息ID: userId={}, lastViewedMessageId={}", userId, lastViewedMessageId);
+    }
+
+    /**
+     * 获取复习卡片计数
+     */
+    public long getReviewCardCount(long userId) {
+        Long count = userStatsMapper.getReviewCardCount(userId);
+        return count != null ? count : 0L;
+    }
+
+    /**
+     * 原子递增复习卡片计数器并返回新值
+     */
+    public long incrementReviewCardCount(long userId) {
+        getOrCreate(userId);
+        userStatsMapper.incrementReviewCardCount(userId);
+        Long count = userStatsMapper.getReviewCardCount(userId);
+        return count != null ? count : 0L;
+    }
 }

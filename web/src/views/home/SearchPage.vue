@@ -203,22 +203,6 @@ watch(
   { immediate: true }
 )
 
-// 提交搜索
-const handleSearch = () => {
-  if (!searchQuery.value.trim()) return
-
-  // 直接执行搜索
-  performSearch()
-
-  // 同时更新URL(如果不在搜索页或query不同)
-  if (route.path !== '/search' || route.query.q !== searchQuery.value) {
-    router.push({
-      path: '/search',
-      query: { q: searchQuery.value },
-    })
-  }
-}
-
 // 结果总数
 const totalResults = computed(() => {
   return courses.value.length + nodes.value.length + users.value.length + roles.value.length
@@ -248,19 +232,19 @@ const currentResults = computed(() => {
 })
 
 // 导航到详情
-const navigateTo = (type: string, id: number) => {
+const navigateTo = (type: string, item: { id: number; name: string }) => {
   switch (type) {
     case 'roles':
-      router.push(`/role/${id}`)
+      router.push(`/role/${item.id}`)
       break
     case 'courses':
-      router.push(`/course/${id}`)
+      router.push(`/courses/${item.id}`)
       break
     case 'nodes':
-      router.push(`/course/node/${id}`)
+      router.push(`/read?nodeId=${item.id}`)
       break
     case 'users':
-      router.push(`/profile/${id}`)
+      router.push(`/users/${item.name}`)
       break
   }
 }
@@ -326,23 +310,6 @@ watch(activeTab, () => {
 <template>
   <DefaultLayout>
     <v-container class="search-page">
-      <!-- 搜索框 -->
-      <div class="search-input-wrapper mb-8">
-        <v-text-field
-          v-model="searchQuery"
-          variant="outlined"
-          :placeholder="t('common.searchPlaceholderFull')"
-          prepend-inner-icon="mdi-magnify"
-          hide-details
-          density="comfortable"
-          @keyup.enter="handleSearch"
-        >
-          <template #append-inner>
-            <v-btn color="primary" variant="flat" size="small" @click="handleSearch"> {{ t('common.search') }} </v-btn>
-          </template>
-        </v-text-field>
-      </div>
-
       <!-- 加载状态 -->
       <div v-if="searching" class="text-center py-12">
         <v-progress-circular indeterminate color="primary"></v-progress-circular>
@@ -358,26 +325,27 @@ watch(activeTab, () => {
 
       <!-- 搜索结果 -->
       <div v-else-if="!searching && searchQuery && totalResults > 0">
-        <!-- 结果统计 -->
-        <div class="text-body-2 text-grey-darken-1 mb-4">
-          {{ t('common.foundResults', { count: totalResults }) }}{{ hasAnyMore ? '+' : '' }}
+        <!-- 标签页 + 结果统计 -->
+        <div class="d-flex align-center mb-6">
+          <span class="text-body-2 text-grey flex-shrink-0">
+            {{ t('common.foundResults', { count: totalResults }) }}{{ hasAnyMore ? '+' : '' }}
+          </span>
+          <v-spacer />
+          <v-tabs v-model="activeTab" color="primary">
+            <v-tab value="roles" :disabled="roles.length === 0">
+              {{ t('common.roles') }} ({{ roles.length }}{{ hasMoreRoles ? '+' : '' }})
+            </v-tab>
+            <v-tab value="courses" :disabled="courses.length === 0">
+              {{ t('common.courses') }} ({{ courses.length }}{{ hasMoreCourses ? '+' : '' }})
+            </v-tab>
+            <v-tab value="nodes" :disabled="nodes.length === 0">
+              {{ t('common.nodes') }} ({{ nodes.length }}{{ hasMoreNodes ? '+' : '' }})
+            </v-tab>
+            <v-tab value="users" :disabled="users.length === 0">
+              {{ t('common.users') }} ({{ users.length }}{{ hasMoreUsers ? '+' : '' }})
+            </v-tab>
+          </v-tabs>
         </div>
-
-        <!-- 标签页 -->
-        <v-tabs v-model="activeTab" color="primary" class="mb-6">
-          <v-tab value="roles" :disabled="roles.length === 0">
-            {{ t('common.roles') }} ({{ roles.length }}{{ hasMoreRoles ? '+' : '' }})
-          </v-tab>
-          <v-tab value="courses" :disabled="courses.length === 0">
-            {{ t('common.courses') }} ({{ courses.length }}{{ hasMoreCourses ? '+' : '' }})
-          </v-tab>
-          <v-tab value="nodes" :disabled="nodes.length === 0">
-            {{ t('common.nodes') }} ({{ nodes.length }}{{ hasMoreNodes ? '+' : '' }})
-          </v-tab>
-          <v-tab value="users" :disabled="users.length === 0">
-            {{ t('common.users') }} ({{ users.length }}{{ hasMoreUsers ? '+' : '' }})
-          </v-tab>
-        </v-tabs>
 
         <!-- 分类结果 -->
         <div>
@@ -385,7 +353,7 @@ watch(activeTab, () => {
             v-for="item in currentResults"
             :key="item.id"
             class="result-item"
-            @click="navigateTo(activeTab, item.id)"
+            @click="navigateTo(activeTab, item)"
           >
             <div class="result-title">{{ item.name }}</div>
             <div v-if="item.description" class="result-description">
@@ -427,7 +395,7 @@ watch(activeTab, () => {
 <style scoped>
 .search-page {
   max-width: 900px;
-  padding-top: 40px;
+  padding-top: 20px;
 }
 
 .result-item {

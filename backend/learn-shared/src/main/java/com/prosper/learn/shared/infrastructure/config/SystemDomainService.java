@@ -32,6 +32,16 @@ public class SystemDomainService {
     // 内存缓存 - 角色分类
     private volatile JsonNode roleCategoriesCache;
 
+    // 内存缓存 - AI Prompt
+    private volatile String postSystemPrompt;
+    private volatile String postAutoPrompt;
+    private volatile String postArticlePrompt;
+    private volatile String postIndexPrompt;
+    private volatile String roadmapSystemPrompt;
+    private volatile String roadmapPrompt;
+    private volatile String memoryCardSystemPrompt;
+    private volatile String memoryCardPrompt;
+
     // 课程主分类 ID 集合（用于快速验证）
     private volatile Set<Integer> courseMainCategoryIds;
     // 课程分类映射：mainCategoryId -> Set<subCategoryId>
@@ -50,6 +60,7 @@ public class SystemDomainService {
         try {
             loadCourseCategories();
             loadRoleCategories();
+            loadPrompts();
             log.info("系统配置加载成功");
         } catch (Exception e) {
             log.error("系统配置加载失败", e);
@@ -299,6 +310,33 @@ public class SystemDomainService {
         log.info("系统配置 重新加载中...");
         loadCourseCategories();
         loadRoleCategories();
+        loadPrompts();
         log.info("系统配置 重新加载完成");
     }
+
+    // ========= AI Prompt 加载与获取 =========
+
+    /**
+     * 加载所有 AI Prompt 配置
+     */
+    private void loadPrompts() {
+        postSystemPrompt = systemDataService.getValue("postSystemPrompt");
+        postAutoPrompt = systemDataService.getValue("postAutoPrompt");
+        postArticlePrompt = systemDataService.getValue("postArticlePrompt");
+        postIndexPrompt = systemDataService.getValue("postIndexPrompt");
+        roadmapSystemPrompt = systemDataService.getValue("roadmapSystemPrompt");
+        roadmapPrompt = systemDataService.getValue("roadmapPrompt");
+        memoryCardSystemPrompt = systemDataService.getValue("memoryCardSystemPrompt");
+        memoryCardPrompt = systemDataService.getValue("memoryCardPrompt");
+        log.info("系统配置 AI Prompt 加载完成");
+    }
+
+    public String getPostSystemPrompt() { return postSystemPrompt; }
+    public String getPostAutoPrompt() { return postAutoPrompt; }
+    public String getPostArticlePrompt() { return postArticlePrompt; }
+    public String getPostIndexPrompt() { return postIndexPrompt; }
+    public String getRoadmapSystemPrompt() { return roadmapSystemPrompt; }
+    public String getRoadmapPrompt() { return roadmapPrompt; }
+    public String getMemoryCardSystemPrompt() { return memoryCardSystemPrompt; }
+    public String getMemoryCardPrompt() { return memoryCardPrompt; }
 }

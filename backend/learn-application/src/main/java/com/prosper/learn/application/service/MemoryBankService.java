@@ -58,6 +58,7 @@ public class MemoryBankService {
     private final UserCardSrsDataService userCardSrsDataService;
     private final DailyLimitService dailyLimitService;
     private final SystemProperties systemProperties;
+    private final ContentVisibilityService contentVisibilityService;
 
     // ========== DTO 转换方法 ==========
 
@@ -296,10 +297,8 @@ public class MemoryBankService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(request.getDeckId());
         CourseDO course = courseDataService.validateAndGet(request.getCourseId());
 
-        // 验证卡片组状态：只有已发布的卡片组才能加入复习序列
-        if (!ContentState.PUBLISHED.value().equals(deck.getState())) {
-            throw StatusCode.OBJECT_STATE_INVALID.exception();
-        }
+        // 检查卡片组及其祖先链的可见性
+        contentVisibilityService.validateVisibility(ContentType.memory_card_deck, request.getDeckId(), userId);
 
         // 跨域查询：获取卡片列表
         List<MemoryCardDO> cards = cardDataService.getByDeckId(request.getDeckId());

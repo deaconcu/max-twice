@@ -34,12 +34,16 @@ public class BookmarkService {
     private final RoadmapDataService roadmapDataService;
     private final PostDataService postDataService;
     private final MemoryCardDeckDataService memoryCardDeckDataService;
+    private final ContentVisibilityService contentVisibilityService;
 
     /**
      * 切换收藏状态
      */
     @Transactional
     public boolean toggleBookmark(long userId, long objectId, Enums.ContentType contentType) {
+        // 验证内容可见性
+        contentVisibilityService.validateVisibility(contentType, objectId, userId);
+
         // 验证对象存在并获取 parentId
         Long parentId = validateAndGetParentId(objectId, contentType);
 

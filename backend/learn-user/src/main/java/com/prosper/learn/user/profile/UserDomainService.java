@@ -155,7 +155,6 @@ public class UserDomainService {
         user.setState(UserState.ACTIVE.value());
         user.setRole(UserRole.USER.getCode());
         user.setEmailValidated(false); // 设置邮箱验证状态默认值
-        user.setLastViewedMessageId(0L); // 设置最后查看消息ID默认值
         userDataService.insert(user);
 
         log.info("用户创建成功: userId={}，email={}", user.getId(), email);

@@ -8,7 +8,32 @@ const showSnackbar = inject<(message: string, type?: string) => void>('showSnack
 const systemConfigStore = useSystemConfigStore()
 
 // 配置项类型
-type ConfigKey = 'courseCategories' | 'roleCategories' | 'rejectReasons' | 'banReasons' | 'homepageRecommendations'
+type ConfigKey =
+  | 'courseCategories'
+  | 'roleCategories'
+  | 'rejectReasons'
+  | 'banReasons'
+  | 'homepageRecommendations'
+  | 'postSystemPrompt'
+  | 'postAutoPrompt'
+  | 'postArticlePrompt'
+  | 'postIndexPrompt'
+  | 'roadmapSystemPrompt'
+  | 'roadmapPrompt'
+  | 'memoryCardSystemPrompt'
+  | 'memoryCardPrompt'
+
+// 纯文本配置项（不需要 JSON 校验）
+const plainTextKeys = new Set<ConfigKey>([
+  'postSystemPrompt',
+  'postAutoPrompt',
+  'postArticlePrompt',
+  'postIndexPrompt',
+  'roadmapSystemPrompt',
+  'roadmapPrompt',
+  'memoryCardSystemPrompt',
+  'memoryCardPrompt',
+])
 
 // 响应式数据
 const courseCategories = ref<string>('')
@@ -24,6 +49,24 @@ const rejectReasonsUpdatedAt = ref<string>('')
 const banReasonsUpdatedAt = ref<string>('')
 const homepageRecommendationsUpdatedAt = ref<string>('')
 const frontendUrlUpdatedAt = ref<string>('')
+
+// AI Prompt 响应式数据
+const postSystemPrompt = ref<string>('')
+const postAutoPrompt = ref<string>('')
+const postArticlePrompt = ref<string>('')
+const postIndexPrompt = ref<string>('')
+const roadmapSystemPrompt = ref<string>('')
+const roadmapPrompt = ref<string>('')
+const memoryCardSystemPrompt = ref<string>('')
+const memoryCardPrompt = ref<string>('')
+const postSystemPromptUpdatedAt = ref<string>('')
+const postAutoPromptUpdatedAt = ref<string>('')
+const postArticlePromptUpdatedAt = ref<string>('')
+const postIndexPromptUpdatedAt = ref<string>('')
+const roadmapSystemPromptUpdatedAt = ref<string>('')
+const roadmapPromptUpdatedAt = ref<string>('')
+const memoryCardSystemPromptUpdatedAt = ref<string>('')
+const memoryCardPromptUpdatedAt = ref<string>('')
 
 // 对话框状态
 const dialog = ref(false)
@@ -66,6 +109,30 @@ const { loading: loadingConfig } = useFetch({
           frontendUrl.value = item.value
           frontendUrlOriginal.value = item.value
           frontendUrlUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'postSystemPrompt') {
+          postSystemPrompt.value = item.value
+          postSystemPromptUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'postAutoPrompt') {
+          postAutoPrompt.value = item.value
+          postAutoPromptUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'postArticlePrompt') {
+          postArticlePrompt.value = item.value
+          postArticlePromptUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'postIndexPrompt') {
+          postIndexPrompt.value = item.value
+          postIndexPromptUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'roadmapSystemPrompt') {
+          roadmapSystemPrompt.value = item.value
+          roadmapSystemPromptUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'roadmapPrompt') {
+          roadmapPrompt.value = item.value
+          roadmapPromptUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'memoryCardSystemPrompt') {
+          memoryCardSystemPrompt.value = item.value
+          memoryCardSystemPromptUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'memoryCardPrompt') {
+          memoryCardPrompt.value = item.value
+          memoryCardPromptUpdatedAt.value = item.updatedAt
         }
       }
     }
@@ -84,6 +151,14 @@ const openDialog = (key: ConfigKey): void => {
     rejectReasons: '拒绝理由',
     banReasons: '屏蔽理由',
     homepageRecommendations: '首页新手推荐',
+    postSystemPrompt: '文章/目录 System Prompt',
+    postAutoPrompt: '自动判断 User Prompt',
+    postArticlePrompt: '生成文章 User Prompt',
+    postIndexPrompt: '生成目录 User Prompt',
+    roadmapSystemPrompt: '路线图 System Prompt',
+    roadmapPrompt: '路线图 User Prompt',
+    memoryCardSystemPrompt: '记忆卡片 System Prompt',
+    memoryCardPrompt: '记忆卡片 User Prompt',
   }
   const valueMap: Record<ConfigKey, string> = {
     courseCategories: courseCategories.value,
@@ -91,14 +166,26 @@ const openDialog = (key: ConfigKey): void => {
     rejectReasons: rejectReasons.value,
     banReasons: banReasons.value,
     homepageRecommendations: homepageRecommendations.value,
+    postSystemPrompt: postSystemPrompt.value,
+    postAutoPrompt: postAutoPrompt.value,
+    postArticlePrompt: postArticlePrompt.value,
+    postIndexPrompt: postIndexPrompt.value,
+    roadmapSystemPrompt: roadmapSystemPrompt.value,
+    roadmapPrompt: roadmapPrompt.value,
+    memoryCardSystemPrompt: memoryCardSystemPrompt.value,
+    memoryCardPrompt: memoryCardPrompt.value,
   }
   dialogTitle.value = titleMap[key]
   dialogValue.value = valueMap[key]
   dialog.value = true
 }
 
-// 格式化 JSON
+// 格式化 JSON（纯文本配置项不可格式化）
 const formatDialogValue = (): void => {
+  if (plainTextKeys.has(dialogKey.value)) {
+    showSnackbar?.('该配置项为纯文本，无需格式化', 'info')
+    return
+  }
   try {
     const parsed = JSON.parse(dialogValue.value)
     dialogValue.value = JSON.stringify(parsed, null, 2)
@@ -110,6 +197,8 @@ const formatDialogValue = (): void => {
 // 检查对话框内容是否有效
 const isDialogValueValid = (): boolean => {
   if (!dialogValue.value.trim()) return false
+  // 纯文本配置项不需要校验 JSON
+  if (plainTextKeys.has(dialogKey.value)) return true
   try {
     JSON.parse(dialogValue.value)
     return true
@@ -154,6 +243,30 @@ const { execute: saveConfig, loading: saving } = useMutation(
       } else if (data.key === 'homepage_recommendations') {
         homepageRecommendations.value = dialogValue.value
         homepageRecommendationsUpdatedAt.value = now
+      } else if (data.key === 'postSystemPrompt') {
+        postSystemPrompt.value = dialogValue.value
+        postSystemPromptUpdatedAt.value = now
+      } else if (data.key === 'postAutoPrompt') {
+        postAutoPrompt.value = dialogValue.value
+        postAutoPromptUpdatedAt.value = now
+      } else if (data.key === 'postArticlePrompt') {
+        postArticlePrompt.value = dialogValue.value
+        postArticlePromptUpdatedAt.value = now
+      } else if (data.key === 'postIndexPrompt') {
+        postIndexPrompt.value = dialogValue.value
+        postIndexPromptUpdatedAt.value = now
+      } else if (data.key === 'roadmapSystemPrompt') {
+        roadmapSystemPrompt.value = dialogValue.value
+        roadmapSystemPromptUpdatedAt.value = now
+      } else if (data.key === 'roadmapPrompt') {
+        roadmapPrompt.value = dialogValue.value
+        roadmapPromptUpdatedAt.value = now
+      } else if (data.key === 'memoryCardSystemPrompt') {
+        memoryCardSystemPrompt.value = dialogValue.value
+        memoryCardSystemPromptUpdatedAt.value = now
+      } else if (data.key === 'memoryCardPrompt') {
+        memoryCardPrompt.value = dialogValue.value
+        memoryCardPromptUpdatedAt.value = now
       }
       dialog.value = false
     },
@@ -162,7 +275,7 @@ const { execute: saveConfig, loading: saving } = useMutation(
 
 const saveDialogConfig = async (): Promise<void> => {
   if (!isDialogValueValid()) {
-    showSnackbar?.('JSON 格式无效', 'error')
+    showSnackbar?.('内容不能为空', 'error')
     return
   }
   // 映射前端 key 到后端 key
@@ -172,6 +285,14 @@ const saveDialogConfig = async (): Promise<void> => {
     rejectReasons: 'rejectReasons',
     banReasons: 'banReasons',
     homepageRecommendations: 'homepage_recommendations',
+    postSystemPrompt: 'postSystemPrompt',
+    postAutoPrompt: 'postAutoPrompt',
+    postArticlePrompt: 'postArticlePrompt',
+    postIndexPrompt: 'postIndexPrompt',
+    roadmapSystemPrompt: 'roadmapSystemPrompt',
+    roadmapPrompt: 'roadmapPrompt',
+    memoryCardSystemPrompt: 'memoryCardSystemPrompt',
+    memoryCardPrompt: 'memoryCardPrompt',
   }
   await saveConfig({ key: keyMap[dialogKey.value], value: dialogValue.value })
 }
@@ -326,13 +447,140 @@ const saveFrontendUrl = async (): Promise<void> => {
       </v-card-text>
     </v-card>
 
+    <!-- AI Prompt 配置 -->
+    <v-card flat class="border mt-4">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-robot-outline" size="18" class="mr-2"></v-icon>
+        AI Prompt 配置
+      </v-card-title>
+      <v-card-text class="pa-0">
+        <v-list v-if="!loadingConfig" class="pa-2">
+          <!-- 文章/目录 System Prompt -->
+          <v-list-item
+            prepend-icon="mdi-script-text-outline"
+            title="文章/目录 System Prompt"
+            :subtitle="postSystemPromptUpdatedAt ? `上次更新: ${new Date(postSystemPromptUpdatedAt).toLocaleString('zh-CN')}` : '生成文章和目录时的系统提示词'"
+            rounded="lg"
+            class="config-item mb-2 px-4"
+            @click="openDialog('postSystemPrompt')"
+          >
+            <template #append>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
+            </template>
+          </v-list-item>
+
+          <!-- 自动判断 User Prompt -->
+          <v-list-item
+            prepend-icon="mdi-auto-fix"
+            title="自动判断 User Prompt"
+            :subtitle="postAutoPromptUpdatedAt ? `上次更新: ${new Date(postAutoPromptUpdatedAt).toLocaleString('zh-CN')}` : '自动判断生成文章或目录的提示词，变量: {courseName} {nodeName} {nodeDescription}'"
+            rounded="lg"
+            class="config-item mb-2 px-4"
+            @click="openDialog('postAutoPrompt')"
+          >
+            <template #append>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
+            </template>
+          </v-list-item>
+
+          <!-- 生成文章 User Prompt -->
+          <v-list-item
+            prepend-icon="mdi-file-document-outline"
+            title="生成文章 User Prompt"
+            :subtitle="postArticlePromptUpdatedAt ? `上次更新: ${new Date(postArticlePromptUpdatedAt).toLocaleString('zh-CN')}` : '强制生成文章的提示词，变量: {courseName} {nodeName} {nodeDescription}'"
+            rounded="lg"
+            class="config-item mb-2 px-4"
+            @click="openDialog('postArticlePrompt')"
+          >
+            <template #append>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
+            </template>
+          </v-list-item>
+
+          <!-- 生成目录 User Prompt -->
+          <v-list-item
+            prepend-icon="mdi-format-list-bulleted"
+            title="生成目录 User Prompt"
+            :subtitle="postIndexPromptUpdatedAt ? `上次更新: ${new Date(postIndexPromptUpdatedAt).toLocaleString('zh-CN')}` : '强制生成目录的提示词，变量: {courseName} {nodeName} {nodeDescription}'"
+            rounded="lg"
+            class="config-item mb-2 px-4"
+            @click="openDialog('postIndexPrompt')"
+          >
+            <template #append>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
+            </template>
+          </v-list-item>
+
+          <!-- 路线图 System Prompt -->
+          <v-list-item
+            prepend-icon="mdi-map-outline"
+            title="路线图 System Prompt"
+            :subtitle="roadmapSystemPromptUpdatedAt ? `上次更新: ${new Date(roadmapSystemPromptUpdatedAt).toLocaleString('zh-CN')}` : '生成学习路线图时的系统提示词'"
+            rounded="lg"
+            class="config-item mb-2 px-4"
+            @click="openDialog('roadmapSystemPrompt')"
+          >
+            <template #append>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
+            </template>
+          </v-list-item>
+
+          <!-- 路线图 User Prompt -->
+          <v-list-item
+            prepend-icon="mdi-map-marker-path"
+            title="路线图 User Prompt"
+            :subtitle="roadmapPromptUpdatedAt ? `上次更新: ${new Date(roadmapPromptUpdatedAt).toLocaleString('zh-CN')}` : '生成学习路线图的提示词，变量: {roleName} {roleDescription}'"
+            rounded="lg"
+            class="config-item mb-2 px-4"
+            @click="openDialog('roadmapPrompt')"
+          >
+            <template #append>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
+            </template>
+          </v-list-item>
+
+          <!-- 记忆卡片 System Prompt -->
+          <v-list-item
+            prepend-icon="mdi-card-multiple-outline"
+            title="记忆卡片 System Prompt"
+            :subtitle="memoryCardSystemPromptUpdatedAt ? `上次更新: ${new Date(memoryCardSystemPromptUpdatedAt).toLocaleString('zh-CN')}` : '生成记忆卡片时的系统提示词'"
+            rounded="lg"
+            class="config-item mb-2 px-4"
+            @click="openDialog('memoryCardSystemPrompt')"
+          >
+            <template #append>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
+            </template>
+          </v-list-item>
+
+          <!-- 记忆卡片 User Prompt -->
+          <v-list-item
+            prepend-icon="mdi-cards-outline"
+            title="记忆卡片 User Prompt"
+            :subtitle="memoryCardPromptUpdatedAt ? `上次更新: ${new Date(memoryCardPromptUpdatedAt).toLocaleString('zh-CN')}` : '生成记忆卡片的提示词，变量: {articleContent}'"
+            rounded="lg"
+            class="config-item px-4"
+            @click="openDialog('memoryCardPrompt')"
+          >
+            <template #append>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
+            </template>
+          </v-list-item>
+        </v-list>
+      </v-card-text>
+    </v-card>
+
     <!-- 编辑对话框 -->
     <v-dialog v-model="dialog" max-width="900px" persistent>
       <v-card variant="flat" rounded="lg">
         <v-card-title class="pa-6 pb-4">
           <div class="d-flex align-center justify-space-between">
             <div class="d-flex align-center">
-              <v-icon icon="mdi-code-json" color="blue-darken-1" class="mr-3"></v-icon>
+              <v-icon
+                :icon="plainTextKeys.has(dialogKey) ? 'mdi-text-box-outline' : 'mdi-code-json'"
+                color="blue-darken-1"
+                class="mr-3"
+              ></v-icon>
               <span class="text-h6 font-weight-bold">编辑 {{ dialogTitle }}</span>
             </div>
             <v-btn icon variant="text" @click="dialog = false">
@@ -344,18 +592,18 @@ const saveFrontendUrl = async (): Promise<void> => {
         <v-card-text class="pa-6 pt-0">
           <v-textarea
             v-model="dialogValue"
-            :label="`${dialogTitle} JSON 配置`"
+            :label="plainTextKeys.has(dialogKey) ? `${dialogTitle}` : `${dialogTitle} JSON 配置`"
             variant="outlined"
             rounded="lg"
             bg-color="grey-lighten-5"
-            :error="dialogValue.trim().length > 0 && !isDialogValueValid()"
-            :error-messages="dialogValue.trim().length > 0 && !isDialogValueValid() ? 'JSON 格式无效' : ''"
+            :error="!plainTextKeys.has(dialogKey) && dialogValue.trim().length > 0 && !isDialogValueValid()"
+            :error-messages="!plainTextKeys.has(dialogKey) && dialogValue.trim().length > 0 && !isDialogValueValid() ? 'JSON 格式无效' : ''"
             class="config-textarea"
           ></v-textarea>
         </v-card-text>
 
         <v-card-actions class="pa-6 pt-0">
-          <v-btn variant="tonal" color="grey" @click="formatDialogValue">
+          <v-btn variant="tonal" color="grey" :disabled="plainTextKeys.has(dialogKey)" @click="formatDialogValue">
             <v-icon icon="mdi-code-json" class="mr-1"></v-icon>
             格式化
           </v-btn>

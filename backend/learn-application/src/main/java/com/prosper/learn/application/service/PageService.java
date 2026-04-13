@@ -71,6 +71,7 @@ public class PageService {
     private final UserLearningService userLearningService;
     private final ApplicationEventPublisher eventPublisher;
     private final ContentStatsDomainService contentStatsDomainService;
+    private final ContentVisibilityService contentVisibilityService;
 
 
     // ========== 常量定义 ==========
@@ -141,6 +142,9 @@ public class PageService {
     public Map<String, Object> readPageByComment(Long commentId, long userId) {
         CommentDO commentDO = commentDataService.validateAndGet(commentId);
 
+        // 检查评论及其祖先链的可见性
+        contentVisibilityService.validateVisibility(ContentType.comment, commentId, userId);
+
         if (commentDO.getReplyToCommentId() != 0) {
             Map<String, Object> data = new HashMap<>();
             data.put("commentId", commentDO.getReplyToCommentId());
@@ -183,6 +187,9 @@ public class PageService {
     public Map<String, Object> readPageByPost(Long postId, long userId) {
         PostDO postDO = postService.validateAndGetPost(postId);
 
+        // 检查帖子及其祖先链的可见性
+        contentVisibilityService.validateVisibility(ContentType.post, postId, userId);
+
         // 发布内容浏览事件
         eventPublisher.publishEvent(new ContentViewedEvent(
             userId,
@@ -220,9 +227,8 @@ public class PageService {
     public Map<String, Object> readPageByNode(Long nodeId, String path, long userId) {
         NodeDO rootNodeDO = nodeDataService.validateAndGet(nodeId);
 
-        if (rootNodeDO.getState() != null && rootNodeDO.getState() != ContentState.PUBLISHED.value()) {
-            throw StatusCode.NODE_STATE_INVALID.exception();
-        }
+        // 检查节点及其祖先链的可见性
+        contentVisibilityService.validateVisibility(ContentType.node, nodeId, userId);
 
         CourseDO courseDO = validateCourseExists(rootNodeDO.getCourseId());
 
@@ -251,9 +257,8 @@ public class PageService {
             targetNodeJson = pair.right();
             targetNodeDO = nodeDataService.validateAndGet(targetNodeId);
 
-            if (targetNodeDO.getState() != null && targetNodeDO.getState() != ContentState.PUBLISHED.value()) {
-                throw StatusCode.NODE_STATE_INVALID.exception();
-            }
+            // 检查目标节点的可见性
+            contentVisibilityService.validateVisibility(ContentType.node, targetNodeId, userId);
 
             // 从目录中提取选中的帖子
             List<Long> chosenUserIds = new LinkedList<>();

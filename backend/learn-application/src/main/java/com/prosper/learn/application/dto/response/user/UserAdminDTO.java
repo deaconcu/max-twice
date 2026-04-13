@@ -65,16 +65,6 @@ public class UserAdminDTO {
     private Integer role;
 
     /**
-     * 最后查看的消息ID
-     */
-    private Long lastViewedMessageId;
-
-    /**
-     * 复习卡片数量
-     */
-    private Long reviewCardCount;
-
-    /**
      * 创建时间
      */
     private String createdAt;

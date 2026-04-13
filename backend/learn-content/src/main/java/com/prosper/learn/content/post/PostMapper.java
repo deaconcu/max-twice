@@ -31,11 +31,17 @@ public interface PostMapper {
     List<PostDO> getListByNode(long nodeId, int limit, byte state);
 
     @Select({"<script>",
-            "SELECT * FROM post WHERE creator_id = #{userId} and type = #{type}",
-            "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
-            "AND deleted_at IS NULL",
-            "<if test='state != null'> AND state = #{state}</if>",
-            "ORDER BY id DESC LIMIT #{count}",
+            "SELECT p.* FROM post p",
+            "JOIN node n ON p.node_id = n.id",
+            "JOIN course c ON n.course_id = c.id",
+            "WHERE p.creator_id = #{userId} AND p.type = #{type}",
+            "<if test='lastId != null'> AND p.id &lt; #{lastId}</if>",
+            "AND p.deleted_at IS NULL",
+            "AND n.state = " + ContentState.PUBLISHED_VALUE,
+            "AND c.state = " + ContentState.PUBLISHED_VALUE,
+            "<if test='state != null'> AND p.state = #{state}</if>",
+            "<if test='state == null'> AND p.state != " + ContentState.BANNED_VALUE + "</if>",
+            "ORDER BY p.id DESC LIMIT #{count}",
             "</script>"})
     List<PostDO> getPostsByUser(@Param("userId") long userId, @Param("type") int type, @Param("lastId") Long lastId, @Param("state") Byte state, @Param("count") int count);
 

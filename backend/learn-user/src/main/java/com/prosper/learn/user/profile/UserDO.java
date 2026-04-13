@@ -28,16 +28,7 @@ public class UserDO {
 
     private Byte state;
 
-    private Long lastViewedMessageId;  // 最后查看的消息ID
-
     private Integer role;  // 角色代码字段
-
-    /**
-     * 复习卡片计数器
-     * 用户全局复习计数，每复习一张卡片 +1，永不重置
-     * 用于 LEARNING/RELEARNING 阶段的卡片调度
-     */
-    private Long reviewCardCount;
 
     /**
      * 用户时区

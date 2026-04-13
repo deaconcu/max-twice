@@ -91,7 +91,8 @@ export const userApi = {
    */
   getCurrentUserAllPosts(
     lastId?: number,
-    type?: number
+    type?: number,
+    state?: number
   ): Promise<
     ApiResponse<{
       items: Post[]
@@ -102,12 +103,15 @@ export const userApi = {
       }
     }>
   > {
-    const params: { lastId?: number; type?: number } = {}
+    const params: { lastId?: number; type?: number; state?: number } = {}
     if (lastId !== undefined && lastId !== null) {
       params.lastId = lastId
     }
     if (type !== undefined && type !== null) {
       params.type = type
+    }
+    if (state !== undefined && state !== null) {
+      params.state = state
     }
     return apiClient.get('/v1/users/me/posts', { params })
   },
@@ -115,10 +119,15 @@ export const userApi = {
   /**
    * 获取当前用户的路线图列表
    */
-  getCurrentUserRoadmaps(lastId?: number): Promise<ApiResponse<Roadmap[]>> {
-    return apiClient.get('/v1/users/me/roadmaps', {
-      params: { lastId },
-    })
+  getCurrentUserRoadmaps(lastId?: number, state?: number): Promise<ApiResponse<Roadmap[]>> {
+    const params: { lastId?: number; state?: number } = {}
+    if (lastId !== undefined && lastId !== null) {
+      params.lastId = lastId
+    }
+    if (state !== undefined && state !== null) {
+      params.state = state
+    }
+    return apiClient.get('/v1/users/me/roadmaps', { params })
   },
 
   /**

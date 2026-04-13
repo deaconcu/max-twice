@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.prosper.learn.shared.domain.Enums.*;
+
 @Mapper
 public interface MemoryCardDeckMapper {
 
@@ -54,37 +56,31 @@ public interface MemoryCardDeckMapper {
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostKeyset(long postId, double lastScore, long lastId, int state, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND deleted_at IS NULL " +
-            "ORDER BY score DESC, id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByCreator(long creatorId, int limit);
-
     @Select({"<script>",
-            "SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId}",
-            "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
-            " AND deleted_at IS NULL ORDER BY id DESC LIMIT #{limit}",
+            "SELECT d.* FROM memory_card_deck d",
+            "JOIN node n ON d.node_id = n.id",
+            "JOIN course c ON n.course_id = c.id",
+            "WHERE d.creator_id = #{creatorId}",
+            "<if test='lastId != null'> AND d.id &lt; #{lastId}</if>",
+            "AND d.deleted_at IS NULL AND d.state != " + ContentState.BANNED_VALUE,
+            "AND n.state = " + ContentState.PUBLISHED_VALUE,
+            "AND c.state = " + ContentState.PUBLISHED_VALUE,
+            "ORDER BY d.id DESC LIMIT #{limit}",
             "</script>"})
     List<MemoryCardDeckDO> getListByCreatorWithIdPaging(long creatorId, Long lastId, int limit);
 
     @Select({"<script>",
-            "SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state}",
-            "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
-            " AND deleted_at IS NULL ORDER BY id DESC LIMIT #{limit}",
+            "SELECT d.* FROM memory_card_deck d",
+            "JOIN node n ON d.node_id = n.id",
+            "JOIN course c ON n.course_id = c.id",
+            "WHERE d.creator_id = #{creatorId} AND d.state = #{state}",
+            "<if test='lastId != null'> AND d.id &lt; #{lastId}</if>",
+            "AND d.deleted_at IS NULL",
+            "AND n.state = " + ContentState.PUBLISHED_VALUE,
+            "AND c.state = " + ContentState.PUBLISHED_VALUE,
+            "ORDER BY d.id DESC LIMIT #{limit}",
             "</script>"})
     List<MemoryCardDeckDO> getListByCreatorWithIdPagingAndState(long creatorId, int state, Long lastId, int limit);
-
-    @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL AND " +
-            "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
-            "ORDER BY score DESC, id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByCreatorKeyset(long creatorId, double lastScore, long lastId, int state, int limit);
-
-    @Select("SELECT * FROM memory_card_deck WHERE state = #{state} AND deleted_at IS NULL " +
-            "ORDER BY score DESC, id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByState(int state, int limit);
-
-    @Select("SELECT * FROM memory_card_deck WHERE state = #{state} AND deleted_at IS NULL AND " +
-            "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
-            "ORDER BY score DESC, id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByStateKeyset(double lastScore, long lastId, int state, int limit);
 
     @Select({"<script>",
             "SELECT * FROM memory_card_deck WHERE state = #{state}",

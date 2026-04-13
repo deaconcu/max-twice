@@ -109,10 +109,6 @@ public class MemoryCardDeckDataService {
 
     // ==================== 按创建者查询 ====================
 
-    public List<MemoryCardDeckDO> getListByCreator(long creatorId, int limit) {
-        return memoryCardDeckMapper.getListByCreator(creatorId, limit);
-    }
-
     public List<MemoryCardDeckDO> getListByCreatorWithIdPaging(long creatorId, Long lastId, int limit) {
         return memoryCardDeckMapper.getListByCreatorWithIdPaging(creatorId, lastId, limit);
     }

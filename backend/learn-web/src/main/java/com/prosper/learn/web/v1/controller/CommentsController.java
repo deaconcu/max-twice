@@ -108,9 +108,10 @@ public class CommentsController {
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<CommentBasicDTO> getCommentBasic(
-            @PathVariable @NotNull(message = "评论ID不能为空") @Positive(message = "评论ID必须大于0") Long id) {
+            @PathVariable @NotNull(message = "评论ID不能为空") @Positive(message = "评论ID必须大于0") Long id,
+            @CurrentUser UserDO currentUser) {
 
-        CommentBasicDTO basic = commentService.getCommentBasic(id);
+        CommentBasicDTO basic = commentService.getCommentBasic(id, currentUser.getId());
         return ApiResponse.success(basic);
     }
 }

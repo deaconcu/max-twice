@@ -28,7 +28,7 @@ public enum StatusCode {
     PERMISSION_DENIED(1006, "权限不足"),
     NOT_FOUND(1007, "没有找到对象"),
     INVALID_OPERATION(1011, "不合法的操作类型"),
-    OBJECT_STATE_INVALID(1012, "您访问的对象处于非正常状态，当前无法访问"),
+    CONTENT_NOT_VISIBLE(1012, "您访问的对象处于非可见状态，当前无法访问"),
     OPERATION_FAILED(1013, "操作失败"),
     NOT_SUPPORTED(1014, "不支持的操作类型"),
     BATCH_SIZE_EXCEEDED(1015, "批量操作数量超出限制"),

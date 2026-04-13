@@ -19,10 +19,14 @@ public interface RoadmapMapper {
     List<RoadmapDO> getByIds(List<Long> ids);
 
     @Select({"<script>",
-             "SELECT * FROM roadmap WHERE creator_id = #{creatorId} AND deleted_at IS NULL",
-             "<if test='state != null'> AND state = #{state}</if>",
-             "<if test='lastId != null and lastId > 0'> AND id &lt; #{lastId}</if>",
-             " ORDER BY id DESC LIMIT #{limit}",
+             "SELECT r.* FROM roadmap r",
+             "JOIN role ro ON r.role_id = ro.id",
+             "WHERE r.creator_id = #{creatorId} AND r.deleted_at IS NULL",
+             "AND ro.state = " + ContentState.PUBLISHED_VALUE,
+             "<if test='state != null'> AND r.state = #{state}</if>",
+             "<if test='state == null'> AND r.state != " + ContentState.BANNED_VALUE + "</if>",
+             "<if test='lastId != null and lastId > 0'> AND r.id &lt; #{lastId}</if>",
+             "ORDER BY r.id DESC LIMIT #{limit}",
              "</script>"})
     List<RoadmapDO> getListByCreatorWithPaging(long creatorId, Long lastId, int limit, Byte state);
 

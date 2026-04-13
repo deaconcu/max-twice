@@ -1,5 +1,6 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
 import com.prosper.learn.application.assembler.CardAssembler;
 import com.prosper.learn.application.dto.request.ReviewCardRequest;
 import com.prosper.learn.application.dto.response.CourseMemoryBankDTO;
@@ -42,6 +43,7 @@ public class ReviewService {
     private final ReviewDomainService reviewDomainService;
     private final MemoryCardDataService cardDataService;
     private final UserDataService userDataService;
+    private final UserStatsDataService userStatsDataService;
     private final UserCourseSrsSettingDataService courseSettingDataService;
     private final UserCardSrsDataService srsDataService;
     private final SystemProperties systemProperties;
@@ -69,8 +71,8 @@ public class ReviewService {
 
         Long userId = user.getId();
 
-        // 获取用户的复习卡片计数
-        long reviewCardCount = user.getReviewCardCount() != null ? user.getReviewCardCount() : 0L;
+        // 从 user_stats 获取用户的复习卡片计数
+        long reviewCardCount = userStatsDataService.getReviewCardCount(userId);
 
         // 获取卡片顺序设置
         boolean newFirst = getNewFirst(userId, courseId);
@@ -118,8 +120,8 @@ public class ReviewService {
         int rating = request.getResult();
         Long courseId = request.getCourseId();
 
-        // 1. 递增用户的复习卡片计数
-        long reviewCardCount = userDataService.incrementReviewCardCount(userId);
+        // 1. 递增用户的复习卡片计数（从 user_stats）
+        long reviewCardCount = userStatsDataService.incrementReviewCardCount(userId);
 
         // 2. 处理 SRS 算法（内部会判断是否发布复习成功事件）
         LocalDate userToday = getUserToday(user);

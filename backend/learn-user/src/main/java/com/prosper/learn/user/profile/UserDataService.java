@@ -244,23 +244,6 @@ public class UserDataService {
         userMapper.updateEmailValidated(userId, emailValidated, LocalDateTime.now());
     }
 
-    /**
-     * 更新最后查看的消息ID（不影响缓存）
-     */
-    public void updateLastViewedMessageId(long userId, long lastViewedMessageId) {
-        userMapper.updateLastViewedMessageId(userId, lastViewedMessageId);
-    }
-
-    /**
-     * 原子递增复习卡片计数器
-     */
-    @CacheEvict(value = "users", key = "#userId")
-    public long incrementReviewCardCount(long userId) {
-        userMapper.incrementReviewCardCount(userId);
-        UserDO user = userMapper.getById(userId);
-        return user.getReviewCardCount() != null ? user.getReviewCardCount() : 0L;
-    }
-
     // ==================== 缓存清除（内部使用）====================
 
     @CacheEvict(value = "users", key = "#userId")

@@ -6,6 +6,7 @@ import com.prosper.learn.application.dto.response.RobotRoadmapTaskDTO;
 import com.prosper.learn.content.role.RoleDO;
 import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.infrastructure.ai.AIService;
+import com.prosper.learn.shared.infrastructure.config.SystemDomainService;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,12 +34,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RobotRoadmapGenerationService {
+public class RoadmapGenerationService {
 
     private final RoleDataService roleDataService;
     private final AIService aiService;
     private final StringRedisTemplate redisTemplate;
     private final SystemProperties systemProperties;
+    private final SystemDomainService systemDomainService;
     private final ApplicationContext applicationContext;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -85,7 +87,7 @@ public class RobotRoadmapGenerationService {
         }
 
         // 异步执行生成（通过代理调用以确保 @Async 生效）
-        RobotRoadmapGenerationService self = applicationContext.getBean(RobotRoadmapGenerationService.class);
+        RoadmapGenerationService self = applicationContext.getBean(RoadmapGenerationService.class);
         self.executeGenerateAsync(taskId, roleId, userId);
 
         return taskId;
@@ -329,6 +331,8 @@ public class RobotRoadmapGenerationService {
      * 构建路径生成的系统提示词
      */
     private String buildRoadmapSystemPrompt() {
+        return systemDomainService.getRoadmapSystemPrompt();
+        /*
         return """
                 你是学习路径规划专家。请严格遵守以下规范：
 
@@ -460,12 +464,17 @@ public class RobotRoadmapGenerationService {
 
                 请严格按照 JSON 格式输出，确保边的方向正确表示前置依赖关系。
                 """;
+        */
     }
 
     /**
      * 构建路径生成的提示词
      */
     private String buildRoadmapPrompt(RoleDO roleDO) {
+        return systemDomainService.getRoadmapPrompt()
+                .replace("{roleName}", roleDO.getName())
+                .replace("{roleDescription}", roleDO.getDescription());
+        /*
         return String.format("""
                 角色名称：%s
                 角色描述：%s
@@ -475,5 +484,6 @@ public class RobotRoadmapGenerationService {
                 请设计一个从零基础到精通的学习路径，包含必要的课程和知识点。
                 直接输出 JSON 格式的路径数据。
                 """, roleDO.getName(), roleDO.getDescription());
+        */
     }
 }

@@ -114,6 +114,7 @@ export interface MemoryCardDeck {
   course?: {
     id: number
     name: string
+    icon?: string
   } // 课程信息
   node?: {
     id: number

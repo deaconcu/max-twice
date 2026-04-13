@@ -79,6 +79,7 @@ public class RoadmapService {
     private final UserConverter userConverter;
     private final RoleConverter roleConverter;
     private final SystemProperties systemProperties;
+    private final ContentVisibilityService contentVisibilityService;
 
     // ========== DTO转换方法 ==========
     
@@ -361,6 +362,10 @@ public class RoadmapService {
         if (roadmapDO == null) {
             return null;
         }
+
+        // 检查路线图及其角色的可见性
+        contentVisibilityService.validateVisibility(ContentType.roadmap, id, userId);
+
         return toRoadmapWithStatus(roadmapDO, userId);
     }
 
@@ -550,6 +555,9 @@ public class RoadmapService {
         // 跨域验证：验证专业和用户存在
         roleDataService.validateExists(roleId);
         userDataService.validateExists(userId);
+
+        // 验证角色是否为 PUBLISHED
+        contentVisibilityService.validateCanCreateOn(ContentType.role, roleId);
 
         // 验证状态：只能是草稿或提交审核
         if (!state.equals(ContentState.DRAFT.value()) && !state.equals(ContentState.SUBMITTED.value())) {

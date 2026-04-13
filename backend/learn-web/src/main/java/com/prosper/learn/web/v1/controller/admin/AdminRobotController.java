@@ -7,9 +7,9 @@ import com.prosper.learn.application.dto.response.RobotRoadmapDraftDTO;
 import com.prosper.learn.application.dto.response.RobotRoadmapTaskDTO;
 import com.prosper.learn.application.service.CourseService;
 import com.prosper.learn.application.service.NodeService;
-import com.prosper.learn.application.service.robot.PostQueueService;
+import com.prosper.learn.application.service.robot.RobotQueueService;
 import com.prosper.learn.application.service.robot.RobotScanner;
-import com.prosper.learn.application.service.robot.RobotRoadmapGenerationService;
+import com.prosper.learn.application.service.robot.RoadmapGenerationService;
 import com.prosper.learn.infrastructure.ai.AIService;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.web.ratelimit.LimitType;
@@ -34,9 +34,9 @@ import java.util.List;
 public class AdminRobotController {
 
     private final RobotScanner scanner;
-    private final PostQueueService postQueueService;
+    private final RobotQueueService robotQueueService;
     private final AIService aiService;
-    private final RobotRoadmapGenerationService roadmapGenerationService;
+    private final RoadmapGenerationService roadmapGenerationService;
     private final SystemProperties systemProperties;
     private final CourseService courseService;
     private final NodeService nodeService;
@@ -67,9 +67,9 @@ public class AdminRobotController {
             @RequestParam(value = "deleteExisting", defaultValue = "true") boolean deleteExisting) {
         if (!systemProperties.getRobot().isEnabled()) return ApiResponse.success();
         if ("course".equals(idType)) {
-            postQueueService.enqueueByCourseId(id, contentType, recursive, deleteExisting);
+            robotQueueService.enqueueByCourseId(id, contentType, recursive, deleteExisting);
         } else {
-            postQueueService.enqueue(id, contentType, recursive, deleteExisting);
+            robotQueueService.enqueue(id, contentType, recursive, deleteExisting);
         }
         return ApiResponse.success();
     }
@@ -94,7 +94,7 @@ public class AdminRobotController {
     @SaCheckLogin
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<String> clearQueue() {
-        long count = postQueueService.clear();
+        long count = robotQueueService.clear();
         String message = count > 0 ?
             String.format("已清空队列，共删除 %d 个待处理节点", count) :
             "队列已经是空的";
@@ -106,10 +106,10 @@ public class AdminRobotController {
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<RobotQueueStatsDTO> getQueueStats() {
         RobotQueueStatsDTO stats = RobotQueueStatsDTO.builder()
-            .pendingCount(postQueueService.getPendingCount())
-            .todayCompletedCount(postQueueService.getTodayCompletedCount())
-            .lastExecuteTime(postQueueService.getLastExecuteTime())
-            .status(postQueueService.getStatus())
+            .pendingCount(robotQueueService.getPendingCount())
+            .todayCompletedCount(robotQueueService.getTodayCompletedCount())
+            .lastExecuteTime(robotQueueService.getLastExecuteTime())
+            .status(robotQueueService.getStatus())
             .build();
         return ApiResponse.success(stats);
     }
@@ -118,7 +118,7 @@ public class AdminRobotController {
     @SaCheckLogin
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> pauseQueue() {
-        postQueueService.pause();
+        robotQueueService.pause();
         return ApiResponse.success();
     }
 
@@ -126,7 +126,7 @@ public class AdminRobotController {
     @SaCheckLogin
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> resumeQueue() {
-        postQueueService.resume();
+        robotQueueService.resume();
         return ApiResponse.success();
     }
 

@@ -7,6 +7,7 @@ import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.deck.DeckBriefDTO;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
+import com.prosper.learn.application.service.ContentVisibilityService;
 import com.prosper.learn.application.service.UserService;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
@@ -20,6 +21,7 @@ import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.Enums.ContentType;
 import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +49,7 @@ public class CardAssembler {
     private final CourseDataService courseDataService;
 
     private final UserService userService;
+    private final ContentVisibilityService contentVisibilityService;
 
     // ========== DeckBriefDTO ==========
 
@@ -207,30 +210,46 @@ public class CardAssembler {
      * 检查卡片或卡片组是否被屏蔽
      * 如果 user 是卡片或卡片组的创建者，则不屏蔽
      * 如果用户是审核员及以上角色，则不屏蔽
+     * 检查完整祖先链：Card → Deck → Node → Course → ParentCourse
      */
     private boolean isCardOrDeckBlocked(MemoryCardDO card, MemoryCardDeckDO deck, UserDO user) {
-        if (user != null) {
-            Long userId = user.getId();
-            // 创建者始终可以看到自己的内容
-            if (userId.equals(card.getCreatorId())) {
-                return false;
-            }
-            if (deck != null && userId.equals(deck.getCreatorId())) {
-                return false;
-            }
-            // 审核员及以上角色可以看到被屏蔽的内容
-            if (user.hasRole(Enums.UserRole.MODERATOR)) {
-                return false;
-            }
+        Long userId = user != null ? user.getId() : null;
+
+        // 审核员及以上角色可以看到所有内容
+        if (user != null && user.hasRole(Enums.UserRole.MODERATOR)) {
+            return false;
         }
-        // 卡片状态不是 PUBLISHED
+
+        // 卡片状态检查
         if (card.getState() != null && card.getState() != Enums.ContentState.PUBLISHED_VALUE) {
-            return true;
+            // 创建者可以看到自己的非 BANNED 内容
+            if (userId != null && userId.equals(card.getCreatorId())
+                    && card.getState() != Enums.ContentState.BANNED.value()) {
+                // 继续检查祖先链
+            } else {
+                return true;
+            }
         }
-        // 卡片组状态不是 PUBLISHED
+
+        // 卡片组状态检查
         if (deck != null && deck.getState() != null && deck.getState() != Enums.ContentState.PUBLISHED_VALUE) {
-            return true;
+            // 创建者可以看到自己的非 BANNED 内容
+            if (userId != null && userId.equals(deck.getCreatorId())
+                    && deck.getState() != Enums.ContentState.BANNED.value()) {
+                // 继续检查祖先链
+            } else {
+                return true;
+            }
         }
+
+        // 检查祖先链可见性（Node → Course → ParentCourse）
+        if (deck != null && deck.getId() != null) {
+            boolean visible = contentVisibilityService.isVisible(ContentType.memory_card_deck, deck.getId(), userId);
+            if (!visible) {
+                return true;
+            }
+        }
+
         return false;
     }
 

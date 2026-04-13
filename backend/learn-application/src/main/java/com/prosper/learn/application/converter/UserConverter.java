@@ -225,8 +225,6 @@ public interface UserConverter {
     @Mapping(target = "biography")
     @Mapping(target = "state")
     @Mapping(target = "role")
-    @Mapping(target = "lastViewedMessageId")
-    @Mapping(target = "reviewCardCount")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     UserAdminDTO toAdminDTO(UserDO userDO);

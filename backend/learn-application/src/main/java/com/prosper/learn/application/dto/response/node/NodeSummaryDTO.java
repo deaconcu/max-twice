@@ -19,4 +19,6 @@ public class NodeSummaryDTO {
     private Integer commentCount;
 
     private Integer nodeReferenceCount;
+
+    private Byte state;
 }

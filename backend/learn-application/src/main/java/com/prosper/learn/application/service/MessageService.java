@@ -2,6 +2,7 @@ package com.prosper.learn.application.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
 import com.prosper.learn.application.converter.MessageConverter;
 import com.prosper.learn.application.converter.NodeConverter;
 import com.prosper.learn.application.converter.UserConverter;
@@ -75,6 +76,7 @@ public class MessageService {
     private final RoleDataService roleDataService;
     private final MessageDataService messageDataService;
     private final UserDataService userDataService;
+    private final UserStatsDataService userStatsDataService;
     private final RoadmapDataService roadmapDataService;
 
     // 转换器依赖
@@ -191,12 +193,16 @@ public class MessageService {
         // 获取消息列表
         List<MessageDTO> messageDTOs = getListByCategory(category, receiverId, lastId, type);
 
-        // 只在第一页（lastId == null）时返回 lastViewedMessageId
+        // 只在第一页（lastId == null）时处理 lastViewedMessageId
         Long lastViewedMessageId = null;
         if (lastId == null) {
-            lastViewedMessageId = currentUser.getLastViewedMessageId();
-            if (lastViewedMessageId == null) {
-                lastViewedMessageId = 0L;
+            // 读取当前值
+            lastViewedMessageId = userStatsDataService.getLastViewedMessageId(currentUser.getId());
+
+            // 更新为最新消息ID（第一条消息是最新的，因为降序排列）
+            if (!messageDTOs.isEmpty()) {
+                long maxId = messageDTOs.get(0).getId();
+                userStatsDataService.updateLastViewedMessageId(currentUser.getId(), maxId);
             }
         }
 

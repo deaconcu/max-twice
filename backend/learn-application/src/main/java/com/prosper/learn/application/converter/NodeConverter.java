@@ -66,6 +66,7 @@ public interface NodeConverter {
     @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "description")
+    @Mapping(target = "state")
     NodeSummaryDTO toSummaryDTOInternal(NodeDO nodeDO);
 
     default NodeSummaryDTO toSummaryDTO(NodeDO nodeDO) {
@@ -163,6 +164,7 @@ public interface NodeConverter {
     @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "description")
+    @Mapping(target = "state")
     NodeWithProgressDTO toWithProgressDTOInternal(NodeDO nodeDO);
 
     default NodeWithProgressDTO toWithProgressDTO(NodeDO nodeDO, boolean isCompleted) {

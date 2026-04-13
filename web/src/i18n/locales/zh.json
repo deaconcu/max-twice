@@ -548,7 +548,9 @@
       "article": "文章",
       "all": "全部",
       "draft": "草稿",
+      "pending": "审核中",
       "published": "已发布",
+      "rejected": "已拒绝",
       "searchPlaceholder": "搜索...",
       "unfavoriteError": "取消收藏失败",
       "learningTab": "学习中",
@@ -1911,9 +1913,10 @@
     "yearsAgo": "{n}年前"
   },
   "intro": {
-    "mainSlogan": "人生没有说明书，<br />我们一起写一本。",
-    "subSlogan": "想成为谁，就学什么。",
-    "brandMeaning": "— 每个知识点，最多看两遍就懂"
+    "greeting": "Hi，同学，欢迎来到 TwiceMax 知识社区",
+    "line1": "我们致力于：结构化学习路径和知识，让每个知识读两遍就懂",
+    "line2": "快速学习，能帮你胜任多种角色，欢迎加入！",
+    "logoSlogan": "多面成长"
   },
   "chart": {
     "preview": "图表预览"

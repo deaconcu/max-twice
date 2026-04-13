@@ -1,62 +1,64 @@
 <template>
   <div class="pa-0 pa-sm-1">
-    <!-- 顶部筛选栏 -->
-    <div class="d-flex align-center justify-space-between flex-wrap ga-3">
-      <!-- 左侧：状态筛选 -->
-      <div class="d-flex align-center">
-        <v-btn
-          variant="text"
-          size="small"
-          rounded="lg"
-          :color="statusFilter === 'all' ? 'primary' : 'default'"
-          @click="statusFilter = 'all'"
-        >
-          {{ t('user.profile.all') }}
-        </v-btn>
-        <v-btn
-          variant="text"
-          size="small"
-          rounded="lg"
-          :color="statusFilter === 'draft' ? 'primary' : 'default'"
-          @click="statusFilter = 'draft'"
-        >
-          {{ t('user.profile.draft') }}
-        </v-btn>
-        <v-btn
-          variant="text"
-          size="small"
-          rounded="lg"
-          :color="statusFilter === 'published' ? 'primary' : 'default'"
-          @click="statusFilter = 'published'"
-        >
-          {{ t('user.profile.published') }}
-        </v-btn>
-      </div>
-
-      <!-- 右侧：搜索框 -->
-      <v-text-field
-        v-model="searchQuery"
-        :placeholder="t('user.profile.searchPlaceholder')"
-        prepend-inner-icon="mdi-magnify"
-        variant="outlined"
-        density="compact"
+    <!-- 顶部筛选栏（仅自己的 profile 显示）-->
+    <div v-if="isOwnProfile" class="d-flex align-center mb-4">
+      <v-btn
+        variant="text"
+        size="small"
         rounded="lg"
-        clearable
-        hide-details
-        style="max-width: 200px"
-      />
+        :color="statusFilter === 'all' ? 'primary' : 'default'"
+        @click="statusFilter = 'all'"
+      >
+        {{ t('user.profile.all') }}
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'draft' ? 'primary' : 'default'"
+        @click="statusFilter = 'draft'"
+      >
+        {{ t('user.profile.draft') }}
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'pending' ? 'primary' : 'default'"
+        @click="statusFilter = 'pending'"
+      >
+        {{ t('user.profile.pending') }}
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'published' ? 'primary' : 'default'"
+        @click="statusFilter = 'published'"
+      >
+        {{ t('user.profile.published') }}
+      </v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        rounded="lg"
+        :color="statusFilter === 'rejected' ? 'primary' : 'default'"
+        @click="statusFilter = 'rejected'"
+      >
+        {{ t('user.profile.rejected') }}
+      </v-btn>
     </div>
 
     <!-- 加载状态 -->
-    <LoadingSpinner v-if="loading && filteredCatalogs.length === 0" />
+    <LoadingSpinner v-if="loading && catalogs.length === 0" />
 
     <!-- 目录列表 -->
     <v-infinite-scroll
-      v-else-if="filteredCatalogs.length > 0"
-      :items="filteredCatalogs"
+      v-else-if="catalogs.length > 0"
+      :items="catalogs"
       @load="onLoadMore"
     >
-      <div v-for="(catalog, index) in filteredCatalogs" :key="catalog.id">
+      <div v-for="(catalog, index) in catalogs" :key="catalog.id">
         <v-card
           rounded="lg"
           border
@@ -89,52 +91,54 @@
                 <span v-if="catalog.node" class="text-truncate">{{ catalog.node }}</span>
               </div>
 
-              <!-- 右侧：状态标签 -->
-              <v-chip
-                v-if="catalog.state === 0"
-                size="x-small"
-                color="grey"
-                variant="tonal"
-                class="flex-shrink-0 ml-2"
-              >
-                {{ t('user.profile.draft') }}
-              </v-chip>
-              <v-chip
-                v-else-if="catalog.state === 1"
-                size="x-small"
-                color="warning"
-                variant="tonal"
-                class="flex-shrink-0 ml-2"
-              >
-                {{ t('admin.pending') }}
-              </v-chip>
-              <v-chip
-                v-else-if="catalog.state === 2"
-                size="x-small"
-                color="success"
-                variant="tonal"
-                class="flex-shrink-0 ml-2"
-              >
-                {{ t('user.profile.published') }}
-              </v-chip>
-              <v-chip
-                v-else-if="catalog.state === 3"
-                size="x-small"
-                color="error"
-                variant="tonal"
-                class="flex-shrink-0 ml-2"
-              >
-                {{ t('admin.rejected') }}
-              </v-chip>
-              <v-chip
-                v-else-if="catalog.state === 4"
-                size="x-small"
-                color="error"
-                variant="tonal"
-                class="flex-shrink-0 ml-2"
-              >
-                {{ t('admin.banned') }}
-              </v-chip>
+              <!-- 右侧：状态标签（仅自己的 profile 显示）-->
+              <template v-if="isOwnProfile">
+                <v-chip
+                  v-if="catalog.state === 0"
+                  size="x-small"
+                  color="grey"
+                  variant="tonal"
+                  class="flex-shrink-0 ml-2"
+                >
+                  {{ t('user.profile.draft') }}
+                </v-chip>
+                <v-chip
+                  v-else-if="catalog.state === 1"
+                  size="x-small"
+                  color="warning"
+                  variant="tonal"
+                  class="flex-shrink-0 ml-2"
+                >
+                  {{ t('admin.pending') }}
+                </v-chip>
+                <v-chip
+                  v-else-if="catalog.state === 2"
+                  size="x-small"
+                  color="success"
+                  variant="tonal"
+                  class="flex-shrink-0 ml-2"
+                >
+                  {{ t('user.profile.published') }}
+                </v-chip>
+                <v-chip
+                  v-else-if="catalog.state === 3"
+                  size="x-small"
+                  color="error"
+                  variant="tonal"
+                  class="flex-shrink-0 ml-2"
+                >
+                  {{ t('admin.rejected') }}
+                </v-chip>
+                <v-chip
+                  v-else-if="catalog.state === 4"
+                  size="x-small"
+                  color="error"
+                  variant="tonal"
+                  class="flex-shrink-0 ml-2"
+                >
+                  {{ t('admin.banned') }}
+                </v-chip>
+              </template>
             </div>
 
             <!-- 主要内容：目录章节列表 -->
@@ -143,8 +147,23 @@
                 v-for="(node, idx) in catalog.contentNodes"
                 :key="idx"
                 class="catalog-node-item py-2 px-3"
+                :class="{ 'banned-node': node.state === 4 }"
               >
-                <div class="text-body-1 text-grey-darken-3">{{ idx + 1 }}. {{ node.name }}</div>
+                <div class="d-flex align-center">
+                  <v-icon
+                    v-if="node.state === 4"
+                    icon="mdi-cancel"
+                    size="16"
+                    color="grey"
+                    class="mr-2"
+                  />
+                  <span
+                    class="text-body-1"
+                    :class="node.state === 4 ? 'text-grey' : 'text-grey-darken-3'"
+                  >
+                    {{ idx + 1 }}. {{ node.name }}
+                  </span>
+                </div>
                 <div v-if="node.description" class="text-body-2 text-medium-emphasis">
                   {{ node.description }}
                 </div>
@@ -188,14 +207,14 @@
       </template>
 
       <template #empty>
-        <div v-if="!searchQuery" class="text-center py-4">
+        <div class="text-center py-4">
           <p class="text-body-2 text-grey">{{ t('postingList.reachedEnd') }}</p>
         </div>
       </template>
     </v-infinite-scroll>
 
     <!-- 空状态 -->
-    <div v-else class="text-center py-8 py-md-12">
+    <div v-else-if="!loading" class="text-center py-8 py-md-12">
       <v-icon
         icon="mdi-folder-multiple"
         :size="$vuetify.display.mobile ? 48 : 64"
@@ -203,10 +222,10 @@
         class="mb-3 mb-md-4"
       />
       <p class="text-body-2 text-md-body-1 text-grey-darken-2">
-        {{ searchQuery ? t('user.profile.noCatalogsFound') : t('user.profile.noCatalogsCreated') }}
+        {{ statusFilter !== 'all' ? t('user.profile.noCatalogsFound') : t('user.profile.noCatalogsCreated') }}
       </p>
       <p class="text-caption text-md-body-2 text-grey">
-        {{ searchQuery ? t('user.profile.tryOtherKeywords') : t('user.profile.createCatalogHint') }}
+        {{ statusFilter !== 'all' ? t('user.profile.adjustFilters') : t('user.profile.createCatalogHint') }}
       </p>
     </div>
 
@@ -231,26 +250,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
 import { useI18n } from '@/composables/useI18n'
 import { userApi, postApi } from '@/api'
-import { PostType } from '@/enums'
+import { PostType, ContentState } from '@/enums'
 import { parseContentNodes } from '@/utils/postUtils'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import NodeSelectorDialog from '@/components/features/read/NodeSelectorDialog.vue'
 
+interface Props {
+  isOwnProfile?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  isOwnProfile: false,
+})
+
 const { t, locale } = useI18n()
 const router = useRouter()
 
-// 搜索关键词
-const searchQuery = ref('')
-
 // 状态筛选
-const statusFilter = ref('all')
+const statusFilter = ref<'all' | 'draft' | 'pending' | 'published' | 'rejected'>('all')
+
+// 将 statusFilter 转换为后端 state 值
+const getStateValue = (): number | undefined => {
+  switch (statusFilter.value) {
+    case 'draft':
+      return ContentState.DRAFT
+    case 'pending':
+      return ContentState.SUBMITTED
+    case 'published':
+      return ContentState.PUBLISHED
+    case 'rejected':
+      return ContentState.REJECTED
+    default:
+      return undefined // all - 后端返回除 BANNED 外的所有状态
+  }
+}
 
 // 删除确认对话框
 const showDeleteDialog = ref(false)
@@ -269,7 +309,11 @@ const {
   reset: resetPosts,
 } = useInfiniteScroll({
   fetchFn: async (params) => {
-    const response = await userApi.getCurrentUserAllPosts(params.lastId, PostType.INDEX)
+    const response = await userApi.getCurrentUserAllPosts(
+      params.lastId,
+      PostType.INDEX,
+      getStateValue()
+    )
     return {
       code: response.code,
       data: response.data?.items || [],
@@ -281,6 +325,12 @@ const {
     lastId: lastItem.id,
   }),
   initialParams: { lastId: undefined },
+})
+
+// 监听 statusFilter 变化，重新加载列表
+watch(statusFilter, () => {
+  resetPosts()
+  loadMorePosts()
 })
 
 // 删除帖子
@@ -312,34 +362,6 @@ const catalogs = computed(() => {
         : undefined,
     }
   })
-})
-
-// 根据搜索关键词和状态过滤目录
-const filteredCatalogs = computed(() => {
-  let result = catalogs.value
-
-  // 状态筛选
-  if (statusFilter.value === 'draft') {
-    result = result.filter((catalog) => catalog.state === 0)
-  } else if (statusFilter.value === 'published') {
-    result = result.filter((catalog) => catalog.state === 2)
-  }
-
-  // 搜索筛选
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter((catalog) => {
-      const matchNode = catalog.node?.toLowerCase().includes(query)
-      const matchCourse = catalog.course?.name.toLowerCase().includes(query)
-      const matchContent = catalog.contentNodes.some(
-        (node: { name: string; description?: string }) =>
-          node.name.toLowerCase().includes(query) || node.description?.toLowerCase().includes(query)
-      )
-      return matchNode || matchCourse || matchContent
-    })
-  }
-
-  return result
 })
 
 // 跳转到目录详情 (跳转到节点页面)
@@ -396,7 +418,7 @@ const formatDate = (date: string) => {
 type LoadMoreCallback = (status: 'ok' | 'empty') => void
 
 const onLoadMore = async ({ done }: { done: LoadMoreCallback }): Promise<void> => {
-  if (!hasMore.value || loading.value || searchQuery.value) {
+  if (!hasMore.value || loading.value) {
     done('empty')
     return
   }
@@ -425,6 +447,10 @@ onMounted(() => {
 
 .catalog-node-item:not(:last-child) {
   border-bottom: 1px dashed rgb(var(--v-theme-outline));
+}
+
+.catalog-node-item.banned-node {
+  opacity: 0.6;
 }
 
 :deep(.v-field__outline) {

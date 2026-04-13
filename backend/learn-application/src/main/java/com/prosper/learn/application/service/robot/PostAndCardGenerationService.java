@@ -14,6 +14,7 @@ import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.infrastructure.ai.AIService;
 import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.infrastructure.config.SystemDomainService;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
@@ -37,18 +38,19 @@ import java.util.ArrayList;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PostGenerationService {
+public class PostAndCardGenerationService {
 
     // ========= 依赖与配置 =========
 
     private final SystemProperties systemProperties;
+    private final SystemDomainService systemDomainService;
     private final NodeDataService nodeDataService;
     private final CourseDataService courseDataService;
     private final PostService postService;
     private final PostDataService postDataService;
     private final UserDataService userDataService;
     private final MemoryCardDeckService memoryCardDeckService;
-    private final PostQueueService postQueueService;
+    private final RobotQueueService robotQueueService;
     private final ObjectMapper objectMapper;
 
     // AI 服务
@@ -95,7 +97,7 @@ public class PostGenerationService {
                             boolean hasAiPost = postDataService.existPost(childNodeId, aiUserId);
                             if (!hasAiPost) {
                                 // 只有没有AI post的节点才加入队列，继承父节点的contentType和recursive
-                                postQueueService.enqueue(childNodeId, contentType, true, false);
+                                robotQueueService.enqueue(childNodeId, contentType, true, false);
                                 log.info("Robot 子节点 {} 已加入 AI 生成队列，来源帖子: {}", childNodeId, postId);
                             } else {
                                 log.info("Robot 子节点 {} 已有 AI 帖子，跳过队列", childNodeId);
@@ -124,7 +126,9 @@ public class PostGenerationService {
      * 构建系统提示词（通用规范和要求）
      */
     private String buildSystemPrompt(String contentType) {
-        return """
+        return systemDomainService.getPostSystemPrompt();
+        /*
+        return “””
                 你是 MaxTwice 内容生成专家。MaxTwice = 最多看两遍就懂。
 
                 【核心定位】帮助理解的补充材料，不是教科书：
@@ -138,14 +142,14 @@ public class PostGenerationService {
                 【重要】每次请求都是独立任务，不要复用之前结果。
 
                 ## 输出格式规范
-                1. 文章类型：必须以"[A]"开头，后跟纯HTML格式内容
+                1. 文章类型：必须以”[A]”开头，后跟纯HTML格式内容
                    - 使用HTML标签：<h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <table>, <pre> 等
                    - 不要使用 Markdown 语法（禁止使用 #, ##, *, -, `, ```, 等）
                    - 不要添加 style 属性或 CSS 样式
                    - 数学公式使用 LaTeX：<span>$公式$</span> 或 <div>$$公式$$</div>
-                   - Mermaid 图表用 <pre class="mermaid">...</pre> 包裹
-                2. 目录类型：以"[C]"开头，后跟合法的JSON数组
-                3. JSON格式：必须使用双引号，格式为 [{"name": "...", "description": "..."}, ...]
+                   - Mermaid 图表用 <pre class=”mermaid”>...</pre> 包裹
+                2. 目录类型：以”[C]”开头，后跟合法的JSON数组
+                3. JSON格式：必须使用双引号，格式为 [{“name”: “...”, “description”: “...”}, ...]
                 4. 不要在输出前后添加任何额外文字、代码块标记或换行
 
                 ## 文章写作规范
@@ -158,23 +162,23 @@ public class PostGenerationService {
                    - 保持简单，不要复杂
                    - 使用 graph TB 或 graph LR
                    - 节点ID：简单字母数字（A, B1, C2）
-                   - 节点文本：A["文本"]，不用特殊字符（引号、括号、下标等）
+                   - 节点文本：A[“文本”]，不用特殊字符（引号、括号、下标等）
                    - subgraph 名称：纯英文数字，无空格中文
                    - 正确示例：
                      ```
                      graph TB
                        subgraph group1
-                         A["起点"] --> B["中间点"]
+                         A[“起点”] --> B[“中间点”]
                        end
                        subgraph group2
-                         C["终点"]
+                         C[“终点”]
                        end
                      ```
-                   - 禁止：subgraph 理论预测 (说明)、A["文本(注释)"]、B["数组[i]"]
+                   - 禁止：subgraph 理论预测 (说明)、A[“文本(注释)”]、B[“数组[i]”]
                 7. 中文和数字、英文之间添加空格
 
                 ## 目录生成规范
-                1. 名称具体（禁用"绪论""基础"），简单直接，不要用感性化的描述，比如“牛顿-莱布尼茨公式：微积分的终极桥梁”，要直接用“牛顿-莱布尼茨公式”
+                1. 名称具体（禁用”绪论””基础”），简单直接，不要用感性化的描述，比如”牛顿-莱布尼茨公式：微积分的终极桥梁”，要直接用”牛顿-莱布尼茨公式”
                 2. 描述必须包含课程上下文，写清楚这是什么课程的知识点，哪个角度讲、讲什么、不讲什么，要非常详细具体，让人脱离目录树也能理解节点范围，目录是网站的核心资产，目录的描述是重中之重，必须细致严谨定义
                 3. 名称不重复
                 4. 至少2个子目录，否则生成文章
@@ -182,13 +186,14 @@ public class PostGenerationService {
                    - 优先细分：当内容可以拆分为两个相对独立的主题时，应该拆分
                    - 不要刻意控制数量，必须保证内容完整覆盖课程核心知识点
                 6. 子目录必须在给定节点描述的知识范围之内，不得延伸到其他学科领域
-                7. 生成的每一个子目录都需要判断和课程的紧密关系，如果子目录不是核心知识点，必须名称中标注"简述"或"概述"
+                7. 生成的每一个子目录都需要判断和课程的紧密关系，如果子目录不是核心知识点，必须名称中标注”简述”或”概述”
                 8. 核心知识点不要包含简述、概述等字样，必须直接命名
                 9. 无章节序号
-                10. 如果内容繁杂，需要在目录中添加一篇带有"简述"或"概述"的文章来系统介绍该目录下的内容，先给一个总览，后面再细分目录讲细节
+                10. 如果内容繁杂，需要在目录中添加一篇带有”简述”或”概述”的文章来系统介绍该目录下的内容，先给一个总览，后面再细分目录讲细节
 
                 严格按规范输出。
-                """;
+                “””;
+        */
     }
 
     // ========= 构造提示词 =========
@@ -197,6 +202,11 @@ public class PostGenerationService {
      * 构造提示词：自动判断生成文章或目录
      */
     private String buildPromptForAuto(NodeDO nodeDO, CourseDO courseDO) {
+        return systemDomainService.getPostAutoPrompt()
+                .replace("{courseName}", courseDO.getName())
+                .replace("{nodeName}", nodeDO.getName())
+                .replace("{nodeDescription}", nodeDO.getDescription());
+        /*
         return """
                 课程：%s
                 节点：%s
@@ -207,17 +217,23 @@ public class PostGenerationService {
                 2. 如果是"%s"课程的核心内容且内容复杂 → [C] 目录
                 3. 如果是单一知识点 → [A] 文章
                 4. 如果涉及其他学科，不属于本课程核心知识点（即使内容复杂）→ [A] 文章
-                
+
                 要求：
                 如果生成目录：
-             
+
                """.formatted(courseDO.getName(), nodeDO.getName(), nodeDO.getDescription(), courseDO.getName());
+        */
     }
 
     /**
      * 构造提示词：生成文章
      */
     private String buildPromptForArticle(NodeDO nodeDO, CourseDO courseDO) {
+        return systemDomainService.getPostArticlePrompt()
+                .replace("{courseName}", courseDO.getName())
+                .replace("{nodeName}", nodeDO.getName())
+                .replace("{nodeDescription}", nodeDO.getDescription());
+        /*
         return """
                 课程名称：%s
                 当前目录：%s
@@ -225,12 +241,18 @@ public class PostGenerationService {
 
                 任务：为该目录生成一篇文章，以 [A] 开头。
                """.formatted(courseDO.getName(), nodeDO.getName(), nodeDO.getDescription());
+        */
     }
 
     /**
      * 构造提示词：生成目录
      */
     private String buildPromptForIndex(NodeDO nodeDO, CourseDO courseDO) {
+        return systemDomainService.getPostIndexPrompt()
+                .replace("{courseName}", courseDO.getName())
+                .replace("{nodeName}", nodeDO.getName())
+                .replace("{nodeDescription}", nodeDO.getDescription());
+        /*
         return """
                 课程：%s
                 节点：%s
@@ -238,6 +260,7 @@ public class PostGenerationService {
 
                 任务：给当前节点生成子目录，以 [C] 开头。
                """.formatted(courseDO.getName(), nodeDO.getName(), nodeDO.getDescription());
+        */
     }
 
     // ========= 结果解析与入库 =========
@@ -369,6 +392,8 @@ public class PostGenerationService {
      * 构建记忆卡片系统提示词
      */
     private String buildMemoryCardSystemPrompt() {
+        return systemDomainService.getMemoryCardSystemPrompt();
+        /*
         return """
                 你是记忆卡片生成专家。请严格遵守以下规范：
 
@@ -397,12 +422,16 @@ public class PostGenerationService {
 
                 请严格按照 JSON 格式输出，确保使用双引号。
                 """;
+        */
     }
 
     /**
      * 构建记忆卡片生成的提示词
      */
     private String buildMemoryCardPrompt(String articleContent) {
+        return systemDomainService.getMemoryCardPrompt()
+                .replace("{articleContent}", articleContent);
+        /*
         return String.format("""
             基于以下文章内容生成记忆卡片组：
 
@@ -410,6 +439,7 @@ public class PostGenerationService {
 
             请直接输出 JSON 数组。
             """, articleContent);
+        */
     }
 
     /**

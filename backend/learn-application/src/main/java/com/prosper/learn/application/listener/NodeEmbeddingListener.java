@@ -1,7 +1,6 @@
 package com.prosper.learn.application.listener;
 
-import com.prosper.learn.infrastructure.embedding.EmbeddingService;
-import com.prosper.learn.infrastructure.embedding.MilvusService;
+import com.prosper.learn.application.service.NodeEmbeddingService;
 import com.prosper.learn.shared.domain.event.content.lifecycle.NodeCreatedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.NodeUpdatedEvent;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +18,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class NodeEmbeddingListener {
 
-    private final EmbeddingService embeddingService;
-    private final MilvusService milvusService;
+    private final NodeEmbeddingService nodeEmbeddingService;
 
     /**
      * 节点创建时生成embedding
@@ -28,13 +26,8 @@ public class NodeEmbeddingListener {
     @EventListener
     @Async
     public void onNodeCreated(NodeCreatedEvent event) {
-        try {
-            generateAndStoreEmbedding(event.getId(), event.getName(), event.getDescription());
-            log.info("节点向量生成成功: nodeId={}", event.getId());
-        } catch (Exception e) {
-            log.error("节点向量生成失败: nodeId={}", event.getId(), e);
-            // 失败不影响节点创建，通过补偿机制处理
-        }
+        nodeEmbeddingService.upsertAsync(event.getId(), event.getName(), event.getDescription());
+        log.info("节点向量生成任务已提交: nodeId={}", event.getId());
     }
 
     /**
@@ -43,25 +36,7 @@ public class NodeEmbeddingListener {
     @EventListener
     @Async
     public void onNodeUpdated(NodeUpdatedEvent event) {
-        try {
-            generateAndStoreEmbedding(event.getId(), event.getName(), event.getDescription());
-            log.info("节点向量重新生成成功: nodeId={}", event.getId());
-        } catch (Exception e) {
-            log.error("节点向量重新生成失败: nodeId={}", event.getId(), e);
-        }
-    }
-
-    /**
-     * 生成并存储embedding
-     */
-    private void generateAndStoreEmbedding(Long id, String name, String description) {
-        // 拼接文本：标题 + 描述
-        String text = name + "\n\n" + description;
-
-        // 生成embedding
-        float[] embedding = embeddingService.generateEmbedding(text);
-
-        // 存储到Milvus
-        milvusService.upsert(id, embedding);
+        nodeEmbeddingService.upsertAsync(event.getId(), event.getName(), event.getDescription());
+        log.info("节点向量更新任务已提交: nodeId={}", event.getId());
     }
 }

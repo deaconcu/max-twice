@@ -56,6 +56,7 @@ public class UserService {
     private final UserConverter userConverter;
     private final CourseConverter courseConverter;
     private final ApplicationEventPublisher eventPublisher;
+    private final MeilisearchService meilisearchService;
 
     // ========== 常量定义 ==========
 
@@ -136,6 +137,14 @@ public class UserService {
 
         // 查询并返回 DTO
         UserDO userDO = userDataService.getById(userId);
+
+        // 异步更新搜索索引
+        if (ban) {
+            meilisearchService.deleteUser(userId);
+        } else {
+            meilisearchService.indexUser(userDO);
+        }
+
         UserAdminDTO dto = userConverter.toAdminDTO(userDO);
         fillUserStats(List.of(dto));
         return dto;

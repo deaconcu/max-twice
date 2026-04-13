@@ -548,7 +548,9 @@
       "article": "Article",
       "all": "All",
       "draft": "Draft",
+      "pending": "Pending",
       "published": "Published",
+      "rejected": "Rejected",
       "searchPlaceholder": "Search...",
       "unfavoriteError": "Failed to unfavorite",
       "learningTab": "Learning",
@@ -1912,7 +1914,11 @@
   "intro": {
     "mainSlogan": "Life has no manual,<br />let's write one together.",
     "subSlogan": "Become who you want to be by learning what you need.",
-    "brandMeaning": "— Master any concept in at most two reads"
+    "brandMeaning": "— Master any concept in at most two reads",
+    "greeting": "Hi, welcome to TwiceMax",
+    "line1": "Learn any concept in just two reads",
+    "line2": "Master multiple roles, grow with us!",
+    "logoSlogan": "Grow Multi-faceted"
   },
   "chart": {
     "preview": "Chart Preview"

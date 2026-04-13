@@ -337,6 +337,7 @@ export function restoreDeck(deckId: number): Promise<ApiResponse<void>> {
 export function getCurrentUserDecks(params?: {
   lastId?: number
   limit?: number
+  state?: number
 }): Promise<ApiResponse<{ items: MemoryCardDeck[]; hasMore: boolean }>> {
   return client.get('/v1/memory/users/me/memory-decks', { params })
 }

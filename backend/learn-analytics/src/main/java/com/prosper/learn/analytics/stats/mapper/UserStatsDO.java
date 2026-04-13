@@ -49,6 +49,21 @@ public class UserStatsDO {
      */
     private String lastSyncDate;
 
+    // ===== 站点状态字段 =====
+
+    /**
+     * 最后查看的消息ID
+     * 用于计算未读消息数
+     */
+    private Long lastViewedMessageId;
+
+    /**
+     * 复习卡片计数器
+     * 用户全局复习计数，每复习一张卡片 +1，永不重置
+     * 用于 LEARNING/RELEARNING 阶段的卡片调度
+     */
+    private Long reviewCardCount;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

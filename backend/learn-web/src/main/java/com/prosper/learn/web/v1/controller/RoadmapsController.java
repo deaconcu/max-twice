@@ -115,17 +115,30 @@ public class RoadmapsController {
     }
 
     /**
-     * 获取当前登录用户创建的路线图（所有状态）
-     * 包含：待审核、已发布、审核拒绝、已屏蔽
-     * GET /api/v1/users/me/roadmaps?lastId=123
+     * 获取当前登录用户创建的路线图（所有状态或指定状态）
+     * 包含：草稿、待审核、已发布、审核拒绝（不含已屏蔽）
+     * GET /api/v1/users/me/roadmaps?lastId=123&state=2
      */
     @GetMapping("/users/me/roadmaps")
     @SaCheckLogin
     public ApiResponse<List<RoadmapDetailDTO>> getCurrentUserRoadmaps(
             @RequestParam(required = false) Long lastId,
+            @RequestParam(required = false) Integer state,
             @CurrentUser UserDO currentUser) {
 
-        List<RoadmapDetailDTO> roadmaps = roadmapService.getUserRoadmaps(currentUser.getId(), lastId, null);
+        // 验证 state 参数：不能传 BANNED
+        ContentState contentState = null;
+        if (state != null) {
+            if (state.byteValue() == ContentState.BANNED.value()) {
+                return ApiResponse.fail(400, "无效的状态参数");
+            }
+            contentState = ContentState.getByValue(state.byteValue());
+            if (contentState == null) {
+                return ApiResponse.fail(400, "无效的状态参数");
+            }
+        }
+
+        List<RoadmapDetailDTO> roadmaps = roadmapService.getUserRoadmaps(currentUser.getId(), lastId, contentState);
         return ApiResponse.success(roadmaps);
     }
 

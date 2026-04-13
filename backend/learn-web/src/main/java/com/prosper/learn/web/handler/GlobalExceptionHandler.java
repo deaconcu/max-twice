@@ -67,15 +67,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ApiResponse<Object> handleBusinessException(BusinessException e, HttpServletRequest request) {
         log.warn("业务异常: [{}] {}", e.getCode(), e.getMessage());
-        
-        // 尝试获取国际化消息，如果失败则使用原消息
-        String localizedMessage;
-        try {
-            localizedMessage = messageUtils.getMessage(e.getMessage(), e.getMessage());
-        } catch (Exception ex) {
-            localizedMessage = e.getMessage();
-        }
-        
+
+        // 根据错误码获取国际化消息，如果没有找到则使用原消息
+        String errorKey = "error." + e.getCode();
+        String localizedMessage = messageUtils.getMessage(errorKey, e.getMessage());
+
         return ApiResponse.fail(e.getCode(), localizedMessage).path(request.getRequestURI());
     }
     

@@ -58,6 +58,7 @@ public class CommentService {
     private final UserDataService userDataService;
     private final UpvoteDataService upvoteDataService;
     private final PostDataService postDataService;
+    private final ContentVisibilityService contentVisibilityService;
     private final NodeDataService nodeDataService;
     private final RoadmapDataService roadmapDataService;
     private final SystemProperties systemProperties;
@@ -89,16 +90,9 @@ public class CommentService {
             userDataService.validateAndGet(request.getToUser());
         }
 
-        // 验证被评论的对象是否存在（跨域验证）
-        if (request.getObjectType() == post.value()) {
-            postDataService.validateAndGet(request.getObjectId());
-        } else if (request.getObjectType() == node.value()) {
-            nodeDataService.validateAndGet(request.getObjectId());
-        } else if (request.getObjectType() == roadmap.value()) {
-            roadmapDataService.validateAndGet(request.getObjectId());
-        } else {
-            throw StatusCode.COMMENT_INVALID_TYPE.exception();
-        }
+        // 验证被评论的对象及其祖先链是否全部为 PUBLISHED
+        ContentType parentType = ContentType.getByValue(request.getObjectType());
+        contentVisibilityService.validateCanCreateOn(parentType, request.getObjectId());
 
         // 调用 DomainService 创建评论（包含 interaction 领域内的验证和业务逻辑）
         CommentDO savedComment = commentDomainService.createComment(
@@ -682,6 +676,9 @@ public class CommentService {
         // 获取目标评论
         CommentDO targetComment = commentDataService.validateAndGet(commentId);
 
+        // 检查评论及其父内容的可见性
+        contentVisibilityService.validateVisibility(comment, commentId, currentUser.getId());
+
         // 判断是主评论还是子评论
         if (targetComment.getReplyToCommentId() != null && targetComment.getReplyToCommentId() > 0) {
             // 子评论：返回子评论上下文
@@ -765,13 +762,17 @@ public class CommentService {
     /**
      * 获取评论基本信息
      */
-    public CommentBasicDTO getCommentBasic(Long commentId) {
-        CommentDO comment = commentDataService.validateAndGet(commentId);
+    public CommentBasicDTO getCommentBasic(Long commentId, Long currentUserId) {
+        CommentDO commentDO = commentDataService.validateAndGet(commentId);
+
+        // 检查评论及其父内容的可见性
+        contentVisibilityService.validateVisibility(comment, commentId, currentUserId);
+
         CommentBasicDTO dto = new CommentBasicDTO();
-        dto.setId(comment.getId());
-        dto.setObjectType(comment.getObjectType());
-        dto.setObjectId(comment.getObjectId());
-        dto.setReplyToCommentId(comment.getReplyToCommentId());
+        dto.setId(commentDO.getId());
+        dto.setObjectType(commentDO.getObjectType());
+        dto.setObjectId(commentDO.getObjectId());
+        dto.setReplyToCommentId(commentDO.getReplyToCommentId());
         return dto;
     }
 }

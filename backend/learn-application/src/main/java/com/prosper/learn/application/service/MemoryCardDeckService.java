@@ -10,7 +10,7 @@ import com.prosper.learn.application.dto.request.CreateDeckRequest;
 import com.prosper.learn.application.dto.response.deck.*;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
-import com.prosper.learn.application.service.robot.PostQueueService;
+import com.prosper.learn.application.service.robot.RobotQueueService;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
@@ -67,8 +67,9 @@ public class MemoryCardDeckService {
     private final NodeDataService nodeDataService;
     private final MemoryCardService memoryCardService;
     private final ScoreCalculationService scoreCalculationService;
-    private final PostQueueService postQueueService;
+    private final RobotQueueService robotQueueService;
     private final ContentStatsDataService contentStatsDataService;
+    private final ContentVisibilityService contentVisibilityService;
 
     // 事件发布
     private final ApplicationEventPublisher eventPublisher;
@@ -161,17 +162,23 @@ public class MemoryCardDeckService {
      * @param limit 每页数量
      */
     public KeysetPageResponse<DeckFullDTO> getUserDecks(
-            Long userId, Long currentUserId, Long lastId, Integer limit) {
+            Long userId, Long currentUserId, Long lastId, Integer limit, Byte state) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 10;
         if (limit > 50) limit = 50;
 
         List<MemoryCardDeckDO> deckList;
-        // 使用 ID 分页查询
-        if (lastId != null) {
-            deckList = deckDomainService.getListByCreatorWithIdPaging(userId, lastId, limit + 1);
+        // 根据是否有 state 参数选择不同的查询方法
+        if (state != null) {
+            // 有 state 参数，使用带状态过滤的查询
+            Enums.ContentState contentState = Enums.ContentState.getByValue(state);
+            if (contentState == null) {
+                throw StatusCode.INVALID_PARAMETER.exception("无效的状态参数");
+            }
+            deckList = deckDomainService.getListByCreatorWithIdPagingAndState(userId, contentState, lastId, limit + 1);
         } else {
-            deckList = deckDomainService.getListByCreator(userId, limit + 1);
+            // 无 state 参数，查询所有状态（排除BANNED）
+            deckList = deckDomainService.getListByCreatorWithIdPaging(userId, lastId, limit + 1);
         }
 
         return buildDeckResponse(deckList, limit, currentUserId);
@@ -436,6 +443,9 @@ public class MemoryCardDeckService {
         // 获取卡片组信息
         MemoryCardDeckDO deck = deckDomainService.validateAndGet(deckId);
 
+        // 检查卡片组及其祖先链的可见性
+        contentVisibilityService.validateVisibility(Enums.ContentType.memory_card_deck, deckId, user.getId());
+
         // 先转换为基础DTO(包含创建者信息)
         DeckFullDTO baseDTO = deckAssembler.toFullDTO(deck);
 
@@ -474,12 +484,16 @@ public class MemoryCardDeckService {
             // 有来源文章：从帖子获取 nodeId
             PostDO post = postDataService.validateAndGet(postId);
             nodeId = post.getNodeId();
+            // 验证帖子链（帖子 → 节点 → 课程 → 父课程）是否全部 PUBLISHED
+            contentVisibilityService.validateCanCreateOn(Enums.ContentType.post, postId);
         } else {
             // 无来源文章：postId 设为 0，nodeId 从请求中获取
             postId = 0L;
             nodeId = request.getNodeId();
             checkNotNull(nodeId, "无来源文章时，节点ID不能为空");
             nodeDataService.validateAndGet(nodeId);
+            // 验证节点链（节点 → 课程 → 父课程）是否全部 PUBLISHED
+            contentVisibilityService.validateCanCreateOn(Enums.ContentType.node, nodeId);
         }
 
         // 调用 DomainService 创建卡片组
@@ -803,13 +817,16 @@ public class MemoryCardDeckService {
         userDataService.validateExists(userId);
         PostDO post = postDataService.validateAndGet(postId);
 
+        // 验证帖子链是否全部 PUBLISHED
+        contentVisibilityService.validateCanCreateOn(Enums.ContentType.post, postId);
+
         // 只为文章类型的帖子生成记忆卡片
         if (!post.getType().equals(Enums.PostType.article.value())) {
             throw StatusCode.INVALID_PARAMETER.exception("只能为文章类型的帖子生成记忆卡片");
         }
 
         // 将任务加入队列（跨域服务）
-        postQueueService.enqueueMemoryCards(postId);
+        robotQueueService.enqueueMemoryCards(postId);
 
         log.info("卡片组 AI 生成任务入队: postId={}，用户={}", postId, userId);
     }
@@ -837,6 +854,9 @@ public class MemoryCardDeckService {
     public void moveNodeToCourse(Long userId, Long nodeId, Long courseId) {
         // 验证节点存在
         nodeDataService.validateAndGet(nodeId);
+
+        // 检查节点及其祖先链的可见性
+        contentVisibilityService.validateVisibility(Enums.ContentType.node, nodeId, userId);
 
         // 调用 DomainService 执行移动
         deckDomainService.moveNodeToCourse(userId, nodeId, courseId);

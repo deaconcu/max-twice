@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { HEADER_HEIGHT } from '@/constants/layout'
+import { useI18n } from '@/composables/useI18n'
+
+const { locale, switchLocale } = useI18n()
+
+const toggleLocale = () => {
+  switchLocale(locale.value === 'zh' ? 'en' : 'zh')
+}
 </script>
 
 <template>
@@ -8,12 +15,23 @@ import { HEADER_HEIGHT } from '@/constants/layout'
       <v-row align="center" no-gutters>
         <!-- Logo 和名称 -->
         <v-col cols="auto">
-          <div class="d-flex align-center" style="cursor: pointer" @click="$router.push('/home')">
-            <div class="logo-icon">
-              <v-icon size="28" color="primary">mdi-infinity</v-icon>
-            </div>
-            <h2 class="logo-text ml-2">TwiceMax</h2>
+          <div class="d-flex align-center">
+            <h2 class="logo-text">TwiceMax</h2>
           </div>
+        </v-col>
+
+        <v-spacer />
+
+        <!-- 语言切换 -->
+        <v-col cols="auto">
+          <v-btn
+            variant="text"
+            size="small"
+            class="lang-btn"
+            @click="toggleLocale"
+          >
+            {{ locale === 'zh' ? '中' : 'EN' }}
+          </v-btn>
         </v-col>
       </v-row>
     </v-container>
@@ -31,22 +49,20 @@ import { HEADER_HEIGHT } from '@/constants/layout'
   background-color: transparent;
 }
 
-.logo-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(var(--v-theme-surface-variant), 0.8);
-  border: 2px solid rgba(var(--v-theme-border), 0.3);
-  border-radius: 50%;
-  backdrop-filter: blur(10px);
-}
-
 .logo-text {
   font-size: 1.25rem;
   font-weight: 700;
   color: rgb(var(--v-theme-on-surface));
   letter-spacing: -0.02em;
+}
+
+.lang-btn {
+  font-size: 0.85rem;
+  color: rgb(var(--v-theme-on-surface));
+  opacity: 0.7;
+}
+
+.lang-btn:hover {
+  opacity: 1;
 }
 </style>

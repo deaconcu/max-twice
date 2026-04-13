@@ -51,6 +51,7 @@ public class UpvoteService {
     private final MemoryCardDeckDataService deckDataService;
     private final ApplicationEventPublisher eventPublisher;
     private final ContentStatsDomainService contentStatsDomainService;
+    private final ContentVisibilityService contentVisibilityService;
 
     // ========== Command 方法（写操作）==========
 
@@ -70,6 +71,9 @@ public class UpvoteService {
     public void upvotePost(long postId, UserDO user, int type) {
         // 验证和获取帖子对象
         PostDO postDO = postDataService.validateAndGet(postId);
+
+        // 检查帖子及其祖先链的可见性
+        contentVisibilityService.validateVisibility(ContentType.post, postId, user.getId());
 
         // 防止用户给自己的内容点赞
         if (postDO.getCreatorId().equals(user.getId())) {
@@ -141,6 +145,9 @@ public class UpvoteService {
         // 验证和获取评论对象
         CommentDO commentDO = commentDataService.validateAndGet(commentId);
 
+        // 检查评论及其祖先链的可见性
+        contentVisibilityService.validateVisibility(ContentType.comment, commentId, user.getId());
+
         // 防止用户给自己的内容点赞
         if (commentDO.getCreatorId().equals(user.getId())) {
             throw StatusCode.INTERACTION_CANNOT_UPVOTE_OWN_CONTENT.exception();
@@ -186,6 +193,9 @@ public class UpvoteService {
         // 验证和获取路线图对象
         RoadmapDO roadmapDO = roadmapDataService.validateAndGet(roadmapId);
 
+        // 检查路线图及其角色的可见性
+        contentVisibilityService.validateVisibility(ContentType.roadmap, roadmapId, user.getId());
+
         // 防止用户给自己的内容点赞
         if (roadmapDO.getCreatorId().equals(user.getId())) {
             throw StatusCode.INTERACTION_CANNOT_UPVOTE_OWN_CONTENT.exception();
@@ -229,6 +239,9 @@ public class UpvoteService {
     public boolean upvoteMemoryCardDeck(long deckId, UserDO user) {
         // 验证和获取卡片组对象
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+
+        // 检查卡片组及其祖先链的可见性
+        contentVisibilityService.validateVisibility(ContentType.memory_card_deck, deckId, user.getId());
 
         // 防止用户给自己的内容点赞
         if (deck.getCreatorId().equals(user.getId())) {

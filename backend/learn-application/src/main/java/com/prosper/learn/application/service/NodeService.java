@@ -59,6 +59,9 @@ public class NodeService {
     private final ContentStatsDomainService contentStatsDomainService;
     private final ContentStatsDataService contentStatsDataService;
     private final UserService userService;
+    private final ContentVisibilityService contentVisibilityService;
+    private final MeilisearchService meilisearchService;
+    private final NodeEmbeddingService nodeEmbeddingService;
 
     // ========== Query 方法（读操作）==========
 
@@ -324,6 +327,13 @@ public class NodeService {
     @Transactional
     public void approve(Long nodeId) {
         domainService.approve(nodeId);
+
+        // 异步更新搜索索引
+        NodeDO node = nodeDataService.getById(nodeId);
+        meilisearchService.indexNode(node);
+
+        // 异步更新向量索引
+        nodeEmbeddingService.upsertAsync(nodeId, node.getName(), node.getDescription());
     }
 
     /**
@@ -332,6 +342,13 @@ public class NodeService {
     @Transactional
     public void reject(Long nodeId, String reason) {
         domainService.reject(nodeId, reason);
+
+        // 异步更新搜索索引（从索引中移除）
+        NodeDO node = nodeDataService.getById(nodeId);
+        meilisearchService.indexNode(node);
+
+        // 异步从向量库移除
+        nodeEmbeddingService.deleteAsync(nodeId);
     }
 
     /**
@@ -340,6 +357,13 @@ public class NodeService {
     @Transactional
     public void ban(Long nodeId, String reason) {
         domainService.ban(nodeId, reason);
+
+        // 异步更新搜索索引（从索引中移除）
+        NodeDO node = nodeDataService.getById(nodeId);
+        meilisearchService.indexNode(node);
+
+        // 异步从向量库移除
+        nodeEmbeddingService.deleteAsync(nodeId);
     }
 
     /**
@@ -348,6 +372,13 @@ public class NodeService {
     @Transactional
     public void restore(Long nodeId, String reason) {
         domainService.approve(nodeId);
+
+        // 异步更新搜索索引
+        NodeDO node = nodeDataService.getById(nodeId);
+        meilisearchService.indexNode(node);
+
+        // 异步更新向量索引
+        nodeEmbeddingService.upsertAsync(nodeId, node.getName(), node.getDescription());
     }
 
     /**
@@ -445,6 +476,9 @@ public class NodeService {
         if (course == null) {
             throw StatusCode.INVALID_PARAMETER.exception("课程不存在");
         }
+
+        // 验证课程链是否全部 PUBLISHED
+        contentVisibilityService.validateCanCreateOn(ContentType.course, request.getCourseId());
 
         // 检查同一课程下是否已存在同名节点
         if (checkDuplicateNode(request.getCourseId(), request.getName())) {

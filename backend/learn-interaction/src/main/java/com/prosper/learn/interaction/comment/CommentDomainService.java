@@ -47,6 +47,10 @@ public class CommentDomainService {
                 !replyToComment.getObjectType().equals(objectType)) {
                 throw StatusCode.INVALID_PARAMETER.exception("回复的评论不属于当前对象");
             }
+            // 检查被回复评论的状态必须为 PUBLISHED
+            if (replyToComment.getState() != PUBLISHED.value()) {
+                throw StatusCode.INVALID_PARAMETER.exception("无法回复未发布的评论");
+            }
         }
 
         // 构建 CommentDO

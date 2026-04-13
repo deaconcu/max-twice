@@ -48,6 +48,7 @@ public class LearningProgressService {
     private final UserLearningDomainService userLearningDomainService;
     private final UserLearningService userLearningService;
     private final ObjectMapper objectMapper;
+    private final ContentVisibilityService contentVisibilityService;
     private final SystemProperties systemProperties;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -61,6 +62,9 @@ public class LearningProgressService {
         // 验证节点是否存在
         nodeDataService.validateAndGet(nodeId);
         nodeDataService.validateAndGet(rootNodeId);
+
+        // 检查节点及其祖先链的可见性
+        contentVisibilityService.validateVisibility(Enums.ContentType.node, nodeId, userId);
 
         // 调用领域服务处理核心逻辑（标记节点完成）
         domainService.markNodeCompleted(userId, nodeId, userToday);
@@ -93,6 +97,9 @@ public class LearningProgressService {
         // 验证节点是否存在
         nodeDataService.validateAndGet(nodeId);
         nodeDataService.validateAndGet(rootNodeId);
+
+        // 检查节点及其祖先链的可见性
+        contentVisibilityService.validateVisibility(Enums.ContentType.node, nodeId, userId);
 
         // 调用领域服务处理核心逻辑（取消节点完成）
         domainService.unmarkNodeCompleted(userId, nodeId, rootNodeId, userToday);

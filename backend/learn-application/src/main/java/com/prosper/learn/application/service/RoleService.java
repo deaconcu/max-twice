@@ -57,6 +57,8 @@ public class RoleService {
     private final ContentStatsDataService contentStatsDataService;
     private final BookmarkService bookmarkService;
     private final UserService userService;
+    private final ContentVisibilityService contentVisibilityService;
+    private final MeilisearchService meilisearchService;
 
     // 事件发布
     private final ApplicationEventPublisher eventPublisher;
@@ -80,11 +82,10 @@ public class RoleService {
     public RoleDTO getById(long id, boolean published, Long userId) {
         RoleDO roleDO = roleDomainService.validateAndGet(id);
         if (roleDO == null) return null;
-        if (published &&
-            (roleDO.getState() == ContentState.REJECTED.value() ||
-             roleDO.getState() == ContentState.BANNED.value())) {
-            throw StatusCode.ROLE_BLOCKED.exception();
-        }
+
+        // 检查角色的可见性
+        contentVisibilityService.validateVisibility(ContentType.role, id, userId);
+
         return toDTO(roleDO, userId);
     }
 
@@ -272,6 +273,9 @@ public class RoleService {
             roleDO.getId(),
             roleDO.getName()
         ));
+
+        // 异步更新搜索索引
+        meilisearchService.indexRole(roleDO);
     }
 
     @Transactional
@@ -295,6 +299,9 @@ public class RoleService {
             role.getName(),
             reasonValue
         ));
+
+        // 异步更新搜索索引（从索引中移除）
+        meilisearchService.indexRole(role);
     }
 
     @Transactional
@@ -311,6 +318,10 @@ public class RoleService {
 
         // ban 不发送任何消息或事件
         log.info("角色 {} 被封禁，操作者: {}, 原因: {}", id, operator.getId(), reasonValue);
+
+        // 异步更新搜索索引（从索引中移除）
+        RoleDO role = roleDomainService.getById(id);
+        meilisearchService.indexRole(role);
     }
 
     /**
@@ -320,6 +331,9 @@ public class RoleService {
     public void delete(long id, UserDO operator) {
         // 调用 DomainService 执行删除
         roleDomainService.delete(id);
+
+        // 异步从搜索索引中移除
+        meilisearchService.deleteRole(id);
     }
 
     /**

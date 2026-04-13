@@ -452,8 +452,15 @@ public class PostDomainService {
                         .map(node -> {
                             Map<String, Object> nodeInfo = new HashMap<>();
                             nodeInfo.put("id", node.getId());
-                            nodeInfo.put("name", node.getName());
-                            nodeInfo.put("description", node.getDescription() != null ? node.getDescription() : "");
+                            nodeInfo.put("state", node.getState());
+                            // 如果节点被封禁，替换名称和描述
+                            if (node.getState() != null && node.getState() == ContentState.BANNED.value()) {
+                                nodeInfo.put("name", "目录节点已被屏蔽");
+                                nodeInfo.put("description", "");
+                            } else {
+                                nodeInfo.put("name", node.getName());
+                                nodeInfo.put("description", node.getDescription() != null ? node.getDescription() : "");
+                            }
                             return nodeInfo;
                         })
                         .collect(Collectors.toList());
