@@ -6,6 +6,7 @@ import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyMapper;
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -236,10 +237,10 @@ public class ContentStatsSyncService {
     // ========== 辅助方法 ==========
 
     /**
-     * 生成文章统计Redis键名
+     * 生成文章统计Redis键名（带语言前缀）
      */
     private String generatePostStatsKey(String dateStr) {
-        return STATS_KEY_PREFIX + dateStr + CONTENT_STATS_SUFFIX;
+        return RedisKeyPrefix.prefix(STATS_KEY_PREFIX + dateStr + CONTENT_STATS_SUFFIX);
     }
 
     /**

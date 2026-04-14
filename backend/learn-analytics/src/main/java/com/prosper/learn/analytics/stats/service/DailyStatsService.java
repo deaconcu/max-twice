@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import static com.prosper.learn.shared.common.constants.RedisStatsConstants.*;
 import static com.prosper.learn.shared.domain.Enums.*;
 
@@ -657,17 +658,17 @@ public class DailyStatsService {
     }
 
     /**
-     * 生成用户统计Redis键名
+     * 生成用户统计Redis键名（带语言前缀）
      */
     private String generateUserStatsKey(String dateStr) {
-        return STATS_KEY_PREFIX + dateStr + USER_STATS_SUFFIX;
+        return RedisKeyPrefix.prefix(STATS_KEY_PREFIX + dateStr + USER_STATS_SUFFIX);
     }
 
     /**
-     * 生成文章统计Redis键名
+     * 生成文章统计Redis键名（带语言前缀）
      */
     private String generatePostStatsKey(String dateStr) {
-        return STATS_KEY_PREFIX + dateStr + CONTENT_STATS_SUFFIX;
+        return RedisKeyPrefix.prefix(STATS_KEY_PREFIX + dateStr + CONTENT_STATS_SUFFIX);
     }
 
     /**
@@ -817,7 +818,7 @@ public class DailyStatsService {
         }
 
         String today = TimeZoneUtil.todayString();
-        String redisKey = STATS_KEY_PREFIX + today + CONTENT_STATS_SUFFIX;
+        String redisKey = RedisKeyPrefix.prefix(STATS_KEY_PREFIX + today + CONTENT_STATS_SUFFIX);
 
         // 检查 Redis key 是否存在
         Boolean keyExists = redisTemplate.hasKey(redisKey);

@@ -102,6 +102,9 @@ axiosInstance.interceptors.request.use(
     const locale = i18n.global.locale.value || 'zh'
     config.headers['Accept-Language'] = locale
 
+    // 添加站点语言头，用于后端数据源路由
+    config.headers['X-Site-Lang'] = locale
+
     // 添加 ETag 缓存头（If-None-Match）
     if (config.url) {
       const cachedETag = etagCache.getETag(config.url)

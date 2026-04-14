@@ -1,6 +1,8 @@
 package com.prosper.learn.analytics.monitoring.service;
 
 import com.prosper.learn.analytics.stats.scheduler.StatsSyncScheduler;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
@@ -34,17 +36,17 @@ public class StatsMonitorService {
     // ========== 私有辅助方法 ==========
 
     /**
-     * 生成用户统计Redis键名
+     * 生成用户统计Redis键名（带语言前缀）
      */
     private String generateUserStatsKey(String dateStr) {
-        return STATS_KEY_PREFIX + dateStr + USER_STATS_SUFFIX;
+        return RedisKeyPrefix.prefix(STATS_KEY_PREFIX + dateStr + USER_STATS_SUFFIX);
     }
 
     /**
-     * 生成文章统计Redis键名
+     * 生成文章统计Redis键名（带语言前缀）
      */
     private String generatePostStatsKey(String dateStr) {
-        return STATS_KEY_PREFIX + dateStr + POST_STATS_SUFFIX;
+        return RedisKeyPrefix.prefix(STATS_KEY_PREFIX + dateStr + POST_STATS_SUFFIX);
     }
 
     /**
@@ -145,7 +147,7 @@ public class StatsMonitorService {
     }
 
     /**
-     * 每天检查同步状态
+     * 每天检查同步状态（为每种语言执行）
      */
     @Scheduled(cron = "0 0 8 * * ?") // 每天早上8点
     public void checkSyncStatus() {
@@ -153,54 +155,80 @@ public class StatsMonitorService {
             return;
         }
 
+        DataSourceContextHolder.forEachLanguage(lang -> {
+            try {
+                checkSyncStatusInternal(lang);
+            } catch (Exception e) {
+                log.error("[{}] 检查同步状态失败", lang, e);
+            }
+        });
+    }
+
+    /**
+     * 内部检查同步状态方法（单语言）
+     */
+    private void checkSyncStatusInternal(String lang) {
         try {
             LocalDate yesterday = TimeZoneUtil.yesterday();
             validateDate(yesterday);
-            
+
             String yesterdayStr = yesterday.toString();
             String userKey = generateUserStatsKey(yesterdayStr);
             String postKey = generatePostStatsKey(yesterdayStr);
-            
+
             boolean hasUserData = redisTemplate.hasKey(userKey);
             boolean hasPostData = redisTemplate.hasKey(postKey);
-            
+
             if (hasUserData || hasPostData) {
-                log.warn("发现昨天({})的数据未同步完成，用户数据存在:{}, 文章数据存在:{}", 
-                    yesterdayStr, hasUserData, hasPostData);
+                log.warn("[{}] 发现昨天({})的数据未同步完成，用户数据存在:{}, 文章数据存在:{}",
+                    lang, yesterdayStr, hasUserData, hasPostData);
             } else {
-                log.info("昨天({})的数据同步正常", yesterdayStr);
+                log.info("[{}] 昨天({})的数据同步正常", lang, yesterdayStr);
             }
-            
+
         } catch (Exception e) {
-            log.error("检查同步状态失败", e);
+            log.error("[{}] 检查同步状态失败", lang, e);
             throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
     /**
-     * 应用关闭时强制同步剩余数据
+     * 应用关闭时强制同步剩余数据（为每种语言执行）
      */
     @EventListener(ContextClosedEvent.class)
     public void onShutdown(ContextClosedEvent event) {
         if (!systemProperties.getStatsMonitor().isEnableShutdownSync()) {
             return;
         }
-        
+
         log.info("应用关闭，开始同步Redis剩余数据");
+        DataSourceContextHolder.forEachLanguage(lang -> {
+            try {
+                onShutdownInternal(lang);
+            } catch (Exception e) {
+                log.error("[{}] 关闭时同步数据失败", lang, e);
+            }
+        });
+    }
+
+    /**
+     * 内部关闭同步方法（单语言）
+     */
+    private void onShutdownInternal(String lang) {
         try {
             int pendingCount = getPendingDataCount();
             if (pendingCount > 0) {
-                log.warn("发现{}个未同步的统计数据，开始强制同步", pendingCount);
+                log.warn("[{}] 发现{}个未同步的统计数据，开始强制同步", lang, pendingCount);
 
                 LocalDate today = TimeZoneUtil.now();
                 validateDate(today);
                 statsSyncScheduler.syncStatsForDate(today);
-                log.info("强制同步完成");
+                log.info("[{}] 强制同步完成", lang);
             } else {
-                log.info("没有未同步的数据");
+                log.info("[{}] 没有未同步的数据", lang);
             }
         } catch (Exception e) {
-            log.error("关闭时同步数据失败", e);
+            log.error("[{}] 关闭时同步数据失败", lang, e);
         }
     }
 

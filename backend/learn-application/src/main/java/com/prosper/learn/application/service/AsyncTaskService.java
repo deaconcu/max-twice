@@ -2,11 +2,14 @@ package com.prosper.learn.application.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 
 import java.time.Duration;
 import java.util.Map;
@@ -58,9 +61,15 @@ public class AsyncTaskService {
 
     /**
      * 异步执行任务（带进度回调）
+     * 注意：此方法会在新线程中执行，需要传递语言上下文
+     *
+     * @param taskId 任务ID
+     * @param language 语言上下文（从调用方获取 DataSourceContextHolder.getLanguage()）
+     * @param task 任务执行逻辑
      */
     @Async
-    public void runAsyncWithProgress(String taskId, Consumer<Consumer<Object>> task) {
+    public void runAsyncWithProgress(String taskId, String language, Consumer<Consumer<Object>> task) {
+        DataSourceContextHolder.setLanguage(language);
         try {
             // 进度回调
             Consumer<Object> progressCallback = progress -> updateProgress(taskId, progress);
@@ -68,12 +77,14 @@ public class AsyncTaskService {
             // 执行任务
             task.accept(progressCallback);
 
-            log.info("异步任务 {} 执行成功", taskId);
+            log.info("[{}] 异步任务 {} 执行成功", language, taskId);
 
         } catch (Exception e) {
             // 保存失败结果
             saveTaskStatus(taskId, TaskStatus.FAILED, null, e.getMessage());
-            log.error("异步任务 {} 执行失败", taskId, e);
+            log.error("[{}] 异步任务 {} 执行失败", language, taskId, e);
+        } finally {
+            DataSourceContextHolder.clear();
         }
     }
 
@@ -95,7 +106,7 @@ public class AsyncTaskService {
      * 查询任务状态
      */
     public Map<String, Object> getTaskResult(String taskId) {
-        String key = TASK_KEY_PREFIX + taskId;
+        String key = RedisKeyPrefix.prefix(TASK_KEY_PREFIX + taskId);
         String json = redisTemplate.opsForValue().get(key);
 
         if (json == null) {
@@ -116,7 +127,7 @@ public class AsyncTaskService {
      * 保存任务状态到 Redis
      */
     private void saveTaskStatus(String taskId, TaskStatus status, Object result, String error) {
-        String key = TASK_KEY_PREFIX + taskId;
+        String key = RedisKeyPrefix.prefix(TASK_KEY_PREFIX + taskId);
 
         Map<String, Object> taskResult = new java.util.HashMap<>();
         taskResult.put("taskId", taskId);

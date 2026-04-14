@@ -26,8 +26,8 @@ public class NodeEmbeddingListener {
     @EventListener
     @Async
     public void onNodeCreated(NodeCreatedEvent event) {
-        nodeEmbeddingService.upsertAsync(event.getId(), event.getName(), event.getDescription());
-        log.info("节点向量生成任务已提交: nodeId={}", event.getId());
+        nodeEmbeddingService.upsertAsync(event.getId(), event.getName(), event.getDescription(), event.getLanguage());
+        log.info("[{}] 节点向量生成任务已提交: nodeId={}", event.getLanguage(), event.getId());
     }
 
     /**
@@ -36,7 +36,7 @@ public class NodeEmbeddingListener {
     @EventListener
     @Async
     public void onNodeUpdated(NodeUpdatedEvent event) {
-        nodeEmbeddingService.upsertAsync(event.getId(), event.getName(), event.getDescription());
-        log.info("节点向量更新任务已提交: nodeId={}", event.getId());
+        nodeEmbeddingService.upsertAsync(event.getId(), event.getName(), event.getDescription(), event.getLanguage());
+        log.info("[{}] 节点向量更新任务已提交: nodeId={}", event.getLanguage(), event.getId());
     }
 }

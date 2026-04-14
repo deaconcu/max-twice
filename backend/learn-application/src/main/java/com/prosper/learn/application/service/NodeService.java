@@ -17,6 +17,7 @@ import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.node.NodeDomainService;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
 import com.prosper.learn.infrastructure.embedding.EmbeddingService;
 import com.prosper.learn.infrastructure.embedding.MilvusService;
 import com.prosper.learn.shared.common.utils.Utils;
@@ -330,10 +331,10 @@ public class NodeService {
 
         // 异步更新搜索索引
         NodeDO node = nodeDataService.getById(nodeId);
-        meilisearchService.indexNode(node);
+        meilisearchService.indexNode(node, DataSourceContextHolder.getLanguage());
 
         // 异步更新向量索引
-        nodeEmbeddingService.upsertAsync(nodeId, node.getName(), node.getDescription());
+        nodeEmbeddingService.upsertAsync(nodeId, node.getName(), node.getDescription(), DataSourceContextHolder.getLanguage());
     }
 
     /**
@@ -345,10 +346,10 @@ public class NodeService {
 
         // 异步更新搜索索引（从索引中移除）
         NodeDO node = nodeDataService.getById(nodeId);
-        meilisearchService.indexNode(node);
+        meilisearchService.indexNode(node, DataSourceContextHolder.getLanguage());
 
         // 异步从向量库移除
-        nodeEmbeddingService.deleteAsync(nodeId);
+        nodeEmbeddingService.deleteAsync(nodeId, DataSourceContextHolder.getLanguage());
     }
 
     /**
@@ -360,10 +361,10 @@ public class NodeService {
 
         // 异步更新搜索索引（从索引中移除）
         NodeDO node = nodeDataService.getById(nodeId);
-        meilisearchService.indexNode(node);
+        meilisearchService.indexNode(node, DataSourceContextHolder.getLanguage());
 
         // 异步从向量库移除
-        nodeEmbeddingService.deleteAsync(nodeId);
+        nodeEmbeddingService.deleteAsync(nodeId, DataSourceContextHolder.getLanguage());
     }
 
     /**
@@ -375,10 +376,10 @@ public class NodeService {
 
         // 异步更新搜索索引
         NodeDO node = nodeDataService.getById(nodeId);
-        meilisearchService.indexNode(node);
+        meilisearchService.indexNode(node, DataSourceContextHolder.getLanguage());
 
         // 异步更新向量索引
-        nodeEmbeddingService.upsertAsync(nodeId, node.getName(), node.getDescription());
+        nodeEmbeddingService.upsertAsync(nodeId, node.getName(), node.getDescription(), DataSourceContextHolder.getLanguage());
     }
 
     /**
@@ -498,8 +499,8 @@ public class NodeService {
         );
         nodeDataService.insert(node);
 
-        // 审核通过
-        domainService.approve(node.getId());
+        // 审核通过（会触发 Meilisearch 和 Embedding 更新）
+        approve(node.getId());
 
         return node.getId();
     }

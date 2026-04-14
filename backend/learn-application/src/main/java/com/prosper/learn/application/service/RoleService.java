@@ -12,6 +12,7 @@ import com.prosper.learn.application.dto.response.role.RoleDTO;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import com.prosper.learn.content.role.RoleDO;
 import com.prosper.learn.content.role.RoleDomainService;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
 import com.prosper.learn.shared.common.utils.ValidationUtils;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
@@ -275,7 +276,7 @@ public class RoleService {
         ));
 
         // 异步更新搜索索引
-        meilisearchService.indexRole(roleDO);
+        meilisearchService.indexRole(roleDO, DataSourceContextHolder.getLanguage());
     }
 
     @Transactional
@@ -301,7 +302,7 @@ public class RoleService {
         ));
 
         // 异步更新搜索索引（从索引中移除）
-        meilisearchService.indexRole(role);
+        meilisearchService.indexRole(role, DataSourceContextHolder.getLanguage());
     }
 
     @Transactional
@@ -321,7 +322,7 @@ public class RoleService {
 
         // 异步更新搜索索引（从索引中移除）
         RoleDO role = roleDomainService.getById(id);
-        meilisearchService.indexRole(role);
+        meilisearchService.indexRole(role, DataSourceContextHolder.getLanguage());
     }
 
     /**
@@ -333,7 +334,7 @@ public class RoleService {
         roleDomainService.delete(id);
 
         // 异步从搜索索引中移除
-        meilisearchService.deleteRole(id);
+        meilisearchService.deleteRole(id, DataSourceContextHolder.getLanguage());
     }
 
     /**

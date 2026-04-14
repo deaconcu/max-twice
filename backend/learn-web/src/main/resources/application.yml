@@ -7,22 +7,41 @@ spring:
   autoconfigure:
     exclude:
       - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration  # 排除Eureka自动配置
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration  # 禁用默认数据源自动配置
   cache:
     type: ${app.cache.type:redis}  # 读取app.cache.type配置，默认redis
+  # 多数据源配置
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    jdbc-url: jdbc:mysql://127.0.0.1:3307/learn?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
-    username: root
-    password: root123
-    hikari:
-      minimum-idle: 5
-      maximum-pool-size: 10
-      idle-timeout: 300000
-      max-lifetime: 1800000
-      connection-timeout: 500
-      connection-test-query: SELECT 1
-      validation-timeout: 3000
-      keepalive-time: 15000
+    # 用户数据库（共享）
+    user:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://127.0.0.1:3307/learn_user?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+      username: root
+      password: root123
+      hikari:
+        minimum-idle: 3
+        maximum-pool-size: 5
+        pool-name: UserHikariPool
+    # 业务数据库 - 中文站
+    business-zh:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://127.0.0.1:3307/learn_zh?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+      username: root
+      password: root123
+      hikari:
+        minimum-idle: 5
+        maximum-pool-size: 10
+        pool-name: BusinessZhHikariPool
+    # 业务数据库 - 英文站
+    business-en:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://127.0.0.1:3307/learn_en?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+      username: root
+      password: root123
+      hikari:
+        minimum-idle: 3
+        maximum-pool-size: 5
+        pool-name: BusinessEnHikariPool
   jackson:
     time-zone: America/Los_Angeles
     date-format: yyyy-MM-dd HH:mm:ss

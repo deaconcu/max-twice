@@ -4,6 +4,7 @@ import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.UserStatsDO;
 import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyMapper;
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -224,10 +225,10 @@ public class UserStatsSyncService {
     // ========== 辅助方法 ==========
 
     /**
-     * 生成用户统计Redis键名
+     * 生成用户统计Redis键名（带语言前缀）
      */
     private String generateUserStatsKey(String dateStr) {
-        return STATS_KEY_PREFIX + dateStr + USER_STATS_SUFFIX;
+        return RedisKeyPrefix.prefix(STATS_KEY_PREFIX + dateStr + USER_STATS_SUFFIX);
     }
 
     /**

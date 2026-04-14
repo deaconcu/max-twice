@@ -11,6 +11,7 @@ import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.role.RoleDO;
 import com.prosper.learn.content.role.RoleDataService;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
@@ -25,6 +26,10 @@ import java.util.Map;
 
 /**
  * Meilisearch 搜索服务
+ *
+ * 索引按语言分开：
+ * - 业务索引：zh_courses, en_courses, zh_nodes, en_nodes, zh_roles, en_roles
+ * - 用户索引：users（共享，不分语言）
  */
 @Slf4j
 @Service
@@ -43,28 +48,54 @@ public class MeilisearchService {
     @Autowired
     private RoleDataService roleDataService;
 
+    // 基础索引名（业务索引会加语言前缀）
     private static final String INDEX_COURSES = "courses";
     private static final String INDEX_NODES = "nodes";
-    private static final String INDEX_USERS = "users";
     private static final String INDEX_ROLES = "roles";
+    // 用户索引不分语言
+    private static final String INDEX_USERS = "users";
+
+    // ========== 索引名生成（带语言前缀）==========
+
+    private String coursesIndex() {
+        return DataSourceContextHolder.getLanguage() + "_" + INDEX_COURSES;
+    }
+
+    private String nodesIndex() {
+        return DataSourceContextHolder.getLanguage() + "_" + INDEX_NODES;
+    }
+
+    private String rolesIndex() {
+        return DataSourceContextHolder.getLanguage() + "_" + INDEX_ROLES;
+    }
 
     // ========== 初始化 ==========
 
+    /**
+     * 初始化索引（为每种语言创建业务索引）
+     */
     public void initializeIndexes() {
         if (meilisearchClient == null) {
             log.info("Meilisearch 未启用，跳过初始化");
             return;
         }
         try {
-            createIndexIfNotExists(INDEX_COURSES, "id");
-            createIndexIfNotExists(INDEX_NODES, "id");
-            createIndexIfNotExists(INDEX_USERS, "id");
-            createIndexIfNotExists(INDEX_ROLES, "id");
+            // 为每种语言创建业务索引
+            DataSourceContextHolder.forEachLanguage(lang -> {
+                createIndexIfNotExists(coursesIndex(), "id");
+                createIndexIfNotExists(nodesIndex(), "id");
+                createIndexIfNotExists(rolesIndex(), "id");
 
-            configureIndex(INDEX_COURSES, new String[]{"name", "description"});
-            configureIndex(INDEX_NODES, new String[]{"name", "description"});
+                configureIndex(coursesIndex(), new String[]{"name", "description"});
+                configureIndex(nodesIndex(), new String[]{"name", "description"});
+                configureIndex(rolesIndex(), new String[]{"name", "description"});
+
+                log.info("[{}] Meilisearch 业务索引初始化完成", lang);
+            });
+
+            // 用户索引（共享）
+            createIndexIfNotExists(INDEX_USERS, "id");
             configureIndex(INDEX_USERS, new String[]{"name"});
-            configureIndex(INDEX_ROLES, new String[]{"name", "description"});
 
             log.info("Meilisearch 索引初始化完成");
         } catch (Exception e) {
@@ -97,27 +128,38 @@ public class MeilisearchService {
 
     // ========== 全量同步 ==========
 
+    /**
+     * 全量同步（为每种语言同步业务数据）
+     */
     public void syncAll() {
         if (meilisearchClient == null) return;
         log.info("Meilisearch 开始全量同步...");
         long start = System.currentTimeMillis();
 
-        int courses = syncAllCourses();
-        int nodes = syncAllNodes();
-        int users = syncAllUsers();
-        int roles = syncAllRoles();
+        // 为每种语言同步业务数据
+        DataSourceContextHolder.forEachLanguage(lang -> {
+            int courses = syncAllCourses();
+            int nodes = syncAllNodes();
+            int roles = syncAllRoles();
+            log.info("[{}] Meilisearch 同步完成，课程: {}，节点: {}，角色: {}",
+                lang, courses, nodes, roles);
+        });
 
-        log.info("Meilisearch 全量同步完成，耗时 {}ms，课程: {}，节点: {}，用户: {}，角色: {}",
-            System.currentTimeMillis() - start, courses, nodes, users, roles);
+        // 用户是共享的，只同步一次
+        int users = syncAllUsers();
+
+        log.info("Meilisearch 全量同步完成，耗时 {}ms，用户: {}",
+            System.currentTimeMillis() - start, users);
     }
 
     public int syncAllCourses() {
         if (meilisearchClient == null) return 0;
+        String indexName = coursesIndex();
         try {
-            log.info("Meilisearch 同步课程...");
-            meilisearchClient.deleteIndex(INDEX_COURSES);
-            createIndexIfNotExists(INDEX_COURSES, "id");
-            configureIndex(INDEX_COURSES, new String[]{"name", "description"});
+            log.info("Meilisearch 同步课程到索引 {}...", indexName);
+            meilisearchClient.deleteIndex(indexName);
+            createIndexIfNotExists(indexName, "id");
+            configureIndex(indexName, new String[]{"name", "description"});
 
             int total = 0;
             Long lastId = null;
@@ -145,11 +187,12 @@ public class MeilisearchService {
 
     public int syncAllNodes() {
         if (meilisearchClient == null) return 0;
+        String indexName = nodesIndex();
         try {
-            log.info("Meilisearch 同步节点...");
-            meilisearchClient.deleteIndex(INDEX_NODES);
-            createIndexIfNotExists(INDEX_NODES, "id");
-            configureIndex(INDEX_NODES, new String[]{"name", "description"});
+            log.info("Meilisearch 同步节点到索引 {}...", indexName);
+            meilisearchClient.deleteIndex(indexName);
+            createIndexIfNotExists(indexName, "id");
+            configureIndex(indexName, new String[]{"name", "description"});
 
             int total = 0;
             Long lastId = null;
@@ -209,11 +252,12 @@ public class MeilisearchService {
 
     public int syncAllRoles() {
         if (meilisearchClient == null) return 0;
+        String indexName = rolesIndex();
         try {
-            log.info("Meilisearch 同步角色...");
-            meilisearchClient.deleteIndex(INDEX_ROLES);
-            createIndexIfNotExists(INDEX_ROLES, "id");
-            configureIndex(INDEX_ROLES, new String[]{"name", "description"});
+            log.info("Meilisearch 同步角色到索引 {}...", indexName);
+            meilisearchClient.deleteIndex(indexName);
+            createIndexIfNotExists(indexName, "id");
+            configureIndex(indexName, new String[]{"name", "description"});
 
             int total = 0;
             Long lastId = null;
@@ -249,7 +293,7 @@ public class MeilisearchService {
                 "description", c.getDescription() != null ? c.getDescription() : ""
             ));
         }
-        meilisearchClient.index(INDEX_COURSES).addDocuments(objectMapper.writeValueAsString(docs));
+        meilisearchClient.index(coursesIndex()).addDocuments(objectMapper.writeValueAsString(docs));
     }
 
     private void bulkIndexNodes(List<NodeDO> nodes) throws Exception {
@@ -261,7 +305,7 @@ public class MeilisearchService {
                 "description", n.getDescription() != null ? n.getDescription() : ""
             ));
         }
-        meilisearchClient.index(INDEX_NODES).addDocuments(objectMapper.writeValueAsString(docs));
+        meilisearchClient.index(nodesIndex()).addDocuments(objectMapper.writeValueAsString(docs));
     }
 
     private void bulkIndexUsers(List<UserDO> users) throws Exception {
@@ -281,67 +325,90 @@ public class MeilisearchService {
                 "description", p.getDescription() != null ? p.getDescription() : ""
             ));
         }
-        meilisearchClient.index(INDEX_ROLES).addDocuments(objectMapper.writeValueAsString(docs));
+        meilisearchClient.index(rolesIndex()).addDocuments(objectMapper.writeValueAsString(docs));
     }
 
     // ========== 实时同步 ==========
 
+    /**
+     * 索引课程（异步，需传递语言上下文）
+     */
     @Async
-    public void indexCourse(CourseDO course) {
+    public void indexCourse(CourseDO course, String language) {
         if (meilisearchClient == null) return;
-        if (course.getState() != Enums.ContentState.PUBLISHED.value()) {
-            deleteCourse(course.getId());
-            return;
-        }
+        DataSourceContextHolder.setLanguage(language);
         try {
+            if (course.getState() != Enums.ContentState.PUBLISHED.value()) {
+                deleteCourseInternal(course.getId());
+                return;
+            }
             Map<String, Object> doc = Map.of(
                 "id", course.getId(),
                 "name", course.getName(),
                 "description", course.getDescription() != null ? course.getDescription() : ""
             );
-            meilisearchClient.index(INDEX_COURSES).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
+            meilisearchClient.index(coursesIndex()).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
         } catch (Exception e) {
-            log.error("Meilisearch 索引课程失败: {}", course.getId(), e);
+            log.error("[{}] Meilisearch 索引课程失败: {}", language, course.getId(), e);
+        } finally {
+            DataSourceContextHolder.clear();
         }
     }
 
     @Async
-    public void deleteCourse(Long id) {
+    public void deleteCourse(Long id, String language) {
         if (meilisearchClient == null) return;
+        DataSourceContextHolder.setLanguage(language);
         try {
-            meilisearchClient.index(INDEX_COURSES).deleteDocument(String.valueOf(id));
+            deleteCourseInternal(id);
         } catch (Exception e) {
-            log.error("Meilisearch 删除课程失败: {}", id, e);
+            log.error("[{}] Meilisearch 删除课程失败: {}", language, id, e);
+        } finally {
+            DataSourceContextHolder.clear();
         }
     }
 
+    private void deleteCourseInternal(Long id) {
+        meilisearchClient.index(coursesIndex()).deleteDocument(String.valueOf(id));
+    }
+
     @Async
-    public void indexNode(NodeDO node) {
+    public void indexNode(NodeDO node, String language) {
         if (meilisearchClient == null) return;
-        if (node.getState() != Enums.ContentState.PUBLISHED.value()) {
-            deleteNode(node.getId());
-            return;
-        }
+        DataSourceContextHolder.setLanguage(language);
         try {
+            if (node.getState() != Enums.ContentState.PUBLISHED.value()) {
+                deleteNodeInternal(node.getId());
+                return;
+            }
             Map<String, Object> doc = Map.of(
                 "id", node.getId(),
                 "name", node.getName(),
                 "description", node.getDescription() != null ? node.getDescription() : ""
             );
-            meilisearchClient.index(INDEX_NODES).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
+            meilisearchClient.index(nodesIndex()).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
         } catch (Exception e) {
-            log.error("Meilisearch 索引节点失败: {}", node.getId(), e);
+            log.error("[{}] Meilisearch 索引节点失败: {}", language, node.getId(), e);
+        } finally {
+            DataSourceContextHolder.clear();
         }
     }
 
     @Async
-    public void deleteNode(Long id) {
+    public void deleteNode(Long id, String language) {
         if (meilisearchClient == null) return;
+        DataSourceContextHolder.setLanguage(language);
         try {
-            meilisearchClient.index(INDEX_NODES).deleteDocument(String.valueOf(id));
+            deleteNodeInternal(id);
         } catch (Exception e) {
-            log.error("Meilisearch 删除节点失败: {}", id, e);
+            log.error("[{}] Meilisearch 删除节点失败: {}", language, id, e);
+        } finally {
+            DataSourceContextHolder.clear();
         }
+    }
+
+    private void deleteNodeInternal(Long id) {
+        meilisearchClient.index(nodesIndex()).deleteDocument(String.valueOf(id));
     }
 
     @Async
@@ -366,32 +433,42 @@ public class MeilisearchService {
     }
 
     @Async
-    public void indexRole(RoleDO roleDO) {
+    public void indexRole(RoleDO roleDO, String language) {
         if (meilisearchClient == null) return;
-        if (roleDO.getState() != Enums.ContentState.PUBLISHED.value()) {
-            deleteRole(roleDO.getId());
-            return;
-        }
+        DataSourceContextHolder.setLanguage(language);
         try {
+            if (roleDO.getState() != Enums.ContentState.PUBLISHED.value()) {
+                deleteRoleInternal(roleDO.getId());
+                return;
+            }
             Map<String, Object> doc = Map.of(
                 "id", roleDO.getId(),
                 "name", roleDO.getName(),
                 "description", roleDO.getDescription() != null ? roleDO.getDescription() : ""
             );
-            meilisearchClient.index(INDEX_ROLES).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
+            meilisearchClient.index(rolesIndex()).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
         } catch (Exception e) {
-            log.error("Meilisearch 索引角色失败: {}", roleDO.getId(), e);
+            log.error("[{}] Meilisearch 索引角色失败: {}", language, roleDO.getId(), e);
+        } finally {
+            DataSourceContextHolder.clear();
         }
     }
 
     @Async
-    public void deleteRole(Long id) {
+    public void deleteRole(Long id, String language) {
         if (meilisearchClient == null) return;
+        DataSourceContextHolder.setLanguage(language);
         try {
-            meilisearchClient.index(INDEX_ROLES).deleteDocument(String.valueOf(id));
+            deleteRoleInternal(id);
         } catch (Exception e) {
-            log.error("Meilisearch 删除角色失败: {}", id, e);
+            log.error("[{}] Meilisearch 删除角色失败: {}", language, id, e);
+        } finally {
+            DataSourceContextHolder.clear();
         }
+    }
+
+    private void deleteRoleInternal(Long id) {
+        meilisearchClient.index(rolesIndex()).deleteDocument(String.valueOf(id));
     }
 
     // ========== 搜索 ==========
@@ -399,7 +476,7 @@ public class MeilisearchService {
     public Searchable searchCourses(String query, int limit, int offset) {
         if (meilisearchClient == null) return null;
         try {
-            return meilisearchClient.index(INDEX_COURSES)
+            return meilisearchClient.index(coursesIndex())
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
             log.error("Meilisearch 搜索课程失败", e);
@@ -410,7 +487,7 @@ public class MeilisearchService {
     public Searchable searchNodes(String query, int limit, int offset) {
         if (meilisearchClient == null) return null;
         try {
-            return meilisearchClient.index(INDEX_NODES)
+            return meilisearchClient.index(nodesIndex())
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
             log.error("Meilisearch 搜索节点失败", e);
@@ -432,7 +509,7 @@ public class MeilisearchService {
     public Searchable searchRoles(String query, int limit, int offset) {
         if (meilisearchClient == null) return null;
         try {
-            return meilisearchClient.index(INDEX_ROLES)
+            return meilisearchClient.index(rolesIndex())
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
             log.error("Meilisearch 搜索角色失败", e);

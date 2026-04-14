@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import NotificationMenu from '@/components/common/NotificationMenu.vue'
 import UserMenu from '@/components/common/UserMenu.vue'
+import LanguageSwitcher from '@/components/common/LanguageSwitcher.vue'
 import IcosahedronLogoStatic from '@/components/common/IcosahedronLogoStatic.vue'
 import IcosahedronLogo from '@/components/common/IcosahedronLogo.vue'
 import { HEADER_HEIGHT } from '@/constants/layout'
@@ -69,6 +70,9 @@ const handleSearch = () => {
         <!-- Right side actions -->
         <v-col cols="auto">
           <div class="d-flex align-center" :class="$vuetify.display.xs ? 'ga-2' : 'ga-4'">
+            <!-- 语言切换 -->
+            <LanguageSwitcher />
+
             <!-- 通知菜单 -->
             <NotificationMenu />
 

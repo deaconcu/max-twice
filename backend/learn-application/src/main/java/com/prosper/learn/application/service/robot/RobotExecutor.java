@@ -5,6 +5,7 @@ import com.prosper.learn.application.service.MemoryCardDeckService;
 import com.prosper.learn.application.service.PostService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.shared.domain.Enums;
@@ -42,10 +43,19 @@ public class RobotExecutor {
 
     @Scheduled(fixedDelayString = "#{systemProperties.robot.pollIntervalSec * 1000}")
     public void poll() {
-        log.info("Robot 轮询开始");
         if (!systemProperties.getRobot().isEnabled()) return;
+
+        // 为每种语言执行轮询
+        DataSourceContextHolder.forEachLanguage(this::pollForLanguage);
+    }
+
+    /**
+     * 为指定语言执行轮询
+     */
+    private void pollForLanguage(String lang) {
+        log.info("[{}] Robot 轮询开始", lang);
         if (queueService.isPaused()) {
-            log.info("Robot 队列已暂停，跳过轮询");
+            log.info("[{}] Robot 队列已暂停，跳过轮询", lang);
             return;
         }
 
@@ -56,13 +66,13 @@ public class RobotExecutor {
         while (true) {
             // 在每次循环时检查暂停状态，实时响应暂停操作
             if (queueService.isPaused()) {
-                log.info("Robot 队列执行中被暂停，停止轮询，已处理 {} 个任务", processedCount);
+                log.info("[{}] Robot 队列执行中被暂停，停止轮询，已处理 {} 个任务", lang, processedCount);
                 break;
             }
 
             String taskId = queueService.peek();
             if (taskId == null) {
-                log.info("Robot 轮询结束，已处理 {} 个任务", processedCount);
+                log.info("[{}] Robot 轮询结束，已处理 {} 个任务", lang, processedCount);
                 break;
             }
 
@@ -74,14 +84,14 @@ public class RobotExecutor {
                 try {
                     if (taskId.startsWith("N:")) {
                         // 节点内容生成任务
-                        handleNodeTask(taskId, aiUserId);
+                        handleNodeTask(taskId, aiUserId, lang);
                         queueService.recordCompletion();
                     } else if (taskId.startsWith("C:")) {
                         // 记忆卡片生成任务
-                        handleMemoryCardTask(taskId, aiUserId);
+                        handleMemoryCardTask(taskId, aiUserId, lang);
                         queueService.recordCompletion();
                     } else {
-                        log.warn("Robot 未知任务格式: {}，从队列移除", taskId);
+                        log.warn("[{}] Robot 未知任务格式: {}，从队列移除", lang, taskId);
                         queueService.remove(taskId);
                     }
                     success = true;
@@ -89,7 +99,7 @@ public class RobotExecutor {
                 } catch (Exception e) {
                     lastException = e;
                     if (attempt == 0) {
-                        log.warn("Robot 任务 {} 第一次执行失败，立即重试", taskId);
+                        log.warn("[{}] Robot 任务 {} 第一次执行失败，立即重试", lang, taskId);
                     }
                 }
             }
@@ -99,16 +109,16 @@ public class RobotExecutor {
                 queueService.resetFailures(); // 成功则重置连续失败计数
             } else {
                 // 两次尝试都失败，移到队列尾部
-                log.error("Robot 任务 {} 两次尝试均失败，移至队列尾部", taskId, lastException);
+                log.error("[{}] Robot 任务 {} 两次尝试均失败，移至队列尾部", lang, taskId, lastException);
                 queueService.moveToEnd(taskId);
 
                 // 记录连续失败
                 int consecutiveFailures = queueService.recordFailure();
-                log.warn("Robot 连续失败次数: {}", consecutiveFailures);
+                log.warn("[{}] Robot 连续失败次数: {}", lang, consecutiveFailures);
 
                 // 检查是否应该自动暂停
                 if (queueService.shouldAutoPause()) {
-                    log.error("Robot 连续失败次数达到上限({}次)，自动暂停队列执行", consecutiveFailures);
+                    log.error("[{}] Robot 连续失败次数达到上限({}次)，自动暂停队列执行", lang, consecutiveFailures);
                     queueService.pause();
                     break;
                 }
@@ -119,11 +129,11 @@ public class RobotExecutor {
     /**
      * 处理节点内容生成任务
      */
-    private void handleNodeTask(String taskId, long aiUserId) {
+    private void handleNodeTask(String taskId, long aiUserId, String lang) {
         // 解析任务格式：N:{nodeId}:{contentType}:{recursive}:{deleteExisting}
         String[] parts = taskId.split(":");
         if (parts.length != 5) {
-            log.warn("Robot 无效任务格式: {}，从队列移除", taskId);
+            log.warn("[{}] Robot 无效任务格式: {}，从队列移除", lang, taskId);
             queueService.remove(taskId);
             return;
         }
@@ -134,14 +144,14 @@ public class RobotExecutor {
         boolean deleteExisting = Boolean.parseBoolean(parts[4]);
 
         if (deleteExisting && postDataService.existPost(nodeId, aiUserId)) {
-            log.info("Robot 节点 {} 已存在 AI 帖子，重新生成前先软删除现有帖子", nodeId);
+            log.info("[{}] Robot 节点 {} 已存在 AI 帖子，重新生成前先软删除现有帖子", lang, nodeId);
 
             // 查找并软删除现有的AI帖子
             List<PostDO> existingPosts = postDataService.getListByNodeAndCreator(nodeId, aiUserId);
             for (PostDO post : existingPosts) {
                 if (post.getState() != Enums.ContentState.BANNED.value()) {
                     postService.deletePost(post.getId(), userDataService.getById(aiUserId));
-                    log.info("Robot 软删除节点 {} 的现有 AI 帖子 {}", nodeId, post.getId());
+                    log.info("[{}] Robot 软删除节点 {} 的现有 AI 帖子 {}", lang, nodeId, post.getId());
                 }
             }
         }
@@ -149,14 +159,14 @@ public class RobotExecutor {
         // 重新生成内容
         generationService.generateForNode(nodeId, contentType, recursive);
         queueService.remove(taskId);
-        log.info("Robot 节点 {} 内容生成成功，contentType={}，recursive={}，deleteExisting={}",
-            nodeId, contentType, recursive, deleteExisting);
+        log.info("[{}] Robot 节点 {} 内容生成成功，contentType={}，recursive={}，deleteExisting={}",
+            lang, nodeId, contentType, recursive, deleteExisting);
     }
 
     /**
      * 处理记忆卡片生成任务
      */
-    private void handleMemoryCardTask(String taskId, long aiUserId) {
+    private void handleMemoryCardTask(String taskId, long aiUserId, String lang) {
         long postId = Long.parseLong(taskId.substring(2)); // 去掉 "C:" 前缀
 
         // 检查是否已存在AI生成的卡片组（查找所有状态）
@@ -168,7 +178,7 @@ public class RobotExecutor {
             existingDecks.forEach(deck -> {
                 if (deck.getState() == Enums.ContentState.SUBMITTED.value() || deck.getState() == Enums.ContentState.PUBLISHED.value()) {
                     memoryCardDeckService.ban(deck.getId(), aiUserId, "Discarding for AI regeneration");
-                    log.info("Robot 废弃帖子 {} 的现有 AI 卡片组 {}", postId, deck.getId());
+                    log.info("[{}] Robot 废弃帖子 {} 的现有 AI 卡片组 {}", lang, postId, deck.getId());
                 }
             });
         }
@@ -176,7 +186,7 @@ public class RobotExecutor {
         // 生成新的记忆卡片
         generateMemoryCardsForPost(postId, aiUserId);
         queueService.remove(taskId);
-        log.info("Robot 帖子 {} 记忆卡片生成成功", postId);
+        log.info("[{}] Robot 帖子 {} 记忆卡片生成成功", lang, postId);
     }
 
     /**

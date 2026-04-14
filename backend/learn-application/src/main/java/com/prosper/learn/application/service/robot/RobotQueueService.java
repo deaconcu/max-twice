@@ -2,6 +2,7 @@ package com.prosper.learn.application.service.robot;
 
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.course.CourseDO;
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -37,28 +38,28 @@ public class RobotQueueService {
 
     /** 计算 ready 集合的完整 key */
     private String readyKey() {
-        return systemProperties.getRobot().getRedisKeyPrefix() + "ready";
+        return RedisKeyPrefix.prefix(systemProperties.getRobot().getRedisKeyPrefix() + "ready");
     }
 
     /** 今日完成数统计 key */
     private String todayCompletedKey() {
         String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        return systemProperties.getRobot().getRedisKeyPrefix() + "completed:" + date;
+        return RedisKeyPrefix.prefix(systemProperties.getRobot().getRedisKeyPrefix() + "completed:" + date);
     }
 
     /** 最后执行时间 key */
     private String lastExecuteTimeKey() {
-        return systemProperties.getRobot().getRedisKeyPrefix() + "lastExecuteTime";
+        return RedisKeyPrefix.prefix(systemProperties.getRobot().getRedisKeyPrefix() + "lastExecuteTime");
     }
 
     /** 暂停状态 key */
     private String pausedKey() {
-        return systemProperties.getRobot().getRedisKeyPrefix() + "paused";
+        return RedisKeyPrefix.prefix(systemProperties.getRobot().getRedisKeyPrefix() + "paused");
     }
 
     /** 连续失败计数 key */
     private String consecutiveFailuresKey() {
-        return systemProperties.getRobot().getRedisKeyPrefix() + "consecutiveFailures";
+        return RedisKeyPrefix.prefix(systemProperties.getRobot().getRedisKeyPrefix() + "consecutiveFailures");
     }
 
     /**

@@ -3,6 +3,7 @@ package com.prosper.learn.analytics.stats.scheduler;
 import com.prosper.learn.analytics.stats.service.ContentStatsSyncService;
 import com.prosper.learn.analytics.stats.service.UserStatsSyncService;
 import com.prosper.learn.analytics.stats.service.UserLearningSyncService;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
 import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,20 +28,41 @@ public class StatsSyncScheduler {
 
     /**
      * 同步昨天的统计数据（由 Scheduler 定时调用）
+     * 为每种语言执行一次
      */
     public void syncYesterdayStats() {
-        syncStatsForDate(TimeZoneUtil.yesterday());
+        DataSourceContextHolder.forEachLanguage(lang -> {
+            try {
+                syncStatsForDateInternal(TimeZoneUtil.yesterday(), lang);
+            } catch (Exception e) {
+                log.error("[{}] 同步昨天统计数据失败", lang, e);
+            }
+        });
     }
 
     /**
      * 同步指定日期的统计数据（供手动调用）
+     * 为每种语言执行一次
      *
      * @param date 要同步的日期
      */
     public void syncStatsForDate(LocalDate date) {
+        DataSourceContextHolder.forEachLanguage(lang -> {
+            try {
+                syncStatsForDateInternal(date, lang);
+            } catch (Exception e) {
+                log.error("[{}] 同步{}统计数据失败", lang, date, e);
+            }
+        });
+    }
+
+    /**
+     * 内部同步方法（单语言）
+     */
+    private void syncStatsForDateInternal(LocalDate date, String lang) {
         String dateStr = date.toString();
 
-        log.info("开始同步{}的统计数据", dateStr);
+        log.info("[{}] 开始同步{}的统计数据", lang, dateStr);
 
         try {
             // 同步用户统计
@@ -52,11 +74,11 @@ public class StatsSyncScheduler {
             // 同步学习统计（热力图数据）
             int learningStatsCount = userLearningSyncService.syncLearningStats(date);
 
-            log.info("同步{}的数据完成: 用户统计{}条, 内容统计{}条, 学习统计{}条",
-                dateStr, userStatsCount, contentStatsCount, learningStatsCount);
+            log.info("[{}] 同步{}的数据完成: 用户统计{}条, 内容统计{}条, 学习统计{}条",
+                lang, dateStr, userStatsCount, contentStatsCount, learningStatsCount);
 
         } catch (Exception e) {
-            log.error("同步{}的数据失败", dateStr, e);
+            log.error("[{}] 同步{}的数据失败", lang, dateStr, e);
             throw e;
         }
     }

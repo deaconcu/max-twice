@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,13 @@ public class OpencodeService {
     private static final long SESSION_EXPIRE_HOURS = 24;
 
     /**
+     * 获取带语言前缀的 session key
+     */
+    private String getSessionKey() {
+        return RedisKeyPrefix.prefix(SESSION_KEY);
+    }
+
+    /**
      * 生成内容
      *
      * @param prompt 用户提示词
@@ -50,15 +58,16 @@ public class OpencodeService {
      * 重置会话：删除 Redis 中的会话键
      */
     public void resetSession() {
-        redisTemplate.delete(SESSION_KEY);
-        log.info("OpenCode 会话重置，已删除 key: {}", SESSION_KEY);
+        String key = getSessionKey();
+        redisTemplate.delete(key);
+        log.info("OpenCode 会话重置，已删除 key: {}", key);
     }
 
     /**
      * 压缩当前 session 的上下文
      */
     public void summarizeSession() {
-        String sessionId = redisTemplate.opsForValue().get(SESSION_KEY);
+        String sessionId = redisTemplate.opsForValue().get(getSessionKey());
         if (sessionId == null || sessionId.isEmpty()) {
             log.warn("OpenCode 没有活动会话可压缩");
             return;
@@ -70,14 +79,15 @@ public class OpencodeService {
      * 获取或创建 sessionId
      */
     private String getOrCreateSession() {
-        String sessionId = redisTemplate.opsForValue().get(SESSION_KEY);
+        String key = getSessionKey();
+        String sessionId = redisTemplate.opsForValue().get(key);
         if (sessionId != null && !sessionId.isEmpty()) {
             log.debug("OpenCode 复用现有会话: {}", sessionId);
             return sessionId;
         }
 
         sessionId = createSession();
-        redisTemplate.opsForValue().set(SESSION_KEY, sessionId, SESSION_EXPIRE_HOURS, TimeUnit.HOURS);
+        redisTemplate.opsForValue().set(key, sessionId, SESSION_EXPIRE_HOURS, TimeUnit.HOURS);
         log.info("OpenCode 创建新会话: {}", sessionId);
         return sessionId;
     }

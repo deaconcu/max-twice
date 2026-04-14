@@ -1,5 +1,6 @@
 package com.prosper.learn.memory.review;
 
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
  *
  * 管理 LEARNING/RELEARNING 阶段的卡片队列顺序
  * 队列存储在 Redis 中，支持刷新后恢复顺序
+ * Key 设计：{lang}:learning_queue:{userId}
  */
 @Slf4j
 @Service
@@ -30,10 +32,10 @@ public class LearningQueueService {
     private static final long EXPIRE_HOURS = 24;
 
     /**
-     * 获取 Redis key
+     * 获取 Redis key（带语言前缀）
      */
     private String getKey(Long userId) {
-        return KEY_PREFIX + userId;
+        return RedisKeyPrefix.prefix(KEY_PREFIX + userId);
     }
 
     /**

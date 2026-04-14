@@ -1,6 +1,7 @@
 package com.prosper.learn.application.service.robot;
 
 import com.prosper.learn.content.node.NodeDataService;
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +33,7 @@ public class RobotScanner {
     // ========= 进度游标 =========
 
     private String progressKey() {
-        return systemProperties.getRobot().getRedisKeyPrefix() + "scan:lastId";
+        return RedisKeyPrefix.prefix(systemProperties.getRobot().getRedisKeyPrefix() + "scan:lastId");
     }
 
     private long getLastId() {

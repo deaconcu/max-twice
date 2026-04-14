@@ -1,5 +1,6 @@
 package com.prosper.learn.analytics.ranking.service;
 
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +19,16 @@ public class RoleRankingDomainService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final SystemProperties systemProperties;
-    
+
     private static final String HOT_ROLES_KEY = "role:hot:ranking";
     private static final String ROLE_LEARNING_PREFIX = "role:learning:";
+
+    /**
+     * 获取带语言前缀的热门角色 key
+     */
+    private String getHotRolesKey() {
+        return RedisKeyPrefix.prefix(HOT_ROLES_KEY);
+    }
 
     /**
      * 获取热门角色ID列表（按学习人数降序）
@@ -28,11 +36,11 @@ public class RoleRankingDomainService {
     public List<Long> getHotRoleIds(int limit) {
         validateLimit(limit);
         try {
-            Set<String> roleIds = redisTemplate.opsForZSet().reverseRange(HOT_ROLES_KEY, 0, limit - 1);
+            Set<String> roleIds = redisTemplate.opsForZSet().reverseRange(getHotRolesKey(), 0, limit - 1);
             if (roleIds == null || roleIds.isEmpty()) {
                 return List.of();
             }
-            
+
             return roleIds.stream()
                     .map(Long::parseLong)
                     .collect(Collectors.toList());
@@ -65,8 +73,8 @@ public class RoleRankingDomainService {
         try {
             String learningKey = generateLearningKey(roleId);
             redisTemplate.opsForValue().set(learningKey, String.valueOf(learningCount));
-            redisTemplate.opsForZSet().add(HOT_ROLES_KEY, String.valueOf(roleId), learningCount);
-            
+            redisTemplate.opsForZSet().add(getHotRolesKey(), String.valueOf(roleId), learningCount);
+
             log.debug("角色排行榜 初始化统计: roleId={}，learningCount={}",
                      roleId, learningCount);
         } catch (Exception e) {
@@ -81,15 +89,16 @@ public class RoleRankingDomainService {
     public void clearAllStats() {
         try {
             // 清空热门角色排行榜
-            redisTemplate.delete(HOT_ROLES_KEY);
-            
-            // 删除所有角色的统计数据
-            Set<String> learningKeys = redisTemplate.keys(ROLE_LEARNING_PREFIX + "*");
-            
+            redisTemplate.delete(getHotRolesKey());
+
+            // 删除所有角色的统计数据（带语言前缀）
+            String learningKeyPattern = RedisKeyPrefix.prefix(ROLE_LEARNING_PREFIX + "*");
+            Set<String> learningKeys = redisTemplate.keys(learningKeyPattern);
+
             if (learningKeys != null && !learningKeys.isEmpty()) {
                 redisTemplate.delete(learningKeys);
             }
-            
+
             log.info("角色排行榜 已清空所有 Redis 统计数据");
         } catch (Exception e) {
             log.error("角色排行榜 清空统计数据失败", e);
@@ -100,10 +109,10 @@ public class RoleRankingDomainService {
     // ========== 私有辅助方法 ==========
 
     /**
-     * 生成角色学习数Redis键名
+     * 生成角色学习数Redis键名（带语言前缀）
      */
     private String generateLearningKey(long roleId) {
-        return ROLE_LEARNING_PREFIX + roleId;
+        return RedisKeyPrefix.prefix(ROLE_LEARNING_PREFIX + roleId);
     }
 
     /**

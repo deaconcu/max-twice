@@ -19,4 +19,7 @@ public class NodeCreatedEvent {
 
     /** 节点描述 */
     private String description;
+
+    /** 语言上下文（用于异步处理时恢复数据源） */
+    private String language;
 }

@@ -2,6 +2,7 @@ package com.prosper.learn.infrastructure.embedding;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
 import io.milvus.v2.client.ConnectConfig;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.ConsistencyLevel;
@@ -26,6 +27,8 @@ import java.util.*;
 /**
  * Milvus向量数据库服务
  * 使用 Milvus SDK 2.6.x API
+ *
+ * Collection 按语言分开：zh_nodes, en_nodes
  */
 @Service
 @Slf4j
@@ -41,13 +44,20 @@ public class MilvusService {
     private int port;
 
     @Value("${app.milvus.collection-name}")
-    private String collectionName;
+    private String baseCollectionName;
 
     @Value("${app.milvus.vector-dim}")
     private int vectorDim;
 
     @Value("${app.milvus.enabled:true}")
     private boolean enabled;
+
+    /**
+     * 获取当前语言的 collection 名称
+     */
+    private String getCollectionName() {
+        return DataSourceContextHolder.getLanguage() + "_" + baseCollectionName;
+    }
 
     @PostConstruct
     public void init() {
@@ -66,8 +76,11 @@ public class MilvusService {
             milvusClient = new MilvusClientV2(config);
             log.info("Milvus 连接成功: {}:{}", host, port);
 
-            // 初始化 collection
-            initializeCollection();
+            // 为每种语言初始化 collection
+            for (String lang : DataSourceContextHolder.SUPPORTED_LANGUAGES) {
+                String collectionName = lang + "_" + baseCollectionName;
+                initializeCollection(collectionName);
+            }
 
         } catch (Exception e) {
             log.error("Milvus 初始化失败", e);
@@ -83,7 +96,7 @@ public class MilvusService {
         }
     }
 
-    private void initializeCollection() {
+    private void initializeCollection(String collectionName) {
         try {
             // 检查 collection 是否存在
             boolean exists = milvusClient.hasCollection(
@@ -139,7 +152,7 @@ public class MilvusService {
             log.info("Milvus 创建集合 '{}'，使用 HNSW 索引", collectionName);
 
         } catch (Exception e) {
-            log.error("Milvus 初始化集合失败", e);
+            log.error("Milvus 初始化集合 '{}' 失败", collectionName, e);
             throw new RuntimeException("Milvus 初始化集合失败", e);
         }
     }
@@ -166,7 +179,7 @@ public class MilvusService {
 
             // 使用 upsert：如果存在则更新，不存在则插入
             UpsertReq upsertReq = UpsertReq.builder()
-                    .collectionName(collectionName)
+                    .collectionName(getCollectionName())
                     .data(Collections.singletonList(row))
                     .build();
 
@@ -207,7 +220,7 @@ public class MilvusService {
 
             // 使用 upsert：如果存在则更新，不存在则插入
             UpsertReq upsertReq = UpsertReq.builder()
-                    .collectionName(collectionName)
+                    .collectionName(getCollectionName())
                     .data(rows)
                     .build();
 
@@ -244,7 +257,7 @@ public class MilvusService {
 
             // 构建搜索请求
             SearchReq searchReq = SearchReq.builder()
-                    .collectionName(collectionName)
+                    .collectionName(getCollectionName())
                     .data(Collections.singletonList(queryVector))
                     .annsField("embedding")
                     .topK(topK)
@@ -306,7 +319,7 @@ public class MilvusService {
 
         try {
             DeleteReq deleteReq = DeleteReq.builder()
-                    .collectionName(collectionName)
+                    .collectionName(getCollectionName())
                     .ids(Collections.singletonList((Object) nodeId))
                     .build();
 
@@ -337,7 +350,7 @@ public class MilvusService {
             List<Object> ids = new ArrayList<>(nodeIds);
 
             DeleteReq deleteReq = DeleteReq.builder()
-                    .collectionName(collectionName)
+                    .collectionName(getCollectionName())
                     .ids(ids)
                     .build();
 

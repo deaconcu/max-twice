@@ -4,11 +4,9 @@ import cn.dev33.satoken.interceptor.SaInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.prosper.learn.infrastructure.datasource.DataSourceInterceptor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
-import org.mybatis.spring.annotation.MapperScan;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,37 +14,20 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import javax.sql.DataSource;
 import java.time.Duration;
 
 @Configuration
 @Log
-@MapperScan(basePackages = "com.prosper.learn.persistence.mapper")
 @EnableScheduling
+@RequiredArgsConstructor
 public class AppConfiguration implements WebMvcConfigurer {
 
-    @Bean
-    @ConfigurationProperties("spring.datasource")
-    public DataSource dataSource() {
-        return DataSourceBuilder.create().build();
-    }
-
-    @Bean
-    public DataSourceTransactionManager transactionManager(DataSource dataSource) {
-        return new DataSourceTransactionManager(dataSource);
-    }
-
-    // 强制在应用启动时启动连接池
-    @Bean
-    public ApplicationRunner runner(DataSource dataSource) {
-        return args -> dataSource.getConnection();
-    }
+    private final DataSourceInterceptor dataSourceInterceptor;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -62,26 +43,26 @@ public class AppConfiguration implements WebMvcConfigurer {
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory, ObjectMapper objectMapper) {
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
-        
+
         // 使用已配置的 ObjectMapper 创建序列化器
         ObjectMapper redisObjectMapper = objectMapper.copy();
-        
+
         // 启用默认类型信息以保持类型安全
         redisObjectMapper.activateDefaultTyping(
                 redisObjectMapper.getPolymorphicTypeValidator(),
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY
         );
-        
-        org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer jsonRedisSerializer = 
+
+        org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer jsonRedisSerializer =
                 new org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer(redisObjectMapper);
-        
+
         // 设置键值序列化器
         redisTemplate.setKeySerializer(new org.springframework.data.redis.serializer.StringRedisSerializer());
         redisTemplate.setValueSerializer(jsonRedisSerializer);
         redisTemplate.setHashKeySerializer(new org.springframework.data.redis.serializer.StringRedisSerializer());
         redisTemplate.setHashValueSerializer(jsonRedisSerializer);
-        
+
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
     }
@@ -93,8 +74,16 @@ public class AppConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(saInterceptor()).addPathPatterns("/**")
-                .excludePathPatterns("/login", "/api/v1/public/**");  // 排除登录和公开接口
+        // 数据源路由拦截器（最先执行）
+        registry.addInterceptor(dataSourceInterceptor)
+                .addPathPatterns("/api/**")
+                .order(0);
+
+        // Sa-Token 拦截器
+        registry.addInterceptor(saInterceptor())
+                .addPathPatterns("/**")
+                .excludePathPatterns("/login", "/api/v1/public/**")
+                .order(1);
     }
 
     @Bean

@@ -1,5 +1,6 @@
 package com.prosper.learn.analytics.stats.service;
 
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import com.prosper.learn.shared.common.constants.RedisStatsConstants;
 import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.Enums;
@@ -46,23 +47,23 @@ public class RedisStatsDomainService {
     private final RedisTemplate<String, String> redisTemplate;
 
     /**
-     * 生成用户统计Redis键名
-     * 
+     * 生成用户统计Redis键名（带语言前缀）
+     *
      * @param dateStr 日期字符串
      * @return 用户统计键名
      */
     private String generateUserStatsKey(String dateStr) {
-        return RedisStatsConstants.STATS_KEY_PREFIX + dateStr + RedisStatsConstants.USER_STATS_SUFFIX;
+        return RedisKeyPrefix.prefix(RedisStatsConstants.STATS_KEY_PREFIX + dateStr + RedisStatsConstants.USER_STATS_SUFFIX);
     }
-    
+
     /**
-     * 生成内容统计Redis键名
+     * 生成内容统计Redis键名（带语言前缀）
      *
      * @param dateStr 日期字符串
      * @return 内容统计键名
      */
     private String generateContentStatsKey(String dateStr) {
-        return RedisStatsConstants.STATS_KEY_PREFIX + dateStr + RedisStatsConstants.CONTENT_STATS_SUFFIX;
+        return RedisKeyPrefix.prefix(RedisStatsConstants.STATS_KEY_PREFIX + dateStr + RedisStatsConstants.CONTENT_STATS_SUFFIX);
     }
     
     /**

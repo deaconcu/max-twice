@@ -1,5 +1,6 @@
 package com.prosper.learn.memory.review;
 
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,7 @@ import java.time.ZonedDateTime;
  * 每日学习限制服务
  *
  * 使用 Redis 管理每日新卡/复习卡计数
- * Key 设计：memory:daily:{userId}:{courseId}:{type}:{date}
+ * Key 设计：{lang}:memory:daily:{userId}:{courseId}:{type}:{date}
  * TTL：到当天 24:00 过期
  */
 @Slf4j
@@ -30,11 +31,11 @@ public class DailyLimitService {
     private static final String TYPE_REVIEW = "review";
 
     /**
-     * 生成 Redis key
+     * 生成 Redis key（带语言前缀）
      */
     private String getKey(Long userId, Long courseId, String type, LocalDate userToday) {
         String date = userToday.toString();
-        return KEY_PREFIX + userId + ":" + courseId + ":" + type + ":" + date;
+        return RedisKeyPrefix.prefix(KEY_PREFIX + userId + ":" + courseId + ":" + type + ":" + date);
     }
 
     /**

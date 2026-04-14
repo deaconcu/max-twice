@@ -1,6 +1,7 @@
 package com.prosper.learn.analytics.ranking.scheduler;
 
 import com.prosper.learn.analytics.ranking.service.RoleRankingDomainService;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
@@ -102,34 +103,46 @@ public class RoleRankingScheduler {
     // ========== 公共业务方法 ==========
 
     /**
-     * 每小时同步一次角色统计数据到Redis
+     * 每小时同步一次角色统计数据到Redis（为每种语言执行）
      */
     @Scheduled(cron = "0 15 * * * ?")
     public void syncRoleStats() {
         if (!systemProperties.getScheduler().isEnableRoleRankingSync()) {
             return;
         }
-        
-        log.info(LOG_START_SYNC);
-        
+
+        DataSourceContextHolder.forEachLanguage(lang -> {
+            log.info("[{}] {}", lang, LOG_START_SYNC);
+            try {
+                syncRoleStatsInternal(lang);
+            } catch (Exception e) {
+                log.error("[{}] 同步角色统计数据失败", lang, e);
+            }
+        });
+    }
+
+    /**
+     * 内部同步方法（单语言）
+     */
+    private void syncRoleStatsInternal(String lang) {
         try {
             // 先清空Redis中的统计数据
             roleRankingService.clearAllStats();
-            
+
             // 获取所有角色的学习数据（通过roadmap关联）
             String sql = getLearningDataSql();
             List<Map<String, Object>> learningData = jdbcTemplate.queryForList(
                 sql, STATUS_IN_PROGRESS, STATUS_APPROVED);
-            
+
             validateQueryResult(learningData);
-            
+
             // 同步学习数据到Redis
             int updatedCount = processRoleLearningData(learningData);
-            
-            log.info(LOG_SYNC_COMPLETE, updatedCount);
-            
+
+            log.info("[{}] {}", lang, String.format(LOG_SYNC_COMPLETE.replace("{}", "%d"), updatedCount));
+
         } catch (Exception e) {
-            log.error("同步角色统计数据失败", e);
+            log.error("[{}] 同步角色统计数据失败", lang, e);
             throw StatusCode.SCHEDULER_DATA_SYNC_FAILED.exception(e);
         }
     }
@@ -142,7 +155,7 @@ public class RoleRankingScheduler {
         if (!systemProperties.getScheduler().isEnableRoleRankingStartupInit()) {
             return;
         }
-        
+
         try {
             log.info(LOG_INITIALIZE);
             syncRoleStats();

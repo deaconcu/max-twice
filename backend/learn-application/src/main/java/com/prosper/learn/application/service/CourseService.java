@@ -10,6 +10,7 @@ import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDataService;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
@@ -282,7 +283,7 @@ public class CourseService {
 
         // 异步更新搜索索引
         courseDO.setState(ContentState.PUBLISHED.value());
-        meilisearchService.indexCourse(courseDO);
+        meilisearchService.indexCourse(courseDO, DataSourceContextHolder.getLanguage());
     }
 
     /**
@@ -310,7 +311,7 @@ public class CourseService {
 
         // 异步更新搜索索引（从索引中移除）
         courseDO.setState(ContentState.REJECTED.value());
-        meilisearchService.indexCourse(courseDO);
+        meilisearchService.indexCourse(courseDO, DataSourceContextHolder.getLanguage());
     }
 
     /**
@@ -341,7 +342,7 @@ public class CourseService {
 
         // 异步更新搜索索引（从索引中移除）
         courseDO.setState(ContentState.BANNED.value());
-        meilisearchService.indexCourse(courseDO);
+        meilisearchService.indexCourse(courseDO, DataSourceContextHolder.getLanguage());
     }
 
     /**
@@ -360,7 +361,7 @@ public class CourseService {
         courseDomainService.deleteCourse(id);
 
         // 异步从搜索索引中移除
-        meilisearchService.deleteCourse(id);
+        meilisearchService.deleteCourse(id, DataSourceContextHolder.getLanguage());
     }
 
     @Transactional

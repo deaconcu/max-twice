@@ -3,6 +3,7 @@ package com.prosper.learn.web.v1.controller.admin;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemDO;
 import com.prosper.learn.shared.infrastructure.config.SystemDataService;
@@ -244,13 +245,14 @@ public class AdminSystemController {
     )
     public ApiResponse<Map<String, String>> startRecalculateSubCourseCounts() {
         String taskId = asyncTaskService.generateTaskId();
+        String language = DataSourceContextHolder.getLanguage();
         asyncTaskService.initTask(taskId);
-        asyncTaskService.runAsyncWithProgress(taskId, progressCallback -> {
+        asyncTaskService.runAsyncWithProgress(taskId, language, progressCallback -> {
             Map<String, Integer> result = courseService.recalculateAllSubCourseCounts(progressCallback);
             asyncTaskService.completeTask(taskId, result);
         });
 
-        log.info("启动重算子课程数量任务: {}", taskId);
+        log.info("[{}] 启动重算子课程数量任务: {}", language, taskId);
         return ApiResponse.success(Map.of("taskId", taskId, "status", "RUNNING"));
     }
 

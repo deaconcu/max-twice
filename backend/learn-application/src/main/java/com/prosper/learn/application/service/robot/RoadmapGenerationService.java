@@ -6,6 +6,8 @@ import com.prosper.learn.application.dto.response.RobotRoadmapTaskDTO;
 import com.prosper.learn.content.role.RoleDO;
 import com.prosper.learn.content.role.RoleDataService;
 import com.prosper.learn.infrastructure.ai.AIService;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
+import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import com.prosper.learn.shared.infrastructure.config.SystemDomainService;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +56,24 @@ public class RoadmapGenerationService {
     private static final int MAX_DRAFT_SIZE = 100;
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    // ========== Redis Key 生成方法 ==========
+
+    private String taskKey(String taskId) {
+        return RedisKeyPrefix.prefix(TASK_KEY_PREFIX + taskId);
+    }
+
+    private String historyKey(Long userId) {
+        return RedisKeyPrefix.prefix(HISTORY_KEY_PREFIX + userId);
+    }
+
+    private String draftKey(String draftId) {
+        return RedisKeyPrefix.prefix(DRAFT_KEY_PREFIX + draftId);
+    }
+
+    private String draftListKey(Long userId) {
+        return RedisKeyPrefix.prefix(DRAFT_LIST_KEY_PREFIX + userId);
+    }
+
     /**
      * 提交生成任务
      */
@@ -63,6 +83,9 @@ public class RoadmapGenerationService {
 
         // 生成任务ID
         String taskId = "roadmap-" + UUID.randomUUID().toString();
+
+        // 保存当前语言上下文
+        String language = DataSourceContextHolder.getLanguage();
 
         // 保存任务初始状态到 Redis
         RobotRoadmapTaskDTO task = RobotRoadmapTaskDTO.builder()
@@ -76,7 +99,7 @@ public class RoadmapGenerationService {
         try {
             String taskJson = objectMapper.writeValueAsString(task);
             redisTemplate.opsForValue().set(
-                TASK_KEY_PREFIX + taskId,
+                taskKey(taskId),
                 taskJson,
                 TASK_EXPIRE_DAYS,
                 TimeUnit.DAYS
@@ -86,9 +109,9 @@ public class RoadmapGenerationService {
             throw new RuntimeException("创建任务失败", e);
         }
 
-        // 异步执行生成（通过代理调用以确保 @Async 生效）
+        // 异步执行生成（通过代理调用以确保 @Async 生效），传递语言上下文
         RoadmapGenerationService self = applicationContext.getBean(RoadmapGenerationService.class);
-        self.executeGenerateAsync(taskId, roleId, userId);
+        self.executeGenerateAsync(taskId, roleId, userId, language);
 
         return taskId;
     }
@@ -97,9 +120,11 @@ public class RoadmapGenerationService {
      * 异步执行路径生成
      */
     @Async
-    public void executeGenerateAsync(String taskId, Long roleId, Long userId) {
+    public void executeGenerateAsync(String taskId, Long roleId, Long userId, String language) {
+        // 恢复语言上下文
+        DataSourceContextHolder.setLanguage(language);
         try {
-            log.info("Robot 开始生成路径，taskId={}, roleId={}", taskId, roleId);
+            log.info("[{}] Robot 开始生成路径，taskId={}, roleId={}", language, taskId, roleId);
 
             // 查询角色信息
             RoleDO roleDO = roleDataService.validateAndGet(roleId);
@@ -111,7 +136,7 @@ public class RoadmapGenerationService {
             // 调用 AI 生成
             String result = aiService.generateContent(prompt, systemPrompt);
 
-            log.info("Robot 路径生成完成，taskId={}，响应长度={}", taskId, result.length());
+            log.info("[{}] Robot 路径生成完成，taskId={}，响应长度={}", language, taskId, result.length());
 
             // 更新任务状态为成功
             updateTaskStatus(taskId, "COMPLETED", result, null);
@@ -120,8 +145,10 @@ public class RoadmapGenerationService {
             saveToHistory(userId, taskId);
 
         } catch (Exception e) {
-            log.error("Robot 路径生成失败，taskId={}", taskId, e);
+            log.error("[{}] Robot 路径生成失败，taskId={}", language, taskId, e);
             updateTaskStatus(taskId, "FAILED", null, e.getMessage());
+        } finally {
+            DataSourceContextHolder.clear();
         }
     }
 
@@ -129,7 +156,7 @@ public class RoadmapGenerationService {
      * 获取任务状态
      */
     public RobotRoadmapTaskDTO getTaskStatus(String taskId) {
-        String taskJson = redisTemplate.opsForValue().get(TASK_KEY_PREFIX + taskId);
+        String taskJson = redisTemplate.opsForValue().get(taskKey(taskId));
         if (taskJson == null) {
             throw new RuntimeException("任务不存在或已过期");
         }
@@ -155,7 +182,7 @@ public class RoadmapGenerationService {
 
             String taskJson = objectMapper.writeValueAsString(task);
             redisTemplate.opsForValue().set(
-                TASK_KEY_PREFIX + taskId,
+                taskKey(taskId),
                 taskJson,
                 TASK_EXPIRE_DAYS,
                 TimeUnit.DAYS
@@ -170,14 +197,14 @@ public class RoadmapGenerationService {
      */
     private void saveToHistory(Long userId, String taskId) {
         try {
-            String historyKey = HISTORY_KEY_PREFIX + userId;
+            String key = historyKey(userId);
             long timestamp = System.currentTimeMillis();
-            redisTemplate.opsForZSet().add(historyKey, taskId, timestamp);
+            redisTemplate.opsForZSet().add(key, taskId, timestamp);
 
             // 保留最近50条
-            Long count = redisTemplate.opsForZSet().zCard(historyKey);
+            Long count = redisTemplate.opsForZSet().zCard(key);
             if (count != null && count > MAX_HISTORY_SIZE) {
-                redisTemplate.opsForZSet().removeRange(historyKey, 0, count - MAX_HISTORY_SIZE - 1);
+                redisTemplate.opsForZSet().removeRange(key, 0, count - MAX_HISTORY_SIZE - 1);
             }
 
             log.info("Robot 任务 {} 已保存到用户 {} 的历史记录", taskId, userId);
@@ -190,8 +217,8 @@ public class RoadmapGenerationService {
      * 获取历史记录列表
      */
     public java.util.List<RobotRoadmapTaskDTO> getHistory(Long userId) {
-        String historyKey = HISTORY_KEY_PREFIX + userId;
-        java.util.Set<String> taskIds = redisTemplate.opsForZSet().reverseRange(historyKey, 0, -1);
+        String key = historyKey(userId);
+        java.util.Set<String> taskIds = redisTemplate.opsForZSet().reverseRange(key, 0, -1);
 
         if (taskIds == null || taskIds.isEmpty()) {
             return java.util.Collections.emptyList();
@@ -219,16 +246,15 @@ public class RoadmapGenerationService {
             String draftId = "draft-" + UUID.randomUUID().toString();
 
             // 保存草稿内容
-            String draftKey = DRAFT_KEY_PREFIX + draftId;
             redisTemplate.opsForValue().set(
-                draftKey,
+                draftKey(draftId),
                 draftContent,
                 DRAFT_EXPIRE_DAYS,
                 TimeUnit.DAYS
             );
 
             // 添加到用户的草稿列表
-            String listKey = DRAFT_LIST_KEY_PREFIX + userId;
+            String listKey = draftListKey(userId);
             long timestamp = System.currentTimeMillis();
             String listValue = roleId + ":" + draftId;
             redisTemplate.opsForZSet().add(listKey, listValue, timestamp);
@@ -241,7 +267,7 @@ public class RoadmapGenerationService {
                 if (oldDrafts != null) {
                     for (String old : oldDrafts) {
                         String oldDraftId = old.split(":")[1];
-                        redisTemplate.delete(DRAFT_KEY_PREFIX + oldDraftId);
+                        redisTemplate.delete(draftKey(oldDraftId));
                     }
                 }
                 redisTemplate.opsForZSet().removeRange(listKey, 0, count - MAX_DRAFT_SIZE - 1);
@@ -259,8 +285,7 @@ public class RoadmapGenerationService {
      * 获取草稿
      */
     public String getDraft(String draftId) {
-        String draftKey = DRAFT_KEY_PREFIX + draftId;
-        return redisTemplate.opsForValue().get(draftKey);
+        return redisTemplate.opsForValue().get(draftKey(draftId));
     }
 
     /**
@@ -268,11 +293,10 @@ public class RoadmapGenerationService {
      */
     public void deleteDraft(Long userId, String draftId) {
         // 删除草稿内容
-        String draftKey = DRAFT_KEY_PREFIX + draftId;
-        redisTemplate.delete(draftKey);
+        redisTemplate.delete(draftKey(draftId));
 
         // 从用户的草稿列表中删除
-        String listKey = DRAFT_LIST_KEY_PREFIX + userId;
+        String listKey = draftListKey(userId);
         Set<String> allDrafts = redisTemplate.opsForZSet().range(listKey, 0, -1);
         if (allDrafts != null) {
             for (String value : allDrafts) {
@@ -290,7 +314,7 @@ public class RoadmapGenerationService {
      * 获取用户的草稿列表
      */
     public List<RobotRoadmapDraftDTO> getDraftList(Long userId) {
-        String listKey = DRAFT_LIST_KEY_PREFIX + userId;
+        String listKey = draftListKey(userId);
         Set<String> draftValues = redisTemplate.opsForZSet().reverseRange(listKey, 0, -1);
 
         if (draftValues == null || draftValues.isEmpty()) {
