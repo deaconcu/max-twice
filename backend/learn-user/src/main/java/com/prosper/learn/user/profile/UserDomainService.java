@@ -248,11 +248,9 @@ public class UserDomainService {
             throw StatusCode.USER_NOT_FOUND.exception("用户不存在");
         }
 
-        // TODO: 临时禁用密码验证，方便测试
-        // 生产环境必须启用！
-        // if (!passwordEncoder.matches(password, userDO.getPassword())) {
-        //     throw StatusCode.USER_PASSWORD_WRONG.exception();
-        // }
+        if (!passwordEncoder.matches(password, userDO.getPassword())) {
+            throw StatusCode.USER_PASSWORD_WRONG.exception();
+        }
 
         if (!userDO.getEmailValidated()) {
             throw StatusCode.USER_EMAIL_NOT_VALIDATED.exception();

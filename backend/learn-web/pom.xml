@@ -11,12 +11,15 @@
 
     <artifactId>learn-web</artifactId>
 
-    <!--
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-    </properties>
-    -->
+    <build>
+        <finalName>twicemax</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
     <dependencies>
         <!-- Spring Boot DevTools - 开发时热重载 -->

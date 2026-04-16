@@ -4,7 +4,7 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    jdbc-url: jdbc:mysql://127.0.0.1:3307/learn_test?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+    jdbc-url: jdbc:mysql://127.0.0.1:3307/twicemax_test?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
     username: root
     password: root123
     hikari:

@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * OpenAI Embedding服务
- * 负责调用OpenAI API将文本转换为向量
+ * OpenRouter Embedding服务
+ * 负责调用OpenRouter API将文本转换为向量
  */
 @Service
 @RequiredArgsConstructor
@@ -24,13 +24,13 @@ public class EmbeddingService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${openai.api-key}")
+    @Value("${openrouter.api-key}")
     private String apiKey;
 
-    @Value("${openai.api-url}")
+    @Value("${openrouter.embedding-url}")
     private String apiUrl;
 
-    @Value("${openai.model}")
+    @Value("${openrouter.embedding-model}")
     private String model;
 
     /**
