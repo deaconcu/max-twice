@@ -14,9 +14,9 @@ spring:
     # 用户数据库（共享）
     user:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      jdbc-url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3307}/twicemax_user?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
-      username: ${DB_USERNAME:root}
-      password: ${DB_PASSWORD:root123}
+      jdbc-url: jdbc:mysql://${DB_HOST}:${DB_PORT}/twicemax_user?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
       hikari:
         minimum-idle: 3
         maximum-pool-size: 5
@@ -24,9 +24,9 @@ spring:
     # 业务数据库 - 中文站
     business-zh:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      jdbc-url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3307}/twicemax_zh?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
-      username: ${DB_USERNAME:root}
-      password: ${DB_PASSWORD:root123}
+      jdbc-url: jdbc:mysql://${DB_HOST}:${DB_PORT}/twicemax_zh?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
       hikari:
         minimum-idle: 5
         maximum-pool-size: 10
@@ -34,9 +34,9 @@ spring:
     # 业务数据库 - 英文站
     business-en:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      jdbc-url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3307}/twicemax_en?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
-      username: ${DB_USERNAME:root}
-      password: ${DB_PASSWORD:root123}
+      jdbc-url: jdbc:mysql://${DB_HOST}:${DB_PORT}/twicemax_en?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
       hikari:
         minimum-idle: 3
         maximum-pool-size: 5
@@ -48,10 +48,10 @@ spring:
     serialization:
       write-dates-as-timestamps: false
   mail:
-    host: ${MAIL_HOST:smtp.126.com}
-    port: ${MAIL_PORT:465}
-    username: ${MAIL_USERNAME:deaconcc@126.com}
-    password: ${MAIL_PASSWORD:}
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     protocol: smtp
     properties:
       mail:
@@ -62,34 +62,34 @@ spring:
             required: true
           socketFactory:
             class: javax.net.ssl.SSLSocketFactory
-            port: ${MAIL_PORT:465}
-        debug: ${MAIL_DEBUG:false}
+            port: ${MAIL_PORT}
+        debug: ${MAIL_DEBUG}
   data:
     redis:
-      host: ${REDIS_HOST:127.0.0.1}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
 
 server:
-  port: ${PORT:9202}
+  port: ${PORT}
 
 # Meilisearch 配置
 meilisearch:
-  enabled: ${MEILISEARCH_ENABLED:true}
-  host: ${MEILISEARCH_HOST:http://localhost:7700}
-  api-key: ${MEILISEARCH_API_KEY:}
+  enabled: ${MEILISEARCH_ENABLED}
+  host: ${MEILISEARCH_HOST}
+  api-key: ${MEILISEARCH_API_KEY}
 
 # OpenRouter Embedding配置
 openrouter:
-  api-key: ${OPENROUTER_API_KEY:}
+  api-key: ${OPENROUTER_API_KEY}
   embedding-url: https://openrouter.ai/api/v1/embeddings
   embedding-model: openai/text-embedding-3-small
 
 # Milvus向量数据库配置
 milvus:
-  enabled: true
-  host: ${MILVUS_HOST:localhost}
-  port: ${MILVUS_PORT:19530}
+  enabled: ${MILVUS_ENABLED}
+  host: ${MILVUS_HOST}
+  port: ${MILVUS_PORT}
   collection-name: node_embeddings
   vector-dim: 1536
 
@@ -111,16 +111,11 @@ sa-token:
 # Cloudflare R2配置
 cloudflare:
   r2:
-    # 账号ID
-    account-id: ${CLOUDFLARE_R2_ACCOUNT_ID:your-account-id}
-    # 访问密钥ID
-    access-key-id: ${CLOUDFLARE_R2_ACCESS_KEY_ID:your-access-key-id}
-    # 访问密钥
-    secret-access-key: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY:your-secret-access-key}
-    # 存储桶名称
-    bucket-name: ${CLOUDFLARE_R2_BUCKET_NAME:max-twice-images}
-    # 公开域名
-    public-domain: ${CLOUDFLARE_R2_PUBLIC_DOMAIN:https://images.maxtwice.com}
+    account-id: ${CLOUDFLARE_R2_ACCOUNT_ID}
+    access-key-id: ${CLOUDFLARE_R2_ACCESS_KEY_ID}
+    secret-access-key: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY}
+    bucket-name: ${CLOUDFLARE_R2_BUCKET_NAME}
+    public-domain: ${CLOUDFLARE_R2_PUBLIC_DOMAIN}
 
 logging:
   level:
@@ -244,7 +239,7 @@ app:
     # AI模型
     model: gemini-3-flash-preview
     # OpenRouter API Key（从环境变量读取）
-    openrouter-api-key: ${OPENROUTER_API_KEY:}
+    openrouter-api-key: ${OPENROUTER_API_KEY}
   # SRS复习算法配置
   srs:
     # 节点下最大卡片数量限制
