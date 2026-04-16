@@ -61,7 +61,6 @@ public class ConfigControllerTest extends BaseControllerTest {
         // 验证包含所有预期字段
         assertTrue(data.containsKey("card-front"), "应包含 card-front");
         assertTrue(data.containsKey("card-back"), "应包含 card-back");
-        assertTrue(data.containsKey("deck-title"), "应包含 deck-title");
         assertTrue(data.containsKey("deck-description"), "应包含 deck-description");
         assertTrue(data.containsKey("comment-content"), "应包含 comment-content");
         assertTrue(data.containsKey("username"), "应包含 username");
@@ -71,14 +70,14 @@ public class ConfigControllerTest extends BaseControllerTest {
         assertTrue(data.containsKey("course-name"), "应包含 course-name");
         assertTrue(data.containsKey("course-description"), "应包含 course-description");
         assertTrue(data.containsKey("post-content"), "应包含 post-content");
-        assertTrue(data.containsKey("profession-name"), "应包含 profession-name");
-        assertTrue(data.containsKey("profession-description"), "应包含 profession-description");
+        assertTrue(data.containsKey("role-name"), "应包含 role-name");
+        assertTrue(data.containsKey("role-description"), "应包含 role-description");
         assertTrue(data.containsKey("message-content"), "应包含 message-content");
         assertTrue(data.containsKey("roadmap-content"), "应包含 roadmap-content");
         assertTrue(data.containsKey("roadmap-description"), "应包含 roadmap-description");
 
         // 验证字段数量
-        assertTrue(data.size() >= 17, "至少应有 17 个字段");
+        assertTrue(data.size() >= 16, "至少应有 16 个字段");
     }
 
     @Test
@@ -376,7 +375,7 @@ public class ConfigControllerTest extends BaseControllerTest {
         Map<String, Object> data = (Map<String, Object>) response.get("data");
 
         // 验证字段数量
-        assertEquals(17, data.size(), "应该有 17 个验证规则字段");
+        assertEquals(16, data.size(), "应该有 16 个验证规则字段");
     }
 
     @Test

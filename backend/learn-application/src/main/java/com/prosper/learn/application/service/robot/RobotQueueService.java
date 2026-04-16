@@ -35,31 +35,32 @@ public class RobotQueueService {
     private final CourseDataService courseDataService;
 
     private static final int MAX_CONSECUTIVE_FAILURES = 2;
+    private static final String REDIS_KEY_PREFIX = "robot:";
 
     /** 计算 ready 集合的完整 key */
     private String readyKey() {
-        return RedisKeyPrefix.prefix(systemProperties.getRobot().getRedisKeyPrefix() + "ready");
+        return RedisKeyPrefix.prefix(REDIS_KEY_PREFIX + "ready");
     }
 
     /** 今日完成数统计 key */
     private String todayCompletedKey() {
         String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        return RedisKeyPrefix.prefix(systemProperties.getRobot().getRedisKeyPrefix() + "completed:" + date);
+        return RedisKeyPrefix.prefix(REDIS_KEY_PREFIX + "completed:" + date);
     }
 
     /** 最后执行时间 key */
     private String lastExecuteTimeKey() {
-        return RedisKeyPrefix.prefix(systemProperties.getRobot().getRedisKeyPrefix() + "lastExecuteTime");
+        return RedisKeyPrefix.prefix(REDIS_KEY_PREFIX + "lastExecuteTime");
     }
 
     /** 暂停状态 key */
     private String pausedKey() {
-        return RedisKeyPrefix.prefix(systemProperties.getRobot().getRedisKeyPrefix() + "paused");
+        return RedisKeyPrefix.prefix(REDIS_KEY_PREFIX + "paused");
     }
 
     /** 连续失败计数 key */
     private String consecutiveFailuresKey() {
-        return RedisKeyPrefix.prefix(systemProperties.getRobot().getRedisKeyPrefix() + "consecutiveFailures");
+        return RedisKeyPrefix.prefix(REDIS_KEY_PREFIX + "consecutiveFailures");
     }
 
     /**

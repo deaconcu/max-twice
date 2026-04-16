@@ -2,7 +2,6 @@ package com.prosper.learn.analytics.ranking.service;
 
 import com.prosper.learn.infrastructure.redis.RedisKeyPrefix;
 import com.prosper.learn.shared.domain.exception.StatusCode;
-import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -18,7 +17,6 @@ import java.util.stream.Collectors;
 public class RoleRankingDomainService {
 
     private final RedisTemplate<String, String> redisTemplate;
-    private final SystemProperties systemProperties;
 
     private static final String HOT_ROLES_KEY = "role:hot:ranking";
     private static final String ROLE_LEARNING_PREFIX = "role:learning:";
@@ -128,7 +126,7 @@ public class RoleRankingDomainService {
      * 验证限制数量有效性
      */
     private void validateLimit(int limit) {
-        if (limit <= 0 || limit > systemProperties.getCourseRanking().getMaxHotCoursesLimit()) {
+        if (limit <= 0 || limit > 200) {
             throw StatusCode.INVALID_PARAMETER.exception();
         }
     }

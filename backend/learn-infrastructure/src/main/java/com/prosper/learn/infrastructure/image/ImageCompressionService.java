@@ -22,19 +22,19 @@ import java.util.List;
 @Service
 public class ImageCompressionService {
 
-    @Value("${upload.compression.enabled:true}")
+    @Value("${app.upload.compression.enabled:true}")
     private boolean compressionEnabled;
 
-    @Value("${upload.compression.max-width:2048}")
+    @Value("${app.upload.compression.max-width:2048}")
     private int maxWidth;
 
-    @Value("${upload.compression.max-height:2048}")
+    @Value("${app.upload.compression.max-height:2048}")
     private int maxHeight;
 
-    @Value("${upload.compression.quality:0.85}")
+    @Value("${app.upload.compression.quality:0.85}")
     private double quality;
 
-    @Value("${upload.compression.format:webp}")
+    @Value("${app.upload.compression.format:webp}")
     private String format;
 
     /**

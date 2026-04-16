@@ -1,15 +1,14 @@
 spring:
   application:
+    # 服务标识
     name: learn-service
-  cloud:
-    discovery:
-      enabled: false  # 禁用服务发现
   autoconfigure:
+    # 项目使用自定义多数据源（DataSourceConfig.java），必须排除默认的单数据源自动配置，否则会冲突。
     exclude:
-      - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration  # 排除Eureka自动配置
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration  # 禁用默认数据源自动配置
   cache:
-    type: ${app.cache.type:redis}  # 读取app.cache.type配置，默认redis
+    # 使用 Redis 作为缓存实现 支持 none/redis
+    type: redis
   # 多数据源配置
   datasource:
     # 用户数据库（共享）
@@ -43,11 +42,13 @@ spring:
         maximum-pool-size: 5
         pool-name: BusinessEnHikariPool
   jackson:
-    time-zone: America/Los_Angeles
+    # 后端统一 UTC 时区，前端根据用户时区转换显示
+    time-zone: UTC
     date-format: yyyy-MM-dd HH:mm:ss
     serialization:
       write-dates-as-timestamps: false
   mail:
+    # todo 生产环境需要修改为专用邮箱，并且开启smtp服务，替换密码字段为环境变量，debug修改为false
     host: smtp.126.com
     port: 465
     username: deaconcc@126.com
@@ -65,96 +66,115 @@ spring:
             port: 465
         debug: true
   data:
+    # todo 生产环境可添加密码
     redis:
       host: 127.0.0.1
       port: 6379
 
+server:
+  port: ${PORT:9202}
+
 # Meilisearch 配置
 meilisearch:
+  # todo 生产环境需要修改 host，api-key修改为环境变量
   enabled: true
   host: http://localhost:7700
   api-key: your_master_key_change_this_in_production
 
-server:
-  port: ${PORT:9202}
-  servlet:
-    context-path: /
+# OpenAI Embedding配置
+openai:
+  api-key: ${AI_API_KEY:xxxxxxx}
+  api-url: https://openrouter.ai/api/v1/embeddings
+  model: openai/text-embedding-3-small
 
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: http://127.0.0.1:8761/eureka/
-    register-with-eureka: false  # 不向注册中心注册自己
-    fetch-registry: false        # 不从注册中心获取服务列表
-  instancen:
-    preferIpAddress: true
-    instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
+# Milvus向量数据库配置
+milvus:
+  enabled: true
+  host: ${MILVUS_HOST:localhost}
+  port: ${MILVUS_PORT:19530}
+  collection-name: node_embeddings
+  vector-dim: 1536
 
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
 sa-token:
+  # Token 有效期（秒），72000秒 = 20小时。用户登录后，20小时内无需重新登录
   timeout: 72000
   token-name: token
-  storage-typee: cookie
+  storage-type: cookie
+  # 禁止 JS 访问 Cookie
   cookie-http-only: true
+  # 仅 HTTPS 传输
   cookie-secure: true
 
+
+# Cloudflare R2配置
+cloudflare:
+  r2:
+    # 账号ID
+    account-id: ${CLOUDFLARE_R2_ACCOUNT_ID:your-account-id}
+    # 访问密钥ID
+    access-key-id: ${CLOUDFLARE_R2_ACCESS_KEY_ID:your-access-key-id}
+    # 访问密钥
+    secret-access-key: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY:your-secret-access-key}
+    # 存储桶名称
+    bucket-name: ${CLOUDFLARE_R2_BUCKET_NAME:max-twice-images}
+    # 公开域名
+    public-domain: ${CLOUDFLARE_R2_PUBLIC_DOMAIN:https://images.maxtwice.com}
+
+logging:
+  level:
+    # 业务代码
+    com.prosper.learn: INFO
+    # 框架日志
+    org.springframework: WARN
+    org.apache.ibatis: WARN
+    org.mybatis: WARN
+    java.sql: WARN
+    # 按需开启调试（默认关闭）
+    # com.prosper.learn.infrastructure.image: DEBUG  # R2 上传
+    # com.prosper.learn.persistence.mapper: DEBUG    # SQL 日志
+
 app:
-  contents:
-    max-pinned-items: 10
-    pin-field: "^"
-    chosen-field: "+"
-  user:
-    # 用户名最大长度
-    max-username-length: 50
-    # 密码最小长度
-    min-password-length: 6
-    # 关注列表分页大小
-    follow-page-size: 10
-    # 验证码范围
-    verification-code-min: 100000
-    verification-code-max: 999999
-    # 邮件配置
-    email-sender: "deaconcc@126.com"
-    email-subject: "Your Verification Code"
-    # 功能开关
-    enable-email-validation: true
-    enable-duplicate-follow-check: true
-    enable-duplicate-subscription-check: true
-  course:
-    max-name-length: 100
-    default-page-size: 20
-    # 课程名称搜索结果限制数量
-    search-limit: 50
-    # 热门课程排行榜数量限制
-    hot-courses-ranking-limit: 100
-    # 是否启用课程状态验证
-    enable-state-validation: true
-    # 是否启用父课程存在性验证
-    enable-parent-validation: true
-  course-ranking:
-    # 默认热门课程列表大小
-    default-hot-courses-limit: 20
-    # 统计数据清理时的批量大小
-    clear-batch-size: 1000
+  # 默认语言
+  default-language: en
+  # 图片上传配置
+  upload:
+    quota:
+      # 最小上传间隔(秒)
+      min-interval: 1
+      # 每分钟限制
+      minute-limit: 20
+      # 每小时限制
+      hour-limit: 100
+      # 每天限制
+      daily-limit: 200
+    file:
+      # 文件大小限制(字节，5MB)
+      max-size: 5242880
+      # 图片尺寸限制(像素)
+      max-dimension: 4096
+      # 允许的文件类型（逗号分隔）
+      allowed-types: image/jpeg,image/png,image/webp
+    compression:
+      # 是否启用压缩
+      enabled: true
+      # 最大宽度
+      max-width: 2048
+      # 最大高度
+      max-height: 2048
+      # 压缩质量(0.0-1.0)
+      quality: 0.85
+      # 输出格式（jpg 原生支持，稳定可靠）
+      format: jpg
   stats:
     # 系统开始日期（用于历史数据查询起始点）
-    system-start-date: "2020-01-01"
+    system-start-date: "2025-01-01"
     # 最大查询天数范围
     max-query-days-range: 365
-    # 最大查询年份范围
-    max-query-year-range: 5
-    # 是否启用统计数据缓存
-    enable-stats-cache: true
-    # 缓存过期时间（分钟）
-    cache-ttl-minutes: 60
   stats-monitor:
-    # Redis健康检查间隔（毫秒）
-    health-check-interval: 60000
-    # Redis内存监控间隔（毫秒）
-    memory-monitor-interval: 3600000
     # 待同步数据警告阈值
     pending-data-threshold: 1000
     # 是否启用Redis健康监控
@@ -165,74 +185,17 @@ app:
     enable-sync-status-check: true
     # 是否启用关闭时强制同步
     enable-shutdown-sync: true
-  role:
-    # 分页查询默认页面大小
-    default-page-size: 20
-    # 默认专业图标
-    default-icon: "mdi-triangle-outline"
-    # 默认热门专业数量限制
-    default-hot-role-limit: 20
-    # 最大热门专业数量限制
-    max-hot-role-limit: 100
-    # 是否启用专业状态验证
-    enable-state-validation: true
-    # 是否启用并发状态检查
-    enable-concurrency-check: true
-  learning-progress:
-    # Redis缓存过期时间（天）
-    cache-expire-days: 365
-    # 同步失败重试间隔（毫秒）
-    sync-retry-interval: 60000
-    # 课程完成百分比阈值（基点，10000=100%）
-    completion-threshold: 10000
-    # 进度百分比精度倍数（基点转换）
-    progress-precision-multiplier: 10000
-    # 默认目录索引
-    default-toc-index: 1
-    # 是否启用Redis降级到数据库
-    enable-database-fallback: true
-    # 是否启用定期补偿同步
-    enable-retry-sync: true
-    # 是否启用层级进度计算
-    enable-hierarchical-progress: true
-  comment:
-    # 默认分页大小
-    default-page-size: 10
-    # 待审核评论查询数量
-    pending-comments-limit: 50
-    # 评论缓存过期时间（分钟）
-    cache-ttl-minutes: 30
-  page:
-    # 是否启用路径格式验证
-    enable-path-validation: true
-    # 是否启用自动路径修复
-    enable-auto-path-repair: true
   scheduler:
-    # 角色排行榜同步Cron表达式
-    role-ranking-sync-cron: "0 15 * * * ?"
-    # 应用启动后初始化延迟时间（毫秒）
-    initialization-delay-ms: 10000
     # 是否启用角色排行榜定时同步
     enable-role-ranking-sync: false
     # 是否启用应用启动时初始化（角色排行榜）
     enable-role-ranking-startup-init: false
-    # 数据同步批处理大小
-    sync-batch-size: 1000
-  roadmap:
-    # 默认分页大小
-    default-page-size: 20
-    # 完成进度阈值（基点，10000=100%）
-    completion-threshold: 10000
-    # 进度精度倍数（基点转换）
-    progress-precision-divisor: 100.0
-    # 是否启用内容格式验证
-    enable-content-validation: true
-    # 是否启用权限检查
-    enable-permission-check: true
-    # 是否启用批量状态查询优化
-    enable-batch-status-query: true
-  cache:
-    type: none  # redis 启用缓存，none 关闭所有缓存
+  # 用户相关配置
+  user:
+    # 验证码过期时间（分钟）
+    verification-code-expiry-minutes: 10
+    # 验证码发送间隔（秒）
+    verification-code-send-interval-seconds: 60
   validation:
     # 评论相关
     comment-content-min-length: 1
@@ -263,8 +226,6 @@ app:
     card-front-max-length: 500
     card-back-min-length: 1
     card-back-max-length: 500
-    deck-title-min-length: 2
-    deck-title-max-length: 30
     deck-description-max-length: 200
     # 消息相关
     message-content-min-length: 1
@@ -274,83 +235,28 @@ app:
     roadmap-content-max-length: 5000
     roadmap-description-min-length: 1
     roadmap-description-max-length: 500
-  data-service:
-    # 批量更新最大数量限制
-    max-batch-update-size: 50
-  # OpenAI Embedding配置
-  openai:
-    api-key: ${AI_API_KEY:xxxxxxx}
-    api-url: https://openrouter.ai/api/v1/embeddings
-    model: openai/text-embedding-3-small
-    timeout-ms: 30000
-    max-retries: 3
-  # Milvus向量数据库配置
-  milvus:
-    enabled: true
-    host: ${MILVUS_HOST:localhost}
-    port: ${MILVUS_PORT:19530}
-    collection-name: node_embeddings
-    vector-dim: 1536
-    timeout-ms: 30000
   # AI服务配置
   robot:
+    # AI用户ID
+    ai-user-id: 85
+    # 执行器轮询间隔（秒）
+    poll-interval-sec: 10
     # AI服务: opencode, gemini, openrouter
     ai-service: gemini
     # AI模型
     model: gemini-3-flash-preview
-    # Gemini API Key（从环境变量读取）
-    gemini-api-key: ${GEMINI_API_KEY:}
     # OpenRouter API Key（从环境变量读取）
     openrouter-api-key: ${AI_API_KEY:}
-
-# 图片上传配置
-upload:
-  quota:
-    # 最小上传间隔(秒)
-    min-interval: 1
-    # 每分钟限制
-    minute-limit: 20
-    # 每小时限制
-    hour-limit: 100
-    # 每天限制
-    daily-limit: 200
-  file:
-    # 文件大小限制(字节，5MB)
-    max-size: 5242880
-    # 图片尺寸限制(像素)
-    max-dimension: 4096
-    # 允许的文件类型（逗号分隔）
-    allowed-types: image/jpeg,image/png,image/webp
-  compression:
-    # 是否启用压缩
-    enabled: true
-    # 最大宽度
-    max-width: 2048
-    # 最大高度
-    max-height: 2048
-    # 压缩质量(0.0-1.0)
-    quality: 0.85
-    # 输出格式（jpg 原生支持，稳定可靠）
-    format: jpg
-
-# Cloudflare R2配置
-cloudflare:
-  r2:
-    # 账号ID
-    account-id: ${CLOUDFLARE_R2_ACCOUNT_ID:your-account-id}
-    # 访问密钥ID
-    access-key-id: ${CLOUDFLARE_R2_ACCESS_KEY_ID:your-access-key-id}
-    # 访问密钥
-    secret-access-key: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY:your-secret-access-key}
-    # 存储桶名称
-    bucket-name: ${CLOUDFLARE_R2_BUCKET_NAME:max-twice-images}
-    # 公开域名
-    public-domain: ${CLOUDFLARE_R2_PUBLIC_DOMAIN:https://images.maxtwice.com}
-
-
-
   # SRS复习算法配置
   srs:
+    # 节点下最大卡片数量限制
+    max-cards-per-node: 200
+    # 用户最大学习卡片数量限制
+    max-cards-per-user: 10000
+    # 每日新卡上限默认值
+    default-daily-new-limit: 20
+    # 每日复习上限默认值
+    default-daily-review-limit: 100
     algorithm:
       # 卡片间隔数组: LEARNING/RELEARNING 阶段共用
       # 表示每个步骤需要间隔多少张卡片后再现
@@ -366,14 +272,3 @@ cloudflare:
       new-interval-multiplier: 0.5
       # 最小难度因子: EF的最小值
       min-ease-factor: 1.3
-
-logging:
-  level:
-    com.prosper.learn: INFO
-    com.prosper.learn.infrastructure.image: DEBUG  # R2 上传日志
-    com.prosper.learn.persistence.mapper: DEBUG  # MyBatis Mapper SQL日志
-    org.springframework.web: DEBUG
-    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
-    org.apache.ibatis: DEBUG
-    java.sql: DEBUG
-    org.mybatis.spring.SqlSessionFactoryBean: DEBUG

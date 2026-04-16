@@ -11,6 +11,7 @@ import com.prosper.learn.application.dto.response.course.CourseFullDTO;
 import com.prosper.learn.application.dto.response.user.*;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.infrastructure.datasource.DataSourceContextHolder;
 import com.prosper.learn.interaction.follow.FollowDO;
 import com.prosper.learn.interaction.follow.FollowDataService;
 import com.prosper.learn.learning.enrollment.UserLearningDO;
@@ -229,13 +230,12 @@ public class UserService {
         UserDO user = userDomainService.createUser(email, password);
 
         // 跨域操作：异步发送验证邮件（不阻塞注册流程）
-        if (systemProperties.getUser().isEnableEmailValidation()) {
-            String code = generateVerificationCode();
-            userDomainService.createVerificationCode(email, code);
+        String code = generateVerificationCode();
+        userDomainService.createVerificationCode(email, code);
 
-            // 异步发送邮件，失败不影响注册
-            emailService.sendVerificationEmailAsync(email, code);
-        }
+        // 异步发送邮件，失败不影响注册
+        String language = DataSourceContextHolder.getLanguage();
+        emailService.sendVerificationEmailAsync(email, code, language);
 
         log.info("用户注册成功: {}", email);
     }
@@ -294,7 +294,8 @@ public class UserService {
         userDomainService.createVerificationCode(email, code);
 
         // 4. 异步发送邮件
-        emailService.sendVerificationEmailAsync(email, code);
+        String language = DataSourceContextHolder.getLanguage();
+        emailService.sendVerificationEmailAsync(email, code, language);
 
         log.info("重新发送验证码成功: {}", email);
     }
@@ -305,9 +306,8 @@ public class UserService {
      */
     private String generateVerificationCode() {
         SecureRandom random = new SecureRandom();
-        int min = systemProperties.getUser().getVerificationCodeMin();
-        int max = systemProperties.getUser().getVerificationCodeMax();
-        int code = min + random.nextInt(max - min + 1);
+        // 生成 6 位数字验证码 (100000 ~ 999999)
+        int code = 100000 + random.nextInt(900000);
         return String.valueOf(code);
     }
 
@@ -451,14 +451,19 @@ public class UserService {
         if (!StringUtils.hasText(username)) {
             throw StatusCode.INVALID_PARAMETER.exception();
         }
-        if (username.length() > systemProperties.getUser().getMaxUsernameLength()) {
+        var validation = systemProperties.getValidation();
+        if (username.length() < validation.getUsernameMinLength()
+                || username.length() > validation.getUsernameMaxLength()) {
             throw StatusCode.USER_INVALID_USERNAME_LENGTH.exception();
         }
     }
 
     private void validatePassword(String password) {
         // 长度检查
-        if (password == null || password.length() < systemProperties.getUser().getMinPasswordLength()) {
+        var validation = systemProperties.getValidation();
+        if (password == null
+                || password.length() < validation.getPasswordMinLength()
+                || password.length() > validation.getPasswordMaxLength()) {
             throw StatusCode.USER_INVALID_PASSWORD_LENGTH.exception();
         }
 

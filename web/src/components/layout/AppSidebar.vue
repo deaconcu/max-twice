@@ -88,7 +88,7 @@ const handleToolClick = (tool: (typeof BOTTOM_TOOLS)[number]) => {
 .nav-link {
   display: flex;
   align-items: center;
-  padding: 12px 12px 12px 14px;
+  padding: 10px 14px;
   text-decoration: none;
   color: rgb(var(--v-theme-on-surface-variant));
   border-radius: 8px;

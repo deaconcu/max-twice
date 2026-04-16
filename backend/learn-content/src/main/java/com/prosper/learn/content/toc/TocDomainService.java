@@ -13,7 +13,6 @@ import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.toc.TocChosenEvent;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.StatusCode;
-import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -43,6 +42,9 @@ import java.util.*;
 @RequiredArgsConstructor
 public class TocDomainService {
 
+    /** 目录中选中帖子的字段标识 */
+    private static final String CHOSEN_FIELD = "+";
+
     /** JSON 对象映射器，用于目录结构的序列化和反序列化 */
     private final ObjectMapper objectMapper;
 
@@ -60,9 +62,6 @@ public class TocDomainService {
 
     /** 事件发布器 */
     private final ApplicationEventPublisher eventPublisher;
-
-    /** 系统配置 */
-    private final SystemProperties systemProperties;
 
     /**
      * 验证帖子存在性并检查类型
@@ -293,7 +292,7 @@ public class TocDomainService {
                     Arrays.stream(topPost.getContent().split(","))
                             .forEach(id -> rootNodeContent.putObject(id));
                     // 设置选中的帖子
-                    rootNodeContent.put(systemProperties.getContents().getChosenField(), topPost.getId());
+                    rootNodeContent.put(CHOSEN_FIELD, topPost.getId());
                 }
             }
 
@@ -405,7 +404,7 @@ public class TocDomainService {
         // 4. 创建childNode
         ObjectNode childNode = objectMapper.createObjectNode();
         Arrays.stream(postDO.getContent().split(",")).forEach(id->childNode.putObject((id)));
-        childNode.put(systemProperties.getContents().getChosenField(), postId);
+        childNode.put(CHOSEN_FIELD, postId);
 
         String[] pathSplit = path.split("-", 2);
         int tocIndex = Integer.parseInt(pathSplit[0]);

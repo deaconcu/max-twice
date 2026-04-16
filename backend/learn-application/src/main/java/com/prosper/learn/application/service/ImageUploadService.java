@@ -37,13 +37,13 @@ public class ImageUploadService {
     private final ImageCompressionService imageCompressionService;
     private final R2Service r2Service;
 
-    @Value("${upload.file.max-size:5242880}")
+    @Value("${app.upload.file.max-size:5242880}")
     private long maxFileSize; // 5MB
 
-    @Value("${upload.file.max-dimension:4096}")
+    @Value("${app.upload.file.max-dimension:4096}")
     private int maxDimension;
 
-    @Value("${upload.file.allowed-types:image/jpeg,image/png,image/webp}")
+    @Value("${app.upload.file.allowed-types:image/jpeg,image/png,image/webp}")
     private String[] allowedTypes;
 
     /**

@@ -213,8 +213,8 @@ public class PublicController {
             @RequestParam(required = false) String path) {
 
         try {
-            Map<String, Object> result = pageService.readPageByPathPublic(courseId, path);
-            return ApiResponse.success(result);
+            //Map<String, Object> result = pageService.readPageByPathPublic(courseId, path);
+            return ApiResponse.success();
         } catch (Exception e) {
             log.error("公开接口 读取页面失败: courseId={}，path={}", courseId, path, e);
             throw e;

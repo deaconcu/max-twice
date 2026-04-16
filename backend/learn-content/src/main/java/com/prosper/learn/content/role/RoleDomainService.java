@@ -116,29 +116,18 @@ public class RoleDomainService {
      * 审核通过角色
      *
      * @param id 角色ID
-     * @param enableStateValidation 是否启用状态验证
-     * @param enableConcurrencyCheck 是否启用并发检查
-     * @return 受影响的行数
      */
     @Transactional
-    public int approve(long id, boolean enableStateValidation, boolean enableConcurrencyCheck) {
+    public void approve(long id) {
         RoleDO roleDO = roleDataService.validateAndGet(id);
 
         // 状态验证：只有已批准的角色不能重复批准，已拒绝和已屏蔽的可以重新批准
-        if (enableStateValidation) {
-            Utils.validateStateTransition(roleDO.getState(), ContentState.PUBLISHED);
-        }
+        Utils.validateStateTransition(roleDO.getState(), ContentState.PUBLISHED);
 
         // 执行审核
-        int rowsAffected = roleDataService.approve(id);
-
-        // 并发检查
-        if (enableConcurrencyCheck && rowsAffected == 0) {
-            throw StatusCode.ROLE_STATE_CONFLICT.exception();
-        }
+        roleDataService.approve(id);
 
         log.info("角色 审核通过: roleId={}", id);
-        return rowsAffected;
     }
 
     /**
@@ -146,31 +135,20 @@ public class RoleDomainService {
      *
      * @param id 角色ID
      * @param reason 拒绝原因
-     * @param enableStateValidation 是否启用状态验证
-     * @param enableConcurrencyCheck 是否启用并发检查
-     * @return 受影响的行数
      */
     @Transactional
-    public int reject(long id, String reason, boolean enableStateValidation, boolean enableConcurrencyCheck) {
+    public void reject(long id, String reason) {
         RoleDO roleDO = roleDataService.validateAndGet(id);
 
         // 状态验证：已拒绝和已屏蔽的不能重复拒绝
-        if (enableStateValidation) {
-            Utils.validateStateTransition(roleDO.getState(), ContentState.REJECTED);
-        }
+        Utils.validateStateTransition(roleDO.getState(), ContentState.REJECTED);
 
         String reasonValue = reason != null ? reason : "";
 
         // 执行拒绝
-        int rowsAffected = roleDataService.reject(id, reasonValue);
-
-        // 并发检查
-        if (enableConcurrencyCheck && rowsAffected == 0) {
-            throw StatusCode.ROLE_STATE_CONFLICT.exception();
-        }
+        roleDataService.reject(id, reasonValue);
 
         log.info("角色 审核拒绝: roleId={}，reason={}", id, reasonValue);
-        return rowsAffected;
     }
 
     /**
@@ -178,31 +156,20 @@ public class RoleDomainService {
      *
      * @param id 角色ID
      * @param reason 封禁原因
-     * @param enableStateValidation 是否启用状态验证
-     * @param enableConcurrencyCheck 是否启用并发检查
-     * @return 受影响的行数
      */
     @Transactional
-    public int ban(long id, String reason, boolean enableStateValidation, boolean enableConcurrencyCheck) {
+    public void ban(long id, String reason) {
         RoleDO roleDO = roleDataService.validateAndGet(id);
 
         // 状态验证：已屏蔽的不能重复屏蔽
-        if (enableStateValidation) {
-            Utils.validateStateTransition(roleDO.getState(), ContentState.BANNED);
-        }
+        Utils.validateStateTransition(roleDO.getState(), ContentState.BANNED);
 
         String reasonValue = reason != null ? reason : "";
 
         // 执行封禁
-        int rowsAffected = roleDataService.ban(id, reasonValue);
-
-        // 并发检查
-        if (enableConcurrencyCheck && rowsAffected == 0) {
-            throw StatusCode.ROLE_STATE_CONFLICT.exception();
-        }
+        roleDataService.ban(id, reasonValue);
 
         log.info("角色 封禁: roleId={}，reason={}", id, reasonValue);
-        return rowsAffected;
     }
 
     /**

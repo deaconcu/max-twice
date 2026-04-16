@@ -24,13 +24,13 @@ public class EmbeddingService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${app.openai.api-key}")
+    @Value("${openai.api-key}")
     private String apiKey;
 
-    @Value("${app.openai.api-url}")
+    @Value("${openai.api-url}")
     private String apiUrl;
 
-    @Value("${app.openai.model}")
+    @Value("${openai.model}")
     private String model;
 
     /**

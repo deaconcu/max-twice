@@ -60,9 +60,10 @@ public class CommentsController {
             @RequestParam @NotNull(message = "对象类型不能为空") @Positive(message = "对象类型必须大于0") Integer objectType,
             @RequestParam(required = false) Double lastScore,
             @RequestParam(required = false) @Positive(message = "lastId必须大于0") Long lastId,
+            @RequestParam(defaultValue = "10") @Positive(message = "pageSize必须大于0") Integer pageSize,
             @CurrentUser UserDO currentUser) {
 
-        KeysetPageResponse<CommentWithRepliesDTO> comments = commentService.getCommentsByObject(objectId, objectType, lastScore, lastId, currentUser);
+        KeysetPageResponse<CommentWithRepliesDTO> comments = commentService.getCommentsByObject(objectId, objectType, lastScore, lastId, pageSize, currentUser);
         return ApiResponse.success(comments);
     }
 
@@ -78,9 +79,10 @@ public class CommentsController {
             @PathVariable @NotNull(message = "评论ID不能为空") @Positive(message = "评论ID必须大于0") Long id,
             @RequestParam(required = false) Double lastScore,
             @RequestParam(required = false) @Positive(message = "lastId必须大于0") Long lastId,
+            @RequestParam(defaultValue = "10") @Positive(message = "pageSize必须大于0") Integer pageSize,
             @CurrentUser UserDO currentUser) {
 
-        KeysetPageResponse<CommentDetailDTO> replies = commentService.getCommentReplies(id, lastScore, lastId, currentUser);
+        KeysetPageResponse<CommentDetailDTO> replies = commentService.getCommentReplies(id, lastScore, lastId, pageSize, currentUser);
         return ApiResponse.success(replies);
     }
 

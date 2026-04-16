@@ -33,7 +33,6 @@ import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentViewedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
-import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,7 +61,6 @@ public class PageService {
     private final UserDataService userDataService;
     private final CommentDataService commentDataService;
     private final UserLearningDomainService userLearningDomainService;
-    private final SystemProperties systemProperties;
     private final NodeConverter nodeConverter;
     private final PostConverter postConverter;
     private final UserConverter userConverter;
@@ -451,25 +449,6 @@ public class PageService {
     }
 
     /**
-     * 根据课程ID和路径读取页面数据
-     */
-    public Map<String, Object> readPageByPath(Long courseId, String path, long userId) {
-        validatePath(path);
-        CourseDO courseDO = validateCourseExists(courseId);
-        return readPageData(courseDO, path, null, null, userId);
-    }
-
-    /**
-     * 根据课程ID和路径读取页面数据（公开接口，无需登录）
-     * 用于匿名用户浏览，不包含个性化信息
-     */
-    public Map<String, Object> readPageByPathPublic(Long courseId, String path) {
-        validatePath(path);
-        CourseDO courseDO = validateCourseExists(courseId);
-        return readPageDataPublic(courseDO, path);
-    }
-
-    /**
      * 核心页面数据聚合逻辑
      */
     private Map<String, Object> readPageData(CourseDO courseDO, String path, NodeDO nodeDO, PostDO postDO, long userId) {
@@ -577,17 +556,6 @@ public class PageService {
         return courseDO;
     }
     
-    private void validatePath(String path) {
-        if (!systemProperties.getPage().isEnablePathValidation()) {
-            return;
-        }
-        
-        if (path != null && !path.isEmpty() && !PATH_PATTERN.matcher(path).matches()) {
-            log.warn("无效的路径格式: {}", path);
-            // 可以选择抛异常或者记录日志
-        }
-    }
-    
     private String generateDefaultPath(Long rootNode) {
         return DEFAULT_PATH_PREFIX + rootNode;
     }
@@ -610,13 +578,13 @@ public class PageService {
     
     private Utils.Pair<Long, JsonNode> getNodeByPath(JsonNode rootNode, String path, Long rootNode2) {
         Utils.Pair<Long, JsonNode> pair = Utils.getNodeByPath(rootNode, path);
-        
-        if (pair == null && systemProperties.getPage().isEnableAutoPathRepair()) {
+
+        if (pair == null) {
             log.warn("路径{}不存在，自动修复为默认路径", path);
             String defaultPath = generateDefaultPath(rootNode2);
             pair = Utils.getNodeByPath(rootNode, defaultPath);
         }
-        
+
         return pair;
     }
     

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/modules/auth'
 import { useUserStore } from '@/stores/modules/user'
+import { useSiteStore, SITE_LANGUAGES } from '@/stores'
 import { UserRole } from '@/enums'
 import { userApi } from '@/api'
 import RoleManagement from '@/components/admin/RoleManagement.vue'
@@ -27,6 +28,14 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const userStore = useUserStore()
+const siteStore = useSiteStore()
+
+// 语言站切换
+const handleSiteChange = (lang: string) => {
+  siteStore.setLanguage(lang as 'zh' | 'en')
+  // 刷新页面以重新加载数据
+  window.location.reload()
+}
 
 // 登出
 const handleLogout = () => {
@@ -146,6 +155,24 @@ onMounted(async () => {
             <div class="text-body-1 font-weight-bold">MaxTwice</div>
             <div class="text-caption text-grey">管理后台</div>
           </div>
+        </div>
+
+        <!-- 语言站切换 -->
+        <div class="site-switcher px-2 mb-2">
+          <v-select
+            :model-value="siteStore.currentLanguage"
+            :items="SITE_LANGUAGES"
+            item-title="label"
+            item-value="value"
+            density="compact"
+            variant="outlined"
+            hide-details
+            @update:model-value="handleSiteChange"
+          >
+            <template #prepend-inner>
+              <v-icon size="16" class="mr-1">mdi-web</v-icon>
+            </template>
+          </v-select>
         </div>
 
         <!-- 菜单列表 -->
@@ -302,6 +329,21 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   padding: 0px 8px 8px 8px;
+}
+
+/* 语言站切换 */
+.site-switcher {
+  margin-bottom: 8px;
+}
+
+.site-switcher :deep(.v-field) {
+  font-size: 13px;
+}
+
+.site-switcher :deep(.v-field__input) {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  min-height: 32px;
 }
 
 /* 用户信息区域 */

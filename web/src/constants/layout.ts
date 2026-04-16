@@ -10,7 +10,7 @@ export const HEADER_HEIGHT = 56
 /**
  * Sidebar 宽度（PC端）
  */
-export const SIDEBAR_WIDTH = 125
+export const SIDEBAR_WIDTH = 145
 
 /**
  * 底部导航栏高度（移动端）

@@ -51,9 +51,11 @@ public class RoadmapsController {
             Long lastId,
             @RequestParam(required = false, defaultValue = "score")
             String sortBy,
+            @RequestParam(defaultValue = "20") @Positive(message = "pageSize必须大于0")
+            Integer pageSize,
             @CurrentUser UserDO currentUser) {
 
-        List<RoadmapWithStatusDTO> roadmaps = roadmapService.getRoadmapsByRole(roleId, lastId, sortBy, currentUser);
+        List<RoadmapWithStatusDTO> roadmaps = roadmapService.getRoadmapsByRole(roleId, lastId, sortBy, pageSize, currentUser);
 
         return ApiResponse.success(roadmaps);
     }
@@ -124,6 +126,7 @@ public class RoadmapsController {
     public ApiResponse<List<RoadmapDetailDTO>> getCurrentUserRoadmaps(
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false) Integer state,
+            @RequestParam(defaultValue = "20") @Positive(message = "pageSize必须大于0") Integer pageSize,
             @CurrentUser UserDO currentUser) {
 
         // 验证 state 参数：不能传 BANNED
@@ -138,7 +141,7 @@ public class RoadmapsController {
             }
         }
 
-        List<RoadmapDetailDTO> roadmaps = roadmapService.getUserRoadmaps(currentUser.getId(), lastId, contentState);
+        List<RoadmapDetailDTO> roadmaps = roadmapService.getUserRoadmaps(currentUser.getId(), lastId, contentState, pageSize);
         return ApiResponse.success(roadmaps);
     }
 
@@ -149,9 +152,10 @@ public class RoadmapsController {
     @GetMapping("/users/{userId}/roadmaps")
     public ApiResponse<List<RoadmapDetailDTO>> getUserRoadmaps(
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
-            @RequestParam(required = false) Long lastId) {
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "20") @Positive(message = "pageSize必须大于0") Integer pageSize) {
 
-        List<RoadmapDetailDTO> roadmaps = roadmapService.getUserRoadmaps(userId, lastId, ContentState.PUBLISHED);
+        List<RoadmapDetailDTO> roadmaps = roadmapService.getUserRoadmaps(userId, lastId, ContentState.PUBLISHED, pageSize);
         return ApiResponse.success(roadmaps);
     }
 

@@ -259,11 +259,7 @@ public class RoleService {
     @Transactional
     public void approve(long id, UserDO operator) {
         // 调用 DomainService 执行审核通过
-        roleDomainService.approve(
-            id,
-            systemProperties.getRole().isEnableStateValidation(),
-            systemProperties.getRole().isEnableConcurrencyCheck()
-        );
+        roleDomainService.approve(id);
 
         // 获取角色信息
         RoleDO roleDO = roleDomainService.getById(id);
@@ -282,12 +278,7 @@ public class RoleService {
     @Transactional
     public void reject(long id, String reason, UserDO operator) {
         // 调用 DomainService 执行拒绝
-        roleDomainService.reject(
-            id,
-            reason,
-            systemProperties.getRole().isEnableStateValidation(),
-            systemProperties.getRole().isEnableConcurrencyCheck()
-        );
+        roleDomainService.reject(id, reason);
 
         // 获取角色信息
         RoleDO role = roleDomainService.getById(id);
@@ -308,12 +299,7 @@ public class RoleService {
     @Transactional
     public void ban(long id, String reason, UserDO operator) {
         // 调用 DomainService 执行封禁
-        roleDomainService.ban(
-            id,
-            reason,
-            systemProperties.getRole().isEnableStateValidation(),
-            systemProperties.getRole().isEnableConcurrencyCheck()
-        );
+        roleDomainService.ban(id, reason);
 
         String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
 
@@ -436,9 +422,6 @@ public class RoleService {
 
     private void validateHotRolesLimit(int limit) {
         ValidationUtils.require(limit > 0, "限制数量必须大于0");
-        ValidationUtils.require(
-            limit <= systemProperties.getRole().getMaxHotRolesLimit(),
-            "限制数量超过最大值"
-        );
+        ValidationUtils.require(limit <= 200, "限制数量超过最大值");
     }
 }

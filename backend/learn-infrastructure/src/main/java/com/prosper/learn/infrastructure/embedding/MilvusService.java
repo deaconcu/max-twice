@@ -37,19 +37,19 @@ public class MilvusService {
     private MilvusClientV2 milvusClient;
     private final Gson gson = new Gson();
 
-    @Value("${app.milvus.host}")
+    @Value("${milvus.host}")
     private String host;
 
-    @Value("${app.milvus.port}")
+    @Value("${milvus.port}")
     private int port;
 
-    @Value("${app.milvus.collection-name}")
+    @Value("${milvus.collection-name}")
     private String baseCollectionName;
 
-    @Value("${app.milvus.vector-dim}")
+    @Value("${milvus.vector-dim}")
     private int vectorDim;
 
-    @Value("${app.milvus.enabled:true}")
+    @Value("${milvus.enabled:true}")
     private boolean enabled;
 
     /**

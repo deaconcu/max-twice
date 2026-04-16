@@ -32,8 +32,10 @@ public class RobotScanner {
 
     // ========= 进度游标 =========
 
+    private static final String REDIS_KEY_PREFIX = "robot:";
+
     private String progressKey() {
-        return RedisKeyPrefix.prefix(systemProperties.getRobot().getRedisKeyPrefix() + "scan:lastId");
+        return RedisKeyPrefix.prefix(REDIS_KEY_PREFIX + "scan:lastId");
     }
 
     private long getLastId() {

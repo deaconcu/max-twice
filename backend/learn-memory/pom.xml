@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.prosper</groupId>
         <artifactId>Learn</artifactId>
-        <version>0.0.1</version>
+        <version>1.0.0</version>
     </parent>
 
     <artifactId>learn-memory</artifactId>
@@ -18,21 +18,20 @@
         <dependency>
             <groupId>com.prosper</groupId>
             <artifactId>learn-shared</artifactId>
-            <version>0.0.1</version>
+            <version>1.0.0</version>
         </dependency>
 
         <!-- 依赖 learn-infrastructure（用于 RedisKeyPrefix） -->
         <dependency>
             <groupId>com.prosper</groupId>
             <artifactId>learn-infrastructure</artifactId>
-            <version>0.0.1</version>
+            <version>1.0.0</version>
         </dependency>
 
         <!-- MyBatis -->
         <dependency>
             <groupId>org.mybatis.spring.boot</groupId>
             <artifactId>mybatis-spring-boot-starter</artifactId>
-            <version>3.0.3</version>
         </dependency>
     </dependencies>
 

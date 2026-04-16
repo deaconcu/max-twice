@@ -13,29 +13,10 @@ import org.springframework.stereotype.Component;
 public class SystemProperties {
 
     /**
-     * 内容管理相关配置
-     */
-    private Contents contents = new Contents();
-
-    /**
-     * 课程相关配置
-     */
-    private Course course = new Course();
-
-    /**
-     * 课程排行相关配置
-     */
-    private CourseRanking courseRanking = new CourseRanking();
-
-    /**
      * 统计服务相关配置
      */
     private Stats stats = new Stats();
 
-    /**
-     * 平台统计相关配置
-     */
-    private PlatformStats platformStats = new PlatformStats();
 
     /**
      * 统计监控相关配置
@@ -43,59 +24,14 @@ public class SystemProperties {
     private StatsMonitor statsMonitor = new StatsMonitor();
 
     /**
-     * 评论相关配置
-     */
-    private Comment comment = new Comment();
-
-    /**
-     * 专业相关配置
-     */
-    private Role role = new Role();
-
-    /**
      * 用户相关配置
      */
     private User user = new User();
 
     /**
-     * 学习进度相关配置
-     */
-    private LearningProgress learningProgress = new LearningProgress();
-
-    /**
-     * 页面服务相关配置
-     */
-    private Page page = new Page();
-
-    /**
-     * 帖子服务相关配置
-     */
-    private Posting posting = new Posting();
-
-    /**
      * 调度器相关配置
      */
     private Scheduler scheduler = new Scheduler();
-
-    /**
-     * 路线图相关配置
-     */
-    private Roadmap roadmap = new Roadmap();
-
-    /**
-     * 缓存相关配置
-     */
-    private Cache cache = new Cache();
-
-    /**
-     * 数据服务相关配置
-     */
-    private DataService dataService = new DataService();
-
-    /**
-     * 收藏相关配置
-     */
-    private Bookmark bookmark = new Bookmark();
 
     private Robot robot = new Robot();
 
@@ -110,47 +46,6 @@ public class SystemProperties {
     private Srs srs = new Srs();
 
     @Data
-    public static class Contents {
-        /**
-         * 最大置顶帖子数量
-         */
-        private int maxPinnedItems = 10;
-
-        /**
-         * 置顶字段标识
-         */
-        private String pinField = "^";
-
-        /**
-         * 选中字段标识
-         */
-        private String chosenField = "+";
-    }
-
-    @Data
-    public static class CourseRanking {
-        /**
-         * 默认热门课程列表大小
-         */
-        private int defaultHotCoursesLimit = 20;
-
-        /**
-         * 最大热门课程列表大小
-         */
-        private int maxHotCoursesLimit = 200;
-
-        /**
-         * 是否启用排行榜更新
-         */
-        private boolean enableRankingUpdate = true;
-
-        /**
-         * 统计数据清理时的批量大小
-         */
-        private int clearBatchSize = 1000;
-    }
-
-    @Data
     public static class Stats {
         /**
          * 系统开始日期（用于历史数据查询起始点）
@@ -161,35 +56,10 @@ public class SystemProperties {
          * 最大查询天数范围
          */
         private int maxQueryDaysRange = 365;
-
-        /**
-         * 最大查询年份范围 
-         */
-        private int maxQueryYearRange = 5;
-
-        /**
-         * 是否启用统计数据缓存
-         */
-        private boolean enableStatsCache = true;
-
-        /**
-         * 缓存过期时间（分钟）
-         */
-        private int cacheTtlMinutes = 60;
     }
 
     @Data
     public static class StatsMonitor {
-        /**
-         * Redis健康检查间隔（毫秒）- 可能根据环境调整
-         */
-        private long healthCheckInterval = 60000;
-
-        /**
-         * Redis内存监控间隔（毫秒）- 可能根据环境调整
-         */
-        private long memoryMonitorInterval = 3600000;
-
         /**
          * 待同步数据警告阈值 - 可能根据业务量调整
          */
@@ -217,134 +87,7 @@ public class SystemProperties {
     }
 
     @Data
-    public static class Comment {
-        /**
-         * 默认分页大小
-         */
-        private int defaultPageSize = 10;
-
-        /**
-         * 待审核评论查询数量
-         */
-        private int pendingCommentsLimit = 50;
-
-        /**
-         * 评论缓存过期时间（分钟）
-         */
-        private int cacheTtlMinutes = 30;
-    }
-
-    @Data
-    public static class Course {
-        /**
-         * 课程名称搜索结果限制数量
-         */
-        private int searchLimit = 50;
-
-        /**
-         * 热门课程排行榜数量限制
-         */
-        private int hotCoursesRankingLimit = 100;
-    }
-
-    @Data
-    public static class PlatformStats {
-        /**
-         * 平台统计数据的默认缓存时间（分钟）
-         */
-        private int defaultCacheTtlMinutes = 30;
-
-        /**
-         * 平台统计数据的最大查询范围（天）
-         */
-        private int maxQueryRangeDays = 90;
-    }
-
-    @Data
-    public static class Role {
-        /**
-         * 分页查询默认页面大小
-         */
-        private int defaultPageSize = 20;
-
-        /**
-         * 默认专业图标
-         */
-        private String defaultIcon = "mdi-triangle-outline";
-
-        /**
-         * 默认热门专业数量限制
-         */
-        private int defaultHotRolesLimit = 20;
-
-        /**
-         * 最大热门专业数量限制
-         */
-        private int maxHotRolesLimit = 100;
-
-        /**
-         * 是否启用专业状态验证
-         */
-        private boolean enableStateValidation = true;
-
-        /**
-         * 是否启用并发状态检查
-         */
-        private boolean enableConcurrencyCheck = true;
-    }
-
-    @Data
     public static class User {
-        /**
-         * 用户名最大长度
-         */
-        private int maxUsernameLength = 50;
-
-        /**
-         * 密码最小长度
-         */
-        private int minPasswordLength = 6;
-
-        /**
-         * 关注列表分页大小
-         */
-        private int followPageSize = 10;
-
-        /**
-         * 最大订阅数量
-         */
-        private int maxSubscriptions = 100;
-
-        /**
-         * 验证码最小值
-         */
-        private int verificationCodeMin = 100000;
-
-        /**
-         * 验证码最大值
-         */
-        private int verificationCodeMax = 999999;
-
-        /**
-         * 邮件发送者地址
-         */
-        private String emailSender = "deaconcc@126.com";
-
-        /**
-         * 邮件验证主题
-         */
-        private String emailSubject = "Your Verification Code";
-
-        /**
-         * 是否启用邮箱验证
-         */
-        private boolean enableEmailValidation = true;
-
-        /**
-         * 是否启用重复关注检查
-         */
-        private boolean enableDuplicateFollowCheck = true;
-
         /**
          * 验证码过期时间（分钟）
          */
@@ -354,157 +97,19 @@ public class SystemProperties {
          * 验证码发送间隔（秒）
          */
         private int verificationCodeSendIntervalSeconds = 60;
-
-        /**
-         * 默认时区（IANA格式）
-         * 当用户未设置时区时使用
-         */
-        private String defaultTimezone = "America/Los_Angeles";
-    }
-
-    @Data
-    public static class LearningProgress {
-        /**
-         * Redis缓存过期时间（天）
-         */
-        private int cacheExpireDays = 365;
-
-        /**
-         * 同步失败重试间隔（毫秒）
-         */
-        private long syncRetryInterval = 60000;
-
-        /**
-         * 课程完成百分比阈值（基点，10000=100%）
-         */
-        private int completionThreshold = 10000;
-
-        /**
-         * 进度百分比精度倍数（基点转换）
-         */
-        private int progressPrecisionMultiplier = 10000;
-
-        /**
-         * 默认目录索引
-         */
-        private int defaultTocIndex = 1;
-
-        /**
-         * 是否启用Redis降级到数据库
-         */
-        private boolean enableDatabaseFallback = true;
-
-        /**
-         * 是否启用定期补偿同步
-         */
-        private boolean enableRetrySync = true;
-
-        /**
-         * 是否启用层级进度计算
-         */
-        private boolean enableHierarchicalProgress = true;
-    }
-
-    @Data
-    public static class Page {
-        /**
-         * 是否启用路径格式验证
-         */
-        private boolean enablePathValidation = true;
-
-        /**
-         * 是否启用自动路径修复
-         */
-        private boolean enableAutoPathRepair = true;
-    }
-    
-    @Data
-    public static class Posting {
-        /**
-         * 默认分页大小
-         */
-        private int defaultPageSize = 10;
-        
-        /**
-         * 节点下默认帖子数量
-         */
-        private int defaultNodePostCount = 2;
-        
-        /**
-         * 节点列表默认数量
-         */
-        private int defaultNodeListCount = 3;
-        
-        /**
-         * 待审核帖子查询限制
-         */
-        private int pendingPostsLimit = 20;
-        
-        /**
-         * 用户内容列表默认数量
-         */
-        private int userContentsPageSize = 10;
-        
-        /**
-         * 是否启用帖子内容ID转名称
-         */
-        private boolean enableContentIdToName = true;
     }
 
     @Data
     public static class Scheduler {
-        /**
-         * 角色排行榜同步Cron表达式
-         */
-        private String roleRankingSyncCron = "0 15 * * * ?";
-
-        /**
-         * 课程排行榜同步Cron表达式
-         */
-        private String courseRankingSyncCron = "0 30 * * * ?";
-
-        /**
-         * 应用启动后初始化延迟时间（毫秒）
-         */
-        private long initializationDelayMs = 10000;
-
         /**
          * 是否启用角色排行榜定时同步
          */
         private boolean enableRoleRankingSync = true;
 
         /**
-         * 是否启用课程排行榜定时同步
-         */
-        private boolean enableCourseRankingSync = true;
-
-        /**
          * 是否启用应用启动时初始化（角色排行榜）
          */
         private boolean enableRoleRankingStartupInit = true;
-
-        /**
-         * 数据同步批处理大小
-         */
-        private int syncBatchSize = 1000;
-    }
-
-    @Data
-    public static class Roadmap {
-        /**
-         * 默认分页大小
-         */
-        private int defaultPageSize = 20;
-    }
-
-    @Data
-    public static class Cache {
-        /**
-         * 缓存类型 - 控制Spring Cache的类型
-         * 值：redis（启用缓存）、none（关闭缓存）
-         * 影响：spring.cache.type配置，控制所有@Cacheable等注解是否生效
-         */
-        private String type = "redis";
     }
 
     @Data
@@ -515,12 +120,6 @@ public class SystemProperties {
         private long aiUserId = 85L;
         /** 执行器轮询间隔（秒） */
         private int pollIntervalSec = 10;
-        /** DIRECTORY 分支每个节点最多创建的子节点数量 */
-        private int maxChildrenPerNode = 30;
-        /** 兜底扫描CRON表达式（默认每日03:00） */
-        private String scanCron = "0 0 3 * * ?";
-        /** Redis键前缀，例如 robot:ready */
-        private String redisKeyPrefix = "robot:";
 
         /** AI服务: opencode, gemini, openrouter */
         private String aiService = "openrouter";
@@ -532,10 +131,6 @@ public class SystemProperties {
         private String opencodeBaseUrl = "http://127.0.0.1:4096";
         /** OpenCode 的 provider ID */
         private String providerId = "github-copilot";
-
-        // ========== Gemini API 相关配置 ==========
-        /** Gemini API Key */
-        private String geminiApiKey;
 
         // ========== OpenRouter 相关配置 ==========
         /** OpenRouter API Key */
@@ -692,21 +287,5 @@ public class SystemProperties {
              */
             private double minEaseFactor = 1.3;
         }
-    }
-
-    @Data
-    public static class DataService {
-        /**
-         * 批量更新最大数量限制
-         */
-        private int maxBatchUpdateSize = 50;
-    }
-
-    @Data
-    public static class Bookmark {
-        /**
-         * 每个用户每种类型最大收藏数量
-         */
-        private int maxBookmarksPerType = 1000;
     }
 }

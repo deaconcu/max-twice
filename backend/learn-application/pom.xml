@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.prosper</groupId>
         <artifactId>Learn</artifactId>
-        <version>0.0.1</version>
+        <version>1.0.0</version>
     </parent>
 
     <artifactId>learn-application</artifactId>
@@ -18,44 +18,50 @@
         <dependency>
             <groupId>com.prosper</groupId>
             <artifactId>learn-content</artifactId>
-            <version>0.0.1</version>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
             <artifactId>learn-interaction</artifactId>
-            <version>0.0.1</version>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
             <artifactId>learn-learning</artifactId>
-            <version>0.0.1</version>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
             <artifactId>learn-memory</artifactId>
-            <version>0.0.1</version>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
             <artifactId>learn-user</artifactId>
-            <version>0.0.1</version>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
             <artifactId>learn-analytics</artifactId>
-            <version>0.0.1</version>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
             <artifactId>learn-infrastructure</artifactId>
-            <version>0.0.1</version>
+            <version>1.0.0</version>
         </dependency>
 
         <!-- Meilisearch -->
         <dependency>
             <groupId>com.meilisearch.sdk</groupId>
             <artifactId>meilisearch-java</artifactId>
-            <version>0.18.0</version>
+            <version>0.20.0</version>
+        </dependency>
+
+        <!-- Mail -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
     </dependencies>

@@ -5,52 +5,60 @@ spring:
   application:
     name: migration-runner
 
-  # 数据库配置
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+
+  # 多数据源配置
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3307/learn?useSSL=false&characterEncoding=utf-8
-    username: root
-    password: root123
+    # 用户数据库（共享）
+    user:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://127.0.0.1:3307/learn_user?useSSL=false&characterEncoding=utf-8
+      username: root
+      password: root123
+      hikari:
+        minimum-idle: 2
+        maximum-pool-size: 3
+        pool-name: UserHikariPool
+    # 业务数据库 - 中文站
+    business-zh:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://127.0.0.1:3307/learn_zh?useSSL=false&characterEncoding=utf-8
+      username: root
+      password: root123
+      hikari:
+        minimum-idle: 2
+        maximum-pool-size: 3
+        pool-name: BusinessZhHikariPool
+    # 业务数据库 - 英文站
+    business-en:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://127.0.0.1:3307/learn_en?useSSL=false&characterEncoding=utf-8
+      username: root
+      password: root123
+      hikari:
+        minimum-idle: 2
+        maximum-pool-size: 3
+        pool-name: BusinessEnHikariPool
 
   # 禁用缓存（不需要 Redis）
   cache:
     type: none
-
-  # 禁用服务发现
-  cloud:
-    discovery:
-      enabled: false
-    service-registry:
-      auto-registration:
-        enabled: false
-
-  # 禁用自动配置
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-      - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
-      - org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationAutoConfiguration
 
 # MyBatis 配置
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
-# 应用配置（避免 SystemProperties 报错）
+# 应用配置
 app:
-  cache:
-    type: none
-
-# Eureka 配置（禁用）
-eureka:
-  client:
-    enabled: false
-    register-with-eureka: false
-    fetch-registry: false
+  default-language: zh
 
 # 日志配置
 logging:
   level:
     root: INFO
     com.prosper.learn: DEBUG
-    com.prosper.learn.application.migration: DEBUG
+    com.prosper.learn.tools: DEBUG

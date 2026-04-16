@@ -26,12 +26,12 @@ import com.prosper.learn.interaction.comment.CommentDataService;
 import com.prosper.learn.interaction.comment.CommentDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
+import com.prosper.learn.shared.common.constants.CommonConstants;
 import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.CommentDeletedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
-import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
@@ -61,7 +61,6 @@ public class CommentService {
     private final ContentVisibilityService contentVisibilityService;
     private final NodeDataService nodeDataService;
     private final RoadmapDataService roadmapDataService;
-    private final SystemProperties systemProperties;
     private final CommentConverter commentConverter;
     private final UserConverter userConverter;
     private final ApplicationEventPublisher eventPublisher;
@@ -223,12 +222,12 @@ public class CommentService {
      * 获取对象(post, node, comment ...)评论，分页查询，按分数和ID倒序排列
      * @param lastScore 上一页最后一条记录的分数，首页传null
      * @param lastId 上一页最后一条记录的ID，首页传null
+     * @param pageSize 每页数量
      * @return KeysetPageResponse<CommentWithRepliesDTO> 包含子评论的评论列表
      */
-    public KeysetPageResponse<CommentWithRepliesDTO> getCommentsByObject(Long objectId, Integer type, Double lastScore, Long lastId, UserDO currentUser) {
+    public KeysetPageResponse<CommentWithRepliesDTO> getCommentsByObject(Long objectId, Integer type, Double lastScore, Long lastId, int pageSize, UserDO currentUser) {
         validateCommentType(type);
-
-        int pageSize = systemProperties.getComment().getDefaultPageSize();
+        pageSize = Math.min(pageSize, CommonConstants.MAX_PAGE_SIZE);
 
         // 调用 DomainService 获取评论列表
         List<CommentDO> commentDOList = commentDomainService.getCommentsByObject(objectId, type, lastScore, lastId, pageSize);
@@ -256,10 +255,11 @@ public class CommentService {
      * 获取子评论列表，分页查询，按分数和ID倒序排列
      * @param lastScore 上一页最后一条记录的分数，首页传null
      * @param lastId 上一页最后一条记录的ID，首页传null
+     * @param pageSize 每页数量
      * @return KeysetPageResponse<CommentDetailDTO> 不包含子评论的评论详情列表
      */
-    public KeysetPageResponse<CommentDetailDTO> getCommentReplies(Long id, Double lastScore, Long lastId, UserDO currentUser) {
-        int pageSize = systemProperties.getComment().getDefaultPageSize();
+    public KeysetPageResponse<CommentDetailDTO> getCommentReplies(Long id, Double lastScore, Long lastId, int pageSize, UserDO currentUser) {
+        pageSize = Math.min(pageSize, CommonConstants.MAX_PAGE_SIZE);
 
         // 调用 DomainService 获取子评论列表
         List<CommentDO> commentDOList = commentDomainService.getCommentReplies(id, lastScore, lastId, pageSize);
@@ -300,7 +300,7 @@ public class CommentService {
      * @return List<CommentAdminDTO> 管理员视图（含审核原因）
      */
     public List<CommentAdminDTO> getCommentsByState(String state, Long lastId) {
-        int pageSize = systemProperties.getComment().getDefaultPageSize();
+        int pageSize = CommonConstants.DEFAULT_PAGE_SIZE;
 
         // 调用 DomainService 获取评论列表（包含状态转换逻辑）
         List<CommentDO> commentDOList = commentDomainService.getCommentsByState(state, lastId, pageSize);
@@ -313,7 +313,7 @@ public class CommentService {
      * 管理后台：按状态获取评论列表
      */
     public KeysetPageResponse<CommentAdminDTO> listByState(ContentState state, Long lastId) {
-        int pageSize = systemProperties.getComment().getDefaultPageSize();
+        int pageSize = CommonConstants.DEFAULT_PAGE_SIZE;
         Byte stateValue = state != null ? state.value() : null;
         List<CommentDO> commentDOList = commentDomainService.listByState(stateValue, lastId, pageSize + 1);
         return buildAdminResponse(commentDOList, pageSize);
@@ -323,7 +323,7 @@ public class CommentService {
      * 管理后台：高级筛选评论列表
      */
     public KeysetPageResponse<CommentAdminDTO> listByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId) {
-        int pageSize = systemProperties.getComment().getDefaultPageSize();
+        int pageSize = CommonConstants.DEFAULT_PAGE_SIZE;
         List<CommentDO> commentDOList = commentDomainService.listByFilter(objectType, objectId, creatorId, lastId, pageSize + 1);
         return buildAdminResponse(commentDOList, pageSize);
     }

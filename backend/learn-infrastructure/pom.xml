@@ -5,7 +5,7 @@
     <parent>
         <artifactId>Learn</artifactId>
         <groupId>com.prosper</groupId>
-        <version>0.0.1</version>
+        <version>1.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -20,26 +20,27 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.prosper</groupId>
             <artifactId>learn-shared</artifactId>
-            <version>0.0.1</version>
+            <version>1.0.0</version>
             <scope>compile</scope>
+        </dependency>
+        <!-- Spring Web -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <!-- AWS S3 SDK for Cloudflare R2 -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3</artifactId>
-            <version>2.28.0</version>
+            <version>2.42.34</version>
         </dependency>
         <!-- Image compression -->
         <dependency>
             <groupId>net.coobird</groupId>
             <artifactId>thumbnailator</artifactId>
-            <version>0.4.20</version>
+            <version>0.4.21</version>
         </dependency>
         <!-- Jakarta Annotation API for @PostConstruct -->
         <dependency>
@@ -50,22 +51,15 @@
         <dependency>
             <groupId>io.milvus</groupId>
             <artifactId>milvus-sdk-java</artifactId>
-            <version>2.6.11</version>
+            <version>2.6.17</version>
         </dependency>
 
         <!-- Google Gemini SDK -->
         <dependency>
             <groupId>com.google.genai</groupId>
             <artifactId>google-genai</artifactId>
-            <version>1.38.0</version>
+            <version>1.50.0</version>
         </dependency>
-        <!--
-            <dependency>
-                <groupId>com.sun.jersey.contribs</groupId>
-                <artifactId>jersey-apache-client4</artifactId>
-                <version>1.19.4</version>
-            </dependency>
-        -->
     </dependencies>
 
     </project>

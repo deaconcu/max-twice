@@ -3,7 +3,6 @@ package com.prosper.learn.interaction.bookmark;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmarkedEvent;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
-import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -16,9 +15,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BookmarkDomainService {
 
+    private static final int MAX_BOOKMARKS_PER_TYPE = 1000;
+
     private final BookmarkDataService bookmarkDataService;
     private final ApplicationEventPublisher eventPublisher;
-    private final SystemProperties systemProperties;
 
     /**
      * 切换收藏状态（toggle）
@@ -28,10 +28,9 @@ public class BookmarkDomainService {
 
         if (existing == null) {
             // 检查收藏数量限制
-            int maxBookmarks = systemProperties.getBookmark().getMaxBookmarksPerType();
             int count = bookmarkDataService.countByUser(userId, contentType.value());
-            if (count >= maxBookmarks) {
-                throw new RuntimeException("收藏数量已达上限（每类型最多" + maxBookmarks + "条）");
+            if (count >= MAX_BOOKMARKS_PER_TYPE) {
+                throw new RuntimeException("收藏数量已达上限（每类型最多" + MAX_BOOKMARKS_PER_TYPE + "条）");
             }
 
             // 添加收藏

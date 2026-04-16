@@ -6,6 +6,7 @@ import axios, {
 } from 'axios'
 import type { ApiResponse } from '@/types/api'
 import { logger } from '@/utils/logger'
+import { useSiteStore } from '@/stores'
 
 /**
  * 自定义 API 错误类
@@ -95,6 +96,15 @@ axiosInstance.interceptors.request.use(
     // 如果存在 token，添加到请求头
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+
+    // 添加语言站请求头
+    try {
+      const siteStore = useSiteStore()
+      config.headers['X-Site-Lang'] = siteStore.currentLanguage
+    } catch {
+      // store 未初始化时使用默认值
+      config.headers['X-Site-Lang'] = 'zh'
     }
 
     // 添加 ETag 缓存头（If-None-Match）

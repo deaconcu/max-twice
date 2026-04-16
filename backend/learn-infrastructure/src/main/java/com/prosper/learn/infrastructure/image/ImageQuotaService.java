@@ -48,16 +48,16 @@ public class ImageQuotaService {
 
     private final RedisTemplate<String, String> redisTemplate;
 
-    @Value("${upload.quota.min-interval:0}")
+    @Value("${app.upload.quota.min-interval:0}")
     private int minInterval; // 最小上传间隔（秒），0表示不限制
 
-    @Value("${upload.quota.minute-limit:30}")
+    @Value("${app.upload.quota.minute-limit:30}")
     private int minuteLimit; // 每分钟限制
 
-    @Value("${upload.quota.hour-limit:150}")
+    @Value("${app.upload.quota.hour-limit:150}")
     private int hourLimit; // 每小时限制
 
-    @Value("${upload.quota.daily-limit:300}")
+    @Value("${app.upload.quota.daily-limit:300}")
     private int dailyLimit; // 每天限制
 
     private static final String KEY_PREFIX_INTERVAL = "upload:interval:";

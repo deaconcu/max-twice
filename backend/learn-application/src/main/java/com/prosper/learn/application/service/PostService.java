@@ -30,6 +30,7 @@ import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.content.post.PostDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
+import com.prosper.learn.shared.common.constants.CommonConstants;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
@@ -42,7 +43,6 @@ import static com.prosper.learn.shared.domain.Enums.ContentState;
 import static com.prosper.learn.shared.domain.Enums.PostType;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.StatusCode;
-import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
@@ -99,7 +99,6 @@ public class PostService {
 
     // 工具和配置
     private final ObjectMapper objectMapper;
-    private final SystemProperties systemProperties;
 
     // 转换器
     private final UserConverter userConverter;
@@ -159,7 +158,7 @@ public class PostService {
     public List<PostDO> getList(long nodeId) {
         nodeDataService.validateAndGet(nodeId);
         return domainService.getListByNodeAndScore(
-                nodeId, systemProperties.getPosting().getDefaultNodePostCount(), ContentState.PUBLISHED.value());
+                nodeId, CommonConstants.DEFAULT_PAGE_SIZE, ContentState.PUBLISHED.value());
     }
 
     /**
@@ -168,7 +167,7 @@ public class PostService {
     public KeysetPageResponse<PostFullDTO> getUserPostsWithPagination(Long userId, Long lastId, PostType postType, Byte state) {
         userDataService.validateAndGet(userId);
 
-        int count = systemProperties.getPosting().getUserContentsPageSize();
+        int count = CommonConstants.DEFAULT_PAGE_SIZE;
 
         // 调用 DomainService 查询（包含 idToName 处理）
         List<PostDO> postings = domainService.getUserPosts(userId, postType.value(), lastId, state, count + 1);
@@ -238,18 +237,6 @@ public class PostService {
     }
 
     /**
-     * 获取节点帖子列表
-     */
-    public List<PostSummaryDTO> getNodePostsList(Long nodeId) {
-        int count = systemProperties.getPosting().getDefaultNodeListCount();
-
-        // 调用 DomainService 查询（包含 idToName 处理）
-        List<PostDO> postings = domainService.getNodePostsList(nodeId, count, ContentState.PUBLISHED.value());
-
-        return postConverter.toSummaryDTO(postings);
-    }
-
-    /**
      * 根据状态获取帖子列表（支持分页）- 管理后台使用
      */
     public KeysetPageResponse<PostAdminDTO> listByState(ContentState state, Long lastId, Integer limit) {
@@ -276,7 +263,7 @@ public class PostService {
      * Admin - 高级筛选帖子列表
      */
     public KeysetPageResponse<PostAdminDTO> listByFilter(Long nodeId, Long creatorId, Long lastId) {
-        int limit = systemProperties.getPosting().getPendingPostsLimit();
+        int limit = CommonConstants.DEFAULT_PAGE_SIZE;
 
         List<PostDO> postDOList = domainService.listByFilter(nodeId, creatorId, lastId, limit + 1);
 

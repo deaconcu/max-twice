@@ -25,6 +25,7 @@ import com.prosper.learn.content.roadmap.RoadmapDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDomainService;
 import com.prosper.learn.learning.enrollment.UserLearningDO;
 import com.prosper.learn.learning.enrollment.UserLearningDomainService;
+import com.prosper.learn.shared.common.constants.CommonConstants;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
@@ -35,7 +36,6 @@ import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRestoredEv
 import static com.prosper.learn.shared.domain.Enums.ContentState;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.StatusCode;
-import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import com.prosper.learn.user.profile.UserDomainService;
@@ -78,7 +78,6 @@ public class RoadmapService {
     private final RoadmapConverter roadmapConverter;
     private final UserConverter userConverter;
     private final RoleConverter roleConverter;
-    private final SystemProperties systemProperties;
     private final ContentVisibilityService contentVisibilityService;
 
     // ========== DTO转换方法 ==========
@@ -329,7 +328,7 @@ public class RoadmapService {
     public List<RoadmapSummaryDTO> getRoadmapsByRolePublic(Long roleId, Long lastId, Integer pageSize) {
         validateRoleId(roleId);
 
-        int limit = pageSize != null && pageSize > 0 ? pageSize : systemProperties.getRoadmap().getDefaultPageSize();
+        int limit = normalizePageSize(pageSize);
 
         // 委托给 DomainService 查询
         List<RoadmapDO> roadmapList = domainService.getRoadmapsByRolePublic(roleId, lastId, limit);
@@ -411,7 +410,7 @@ public class RoadmapService {
     /**
      * 获取角色路线图列表（带置顶和状态信息）
      */
-    public List<RoadmapWithStatusDTO> getRoadmapsByRole(Long roleId, Long lastId, String sortBy, UserDO currentUser) {
+    public List<RoadmapWithStatusDTO> getRoadmapsByRole(Long roleId, Long lastId, String sortBy, Integer pageSize, UserDO currentUser) {
         validateRoleId(roleId);
 
         // 默认按 score 排序
@@ -419,7 +418,7 @@ public class RoadmapService {
             sortBy = "score";
         }
 
-        int limit = systemProperties.getRoadmap().getDefaultPageSize();
+        int limit = normalizePageSize(pageSize);
 
         // 委托给 DomainService 查询路线图列表
         List<RoadmapDO> roadmapList = domainService.getRoadmapsByRole(
@@ -433,12 +432,13 @@ public class RoadmapService {
      * 获取用户创建的路线图列表（所有状态）
      * @param userId 用户ID
      * @param lastId 分页游标
+     * @param pageSize 每页数量
      * @return 路线图列表（包含专业信息）
      */
-    public List<RoadmapDetailDTO> getUserRoadmaps(Long userId, Long lastId, ContentState state) {
+    public List<RoadmapDetailDTO> getUserRoadmaps(Long userId, Long lastId, ContentState state, Integer pageSize) {
         validateUserId(userId);
 
-        int limit = systemProperties.getRoadmap().getDefaultPageSize();
+        int limit = normalizePageSize(pageSize);
 
         // 委托给 DomainService 查询
         List<RoadmapDO> roadmapList = domainService.getUserRoadmaps(
@@ -637,7 +637,14 @@ public class RoadmapService {
     }
 
     // ========== 私有辅助方法 ==========
-    
+
+    private int normalizePageSize(Integer pageSize) {
+        if (pageSize == null || pageSize <= 0) {
+            return CommonConstants.DEFAULT_PAGE_SIZE;
+        }
+        return Math.min(pageSize, CommonConstants.MAX_PAGE_SIZE);
+    }
+
     private void validateUserId(long userId) {
         if (userId <= 0) {
             throw StatusCode.INVALID_PARAMETER.exception();
