@@ -14,7 +14,7 @@ spring:
     # 用户数据库（共享）
     user:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      jdbc-url: jdbc:mysql://${DB_HOST}:${DB_PORT}/twicemax_user?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+      jdbc-url: jdbc:mysql://${DB_HOST}:${DB_PORT}/twicemax_user?useSSL=false&characterEncoding=utf-8&allowPublicKeyRetrieval=true
       username: ${DB_USERNAME}
       password: ${DB_PASSWORD}
       hikari:
@@ -24,7 +24,7 @@ spring:
     # 业务数据库 - 中文站
     business-zh:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      jdbc-url: jdbc:mysql://${DB_HOST}:${DB_PORT}/twicemax_zh?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+      jdbc-url: jdbc:mysql://${DB_HOST}:${DB_PORT}/twicemax_zh?useSSL=false&characterEncoding=utf-8&allowPublicKeyRetrieval=true
       username: ${DB_USERNAME}
       password: ${DB_PASSWORD}
       hikari:
@@ -34,7 +34,7 @@ spring:
     # 业务数据库 - 英文站
     business-en:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      jdbc-url: jdbc:mysql://${DB_HOST}:${DB_PORT}/twicemax_en?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+      jdbc-url: jdbc:mysql://${DB_HOST}:${DB_PORT}/twicemax_en?useSSL=false&characterEncoding=utf-8&allowPublicKeyRetrieval=true
       username: ${DB_USERNAME}
       password: ${DB_PASSWORD}
       hikari:
