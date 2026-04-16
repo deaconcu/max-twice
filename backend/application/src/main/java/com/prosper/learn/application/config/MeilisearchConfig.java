@@ -16,13 +16,17 @@ public class MeilisearchConfig {
     @Value("${meilisearch.host}")
     private String host;
 
+    @Value("${meilisearch.port}")
+    private int port;
+
     @Value("${meilisearch.api-key}")
     private String apiKey;
 
     @Bean
     @ConditionalOnProperty(name = "meilisearch.enabled", havingValue = "true")
     public Client meilisearchClient() {
-        Config config = new Config(host, apiKey);
+        String url = "http://" + host + ":" + port;
+        Config config = new Config(url, apiKey);
         return new Client(config);
     }
 }

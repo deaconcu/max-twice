@@ -76,7 +76,8 @@ server:
 # Meilisearch 配置
 meilisearch:
   enabled: ${MEILISEARCH_ENABLED}
-  host: http://${MEILISEARCH_HOST}:${MEILISEARCH_PORT}
+  host: ${MEILISEARCH_HOST}
+  port: ${MEILISEARCH_PORT}
   api-key: ${MEILISEARCH_API_KEY}
 
 # OpenRouter Embedding配置
