@@ -5,19 +5,19 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.prosper</groupId>
-        <artifactId>Learn</artifactId>
+        <artifactId>twicemax</artifactId>
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>learn-user</artifactId>
-    <name>learn-user</name>
-    <description>用户域：User、Auth、Notification</description>
+    <artifactId>learning</artifactId>
+    <name>learn-learning</name>
+    <description>学习域：Progress、Enrollment、Achievement</description>
 
     <dependencies>
         <!-- 依赖 learn-shared -->
         <dependency>
             <groupId>com.prosper</groupId>
-            <artifactId>learn-shared</artifactId>
+            <artifactId>shared</artifactId>
             <version>1.0.0</version>
         </dependency>
 
@@ -25,12 +25,6 @@
         <dependency>
             <groupId>org.mybatis.spring.boot</groupId>
             <artifactId>mybatis-spring-boot-starter</artifactId>
-        </dependency>
-
-        <!-- Spring Security Crypto -->
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-crypto</artifactId>
         </dependency>
     </dependencies>
 

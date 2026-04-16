@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.prosper</groupId>
-        <artifactId>Learn</artifactId>
+        <artifactId>twicemax</artifactId>
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>learn-application</artifactId>
+    <artifactId>application</artifactId>
     <name>learn-application</name>
     <description>应用编排层：跨域业务流程编排</description>
 
@@ -17,37 +17,37 @@
         <!-- 依赖各个业务域 -->
         <dependency>
             <groupId>com.prosper</groupId>
-            <artifactId>learn-content</artifactId>
+            <artifactId>content</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
-            <artifactId>learn-interaction</artifactId>
+            <artifactId>interaction</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
-            <artifactId>learn-learning</artifactId>
+            <artifactId>learning</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
-            <artifactId>learn-memory</artifactId>
+            <artifactId>memory</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
-            <artifactId>learn-user</artifactId>
+            <artifactId>user</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
-            <artifactId>learn-analytics</artifactId>
+            <artifactId>analytics</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
-            <artifactId>learn-infrastructure</artifactId>
+            <artifactId>infrastructure</artifactId>
             <version>1.0.0</version>
         </dependency>
 

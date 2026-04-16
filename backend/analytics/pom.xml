@@ -5,19 +5,19 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.prosper</groupId>
-        <artifactId>Learn</artifactId>
+        <artifactId>twicemax</artifactId>
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>learn-content</artifactId>
-    <name>learn-content</name>
-    <description>内容域：Post、Course、Node、Role、Roadmap</description>
+    <artifactId>analytics</artifactId>
+    <name>learn-analytics</name>
+    <description>分析域：Stats、Report、Monitoring</description>
 
     <dependencies>
         <!-- 依赖 learn-shared -->
         <dependency>
             <groupId>com.prosper</groupId>
-            <artifactId>learn-shared</artifactId>
+            <artifactId>shared</artifactId>
             <version>1.0.0</version>
         </dependency>
 
@@ -25,6 +25,12 @@
         <dependency>
             <groupId>org.mybatis.spring.boot</groupId>
             <artifactId>mybatis-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.prosper</groupId>
+            <artifactId>infrastructure</artifactId>
+            <version>1.0.0</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

@@ -5,21 +5,21 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.prosper</groupId>
-    <artifactId>Learn</artifactId>
+    <artifactId>twicemax</artifactId>
     <packaging>pom</packaging>
     <version>1.0.0</version>
     <modules>
-        <module>learn-web</module>
-        <module>learn-infrastructure</module>
-        <module>learn-shared</module>
-        <module>learn-content</module>
-        <module>learn-interaction</module>
-        <module>learn-learning</module>
-        <module>learn-memory</module>
-        <module>learn-user</module>
-        <module>learn-analytics</module>
-        <module>learn-application</module>
-        <module>learn-tools</module>
+        <module>web</module>
+        <module>infrastructure</module>
+        <module>shared</module>
+        <module>content</module>
+        <module>interaction</module>
+        <module>learning</module>
+        <module>memory</module>
+        <module>user</module>
+        <module>analytics</module>
+        <module>application</module>
+        <module>tools</module>
     </modules>
 
     <properties>

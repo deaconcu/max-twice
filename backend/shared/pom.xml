@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.prosper</groupId>
-        <artifactId>Learn</artifactId>
+        <artifactId>twicemax</artifactId>
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>learn-shared</artifactId>
+    <artifactId>shared</artifactId>
     <name>learn-shared</name>
     <description>共享基础设施：领域事件、枚举、异常、工具类、缓存配置、DataService基类</description>
 
