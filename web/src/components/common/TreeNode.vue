@@ -1,21 +1,16 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { ContentState } from '@/enums'
-
-interface NodeInfo {
-  name?: string
-  isCompleted?: boolean
-  state?: number
-}
+import type { Node } from '@/types/node'
 
 type NodeData = Record<string, any>
 
 interface Props {
   nodeData: NodeData
-  nodeInfos: Record<string, NodeInfo>
+  nodeInfos?: Record<string, Node>
   nodeId?: number | null
   courseId?: number | null
-  path: string
+  path?: string
   currPath?: string
   depth?: number
   isLearning?: boolean
@@ -24,8 +19,10 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  nodeInfos: () => ({}),
   nodeId: null,
   courseId: null,
+  path: '',
   currPath: '',
   depth: 0,
   isLearning: false,

@@ -825,7 +825,7 @@ import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { useUserStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/format'
 import UserAvatar from '@/components/common/UserAvatar.vue'
-import type { MemoryCardDeck } from '@/types/memory'
+import type { MemoryCardDeck, DeckDetail, MemoryCardView } from '@/types/memory'
 import { useI18n } from '@/composables/useI18n'
 
 const props = defineProps<Props>()
@@ -851,11 +851,11 @@ const currentTab = ref('all') // 'all' | 'study' | 'diff'
 const diffTab = ref('modified') // diff页面内的子tab: 'modified' | 'added' | 'nodeOnly'
 
 // 卡片数据
-const deckDetail = ref<any>(null)
-const studyCards = ref<any[]>([]) // 用户学习的卡片
+const deckDetail = ref<DeckDetail | null>(null)
+const studyCards = ref<MemoryCardView[]>([]) // 用户学习的卡片
 
 // 卡片预览
-const selectedCard = ref<any>(null)
+const selectedCard = ref<MemoryCardView | null>(null)
 const showCardPreview = ref(false)
 const isFlipped = ref(false)
 
@@ -960,7 +960,7 @@ const {
     // 获取用户在这个node下学习的所有卡片
     const nodeId = deckDetail.value?.nodeId
     console.log('Loading study cards for nodeId:', nodeId)
-    console.log('Loading study cards for userId:', userStore.user?.id)
+    console.log('Loading study cards for userId:', userStore.currentUser?.id)
     if (nodeId && currentUserId.value) {
       try {
         const response = await memoryApi.getUserCardsByNode(nodeId)

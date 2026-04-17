@@ -92,8 +92,8 @@ const { execute: executeSaveDraft, loading: savingDraft } = useMutation(
       showSnackbar?.(t('nodeSelector.draftSaved'), 'success')
 
       // 如果是创建模式，保存返回的草稿信息，转为编辑模式
-      if (!isEditMode.value && response.data) {
-        currentDraft.value = response.data
+      if (!isEditMode.value && response) {
+        currentDraft.value = response
       }
 
       // 不关闭对话框，不刷新列表

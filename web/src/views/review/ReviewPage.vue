@@ -189,79 +189,83 @@
             </v-expansion-panels>
           </v-card>
 
-          <!-- 复习模式 -->
-          <div v-if="viewMode === 'review'">
-            <!-- 选中课程时显示课程名 header + 模式切换按钮 -->
-            <div v-if="selectedCourse" class="d-flex align-center justify-space-between mb-4">
-              <div class="d-flex align-baseline ga-4">
-                <span class="text-h6 font-weight-bold text-grey-darken-3">{{
-                  selectedCourse.course.name
-                }}</span>
-                <div class="text-caption text-grey-darken-1 d-flex align-center ga-2">
-                  <span v-if="selectedCourseLearningCards > 0">
-                    {{ t('review.learningCards') }}
-                    <span class="font-weight-bold text-warning">{{
-                      selectedCourseLearningCards
-                    }}</span>
-                    {{ t('review.cards') }}
-                  </span>
-                  <span
-                    v-if="
-                      selectedCourseLearningCards > 0 && (selectedCourse?.dueCardCount || 0) > 0
-                    "
-                    >·</span
-                  >
-                  <span v-if="(selectedCourse?.dueCardCount || 0) > 0">
-                    {{ t('review.dueReview') }}
-                    <span class="font-weight-bold text-error">{{
-                      selectedCourse?.dueCardCount || 0
-                    }}</span>
-                    {{ t('review.cards') }}
-                  </span>
-                  <span v-if="selectedCourseNewCards > 0">·</span>
-                  <span v-if="selectedCourseNewCards > 0">
-                    {{ t('review.newCards') }}
-                    <span class="font-weight-bold text-success">{{ selectedCourseNewCards }}</span>
-                    {{ t('review.cards') }}
-                  </span>
-                  <span v-if="submitting">· {{ t('review.submitting') }}</span>
-                </div>
-              </div>
-              <!-- 模式切换按钮 -->
-              <div class="d-flex align-center ga-1">
-                <v-btn
-                  :color="viewMode === 'review' ? 'primary' : 'grey'"
-                  :variant="viewMode === 'review' ? 'flat' : 'text'"
-                  rounded="lg"
-                  size="small"
-                  @click="switchViewMode('review')"
+          <!-- 选中课程时显示课程名 header + 模式切换按钮 (公共区域) -->
+          <div v-if="selectedCourse" class="d-flex align-center justify-space-between mb-4">
+            <div class="d-flex align-baseline ga-4">
+              <span class="text-h6 font-weight-bold text-grey-darken-3">{{
+                selectedCourse.course.name
+              }}</span>
+              <!-- 复习模式下显示额外信息 -->
+              <div
+                v-if="viewMode === 'review'"
+                class="text-caption text-grey-darken-1 d-flex align-center ga-2"
+              >
+                <span v-if="selectedCourseLearningCards > 0">
+                  {{ t('review.learningCards') }}
+                  <span class="font-weight-bold text-warning">{{
+                    selectedCourseLearningCards
+                  }}</span>
+                  {{ t('review.cards') }}
+                </span>
+                <span
+                  v-if="
+                    selectedCourseLearningCards > 0 && (selectedCourse?.dueCardCount || 0) > 0
+                  "
+                  >·</span
                 >
-                  <v-icon icon="mdi-play" size="16" class="mr-1"></v-icon>
-                  复习
-                </v-btn>
-                <v-btn
-                  :color="viewMode === 'list' ? 'primary' : 'grey'"
-                  :variant="viewMode === 'list' ? 'flat' : 'text'"
-                  rounded="lg"
-                  size="small"
-                  @click="switchViewMode('list')"
-                >
-                  <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1"></v-icon>
-                  卡片管理
-                </v-btn>
-                <v-btn
-                  :color="viewMode === 'manage' ? 'primary' : 'grey'"
-                  :variant="viewMode === 'manage' ? 'flat' : 'text'"
-                  rounded="lg"
-                  size="small"
-                  @click="switchViewMode('manage')"
-                >
-                  <v-icon icon="mdi-cog" size="16" class="mr-1"></v-icon>
-                  复习设置
-                </v-btn>
+                <span v-if="(selectedCourse?.dueCardCount || 0) > 0">
+                  {{ t('review.dueReview') }}
+                  <span class="font-weight-bold text-error">{{
+                    selectedCourse?.dueCardCount || 0
+                  }}</span>
+                  {{ t('review.cards') }}
+                </span>
+                <span v-if="selectedCourseNewCards > 0">·</span>
+                <span v-if="selectedCourseNewCards > 0">
+                  {{ t('review.newCards') }}
+                  <span class="font-weight-bold text-success">{{ selectedCourseNewCards }}</span>
+                  {{ t('review.cards') }}
+                </span>
+                <span v-if="submitting">· {{ t('review.submitting') }}</span>
               </div>
             </div>
+            <!-- 模式切换按钮 -->
+            <div class="d-flex align-center ga-1">
+              <v-btn
+                :color="viewMode === 'review' ? 'primary' : 'grey'"
+                :variant="viewMode === 'review' ? 'flat' : 'text'"
+                rounded="lg"
+                size="small"
+                @click="switchViewMode('review')"
+              >
+                <v-icon icon="mdi-play" size="16" class="mr-1"></v-icon>
+                复习
+              </v-btn>
+              <v-btn
+                :color="viewMode === 'list' ? 'primary' : 'grey'"
+                :variant="viewMode === 'list' ? 'flat' : 'text'"
+                rounded="lg"
+                size="small"
+                @click="switchViewMode('list')"
+              >
+                <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1"></v-icon>
+                卡片管理
+              </v-btn>
+              <v-btn
+                :color="viewMode === 'manage' ? 'primary' : 'grey'"
+                :variant="viewMode === 'manage' ? 'flat' : 'text'"
+                rounded="lg"
+                size="small"
+                @click="switchViewMode('manage')"
+              >
+                <v-icon icon="mdi-cog" size="16" class="mr-1"></v-icon>
+                复习设置
+              </v-btn>
+            </div>
+          </div>
 
+          <!-- 复习模式 -->
+          <div v-if="viewMode === 'review'">
             <!-- 加载状态 -->
             <LoadingSpinner v-if="reviewLoading" />
 
@@ -537,48 +541,6 @@
 
           <!-- 列表模式 -->
           <div v-else-if="viewMode === 'list'">
-            <!-- 选中课程时显示课程名 header + 模式切换按钮 -->
-            <div v-if="selectedCourse" class="d-flex align-center justify-space-between mb-4">
-              <div class="d-flex align-center ga-2">
-                <span class="text-h6 font-weight-bold text-grey-darken-3">{{
-                  selectedCourse.course.name
-                }}</span>
-              </div>
-              <!-- 模式切换按钮 -->
-              <div class="d-flex align-center ga-1">
-                <v-btn
-                  :color="viewMode === 'review' ? 'primary' : 'grey'"
-                  :variant="viewMode === 'review' ? 'flat' : 'text'"
-                  rounded="lg"
-                  size="small"
-                  @click="switchViewMode('review')"
-                >
-                  <v-icon icon="mdi-play" size="16" class="mr-1"></v-icon>
-                  复习
-                </v-btn>
-                <v-btn
-                  :color="viewMode === 'list' ? 'primary' : 'grey'"
-                  :variant="viewMode === 'list' ? 'flat' : 'text'"
-                  rounded="lg"
-                  size="small"
-                  @click="switchViewMode('list')"
-                >
-                  <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1"></v-icon>
-                  卡片管理
-                </v-btn>
-                <v-btn
-                  :color="viewMode === 'manage' ? 'primary' : 'grey'"
-                  :variant="viewMode === 'manage' ? 'flat' : 'text'"
-                  rounded="lg"
-                  size="small"
-                  @click="switchViewMode('manage')"
-                >
-                  <v-icon icon="mdi-cog" size="16" class="mr-1"></v-icon>
-                  复习设置
-                </v-btn>
-              </div>
-            </div>
-
             <!-- 加载状态 -->
             <LoadingSpinner v-if="listLoading && listCards.length === 0" />
 
@@ -796,48 +758,6 @@
 
           <!-- 管理模式 -->
           <div v-else-if="viewMode === 'manage'">
-            <!-- 选中课程时显示课程名 header + 模式切换按钮 -->
-            <div v-if="selectedCourse" class="d-flex align-center justify-space-between mb-4">
-              <div class="d-flex align-center ga-2">
-                <span class="text-h6 font-weight-bold text-grey-darken-3">{{
-                  selectedCourse.course.name
-                }}</span>
-              </div>
-              <!-- 模式切换按钮 -->
-              <div class="d-flex align-center ga-1">
-                <v-btn
-                  :color="viewMode === 'review' ? 'primary' : 'grey'"
-                  :variant="viewMode === 'review' ? 'flat' : 'text'"
-                  rounded="lg"
-                  size="small"
-                  @click="switchViewMode('review')"
-                >
-                  <v-icon icon="mdi-play" size="16" class="mr-1"></v-icon>
-                  复习
-                </v-btn>
-                <v-btn
-                  :color="viewMode === 'list' ? 'primary' : 'grey'"
-                  :variant="viewMode === 'list' ? 'flat' : 'text'"
-                  rounded="lg"
-                  size="small"
-                  @click="switchViewMode('list')"
-                >
-                  <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1"></v-icon>
-                  卡片管理
-                </v-btn>
-                <v-btn
-                  :color="viewMode === 'manage' ? 'primary' : 'grey'"
-                  :variant="viewMode === 'manage' ? 'flat' : 'text'"
-                  rounded="lg"
-                  size="small"
-                  @click="switchViewMode('manage')"
-                >
-                  <v-icon icon="mdi-cog" size="16" class="mr-1"></v-icon>
-                  复习设置
-                </v-btn>
-              </div>
-            </div>
-
             <div v-if="!selectedCourse" class="text-center pa-6 pa-sm-8">
               <v-card border rounded="lg" class="pa-6 pa-sm-8">
                 <v-icon
@@ -1160,7 +1080,7 @@ const { t } = useI18n()
 
 // 状态
 const activeTab = ref<string>('all')
-const viewMode = ref<'review' | 'list' | 'manage'>('review')
+const viewMode = ref<string>('review')
 const isReviewing = ref(false)
 const showAnswer = ref(false)
 const selectedCards = ref<number[]>([])
@@ -1213,11 +1133,11 @@ const {
 const currentCourseList = computed(() => {
   switch (courseStateTab.value) {
     case Status.STUDYING:
-      return studyingSummary.value.courses
+      return studyingSummary.value?.courses ?? []
     case Status.FROZEN:
-      return frozenSummary.value.courses
+      return frozenSummary.value?.courses ?? []
     case Status.HIDDEN:
-      return hiddenSummary.value.courses
+      return hiddenSummary.value?.courses ?? []
     default:
       return []
   }
@@ -1229,7 +1149,7 @@ const courseListLoadingComputed = computed(() => {
 })
 
 // 从复习概览中提取课程列表（学习中的课程，兼容现有代码）
-const courseMemoryBanks = computed(() => studyingSummary.value.courses)
+const courseMemoryBanks = computed(() => studyingSummary.value?.courses ?? [])
 
 // 刷新课程列表的方法（兼容现有代码）
 const refreshCourses = refreshStudying
@@ -1237,9 +1157,9 @@ const refreshCourses = refreshStudying
 // 切换课程状态 Tab，懒加载数据
 const switchCourseStateTab = (state: number) => {
   courseStateTab.value = state
-  if (state === Status.FROZEN && frozenSummary.value.courses.length === 0) {
+  if (state === Status.FROZEN && (frozenSummary.value?.courses.length ?? 0) === 0) {
     void refreshFrozen()
-  } else if (state === Status.HIDDEN && hiddenSummary.value.courses.length === 0) {
+  } else if (state === Status.HIDDEN && (hiddenSummary.value?.courses.length ?? 0) === 0) {
     void refreshHidden()
   }
 }
@@ -1410,7 +1330,7 @@ const { execute: executeReview, loading: submitting } = useMutation(
       // 更新当前课程卡片统计
       if (result.courseStats && selectedCourse.value) {
         const courseId = selectedCourse.value.course.id
-        const bank = studyingSummary.value.courses.find((b) => b.course.id === courseId)
+        const bank = studyingSummary.value?.courses.find((b) => b.course.id === courseId)
         if (bank) {
           bank.newCardCount = result.courseStats.newCardCount
           bank.dueCardCount = result.courseStats.dueCardCount
@@ -1619,9 +1539,9 @@ const getCourseStatusColor = (status: CourseStudyStatus): string => {
   switch (status) {
     case Status.STUDYING:
       return 'success'
-    case Status.PAUSED:
+    case Status.FROZEN:
       return 'warning'
-    case Status.ARCHIVED:
+    case Status.HIDDEN:
       return 'grey'
     default:
       return 'grey'

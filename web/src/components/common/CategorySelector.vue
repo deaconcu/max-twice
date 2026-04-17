@@ -117,7 +117,7 @@ const formMainCategories = computed(() => {
   return mainCategories.value
     .filter((cat) => cat.id !== 0) // 使用数字0而不是字符串'all'
     .map((cat) => ({
-      title: cat.name,
+      title: cat.title,
       value: cat.id,
     }))
 })

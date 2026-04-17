@@ -321,6 +321,9 @@ const biographyRules = useValidationRules('biography')
 const usernameMaxLength = useMaxLength('username')
 const biographyMaxLength = useMaxLength('biography')
 
+// 默认时区
+const DEFAULT_TIMEZONE = 'America/Los_Angeles'
+
 // 本地状态
 const localUserInfo = ref({
   ...props.userInfo,
@@ -332,9 +335,6 @@ const showSuccessAlert = ref(false)
 const displayModifyName = ref(false)
 const displayModifyBio = ref(false)
 const displayModifyTimezone = ref(false)
-
-// 默认时区
-const DEFAULT_TIMEZONE = 'America/Los_Angeles'
 
 // 常用时区选项
 const timezoneOptions = computed(() => [

@@ -354,7 +354,7 @@ const decks = computed(() => {
     createdAt: deck.createdAt || null,
     courseId: deck.courseId,
     nodeId: deck.nodeId,
-    postId: deck.postId || deck.sourcePostId, // 关联的帖子ID
+    postId: deck.postId, // 关联的帖子ID
     course: deck.course || null,
     node: deck.node || null,
     state: deck.state, // 状态字段

@@ -1,5 +1,6 @@
 import apiClient from '../client'
 import type { ApiResponse } from '@/types/api'
+import type { CourseCategoriesData, RoleCategoriesData } from '@/stores/modules/category'
 
 /**
  * 系统配置相关 API（公开接口）
@@ -9,14 +10,14 @@ export const systemApi = {
   /**
    * 获取课程分类数据
    */
-  getCourseCategories(): Promise<ApiResponse> {
+  getCourseCategories(): Promise<ApiResponse<CourseCategoriesData>> {
     return apiClient.get('/v1/public/course-categories')
   },
 
   /**
    * 获取角色分类数据
    */
-  getRoleCategories(): Promise<ApiResponse> {
+  getRoleCategories(): Promise<ApiResponse<RoleCategoriesData>> {
     return apiClient.get('/v1/public/role-categories')
   },
 

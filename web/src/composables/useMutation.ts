@@ -43,7 +43,7 @@ export interface MutationOptions<TPayload, TResult> {
  * useMutation 返回值
  */
 export interface MutationReturn<TPayload, TResult> {
-  execute: (payload: TPayload) => Promise<TResult | null> // 执行变更
+  execute: (payload?: TPayload) => Promise<TResult | null> // 执行变更（参数可选）
   loading: Ref<boolean> // 加载状态
   error: Ref<Error | null> // 错误信息
   data: Ref<TResult | null> // 返回数据
@@ -111,7 +111,7 @@ export function useMutation<TPayload, TResult>(
   const data = ref<TResult | null>(null) as Ref<TResult | null>
 
   // 核心执行函数
-  const executeCore = async (payload: TPayload): Promise<TResult | null> => {
+  const executeCore = async (payload?: TPayload): Promise<TResult | null> => {
     // 去重保护
     if (!allowConcurrent && loading.value) {
       console.warn('[useMutation] Request already in progress, ignoring duplicate call')
@@ -130,10 +130,10 @@ export function useMutation<TPayload, TResult>(
     error.value = null
 
     try {
-      const result = await handleApiCall(() => apiFn(payload), {
+      const result = await handleApiCall(() => apiFn(payload as TPayload), {
         successMessage,
         errorMessage,
-        onSuccess: (result) => onSuccess?.(result, payload),
+        onSuccess: (result) => onSuccess?.(result, payload as TPayload),
         onError,
         showToast,
       })
@@ -152,9 +152,9 @@ export function useMutation<TPayload, TResult>(
   let execute = executeCore
 
   if (debounceDelay) {
-    execute = debounce(executeCore, debounceDelay) as (payload: TPayload) => Promise<TResult | null>
+    execute = debounce(executeCore, debounceDelay) as (payload?: TPayload) => Promise<TResult | null>
   } else if (throttleDelay) {
-    execute = throttle(executeCore, throttleDelay) as (payload: TPayload) => Promise<TResult | null>
+    execute = throttle(executeCore, throttleDelay) as (payload?: TPayload) => Promise<TResult | null>
   }
 
   // 重置状态

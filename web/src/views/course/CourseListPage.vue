@@ -585,9 +585,7 @@ const { execute: executeCreateCourse, loading: _creatingCourse } = useMutation(
         resetCreateForm.value = false
       }, 100)
       // 刷新课程列表
-      if (currentCategory.value) {
-        void refreshCourses()
-      }
+      void loadCourses(true)
     },
   }
 )

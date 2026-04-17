@@ -501,7 +501,7 @@ const {
   data: role,
   loading,
   error: fetchError,
-} = useFetch<Role>({
+} = useFetch<Role | null>({
   fetchFn: () => roleApi.getRole(roleId.value),
   immediate: true,
   defaultValue: null,
@@ -581,7 +581,7 @@ onMounted(() => {
 })
 
 // 加载更多
-const onLoadMore = async ({ done }: { done: (status: string) => void }) => {
+const onLoadMore = async ({ done }: { done: (status: 'ok' | 'empty' | 'loading' | 'error') => void }) => {
   await loadMoreRoadmaps({
     done: () => {
       done(hasMore.value ? 'ok' : 'empty')
@@ -675,7 +675,7 @@ const handleGoToRoadmap = (roadmap: { id: number }): void => {
 // 投票
 const { execute: toggleUpvote } = useMutation(
   ({ roadmapId }: { roadmapId: number }) =>
-    upvoteApi.upvote(roadmapId, ObjectType.ROADMAP, VoteType.NORMAL),
+    upvoteApi.upvote(roadmapId, ObjectType.ROADMAP, VoteType.LIKE),
   { showToast: false }
 )
 

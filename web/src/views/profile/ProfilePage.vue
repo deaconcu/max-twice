@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/modules/auth'
 import { useUserStore } from '@/stores/modules/user'
 import { useFetch } from '@/composables/useFetch'
 import { userApi, statsApi } from '@/api'
+import type { UserStatsDTO } from '@/types/user'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
@@ -52,7 +53,7 @@ const tabRefreshKey = ref(0)
 
 // 判断是否查看自己的资料
 const isOwnProfile = computed(() => {
-  return props.id === 'me' || (userStore.currentUser && props.id === userStore.currentUser.name)
+  return props.id === 'me' || (!!userStore.currentUser && props.id === userStore.currentUser.name)
 })
 
 // 根据ID获取用户信息（如果是自己且 store 有值，则不调用接口）
@@ -131,10 +132,10 @@ const currentUserId = computed(() => {
 })
 
 // 获取用户统计数据
-const { data: userStats, execute: fetchUserStats } = useFetch({
-  fetchFn: () => {
+const { data: userStats, execute: fetchUserStats } = useFetch<UserStatsDTO | null>({
+  fetchFn: async () => {
     const userId = currentUserId.value
-    if (!userId) return Promise.resolve(null)
+    if (!userId) return { code: 200, message: 'ok', data: null }
     return statsApi.getUserAllTimeStats(userId)
   },
   immediate: false,

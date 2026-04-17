@@ -38,8 +38,8 @@ export interface Course {
 export interface CreateCourseRequest {
   name: string
   description: string
-  mainCategory: number
-  subCategory: number
+  mainCategory: number | null
+  subCategory: number | null
 }
 
 /**

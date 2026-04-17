@@ -27,7 +27,7 @@ const iconType = computed(() => {
 
 // 实际使用的图标
 const displayIcon = computed(() => {
-  if (iconType.value === 'mdi') return props.icon
+  if (iconType.value === 'mdi') return props.icon ?? undefined
   return props.defaultIcon
 })
 </script>

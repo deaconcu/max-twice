@@ -35,8 +35,8 @@ const learningProgress = computed(() => ({
 const streakData = computed(() => ({
   learningDays: props.userStats?.learningStreakDays || 0,
   reviewDays: props.userStats?.reviewStreakDays || 0,
-  totalLearningDays: props.userStats?.totalLearningDays || 0,
-  totalReviewDays: props.userStats?.totalReviewDays || 0,
+  totalLearningDays: 0, // 后端暂不支持
+  totalReviewDays: 0, // 后端暂不支持
 }))
 
 // 创作数据

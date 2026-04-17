@@ -26,7 +26,7 @@ const { t } = useI18n()
 interface Props {
   postId?: number
   commentCount?: number
-  objectType?: number
+  objectType?: ObjectType
   targetCommentId?: number | null
   targetSubCommentId?: number | null
 }
@@ -41,7 +41,7 @@ const currentUserId = computed(() => userStore.userId)
 
 // 判断是否是自己的评论
 const isOwnComment = (comment: any) => {
-  return currentUserId.value && comment.creatorId === currentUserId.value
+  return !!currentUserId.value && comment.creatorId === currentUserId.value
 }
 
 const newComment = ref('')
@@ -266,7 +266,7 @@ const loadMore = async () => {
 
 // 加载子评论（点击按钮）
 const { execute: executeLoadSubComments } = useMutation(
-  (params: { commentId: number; lastScore: number; lastId: number }) =>
+  (params: { commentId: number; lastScore?: number; lastId?: number }) =>
     commentApi.getCommentReplies(params.commentId, params.lastScore, params.lastId),
   {
     showToast: false,
@@ -287,11 +287,8 @@ const loadSubComments = async (comment: any) => {
     lastId = lastChild.id
   }
 
-  // 首次加载不传参数，后续加载传 lastScore 和 lastId
-  const result =
-    lastScore !== undefined && lastId !== undefined
-      ? await executeLoadSubComments({ commentId: comment.id, lastScore, lastId })
-      : await commentApi.getCommentReplies(comment.id)
+  // 统一使用 useMutation 调用
+  const result = await executeLoadSubComments({ commentId: comment.id, lastScore, lastId })
 
   if (result?.items && result.items.length > 0) {
     comment.children.push(...result.items)
@@ -476,7 +473,7 @@ onBeforeUnmount(() => {
         rounded="lg"
         :rows="isCommentFocused ? 3 : 1"
         :rules="isCommentFocused ? commentRules : []"
-        :counter="isCommentFocused ? commentMaxLength : false"
+        :counter="isCommentFocused ? commentMaxLength : undefined"
         auto-grow
         hide-details="auto"
         class="mb-3"

@@ -3,6 +3,7 @@
  */
 
 import { VoteType } from '@/enums'
+import type { Node } from '@/types/node'
 
 /**
  * 将后端返回的数字类型转换为前端使用的字符串类型
@@ -17,16 +18,6 @@ export function convertVoteType(voteType: number | null | undefined): string | n
 }
 
 /**
- * 节点信息接口
- */
-export interface NodeInfo {
-  id: number
-  name: string
-  description?: string
-  state?: number
-}
-
-/**
  * 解析目录内容
  * 目录类型的 post，content 字段是 JSON 格式的节点列表
  * 格式：[{"id": 1, "name": "章节名", "description": "描述"}, ...]
@@ -34,7 +25,7 @@ export interface NodeInfo {
  * @param content - 目录内容字符串
  * @returns 解析后的节点列表
  */
-export function parseContentNodes(content: string): NodeInfo[] {
+export function parseContentNodes(content: string): Node[] {
   if (!content) {
     return []
   }

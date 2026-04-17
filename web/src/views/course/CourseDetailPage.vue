@@ -422,14 +422,14 @@ const {
   data: course,
   loading,
   error: fetchError,
-} = useFetch<Course>({
+} = useFetch<Course | null>({
   fetchFn: () => courseApi.getCourse(courseId.value),
   immediate: true,
   defaultValue: null,
 })
 
 // 使用 useFetch 加载子课程列表
-const { data: subCoursesResponse, loading: _loadingSubCourses } = useFetch<{
+const { data: subCoursesResponse, loading: _loadingSubCourses, refresh: refreshSubCoursesList } = useFetch<{
   items: Course[]
   hasMore: boolean
 }>({
@@ -466,7 +466,6 @@ const subscribingSubCourseId = ref<number | null>(null)
 const {
   execute: executeCreateSubCourse,
   loading: creatingSubCourse,
-  refresh: refreshSubCourses,
 } = useMutation(
   (payload: { parentId: number; name: string; description: string }) =>
     courseApi.createSubcourse(payload.parentId, payload.name, payload.description),
@@ -475,7 +474,7 @@ const {
     onSuccess: () => {
       applicationDialog.value = false
       // 刷新子课程列表
-      void refreshSubCourses()
+      void refreshSubCoursesList()
     },
   }
 )

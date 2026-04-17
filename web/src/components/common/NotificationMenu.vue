@@ -65,9 +65,9 @@ const filteredMessages = computed(() => {
       MessageType.POST_BANNED,
       MessageType.COMMENT_REJECTED,
       MessageType.COMMENT_BANNED,
-      MessageType.PROFESSION_REJECTED,
-      MessageType.PROFESSION_BANNED,
-      MessageType.PROFESSION_APPROVED,
+      MessageType.ROLE_REJECTED,
+      MessageType.ROLE_BANNED,
+      MessageType.ROLE_APPROVED,
       MessageType.ROADMAP_REJECTED,
       MessageType.ROADMAP_BANNED,
       MessageType.MEMORY_DECK_REJECTED,
@@ -79,7 +79,7 @@ const filteredMessages = computed(() => {
   }
 
   const types = categoryTypes[filterCategory.value] || []
-  return messages.value.filter((m) => m.type && types.includes(m.type))
+  return messages.value.filter((m) => m.type && (types as number[]).includes(m.type))
 })
 
 // 获取消息图标和颜色
@@ -94,18 +94,18 @@ const getMessageIcon = (message: Message): { icon: string; color: string } => {
     return { icon: 'mdi-thumb-up', color: 'primary' }
   }
   if (
-    [MessageType.NODE_COMMENT, MessageType.POST_COMMENT, MessageType.ROADMAP_COMMENT].includes(
+    ([MessageType.NODE_COMMENT, MessageType.POST_COMMENT, MessageType.ROADMAP_COMMENT] as number[]).includes(
       type as number
     )
   ) {
     return { icon: 'mdi-comment', color: 'primary' }
   }
   if (
-    [
+    ([
       MessageType.REPLY_NODE_COMMENT,
       MessageType.REPLY_POSTING_COMMENT,
       MessageType.REPLY_ROADMAP_COMMENT,
-    ].includes(type as number)
+    ] as number[]).includes(type as number)
   ) {
     return { icon: 'mdi-reply', color: 'primary' }
   }
@@ -114,36 +114,36 @@ const getMessageIcon = (message: Message): { icon: string; color: string } => {
   }
 
   // 审核通过消息
-  if ([MessageType.COURSE_APPROVED, MessageType.PROFESSION_APPROVED].includes(type as number)) {
+  if (([MessageType.COURSE_APPROVED, MessageType.ROLE_APPROVED] as number[]).includes(type as number)) {
     return { icon: 'mdi-check-circle', color: 'success' }
   }
 
   // 拒绝消息
   if (
-    [
+    ([
       MessageType.COURSE_REJECTED,
       MessageType.POST_REJECTED,
       MessageType.COMMENT_REJECTED,
-      MessageType.PROFESSION_REJECTED,
+      MessageType.ROLE_REJECTED,
       MessageType.ROADMAP_REJECTED,
       MessageType.MEMORY_DECK_REJECTED,
       MessageType.NODE_REJECTED,
-    ].includes(type as number)
+    ] as number[]).includes(type as number)
   ) {
     return { icon: 'mdi-alert-circle', color: 'warning' }
   }
 
   // 封禁消息
   if (
-    [
+    ([
       MessageType.COURSE_BANNED,
       MessageType.POST_BANNED,
       MessageType.COMMENT_BANNED,
-      MessageType.PROFESSION_BANNED,
+      MessageType.ROLE_BANNED,
       MessageType.ROADMAP_BANNED,
       MessageType.MEMORY_DECK_BANNED,
       MessageType.NODE_BANNED,
-    ].includes(type as number)
+    ] as number[]).includes(type as number)
   ) {
     return { icon: 'mdi-cancel', color: 'error' }
   }
@@ -437,7 +437,7 @@ const loadMessages = async (reset = false) => {
     }
 
     // 根据筛选获取消息分类
-    let category = MessageCategory.ALL
+    let category: MessageCategory = MessageCategory.ALL
     if (filterCategory.value === 'interaction') {
       category = MessageCategory.INTERACTION
     } else if (filterCategory.value === 'system') {

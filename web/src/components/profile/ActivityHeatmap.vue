@@ -29,7 +29,7 @@ const userStore = useUserStore()
 const targetUserId = computed(() => props.userId ?? userStore.currentUser?.id)
 
 // 加载热力图数据
-const { data: heatmapData, refresh } = useFetch<HeatmapData>({
+const { data: heatmapData, refresh } = useFetch<HeatmapData | null>({
   fetchFn: () => statsApi.getHeatmap(targetUserId.value!, props.months),
   immediate: !!targetUserId.value,
   defaultValue: null,

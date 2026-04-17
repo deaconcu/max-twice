@@ -426,7 +426,7 @@ const switchToMyDecks = () => {
 }
 
 // 获取状态显示文本
-const getStateText = (state: number) => {
+const getStateText = (state: number | undefined) => {
   switch (state) {
     case 1:
       return t('common.stateReviewing')
@@ -442,7 +442,7 @@ const getStateText = (state: number) => {
 }
 
 // 获取状态颜色
-const getStateColor = (state: number) => {
+const getStateColor = (state: number | undefined) => {
   switch (state) {
     case 1:
       return 'warning'

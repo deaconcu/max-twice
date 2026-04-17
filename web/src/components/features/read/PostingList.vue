@@ -97,8 +97,8 @@ const handleNodeConfirm = (nodes: Node[]) => {
 }
 
 // 处理添加文章后的数据加载
-const handleLoadData = (data?: any[]) => {
-  console.log('Reload data after adding:', data)
+const handleLoadData = (_data?: unknown) => {
+  console.log('Reload data after adding:', _data)
   emit('load-data')
 }
 

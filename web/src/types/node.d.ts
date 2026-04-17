@@ -26,6 +26,10 @@ export interface Node {
   isCompleted?: boolean // 是否已完成
   progress?: number // 进度百分比 (0.0-100.0)
   canComplete?: boolean // 递归完成度100%但节点本身未完成，可以提示用户标记完成
+
+  // 搜索/统计相关
+  similarityScore?: number // 向量搜索相似度分数
+  nodeReferenceCount?: number // 节点引用数量
 }
 
 /**

@@ -1,6 +1,6 @@
 import apiClient from '../client'
 import type { ApiResponse, KeysetPageResponse } from '@/types/api'
-import type { Course, ApprovalResponse } from '@/types/course'
+import type { Course, ApprovalResponse, CreateCourseRequest } from '@/types/course'
 import type { UserCourse } from '@/types/userCourse'
 import type { SubscriptionInfo } from '@/types/user'
 
@@ -75,7 +75,7 @@ export const courseApi = {
   /**
    * 创建课程
    */
-  createCourse(courseData: Partial<Course>): Promise<ApiResponse<Course>> {
+  createCourse(courseData: CreateCourseRequest): Promise<ApiResponse<Course>> {
     return apiClient.post('/v1/courses', courseData)
   },
 

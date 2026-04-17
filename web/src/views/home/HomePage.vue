@@ -57,32 +57,32 @@ const { data: homeData, loading: homeLoading } = useFetch<HomePage>({
 
 // 计算属性：用户学习统计
 const stats = computed(() => ({
-  learningDays: homeData.value.userStats.learningDays,
-  coursesInProgress: homeData.value.userStats.coursesInProgress,
-  rolesInProgress: homeData.value.userStats.rolesInProgress,
-  reviewCards: homeData.value.reviewSummary.todayTotal,
+  learningDays: homeData.value?.userStats.learningDays ?? 0,
+  coursesInProgress: homeData.value?.userStats.coursesInProgress ?? 0,
+  rolesInProgress: homeData.value?.userStats.rolesInProgress ?? 0,
+  reviewCards: homeData.value?.reviewSummary.todayTotal ?? 0,
 }))
 
 // 计算属性：平台统计数据
-const platformStats = computed(() => homeData.value.platformStats)
+const platformStats = computed(() => homeData.value?.platformStats)
 
 // 计算属性：收藏的职业
-const bookmarkedRoles = computed(() => homeData.value.bookmarkedRoles)
+const bookmarkedRoles = computed(() => homeData.value?.bookmarkedRoles ?? [])
 
 // 是否显示"查看更多"（等于10个时显示）
 const showMoreBookmarkedRoles = computed(() => bookmarkedRoles.value.length >= 10)
 
 // 计算属性：复习数据
 const reviewData = computed(() => ({
-  todayTotal: homeData.value.reviewSummary.todayTotal,
-  todayCompleted: homeData.value.reviewSummary.todayCompleted,
-  streakDays: homeData.value.reviewSummary.streakDays,
-  courses: homeData.value.reviewSummary.courses.slice(0, 3),
+  todayTotal: homeData.value?.reviewSummary.todayTotal ?? 0,
+  todayCompleted: homeData.value?.reviewSummary.todayCompleted ?? 0,
+  streakDays: homeData.value?.reviewSummary.streakDays ?? 0,
+  courses: homeData.value?.reviewSummary.courses.slice(0, 3) ?? [],
 }))
 
 // 计算属性：正在学习的职业路线
 const recentRoles = computed(() => {
-  return homeData.value.learningRoles.map((item) => {
+  return (homeData.value?.learningRoles ?? []).map((item) => {
     const roadmap = item.object as
       | { id: number; roleName: string; roleIcon?: string; nodeCount?: number }
       | undefined
@@ -101,7 +101,7 @@ const recentRoles = computed(() => {
 
 // 计算属性：正在学习的课程
 const recentCourses = computed(() => {
-  return homeData.value.learningCourses.map((item) => {
+  return (homeData.value?.learningCourses ?? []).map((item) => {
     const course = item.object as
       | { id: number; name: string; description?: string; icon?: string }
       | undefined
@@ -120,7 +120,7 @@ const recentCourses = computed(() => {
 
 // 计算属性：热门职业榜单
 const hotRoles = computed(() => {
-  return homeData.value.hotRoles.map((item, index) => ({
+  return (homeData.value?.hotRoles ?? []).map((item, index) => ({
     id: index + 1,
     roleId: item.id,
     name: item.name,
@@ -132,11 +132,11 @@ const hotRoles = computed(() => {
 })
 
 // 计算属性：热门课程榜单
-const hotCourses = computed(() => homeData.value.hotCourses)
+const hotCourses = computed(() => homeData.value?.hotCourses ?? [])
 
 // 计算属性：新手推荐职业
 const beginnerRoles = computed(() => {
-  return homeData.value.beginnerRoles.map((item) => ({
+  return (homeData.value?.beginnerRoles ?? []).map((item) => ({
     id: item.id,
     name: item.name,
     icon: item.icon ?? 'mdi-briefcase-variant',
@@ -146,7 +146,7 @@ const beginnerRoles = computed(() => {
 
 // 计算属性：新手推荐路线图
 const beginnerRoadmaps = computed(() => {
-  return homeData.value.beginnerRoadmaps.map((item) => ({
+  return (homeData.value?.beginnerRoadmaps ?? []).map((item) => ({
     id: item.id,
     name: item.role?.name ?? t('home.unknownRole'),
     icon: item.role?.icon ?? 'mdi-briefcase-variant',
@@ -157,7 +157,7 @@ const beginnerRoadmaps = computed(() => {
 
 // 计算属性：新手推荐课程
 const beginnerCourses = computed(() => {
-  return homeData.value.beginnerCourses.map((item) => ({
+  return (homeData.value?.beginnerCourses ?? []).map((item) => ({
     id: item.id,
     name: item.name,
     icon: item.icon ?? 'mdi-book-open-variant',
@@ -321,7 +321,7 @@ void homeLoading
                 </h2>
                 <div class="d-flex align-center ga-4">
                   <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
-                    {{ t('home.platformRoles', { count: platformStats.rolePathCount }) }}
+                    {{ t('home.platformRoles', { count: platformStats?.rolePathCount ?? 0 }) }}
                   </span>
                   <v-btn
                     variant="text"
@@ -435,7 +435,7 @@ void homeLoading
                 </h2>
                 <div class="d-flex align-center ga-4">
                   <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
-                    {{ t('home.totalRoadmaps', { count: platformStats.roadmapCount }) }}
+                    {{ t('home.totalRoadmaps', { count: platformStats?.roadmapCount ?? 0 }) }}
                   </span>
                   <v-btn
                     variant="text"
@@ -619,9 +619,9 @@ void homeLoading
                   <span class="text-body-2 text-medium-emphasis d-none d-sm-inline">
                     {{
                       t('home.platformCourses', {
-                        courses: platformStats.courseCount,
-                        nodes: platformStats.knowledgeNodeCount.toLocaleString(),
-                        articles: platformStats.articleCount.toLocaleString(),
+                        courses: platformStats?.courseCount ?? 0,
+                        nodes: (platformStats?.knowledgeNodeCount ?? 0).toLocaleString(),
+                        articles: (platformStats?.articleCount ?? 0).toLocaleString(),
                       })
                     }}
                   </span>
@@ -901,12 +901,9 @@ void homeLoading
                       {{ course.course.name }}
                     </div>
                     <div class="text-caption text-medium-emphasis text-truncate">
-                      {{ t('home.totalCards', { count: course.cardCount }) }}
+                      {{ course.dueCardCount }} {{ t('home.toReview') }}
                     </div>
                   </div>
-                  <v-chip size="small" color="primary" variant="flat" class="flex-shrink-0">
-                    {{ course.dueCardCount }} {{ t('home.toReview') }}
-                  </v-chip>
                 </div>
               </v-card-text>
             </v-card>

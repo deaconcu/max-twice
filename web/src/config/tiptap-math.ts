@@ -144,14 +144,14 @@ export const MathBlock = Node.create({
   },
 
   addNodeView() {
-    return VueNodeViewRenderer(MathBlockComponent)
+    return VueNodeViewRenderer(MathBlockComponent as any)
   },
 
   addCommands() {
     return {
       insertMath:
         (options: { formula: string; displayMode?: boolean }) =>
-        ({ commands }) => {
+        ({ commands }: { commands: any }) => {
           return commands.insertContent({
             type: this.name,
             attrs: {
@@ -160,6 +160,6 @@ export const MathBlock = Node.create({
             },
           })
         },
-    }
+    } as any
   },
 })

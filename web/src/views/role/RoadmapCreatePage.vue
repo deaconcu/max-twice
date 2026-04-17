@@ -146,7 +146,7 @@
                   :snap-grid="[20, 20]"
                   :nodes-selectable="true"
                   :edges-selectable="true"
-                  :selection-mode="'partial'"
+                  :selection-mode="SelectionMode.Partial"
                   :multi-selection-key-code="'Shift'"
                   @connect="onConnect"
                   @nodes-change="onNodesChange"
@@ -227,10 +227,7 @@
                   rounded="lg"
                   autocomplete="off"
                   @keydown.enter="handleSearch"
-                  @click:clear="
-                    searchText = ''
-                    availableCourses = []
-                  "
+                  @click:clear="handleClearSearch"
                 >
                   <template #append-inner>
                     <v-btn icon size="small" variant="text" @click="handleSearch">
@@ -334,10 +331,7 @@
                   rounded="lg"
                   autocomplete="off"
                   @keydown.enter="handleNodeSearch"
-                  @click:clear="
-                    nodeSearchText = ''
-                    availableNodes = []
-                  "
+                  @click:clear="handleClearNodeSearch"
                 >
                   <template #append-inner>
                     <v-btn icon size="small" variant="text" @click="handleNodeSearch">
@@ -379,16 +373,10 @@
                               />
                               {{ node.name }}
                             </div>
-                            <div v-if="node.courseName" class="text-caption text-grey ps-6">
-                              {{ t('roadmapCreate.fromCourse', { name: node.courseName }) }}
-                            </div>
                           </div>
                         </template>
                         <div class="tooltip-content pa-1">
                           <div class="text-subtitle-2 mb-1">{{ node.name }}</div>
-                          <div v-if="node.courseName" class="text-caption text-success mb-2">
-                            {{ t('roadmapCreate.fromCourse', { name: node.courseName }) }}
-                          </div>
                           <div class="text-caption">
                             {{ node.description || t('common.noDescription') }}
                           </div>
@@ -541,7 +529,7 @@ import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { MiniMap } from '@vue-flow/minimap'
 import { Controls } from '@vue-flow/controls'
-import { Position } from '@vue-flow/core'
+import { Position, SelectionMode } from '@vue-flow/core'
 import type { Node, Edge, Connection } from '@vue-flow/core'
 import dagre from 'dagre'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
@@ -564,7 +552,7 @@ const route = useRoute()
 const categoryStore = useCategoryStore()
 
 // 注入全局 snackbar
-const showSnackbar = inject('showSnackbar')!
+const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')!
 
 // 获取 VueFlow 实例
 const { fitView, setCenter } = useVueFlow()
@@ -620,7 +608,7 @@ const hasIsolatedNodes = computed(() => {
   return nodes.value.some((n) => !connectedNodeIds.has(n.id))
 })
 
-const isolatedNodesCount = computed(() => {
+const isolatedNodesCount = computed((): number => {
   if (!hasIsolatedNodes.value) {
     return 0
   }
@@ -664,7 +652,7 @@ const searchCourses = async () => {
   try {
     const response = await courseApi.searchCourses(searchText.value.trim())
     if (response.code === 200) {
-      availableCourses.value = response.data
+      availableCourses.value = response.data ?? []
     } else {
       showSnackbar(t('roadmapCreate.messages.searchCoursesFailed'), 'error')
     }
@@ -679,6 +667,12 @@ const searchCourses = async () => {
 // 手动搜索方法（点击搜索按钮或按下回车触发）
 const handleSearch = () => {
   searchCourses()
+}
+
+// 清除搜索
+const handleClearSearch = () => {
+  searchText.value = ''
+  availableCourses.value = []
 }
 
 // 监听搜索文本变化，清空旧的搜索结果
@@ -712,12 +706,18 @@ const handleNodeSearch = () => {
   loadAvailableNodes()
 }
 
+// 清除节点搜索
+const handleClearNodeSearch = () => {
+  nodeSearchText.value = ''
+  availableNodes.value = []
+}
+
 // 监听节点搜索文本变化，清空旧的搜索结果
 watch(nodeSearchText, () => {
   availableNodes.value = []
 })
 
-const filteredNodes = computed(() => availableNodes.value)
+const filteredNodes = computed(() => availableNodes.value ?? [])
 
 // 节点样式常量
 const ROOT_NODE_STYLE = {
@@ -801,6 +801,10 @@ const calculateNodePosition = (): { x: number; y: number } => {
 
 // 添加课程节点
 const addCourseNode = (course: Course) => {
+  if (!course.rootNodeId) {
+    showSnackbar(t('roadmapCreate.messages.courseCannotBeAdded'), 'warning')
+    return
+  }
   const nodeId = course.rootNodeId.toString()
 
   // 检查是否已存在
@@ -890,8 +894,8 @@ const goToMyRoadmaps = () => {
 
 // 删除选中的节点和边
 const deleteSelectedNodes = () => {
-  const selectedNodes = nodes.value.filter((n) => n.selected && n.id !== '0')
-  const selectedEdges = edges.value.filter((e) => e.selected)
+  const selectedNodes = nodes.value.filter((n) => (n as any).selected && n.id !== '0')
+  const selectedEdges = edges.value.filter((e) => (e as any).selected)
 
   const totalSelected = selectedNodes.length + selectedEdges.length
 
@@ -900,7 +904,7 @@ const deleteSelectedNodes = () => {
     return
   }
 
-  const itemsText = []
+  const itemsText: string[] = []
   if (selectedNodes.length > 0)
     itemsText.push(t('roadmapCreate.messages.nodeCount', { count: selectedNodes.length }))
   if (selectedEdges.length > 0)
@@ -976,7 +980,7 @@ const onNodesChange = (changes: any[]) => {
     if (change.type === 'select') {
       const node = nodes.value.find((n) => n.id === change.id)
       if (node) {
-        node.selected = change.selected
+        ;(node as any).selected = change.selected
       }
     } else if (change.type === 'position') {
       // 拖动过程中和拖动结束时都更新位置
@@ -994,7 +998,7 @@ const onEdgesChange = (changes: any[]) => {
     if (change.type === 'select') {
       const edge = edges.value.find((e) => e.id === change.id)
       if (edge) {
-        edge.selected = change.selected
+        ;(edge as any).selected = change.selected
       }
     }
   })
@@ -1324,7 +1328,7 @@ watch(roadmapData, (newData) => {
     roadmapDescription.value = newData.description || ''
     savedDraftDescription.value = newData.description || ''
     draftRoadmapId.value = newData.id
-    roadmapState.value = newData.state // 保存路线图状态
+    roadmapState.value = newData.state ?? null // 保存路线图状态
 
     // 解析 content 并设置节点和边
     try {

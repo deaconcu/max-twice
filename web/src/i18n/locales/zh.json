@@ -1157,6 +1157,7 @@
       "copyFailed": "解析复制的课程表数据失败",
       "searchCoursesFailed": "搜索课程失败，请重试",
       "searchNodesFailed": "搜索节点失败，请重试",
+      "courseCannotBeAdded": "该课程无法添加",
       "courseAlreadyAdded": "该课程已添加",
       "nodeAlreadyAdded": "该节点已添加",
       "noSelectionToDelete": "请先选中要删除的节点或连线",

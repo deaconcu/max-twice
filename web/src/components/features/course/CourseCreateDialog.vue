@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
+import type { CreateCourseRequest } from '@/types/course'
 
 interface Category {
   id: number
@@ -13,13 +14,6 @@ interface SubCategory {
   id: number
   name: string
   mainCategoryId: number
-}
-
-interface CreateCourseRequest {
-  name: string
-  description: string
-  mainCategory: number | null
-  subCategory: number | null
 }
 
 interface Props {

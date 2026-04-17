@@ -21,7 +21,7 @@
       <div class="overflow-y-auto dialog-content">
         <TipTapEditor
           ref="editorRef"
-          :model-value="getCurrentArticle?.preview || ''"
+          :model-value="getCurrentArticle?.preview || getCurrentArticle?.content || ''"
           :editable="true"
           :placeholder="t('tiptap.placeholder')"
           @update:model-value="updateContentLength"
@@ -97,7 +97,8 @@ const showSnackbar = inject<(message: string, type?: string) => void>('showSnack
 
 interface Article {
   id: number
-  preview: string
+  preview?: string
+  content?: string
   state?: number
   node?: { id: number; name: string }
   course?: string
@@ -153,15 +154,15 @@ const getCurrentArticle = computed(() => props.article || currentArticle.value)
 // 创建帖子
 const { execute: executeCreate, loading: creating } = useMutation(
   (data: { nodeId: number; content: string; type: number; state: number }) =>
-    postApi.createPost(data),
+    postApi.createPost(data as any),
   {
     successMessage: t('posting.operationSuccess'),
     onSuccess: (result, payload) => {
       const isDraft = payload.state === ContentState.DRAFT
       if (isDraft) {
         // 保存草稿：保存返回的文章数据，转为编辑模式，通知父组件添加到列表
-        currentArticle.value = result
-        emit('success', result)
+        currentArticle.value = result as Article
+        emit('success', result as Article)
         // 不关闭窗口
       } else {
         // 发布文章：关闭窗口，不更新列表（文章待审核，列表不变）
@@ -176,7 +177,7 @@ const { execute: executeCreate, loading: creating } = useMutation(
 // 更新帖子
 const { execute: executeUpdate, loading: updating } = useMutation(
   (data: { id: number; content: string; state?: number }) =>
-    postApi.updatePost(data.id, { content: data.content, state: data.state }),
+    postApi.updatePost(data.id, { content: data.content, state: data.state as any }),
   {
     successMessage: t('posting.operationSuccess'),
     onSuccess: (result, payload) => {
@@ -186,15 +187,15 @@ const { execute: executeUpdate, loading: updating } = useMutation(
         // 发布文章：关闭窗口，通知父组件更新该文章状态
         console.log('Publishing, emitting success with:', result)
         emit('update:modelValue', false)
-        emit('success', result)
+        emit('success', result as Article)
         currentArticle.value = null
       } else {
         // 保存草稿：更新当前文章数据，通知父组件更新列表中的数据
         console.log('Saving draft, emitting success with:', result)
         if (result) {
-          currentArticle.value = result
+          currentArticle.value = result as Article
         }
-        emit('success', result)
+        emit('success', result as Article)
         // 不关闭窗口
       }
     },

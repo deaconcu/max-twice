@@ -423,14 +423,14 @@ const formatDate = (date: string) => {
 }
 
 // 跳转到课程
-const goToCourse = (courseId: number) => {
+const goToCourse = (courseId: number | undefined) => {
   if (courseId) {
     router.push({ path: '/read', query: { courseId } })
   }
 }
 
 // 跳转到节点
-const goToNode = (nodeId: number) => {
+const goToNode = (nodeId: number | undefined) => {
   if (nodeId) {
     router.push({ path: '/read', query: { nodeId } })
   }

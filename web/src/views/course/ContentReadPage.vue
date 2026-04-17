@@ -110,7 +110,7 @@
               :sub-course-list="data.subCourseList"
               :is-main-course="isMainCourse"
               :is-learning="isLearning"
-              :course-progress="data.course?.progressPercent || 0"
+              :course-progress="data.course?.progress || 0"
               @start-learning="handleToggleLearning"
             />
 
@@ -256,7 +256,7 @@
     <ConfigContentsDialog
       v-if="data"
       v-model="configContents"
-      :node-id="data.rootNodeId"
+      :node-id="data.rootNodeId ?? 0"
       :contents="data.toc || []"
       @load-data="loadData"
     />
@@ -312,14 +312,6 @@ import { useI18n } from '@/composables/useI18n'
 import { VoteType } from '@/enums'
 import { convertVoteType } from '@/utils/postUtils'
 
-// 将后端返回的数字类型转换为前端使用的字符串类型
-const convertVoteType = (voteType: number | null | undefined): string | null => {
-  if (!voteType || voteType === VoteType.NONE) return null
-  if (voteType === VoteType.TWICE) return 'twice'
-  if (voteType === VoteType.LIKE) return 'helpful'
-  return null
-}
-
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
@@ -362,7 +354,10 @@ const targetSubCommentId = computed(() => {
 
 // 开始学习课程
 const { execute: startLearning, loading: startingLearning } = useMutation(
-  () => progressApi.startCourse(courseId.value),
+  () => {
+    if (!courseId.value) throw new Error('courseId is required')
+    return progressApi.startCourse(courseId.value)
+  },
   {
     onSuccess: () => {
       isLearning.value = true
@@ -372,7 +367,10 @@ const { execute: startLearning, loading: startingLearning } = useMutation(
 
 // 取消学习课程
 const { execute: cancelLearning, loading: cancelingLearning } = useMutation(
-  () => progressApi.cancelCourse(courseId.value),
+  () => {
+    if (!courseId.value) throw new Error('courseId is required')
+    return progressApi.cancelCourse(courseId.value)
+  },
   {
     onSuccess: () => {
       isLearning.value = false
@@ -411,7 +409,7 @@ const { execute: markNodeCompleted, loading: markingNode } = useMutation(
 
       // 更新课程进度
       if (data.value?.course && response.courseProgressPercent !== undefined) {
-        data.value.course.progressPercent = response.courseProgressPercent
+        data.value.course.progress = response.courseProgressPercent
       }
 
       // 更新目录树中该节点的完成状态
@@ -424,13 +422,14 @@ const { execute: markNodeCompleted, loading: markingNode } = useMutation(
 
       // 更新可完成节点标识
       if (data.value?.tocNodeInfos && response.completableNodeIds) {
+        const tocNodeInfos = data.value.tocNodeInfos
         // 先清除所有节点的 canComplete 标识
-        Object.values(data.value.tocNodeInfos).forEach((info: any) => {
+        Object.values(tocNodeInfos).forEach((info: any) => {
           info.canComplete = false
         })
         // 设置新的可完成节点
         response.completableNodeIds.forEach((nodeId: number) => {
-          const nodeInfo = data.value!.tocNodeInfos[nodeId]
+          const nodeInfo = tocNodeInfos[nodeId]
           if (nodeInfo) {
             nodeInfo.canComplete = true
           }
@@ -438,7 +437,7 @@ const { execute: markNodeCompleted, loading: markingNode } = useMutation(
 
         // 同时更新当前节点的 canComplete 状态
         if (data.value.node) {
-          const currentNodeInfo = data.value.tocNodeInfos[data.value.node.id]
+          const currentNodeInfo = tocNodeInfos[data.value.node.id]
           if (currentNodeInfo) {
             data.value.node.canComplete = currentNodeInfo.canComplete
           }
@@ -468,7 +467,7 @@ const { execute: unmarkNodeCompleted, loading: unmarkingNode } = useMutation(
 
       // 更新课程进度
       if (data.value?.course && response.courseProgressPercent !== undefined) {
-        data.value.course.progressPercent = response.courseProgressPercent
+        data.value.course.progress = response.courseProgressPercent
       }
 
       // 更新目录树中该节点的完成状态
@@ -481,13 +480,14 @@ const { execute: unmarkNodeCompleted, loading: unmarkingNode } = useMutation(
 
       // 更新可完成节点标识
       if (data.value?.tocNodeInfos && response.completableNodeIds) {
+        const tocNodeInfos = data.value.tocNodeInfos
         // 先清除所有节点的 canComplete 标识
-        Object.values(data.value.tocNodeInfos).forEach((info: any) => {
+        Object.values(tocNodeInfos).forEach((info: any) => {
           info.canComplete = false
         })
         // 设置新的可完成节点
         response.completableNodeIds.forEach((nodeId: number) => {
-          const nodeInfo = data.value!.tocNodeInfos[nodeId]
+          const nodeInfo = tocNodeInfos[nodeId]
           if (nodeInfo) {
             nodeInfo.canComplete = true
           }
@@ -564,36 +564,40 @@ const {
       courseId: route.query.courseId,
     }
 
+    // data.value 在 onDataReady 中一定存在
+    const dataValue = data.value!
+
     // 处理 toc 为 null 的情况，转换为空数组
-    if (!data.value.toc) {
-      data.value.toc = []
+    if (!dataValue.toc) {
+      dataValue.toc = []
     }
     // 处理投票类型
-    data.value.otherPostings?.forEach((posting: any) => {
+    dataValue.otherPostings?.forEach((posting: any) => {
       posting.voteType = convertVoteType(posting.voteType)
     })
     // 设置学习状态
-    isLearning.value = data.value.learning || false
+    isLearning.value = dataValue.learning || false
 
     // 处理可完成节点标识
-    if (data.value.completableNodeIds && data.value.tocNodeInfos) {
+    if (dataValue.completableNodeIds && dataValue.tocNodeInfos) {
+      const tocNodeInfos = dataValue.tocNodeInfos
       // 先清除所有节点的 canComplete 标识
-      Object.values(data.value.tocNodeInfos).forEach((info: any) => {
+      Object.values(tocNodeInfos).forEach((info: any) => {
         info.canComplete = false
       })
       // 设置新的可完成节点
-      data.value.completableNodeIds.forEach((nodeId: number) => {
-        const nodeInfo = data.value.tocNodeInfos[nodeId]
+      dataValue.completableNodeIds.forEach((nodeId: number) => {
+        const nodeInfo = tocNodeInfos[nodeId]
         if (nodeInfo) {
           nodeInfo.canComplete = true
         }
       })
 
       // 同时更新当前节点的 canComplete 状态
-      if (data.value.node) {
-        const currentNodeInfo = data.value.tocNodeInfos[data.value.node.id]
+      if (dataValue.node) {
+        const currentNodeInfo = tocNodeInfos[dataValue.node.id]
         if (currentNodeInfo) {
-          data.value.node.canComplete = currentNodeInfo.canComplete
+          dataValue.node.canComplete = currentNodeInfo.canComplete
         }
       }
     }
@@ -601,7 +605,7 @@ const {
     // 数据赋值完成后处理数据
     processData()
     // 检查是否有更多数据
-    hasMore.value = data.value.otherPostings && data.value.otherPostings.length > 0
+    hasMore.value = !!(dataValue.otherPostings && dataValue.otherPostings.length > 0)
   },
 })
 
@@ -627,7 +631,9 @@ const {
         posting.voteType = convertVoteType(posting.voteType)
       })
       // 追加到现有列表
-      data.value.otherPostings = [...(data.value.otherPostings || []), ...morePosts.value.items]
+      if (data.value) {
+        data.value.otherPostings = [...(data.value.otherPostings || []), ...morePosts.value.items]
+      }
       hasMore.value = morePosts.value.hasMore
     } else {
       hasMore.value = false
@@ -688,18 +694,19 @@ const processData = () => {
   console.log('currContentsIndex:', currContentsIndex.value)
 
   // 生成路径文本
-  pathText.value = `${data.value.course.name}/`
+  pathText.value = `${data.value.course?.name ?? ''}/`
+  const tocNodeInfos = data.value.tocNodeInfos
   nodes.value.forEach((item: any, index: number) => {
     if (index < 1) return
     if (index < nodes.value.length - 1) {
-      pathText.value += `${data.value.tocNodeInfos[item]?.name}/`
+      pathText.value += `${tocNodeInfos?.[item]?.name ?? ''}/`
     } else {
-      pathText.value += data.value.tocNodeInfos[item]?.name
+      pathText.value += tocNodeInfos?.[item]?.name ?? ''
     }
   })
 
-  currNodeId.value = data.value.node.id
-  isLearning.value = data.value.learning
+  currNodeId.value = data.value.node?.id ?? 0
+  isLearning.value = data.value.learning ?? false
 }
 
 // 滚动监听

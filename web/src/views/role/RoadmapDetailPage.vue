@@ -281,7 +281,7 @@ const {
   data: roadmapData,
   loading,
   error: fetchError,
-} = useFetch<Roadmap>({
+} = useFetch<Roadmap | null>({
   fetchFn: () => roadmapApi.getRoadmap(roadmapId.value),
   immediate: true,
   defaultValue: null,
@@ -520,7 +520,7 @@ const onNodesInitialized = () => {
 
 // 投票
 const { execute: toggleUpvote } = useMutation(
-  () => upvoteApi.upvote(roadmapId.value, ObjectType.ROADMAP, VoteType.NORMAL),
+  () => upvoteApi.upvote(roadmapId.value, ObjectType.ROADMAP, VoteType.LIKE),
   { showToast: false }
 )
 
@@ -596,7 +596,8 @@ const handleToggleBookmark = async () => {
 }
 
 // 获取时间显示
-const getTimeDisplay = (date: string): string => {
+const getTimeDisplay = (date: string | undefined): string => {
+  if (!date) return ''
   const now = new Date()
   const created = new Date(date)
   const days = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))

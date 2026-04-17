@@ -83,28 +83,31 @@ const {
   },
   immediate: true,
   onDataReady: () => {
+    // data.value 在 onDataReady 中一定存在
+    const dataValue = data.value!
+
     // 特殊处理：如果返回了 commentId 和 subCommentId，说明需要重定向
-    if (data.value.commentId && data.value.subCommentId) {
+    if (dataValue.commentId && dataValue.subCommentId) {
       router.replace({
         path: '/read',
         query: {
           ...(route.query.courseId ? { courseId: route.query.courseId } : {}),
           ...(route.query.nodeId ? { nodeId: route.query.nodeId } : {}),
-          commentId: String(data.value.commentId),
-          subCommentId: String(data.value.subCommentId),
+          commentId: String(dataValue.commentId),
+          subCommentId: String(dataValue.subCommentId),
         },
       })
       return
     }
 
     // 处理投票类型
-    const posting = data.value.currPosting || data.value.post
+    const posting = dataValue.post
     if (posting) {
-      posting.voteType = convertVoteType(posting.voteType)
+      posting.voteType = convertVoteType(posting.voteType) as any
     }
 
     // 处理 otherPostings
-    data.value.otherPostings?.forEach((posting: any) => {
+    dataValue.otherPostings?.forEach((posting: any) => {
       posting.voteType = convertVoteType(posting.voteType)
     })
   },
@@ -124,7 +127,7 @@ const handleDeckCreated = (deck: MemoryCardDeck) => {
 
 // 处理创建卡片组
 const handleCreateDeck = () => {
-  const posting = data.value?.currPosting || data.value?.post
+  const posting = data.value?.post
   if (posting) {
     showCreateDeckDialog.value = true
   }
@@ -138,7 +141,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
 
 // 处理查看全部评论
 const handleViewAllComments = () => {
-  const postId = data.value?.currPosting?.id || data.value?.post?.id
+  const postId = data.value?.post?.id
   if (postId) {
     router.replace({
       path: '/read',
@@ -232,18 +235,18 @@ defineExpose({
 
           <!-- 文章详情 -->
           <SinglePost
-            v-if="data.currPosting || data.post"
+            v-if="data.post"
             :data="data"
-            :posting="data.currPosting || data.post"
+            :posting="data.post"
             :detail="true"
             @text-selected="handleTextSelected"
           />
 
           <!-- 评论区 -->
           <CommentSection
-            v-if="data.currPosting || data.post"
-            :post-id="(data.currPosting || data.post).id"
-            :comment-count="(data.currPosting || data.post).commentCount || 0"
+            v-if="data.post"
+            :post-id="data.post.id"
+            :comment-count="data.post.commentCount || 0"
             :object-type="ObjectType.POST"
             :target-comment-id="targetCommentId"
             :target-sub-comment-id="targetSubCommentId"
@@ -253,7 +256,7 @@ defineExpose({
         </div>
 
         <!-- 右侧工具栏 -->
-        <div v-if="showRightSidebar && (data.currPosting || data.post)" class="right-sidebar">
+        <div v-if="showRightSidebar && data.post" class="right-sidebar">
           <div class="sidebar-sticky">
             <!-- AI答疑助手 -->
             <AiAssistant
@@ -265,7 +268,7 @@ defineExpose({
 
             <!-- 记忆卡片组侧边栏 -->
             <MemoryCardSidebar
-              :post-id="(data.currPosting || data.post).id"
+              :post-id="data.post.id"
               class="mb-4 mb-md-4"
               @create-deck="handleCreateDeck"
               @view-deck="handleViewDeck"
@@ -277,9 +280,9 @@ defineExpose({
 
     <!-- 创建卡片组对话框 -->
     <CreateDeckDialog
-      v-if="data && (data.currPosting || data.post)"
+      v-if="data && data.post"
       v-model="showCreateDeckDialog"
-      :post-id="(data.currPosting || data.post).id"
+      :post-id="data.post.id"
       @created="handleDeckCreated"
     />
 
@@ -311,8 +314,8 @@ defineExpose({
         <v-card-text class="pa-0" style="max-height: calc(70vh - 73px); overflow-y: auto">
           <AiAssistant
             v-model:selected-text="articleSelectedText"
-            :node-title="data.node?.name"
-            :node-description="data.node?.description"
+            :node-title="data?.node?.name"
+            :node-description="data?.node?.description"
             class="mobile-assistant"
           />
         </v-card-text>
@@ -359,8 +362,8 @@ defineExpose({
 
         <v-card-text class="pa-0" style="max-height: calc(70vh - 73px); overflow-y: auto">
           <MemoryCardSidebar
-            v-if="data && (data.currPosting || data.post)"
-            :post-id="(data.currPosting || data.post).id"
+            v-if="data && data.post"
+            :post-id="data.post.id"
             class="mobile-memory-sidebar"
             @create-deck="handleCreateDeck"
             @view-deck="handleViewDeck"

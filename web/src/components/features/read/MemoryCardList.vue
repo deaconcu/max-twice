@@ -137,7 +137,7 @@ const lastId = ref<number>(0)
 const lastScore = ref<number>(0)
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 
-const currentUserId = computed(() => userStore.user?.id)
+const currentUserId = computed(() => userStore.currentUser?.id)
 
 // 加载卡片组列表
 const loadDecks = async (reset = false) => {

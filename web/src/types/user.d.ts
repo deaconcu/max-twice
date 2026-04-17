@@ -41,6 +41,7 @@ export interface User {
 export interface LoginResponseData {
   id: number
   name: string
+  avatar?: string // 用户头像
   subscriptions: SubscriptionInfo[] // 订阅的课程信息列表
   role?: UserRole // 用户角色
 }

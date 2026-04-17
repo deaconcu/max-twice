@@ -149,14 +149,14 @@ export const MermaidBlock = Node.create({
   },
 
   addNodeView() {
-    return VueNodeViewRenderer(MermaidBlockComponent)
+    return VueNodeViewRenderer(MermaidBlockComponent as any)
   },
 
   addCommands() {
     return {
       insertMermaid:
         (options: { code: string }) =>
-        ({ commands }) => {
+        ({ commands }: { commands: any }) => {
           return commands.insertContent({
             type: this.name,
             attrs: {
@@ -164,6 +164,6 @@ export const MermaidBlock = Node.create({
             },
           })
         },
-    }
+    } as any
   },
 })

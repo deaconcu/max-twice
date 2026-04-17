@@ -1157,6 +1157,7 @@
       "copyFailed": "Failed to parse copied roadmap data",
       "searchCoursesFailed": "Failed to search courses, please try again",
       "searchNodesFailed": "Failed to search nodes, please try again",
+      "courseCannotBeAdded": "This course cannot be added",
       "courseAlreadyAdded": "This course has already been added",
       "nodeAlreadyAdded": "This node has already been added",
       "noSelectionToDelete": "Please select nodes or edges to delete first",

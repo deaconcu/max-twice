@@ -2,14 +2,8 @@
  * API Composables 公共类型定义
  */
 
-/**
- * 标准 API 响应格式
- */
-export interface ApiResponse<T = any> {
-  code: number // 状态码：200 成功，401 未登录，其他为失败
-  data: T // 返回数据
-  message?: string // 错误信息
-}
+// 从全局类型重导出，保持一致性
+export type { ApiResponse } from '@/types/api'
 
 /**
  * 灵活的游标参数类型，支持任意分页字段

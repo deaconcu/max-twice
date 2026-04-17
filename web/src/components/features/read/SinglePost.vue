@@ -19,6 +19,7 @@ import UserAvatar from '@/components/common/UserAvatar.vue'
 import ImageViewer from '@/components/common/ImageViewer.vue'
 import ChartViewer from '@/components/common/ChartViewer.vue'
 import { useI18n } from '@/composables/useI18n'
+import type { Node } from '@/types/node'
 
 const props = withDefaults(defineProps<Props>(), {
   detail: false,
@@ -28,12 +29,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const { t } = useI18n()
-
-interface NodeInfo {
-  id: number
-  name: string
-  description: string
-}
 
 interface Props {
   posting: any
@@ -100,7 +95,7 @@ const PostType = {
 }
 
 // 解析目录内容
-const contentNodes = computed<NodeInfo[]>(() => {
+const contentNodes = computed<Node[]>(() => {
   if (props.posting.type !== PostType.INDEX) {
     return []
   }

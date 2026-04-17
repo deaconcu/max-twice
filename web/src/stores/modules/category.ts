@@ -25,7 +25,7 @@ export interface RoleCategory {
  */
 export interface CourseCategoryMapping {
   mainCategoryId: number
-  subCategories: {
+  subcategories: {
     id: number
     name: string
   }[]
@@ -37,7 +37,6 @@ export interface CourseCategoryMapping {
 export interface RoleCategoryMapping {
   mainCategoryId: number
   subcategories: {
-    // 注意：小写 c
     id: number
     name: string
   }[]

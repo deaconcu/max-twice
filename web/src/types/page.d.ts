@@ -36,10 +36,11 @@ export interface ReadResponse {
   chosenPosting?: Post
   otherPostings?: Post[]
   lastId?: number
+  lastScore?: number
 
   // TOC（目录）相关
   toc?: TocItem[]
-  tocNodeInfos?: Record<number, Node>
+  tocNodeInfos?: Record<string, Node>
   path?: string
 
   // 其他
@@ -49,4 +50,5 @@ export interface ReadResponse {
   commentId?: number
   subCommentId?: number
   rootNodeId?: number // TOC 是基于此 nodeId 创建的
+  completableNodeIds?: number[] // 可完成的节点ID列表
 }

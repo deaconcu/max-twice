@@ -73,10 +73,10 @@ export async function handleApiCall<T>(
       if (options.showToast !== false && options.successMessage) {
         showSnackbar?.(options.successMessage, 'success')
       }
-      if (options.onSuccess) {
+      if (options.onSuccess && response.data !== undefined) {
         await options.onSuccess(response.data)
       }
-      return response.data
+      return response.data ?? null
     } else {
       console.log('[handleApiCall] 非200响应:', {
         code: response.code,

@@ -61,7 +61,7 @@
             :node-data="toc[currContentsIndex]"
             :node-infos="tocNodeInfos"
             :node-id="nodeId"
-            :path="path"
+            :path="path ?? undefined"
             :curr-path="String(currContentsIndex + 1)"
             :depth="1"
             :is-learning="isLearning"

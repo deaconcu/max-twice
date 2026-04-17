@@ -1,29 +1,14 @@
 import apiClient from '../client'
 import type { ApiResponse } from '@/types/api'
 
+// 从统一类型定义导入
+export type { ReadResponse } from '@/types/page'
+import type { ReadResponse } from '@/types/page'
+
 /**
  * 页面聚合相关 API
  * 参考：web-ts/src/services/api/v1/apiServiceV1.ts (pageServiceV1)
  */
-
-export interface ReadResponse {
-  node?: any
-  parentCourse?: any
-  course?: any
-  subCourseList?: any[]
-  chosenPosting?: any
-  otherPostings?: any[]
-  lastId?: number
-  lastScore?: number
-  toc?: any[]
-  tocNodeInfos?: Record<number, any>
-  path?: string
-  users?: any[]
-  learning?: boolean
-  post?: any
-  commentId?: number
-  subCommentId?: number
-}
 
 export const pageApi = {
   /**

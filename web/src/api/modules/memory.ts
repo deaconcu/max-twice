@@ -140,8 +140,8 @@ export function resetCardProgress(cardIds: number[]): Promise<ApiResponse<void>>
  */
 export function updateCourseMemorySetting(params: {
   courseId: number
-  status?: string
-  frequencySetting?: string
+  status?: number
+  frequencySetting?: number
   cardOrder?: number
   dailyNewLimit?: number
   dailyReviewLimit?: number

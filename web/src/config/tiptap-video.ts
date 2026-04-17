@@ -205,14 +205,14 @@ export const VideoBlock = Node.create({
   },
 
   addNodeView() {
-    return VueNodeViewRenderer(VideoBlockComponent)
+    return VueNodeViewRenderer(VideoBlockComponent as any)
   },
 
   addCommands() {
     return {
       insertVideo:
         (options: { src: string }) =>
-        ({ commands }) => {
+        ({ commands }: { commands: any }) => {
           const parsed = parseVideoUrl(options.src)
           if (!parsed) return false
 
@@ -225,7 +225,7 @@ export const VideoBlock = Node.create({
             },
           })
         },
-    }
+    } as any
   },
 })
 
