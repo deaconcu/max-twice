@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  * 处理目录选择等内容操作
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @RequiredArgsConstructor
 @Validated
 public class ContentsController {

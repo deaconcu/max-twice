@@ -76,13 +76,13 @@ public class AppConfiguration implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         // 数据源路由拦截器（最先执行）
         registry.addInterceptor(dataSourceInterceptor)
-                .addPathPatterns("/api/**")
+                .addPathPatterns("/v1/**")
                 .order(0);
 
         // Sa-Token 拦截器
         registry.addInterceptor(saInterceptor())
                 .addPathPatterns("/**")
-                .excludePathPatterns("/login", "/api/v1/public/**")
+                .excludePathPatterns("/login", "/v1/public/**")
                 .order(1);
     }
 

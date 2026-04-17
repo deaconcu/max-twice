@@ -28,7 +28,7 @@ import java.util.List;
  * Robot 内容生成管理接口
  */
 @RestController
-@RequestMapping("/api/v1/admin/robot")
+@RequestMapping("/v1/admin/robot")
 @RequiredArgsConstructor
 @Validated
 public class AdminRobotController {

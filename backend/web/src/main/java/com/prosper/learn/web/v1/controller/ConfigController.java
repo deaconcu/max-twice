@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  * 配置接口控制器
  */
 @RestController
-@RequestMapping("/api/v1/config")
+@RequestMapping("/v1/config")
 @RequiredArgsConstructor
 public class ConfigController {
 

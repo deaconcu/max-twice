@@ -30,7 +30,7 @@ import static com.prosper.learn.shared.domain.Enums.*;
  * 从CourseClient迁移而来
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @Slf4j
 @RequiredArgsConstructor
 @Validated

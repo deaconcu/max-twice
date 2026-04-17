@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * 合并了UserCourseClient和UserClient中的进度相关功能
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @RequiredArgsConstructor
 @Validated
 public class ProgressController {

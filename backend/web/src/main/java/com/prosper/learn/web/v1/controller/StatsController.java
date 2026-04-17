@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * 从StatsClient迁移而来
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @Slf4j
 @RequiredArgsConstructor
 @Validated

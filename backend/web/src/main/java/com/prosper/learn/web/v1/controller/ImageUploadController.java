@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * 图片上传接口
  */
 @RestController
-@RequestMapping("/api/v1/images")
+@RequestMapping("/v1/images")
 @RequiredArgsConstructor
 @Slf4j
 @Validated

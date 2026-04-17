@@ -35,20 +35,20 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         // 注册请求上下文拦截器（优先级最高，最先执行）
         registry.addInterceptor(requestContextInterceptor)
-                .addPathPatterns("/api/v1/**")
+                .addPathPatterns("/v1/**")
                 .order(0);
 
         // 注册只读模式拦截器
         // 只拦截写操作（POST/PUT/DELETE/PATCH），GET 请求在拦截器内部会直接放行
         registry.addInterceptor(readOnlyModeInterceptor)
-                .addPathPatterns("/api/v1/**")  // 只拦截 v1 API
+                .addPathPatterns("/v1/**")  // 只拦截 v1 API
                 .excludePathPatterns(
-                        "/api/v1/public/**",           // 公开接口
-                        "/api/v1/auth/login",          // 登录接口
-                        "/api/v1/auth/register",       // 注册接口
-                        "/api/v1/auth/validate-email", // 邮箱验证
-                        "/api/v1/config/**",           // 配置接口（读取）
-                        "/api/v1/admin/system/readonly-mode"  // 只读模式控制接口（已在拦截器内部排除，这里再排除一次更清晰）
+                        "/v1/public/**",           // 公开接口
+                        "/v1/auth/login",          // 登录接口
+                        "/v1/auth/register",       // 注册接口
+                        "/v1/auth/validate-email", // 邮箱验证
+                        "/v1/config/**",           // 配置接口（读取）
+                        "/v1/admin/system/readonly-mode"  // 只读模式控制接口（已在拦截器内部排除，这里再排除一次更清晰）
                 );
     }
 }

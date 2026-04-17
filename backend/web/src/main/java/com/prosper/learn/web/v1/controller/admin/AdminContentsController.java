@@ -43,7 +43,7 @@ import static com.prosper.learn.shared.domain.Enums.*;
  * - POST /contents/{contentType}/{id}/operate - 审核操作
  */
 @RestController
-@RequestMapping("/api/v1/admin/contents")
+@RequestMapping("/v1/admin/contents")
 @RequiredArgsConstructor
 @Slf4j
 @RequireRole(UserRole.ADMIN)

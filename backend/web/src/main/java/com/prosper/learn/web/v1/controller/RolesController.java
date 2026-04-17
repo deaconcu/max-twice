@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * 角色管理接口
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @RequiredArgsConstructor
 @Slf4j
 @Validated

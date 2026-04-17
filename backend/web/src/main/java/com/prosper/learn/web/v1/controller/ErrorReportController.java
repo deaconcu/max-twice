@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * 错误上报接口
  */
 @RestController
-@RequestMapping("/api/v1/errors")
+@RequestMapping("/v1/errors")
 @Slf4j
 @RequiredArgsConstructor
 public class ErrorReportController {

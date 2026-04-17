@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * 从AggregateClient拆分出的消息功能
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @RequiredArgsConstructor
 @Validated
 public class MessagesController {

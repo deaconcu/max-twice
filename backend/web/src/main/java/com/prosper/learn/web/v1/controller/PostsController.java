@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * 从PostClient和AggregateClient迁移而来
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @RequiredArgsConstructor
 @Slf4j
 @Validated

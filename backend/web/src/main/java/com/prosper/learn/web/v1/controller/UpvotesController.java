@@ -27,7 +27,7 @@ import static com.prosper.learn.shared.domain.Enums.ContentType.*;
  * 从AggregateClient拆分出的点赞功能
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @RequiredArgsConstructor
 @Validated
 public class UpvotesController {

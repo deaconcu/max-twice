@@ -40,7 +40,7 @@ import static com.prosper.learn.shared.domain.Enums.ContentState;
  * 公开接口 - 无需登录
  */
 @RestController
-@RequestMapping("/api/v1/public")
+@RequestMapping("/v1/public")
 @RequiredArgsConstructor
 @Slf4j
 @Validated

@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * 从CommentClient迁移而来
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @RequiredArgsConstructor
 @Validated
 public class CommentsController {

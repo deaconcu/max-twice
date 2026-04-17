@@ -22,7 +22,7 @@ import static com.prosper.learn.shared.domain.Enums.*;
  * 操作日志管理接口
  */
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/v1/admin")
 @RequiredArgsConstructor
 @Slf4j
 @RequireRole(UserRole.ADMIN)

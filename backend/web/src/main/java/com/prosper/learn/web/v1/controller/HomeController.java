@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * 首页接口
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @Slf4j
 @RequiredArgsConstructor
 public class HomeController {

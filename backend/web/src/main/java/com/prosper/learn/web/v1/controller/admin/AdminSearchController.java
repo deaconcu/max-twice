@@ -15,7 +15,7 @@ import static com.prosper.learn.shared.domain.Enums.*;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/admin/search")
+@RequestMapping("/v1/admin/search")
 @RequiredArgsConstructor
 public class AdminSearchController {
 

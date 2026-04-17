@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * 用户管理接口
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @Slf4j
 @RequiredArgsConstructor
 @Validated

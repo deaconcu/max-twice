@@ -29,7 +29,7 @@ import static com.prosper.learn.shared.domain.Enums.*;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @RequiredArgsConstructor
 @Validated
 public class RoadmapsController {

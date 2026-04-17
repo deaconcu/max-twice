@@ -23,7 +23,7 @@ import java.util.List;
  * 记忆卡片控制器
  */
 @RestController
-@RequestMapping("/api/v1/memory")
+@RequestMapping("/v1/memory")
 @RequiredArgsConstructor
 @Slf4j
 @Validated

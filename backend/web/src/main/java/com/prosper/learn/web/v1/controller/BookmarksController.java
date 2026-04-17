@@ -15,7 +15,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/bookmarks")
+@RequestMapping("/v1/bookmarks")
 @RequiredArgsConstructor
 public class BookmarksController {
 

@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * 记忆卡片组控制器
  */
 @RestController
-@RequestMapping("/api/v1/memory")
+@RequestMapping("/v1/memory")
 @RequiredArgsConstructor
 @Slf4j
 @Validated

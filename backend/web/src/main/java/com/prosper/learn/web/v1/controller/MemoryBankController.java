@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  * 记忆库管理控制器
  */
 @RestController
-@RequestMapping("/api/v1/memory/memory-bank")
+@RequestMapping("/v1/memory/memory-bank")
 @RequiredArgsConstructor
 @Slf4j
 @Validated

@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * 从AggregateClient拆分出的页面聚合功能
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @RequiredArgsConstructor
 @Validated
 public class PagesController {

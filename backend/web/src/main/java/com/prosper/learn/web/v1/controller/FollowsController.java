@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * 从UsersController拆分出来的关注功能
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/v1")
 @RequiredArgsConstructor
 @Validated
 public class FollowsController {

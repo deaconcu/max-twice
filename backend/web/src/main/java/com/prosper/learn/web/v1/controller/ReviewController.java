@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * 复习功能控制器
  */
 @RestController
-@RequestMapping("/api/v1/memory/review")
+@RequestMapping("/v1/memory/review")
 @RequiredArgsConstructor
 @Slf4j
 @Validated
