@@ -17,6 +17,7 @@ public class ConfigurableSizeValidator implements ConstraintValidator<Configurab
     private SystemProperties systemProperties;
 
     private String configKey;
+    private String customMessage;
     private int minLength;
     private int maxLength;
     private String fieldName;
@@ -24,6 +25,7 @@ public class ConfigurableSizeValidator implements ConstraintValidator<Configurab
     @Override
     public void initialize(ConfigurableSize annotation) {
         this.configKey = annotation.configKey();
+        this.customMessage = annotation.message();
         loadConfigValues();
     }
 
@@ -128,11 +130,17 @@ public class ConfigurableSizeValidator implements ConstraintValidator<Configurab
         int length = value.length();
 
         if (length < minLength || length > maxLength) {
-            // 自定义错误消息
             context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate(
-                    String.format("%s长度必须在%d-%d字符之间，当前长度：%d", fieldName, minLength, maxLength, length)
-            ).addConstraintViolation();
+
+            // 如果传了自定义消息，使用自定义消息；否则使用详细消息
+            String message;
+            if (customMessage != null && !customMessage.isEmpty()) {
+                message = customMessage;
+            } else {
+                message = String.format("%s长度必须在%d-%d字符之间，当前长度：%d", fieldName, minLength, maxLength, length);
+            }
+
+            context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
             return false;
         }
 

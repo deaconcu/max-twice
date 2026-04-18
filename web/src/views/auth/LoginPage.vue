@@ -55,12 +55,12 @@
     <v-container fluid class="login-container">
       <v-row align="center" justify="center">
         <!-- Left side - Website Introduction -->
-        <v-col cols="12" md="6" lg="7" class="intro-section d-none d-md-flex">
+        <v-col cols="12" lg="6" class="intro-section d-none d-lg-flex">
           <IntroSection />
         </v-col>
 
         <!-- Right side - Login Form -->
-        <v-col cols="12" md="5" lg="4" sm="8" class="d-flex justify-center">
+        <v-col cols="12" sm="12" md="8" lg="4" class="d-flex justify-center">
           <div class="login-card-wrapper">
             <v-card class="login-card" rounded="xl" elevation="0">
               <!-- Logo Section -->
@@ -101,8 +101,6 @@
                     :label="t('user.login.password')"
                     :placeholder="t('user.login.passwordPlaceholder')"
                     :type="showPassword ? 'text' : 'password'"
-                    :rules="passwordRules"
-                    :counter="passwordMaxLength"
                     :disabled="isLoggingIn"
                     :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
                     variant="outlined"
@@ -145,7 +143,7 @@
                   <v-btn
                     type="submit"
                     :loading="isLoggingIn"
-                    :disabled="isLoggingIn"
+                    :disabled="isLoggingIn || !formData.email || !formData.password"
                     block
                     size="large"
                     color="primary"
@@ -197,7 +195,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useAuth } from '@/composables/useAuth'
-import { useEmailRules, useValidationRules, useMaxLength } from '@/composables/useValidation'
+import { useEmailRules, useMaxLength } from '@/composables/useValidation'
 import { HEADER_HEIGHT } from '@/constants/layout'
 import { BUSINESS_ERROR } from '@/constants/errorCode'
 import SimpleHeader from '@/components/layout/SimpleHeader.vue'
@@ -212,9 +210,7 @@ const { login, isLoggingIn } = useAuth()
 
 // 验证规则
 const emailRules = useEmailRules()
-const passwordRules = useValidationRules('password')
 const emailMaxLength = useMaxLength('email')
-const passwordMaxLength = useMaxLength('password')
 
 // 表单引用
 const loginFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)

@@ -1,7 +1,7 @@
 <template>
   <div class="intro-content">
-    <!-- 插画 -->
-    <img src="@/assets/images/front.png" alt="TwiceMax" class="hero-image" />
+    <!-- 插画区域 -->
+    <div class="hero-image"></div>
 
     <!-- 文案区 -->
     <div class="text-content">
@@ -74,16 +74,21 @@ const { t } = useI18n()
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100%;
   height: 100%;
   padding: 20px;
 }
 
-/* 插画 */
+/* 插画 - 使用背景图 */
 .hero-image {
   width: 100%;
   max-width: 1200px;
-  height: auto;
+  min-height: 500px;
   margin-bottom: 40px;
+  background-image: url('@/assets/images/front.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* 文案区 */

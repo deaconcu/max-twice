@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
       // API 代理配置
       proxy: {
         '/api': {
-          target: env.VITE_API_BASE_URL || 'http://localhost:8090',
+          target: env.VITE_API_URL,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },

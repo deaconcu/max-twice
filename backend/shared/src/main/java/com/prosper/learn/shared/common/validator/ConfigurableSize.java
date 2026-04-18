@@ -22,9 +22,9 @@ public @interface ConfigurableSize {
     String configKey();
 
     /**
-     * 错误消息模板
+     * 错误消息模板（留空则使用详细的长度提示）
      */
-    String message() default "字符串长度不符合要求";
+    String message() default "";
 
     Class<?>[] groups() default {};
 

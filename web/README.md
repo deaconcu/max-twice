@@ -93,7 +93,7 @@ npm run type-check
 ```env
 # 应用配置
 VITE_APP_TITLE=Max Twice
-VITE_API_BASE_URL=http://localhost:8090/api
+VITE_API_URL=http://localhost:9202
 VITE_APP_PORT=5174
 ```
 

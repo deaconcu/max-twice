@@ -58,7 +58,7 @@ const etagCache = new ETagCache()
  * 创建 Axios 实例
  */
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090/api',
+  baseURL: import.meta.env.VITE_API_URL,
   timeout: 60000, // 60秒超时
   withCredentials: true, // 允许携带凭证（cookies）
   headers: {
