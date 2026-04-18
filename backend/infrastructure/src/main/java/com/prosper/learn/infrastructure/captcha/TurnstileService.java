@@ -1,5 +1,6 @@
 package com.prosper.learn.infrastructure.captcha;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
@@ -51,6 +52,11 @@ public class TurnstileService {
             return false;
         }
 
+        log.info("Turnstile 验证开始: token={}, remoteIp={}, secretKey={}",
+                token.substring(0, Math.min(20, token.length())) + "...",
+                remoteIp,
+                secretKey.substring(0, Math.min(10, secretKey.length())) + "...");
+
         try {
             // 构建请求参数
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -67,11 +73,13 @@ public class TurnstileService {
 
             ResponseEntity<String> response = restTemplate.postForEntity(VERIFY_URL, request, String.class);
 
+            log.info("Turnstile 响应: status={}, body={}", response.getStatusCode(), response.getBody());
+
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 TurnstileResponse result = objectMapper.readValue(response.getBody(), TurnstileResponse.class);
 
                 if (result.isSuccess()) {
-                    log.debug("Turnstile 验证通过");
+                    log.info("Turnstile 验证通过");
                     return true;
                 } else {
                     log.warn("Turnstile 验证失败: {}", result.getErrorCodes());
@@ -93,6 +101,7 @@ public class TurnstileService {
      * Turnstile 验证响应
      */
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class TurnstileResponse {
         private boolean success;
 

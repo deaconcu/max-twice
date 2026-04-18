@@ -117,27 +117,20 @@
                   </div>
 
                   <!-- 错误提示 -->
-                  <v-alert
-                    v-if="errorMessage"
-                    type="error"
-                    variant="tonal"
-                    density="compact"
-                    closable
-                    class="mb-4"
-                    @click:close="errorMessage = ''"
-                  >
+                  <div v-if="errorMessage" class="error-message mb-4">
+                    <v-icon size="16" class="mr-1">mdi-alert-circle</v-icon>
                     {{ errorMessage }}
-                  </v-alert>
+                  </div>
 
                   <!-- Turnstile 人机验证（登录失败多次后显示） -->
-                  <div v-if="showCaptcha" class="turnstile-wrapper mb-4">
-                    <TurnstileWidget
-                      ref="turnstileRef"
-                      @verify="onTurnstileVerify"
-                      @error="onTurnstileError"
-                      @expire="onTurnstileExpire"
-                    />
-                  </div>
+                  <TurnstileWidget
+                    v-show="showCaptcha"
+                    ref="turnstileRef"
+                    class="mb-4"
+                    @verify="onTurnstileVerify"
+                    @error="onTurnstileError"
+                    @expire="onTurnstileExpire"
+                  />
 
                   <!-- 登录按钮 -->
                   <v-btn
@@ -227,6 +220,18 @@ const formData = ref({
 // UI 状态
 const showPassword = ref(false)
 const errorMessage = ref('')
+let errorTimer: ReturnType<typeof setTimeout> | null = null
+
+// 显示错误消息，5秒后自动消失
+const showError = (message: string) => {
+  if (errorTimer) {
+    clearTimeout(errorTimer)
+  }
+  errorMessage.value = message
+  errorTimer = setTimeout(() => {
+    errorMessage.value = ''
+  }, 5000)
+}
 
 // Turnstile 验证（登录失败多次后显示）
 const showCaptcha = ref(false)
@@ -238,7 +243,7 @@ const onTurnstileVerify = (token: string) => {
 }
 
 const onTurnstileError = () => {
-  errorMessage.value = t('user.login.captchaLoadFailed')
+  showError(t('user.login.captchaLoadFailed'))
 }
 
 const onTurnstileExpire = () => {
@@ -256,7 +261,7 @@ const handleLogin = async () => {
 
   // 如果显示验证码但未完成验证
   if (showCaptcha.value && !turnstileToken.value) {
-    errorMessage.value = t('user.login.captchaRequired')
+    showError(t('user.login.captchaRequired'))
     return
   }
 
@@ -271,7 +276,7 @@ const handleLogin = async () => {
     // 检查是否需要验证码（错误码 2604）
     if (err?.code === BUSINESS_ERROR.CAPTCHA_REQUIRED) {
       showCaptcha.value = true
-      errorMessage.value = t('user.login.captchaTooManyFailed')
+      showError(t('user.login.captchaTooManyFailed'))
       return
     }
 
@@ -287,9 +292,9 @@ const handleLogin = async () => {
 
     // 其他错误：显示错误信息
     if (err?.message) {
-      errorMessage.value = err.message
+      showError(err.message)
     } else {
-      errorMessage.value = t('user.login.loginFailed')
+      showError(t('user.login.loginFailed'))
     }
 
     // 重置 Turnstile
@@ -814,10 +819,12 @@ a:hover {
   text-decoration: underline !important;
 }
 
-/* Turnstile 容器 */
-.turnstile-wrapper {
+/* 错误提示 */
+.error-message {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  color: #e53935;
+  font-size: 14px;
 }
 
 /* Responsive */

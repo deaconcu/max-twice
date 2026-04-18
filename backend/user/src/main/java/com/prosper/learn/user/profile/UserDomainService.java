@@ -245,11 +245,11 @@ public class UserDomainService {
     public UserDO validateLogin(String email, String password) {
         UserDO userDO = userDataService.getByEmail(email);
         if (userDO == null) {
-            throw StatusCode.USER_NOT_FOUND.exception("用户不存在");
+            throw StatusCode.USER_LOGIN_FAILED.exception();
         }
 
         if (!passwordEncoder.matches(password, userDO.getPassword())) {
-            throw StatusCode.USER_PASSWORD_WRONG.exception();
+            throw StatusCode.USER_LOGIN_FAILED.exception();
         }
 
         if (!userDO.getEmailValidated()) {

@@ -9,11 +9,11 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  // 测试用 key（始终通过）
-  siteKey: '1x00000000000000000000AA',
+  // 从环境变量读取，默认使用测试 key（始终通过）
+  siteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA',
   theme: 'auto',
   size: 'normal',
-  appearance: 'interaction-only',
+  appearance: 'always',
 })
 
 const emit = defineEmits<{
@@ -56,6 +56,8 @@ const renderWidget = () => {
   if (widgetId.value) {
     window.turnstile.remove(widgetId.value)
   }
+
+  console.log('Turnstile sitekey:', props.siteKey)
 
   widgetId.value = window.turnstile.render(containerRef.value, {
     sitekey: props.siteKey,
