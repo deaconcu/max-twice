@@ -519,11 +519,13 @@
       </div>
     </section>
 
-    <!-- 第六屏：总结 -->
+    <!-- 第六屏：欢迎加入 -->
     <section class="intro-screen screen-6">
-      <div class="screen-inner">
-        <img :src="frontImage" alt="快速学习" class="front-image" />
-        <p class="section-hint front-hint">快速学习，帮助你胜任多重角色</p>
+      <div class="screen-inner screen-inner-welcome">
+        <img :src="frontImage" alt="开始学习之旅" class="front-image" />
+        <h2 class="welcome-title">准备好了吗？</h2>
+        <p class="welcome-subtitle">快速学习，帮助你胜任多重角色</p>
+        <p class="welcome-cta">登录，开启你的多面人生</p>
       </div>
     </section>
   </div>
@@ -912,17 +914,40 @@ const roles = [
   }
 }
 
-/* ========== 第六屏：总结 ========== */
-.front-image {
-  max-width: 100%;
-  height: auto;
-  border-radius: 12px;
-  margin-bottom: 24px;
+/* ========== 第六屏：欢迎加入 ========== */
+.screen-inner-welcome {
+  max-width: 540px;
 }
 
-.front-hint {
-  margin-top: 0;
+.front-image {
+  width: 500px;
+  height: auto;
+  margin-bottom: 32px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+}
+
+.welcome-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: rgb(var(--v-theme-on-surface));
+  margin: 0 0 16px 0;
+}
+
+.welcome-subtitle {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  margin: 0 0 32px 0;
+}
+
+.welcome-cta {
   font-size: 1.1rem;
-  color: rgba(var(--v-theme-on-surface), 0.7);
+  font-weight: 600;
+  color: rgb(var(--v-theme-primary));
+  margin: 0;
+  padding: 12px 24px;
+  background: rgba(var(--v-theme-primary), 0.1);
+  border-radius: 24px;
+  display: inline-block;
 }
 </style>
