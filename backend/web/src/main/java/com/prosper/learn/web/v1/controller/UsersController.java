@@ -158,14 +158,13 @@ public class UsersController {
             if (!turnstileService.verify(request.getTurnstileToken(), remoteIp)) {
                 throw StatusCode.CAPTCHA_INVALID.exception();
             }
+            // 验证码通过，清除失败记录（证明是人类，不再要求验证码）
+            userDomainService.clearLoginFailures(remoteIp);
         }
 
         try {
             // Service 负责业务验证
             UserBriefDTO userDTO = userService.validateLogin(request.getEmail(), request.getPassword());
-
-            // 登录成功，清除失败记录
-            userDomainService.clearLoginFailures(remoteIp);
 
             // Controller 负责认证状态管理
             StpUtil.login(userDTO.getId());

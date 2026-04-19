@@ -42,7 +42,7 @@ public class UserDomainService {
 
     // 登录失败次数相关常量
     private static final String LOGIN_FAIL_KEY_PREFIX = "login:fail:ip:";
-    private static final int LOGIN_FAIL_MAX_ATTEMPTS = 5;
+    private static final int LOGIN_FAIL_MAX_ATTEMPTS = 3;
     private static final Duration LOGIN_FAIL_EXPIRE_TIME = Duration.ofMinutes(15);
 
     private final UserDataService userDataService;

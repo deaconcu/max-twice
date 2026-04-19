@@ -149,22 +149,14 @@
                   </p>
 
                   <!-- Turnstile 人机验证（登录失败多次后显示） -->
-                  <div v-if="showCaptcha" class="captcha-section mb-4">
-                    <TurnstileWidget
-                      ref="turnstileRef"
-                      @verify="onTurnstileVerify"
-                      @error="onTurnstileError"
-                      @expire="onTurnstileExpire"
-                    />
-                    <button
-                      v-if="captchaError"
-                      type="button"
-                      class="captcha-retry-btn"
-                      @click="resetTurnstile"
-                    >
-                      {{ t('user.login.captchaRetry') }}
-                    </button>
-                  </div>
+                  <TurnstileWidget
+                    v-if="showCaptcha"
+                    ref="turnstileRef"
+                    class="mb-4"
+                    @verify="onTurnstileVerify"
+                    @error="onTurnstileError"
+                    @expire="onTurnstileExpire"
+                  />
 
                   <v-divider class="my-6" />
 
@@ -243,28 +235,19 @@ const showError = (message: string) => {
 
 // Turnstile 验证（登录失败多次后显示）
 const showCaptcha = ref(false)
-const captchaError = ref(false)
 const turnstileToken = ref('')
 const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
 
 const onTurnstileVerify = (token: string) => {
   turnstileToken.value = token
-  captchaError.value = false
 }
 
 const onTurnstileError = () => {
-  captchaError.value = true
   showError(t('user.login.captchaLoadFailed'))
 }
 
 const onTurnstileExpire = () => {
   turnstileToken.value = ''
-}
-
-const resetTurnstile = () => {
-  turnstileToken.value = ''
-  captchaError.value = false
-  turnstileRef.value?.reset()
 }
 
 /**
@@ -842,27 +825,6 @@ a:hover {
   align-items: center;
   color: #e53935;
   font-size: 14px;
-}
-
-/* Turnstile 验证区域 */
-.captcha-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.captcha-retry-btn {
-  background: none;
-  border: none;
-  color: rgb(var(--v-theme-primary));
-  font-size: 12px;
-  cursor: pointer;
-  padding: 4px 8px;
-}
-
-.captcha-retry-btn:hover {
-  text-decoration: underline;
 }
 
 /* Responsive */

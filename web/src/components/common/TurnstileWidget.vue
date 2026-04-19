@@ -15,7 +15,7 @@ const props = withDefaults(defineProps<Props>(), {
   theme: 'auto',
   size: 'normal',
   appearance: 'always',
-  retry: 'never',
+  retry: 'auto',
 })
 
 const emit = defineEmits<{
