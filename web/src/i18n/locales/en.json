@@ -464,7 +464,8 @@
       "privacyPolicy": "Privacy Policy",
       "captchaLoadFailed": "Captcha failed to load, please refresh the page",
       "captchaRequired": "Please complete the captcha verification",
-      "captchaTooManyFailed": "Too many failed login attempts, please complete the captcha"
+      "captchaTooManyFailed": "Too many failed login attempts, please complete the captcha",
+      "captchaRetry": "Retry"
     },
     "register": {
       "title": "Register",
