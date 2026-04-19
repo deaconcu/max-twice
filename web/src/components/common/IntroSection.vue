@@ -518,11 +518,20 @@
         <p class="section-hint">艾宾浩斯曲线，智能安排复习</p>
       </div>
     </section>
+
+    <!-- 第六屏：总结 -->
+    <section class="intro-screen screen-6">
+      <div class="screen-inner">
+        <img :src="frontImage" alt="快速学习" class="front-image" />
+        <p class="section-hint front-hint">快速学习，帮助你胜任多重角色</p>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import frontImage from '@/assets/images/front.png'
 
 const scrollContainer = ref<HTMLElement | null>(null)
 const activeRoleIndex = ref(0)
@@ -901,5 +910,19 @@ const roles = [
   .section-title {
     font-size: 1.2rem;
   }
+}
+
+/* ========== 第六屏：总结 ========== */
+.front-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.front-hint {
+  margin-top: 0;
+  font-size: 1.1rem;
+  color: rgba(var(--v-theme-on-surface), 0.7);
 }
 </style>
