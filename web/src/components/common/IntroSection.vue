@@ -21,19 +21,79 @@
       <div class="screen-inner">
         <div class="section-label">01 · 角色驱动</div>
         <h2 class="section-title">你在承担哪些角色？</h2>
-        <div class="roles-cloud">
-          <span class="role-chip">程序员</span>
-          <span class="role-chip">父亲</span>
-          <span class="role-chip">投资者</span>
-          <span class="role-chip">儿子</span>
-          <span class="role-chip">跑者</span>
-          <span class="role-chip">丈夫</span>
-          <span class="role-chip">厨师</span>
-          <span class="role-chip">读书人</span>
-          <span class="role-chip">团队领导</span>
-          <span class="role-chip">摄影爱好者</span>
-          <span class="role-chip">...</span>
+
+        <div class="sketch-container sketch-roles">
+          <svg class="sketch-svg" viewBox="0 0 320 160" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <filter id="sketchy-roles" x="-5%" y="-5%" width="110%" height="110%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+            </defs>
+
+            <!-- 第一行 -->
+            <g>
+              <path d="M 10,8 Q 12,6 70,7 Q 74,8 72,10 L 73,34 Q 72,38 69,36 L 11,37 Q 7,36 9,33 Z"
+                    fill="none" stroke="#bbb" stroke-width="1.2" filter="url(#sketchy-roles)"/>
+              <text x="41" y="26" text-anchor="middle" class="role-chip-text">程序员</text>
+            </g>
+            <g>
+              <path d="M 84,8 Q 86,6 134,7 Q 138,8 136,10 L 137,34 Q 136,38 133,36 L 85,37 Q 81,36 83,33 Z"
+                    fill="none" stroke="#bbb" stroke-width="1.2" filter="url(#sketchy-roles)"/>
+              <text x="110" y="26" text-anchor="middle" class="role-chip-text">父亲</text>
+            </g>
+            <g>
+              <path d="M 148,8 Q 150,6 208,7 Q 212,8 210,10 L 211,34 Q 210,38 207,36 L 149,37 Q 145,36 147,33 Z"
+                    fill="none" stroke="#bbb" stroke-width="1.2" filter="url(#sketchy-roles)"/>
+              <text x="179" y="26" text-anchor="middle" class="role-chip-text">投资者</text>
+            </g>
+            <g>
+              <path d="M 222,8 Q 224,6 272,7 Q 276,8 274,10 L 275,34 Q 274,38 271,36 L 223,37 Q 219,36 221,33 Z"
+                    fill="none" stroke="#bbb" stroke-width="1.2" filter="url(#sketchy-roles)"/>
+              <text x="248" y="26" text-anchor="middle" class="role-chip-text">儿子</text>
+            </g>
+
+            <!-- 第二行 -->
+            <g>
+              <path d="M 30,52 Q 32,50 80,51 Q 84,52 82,54 L 83,78 Q 82,82 79,80 L 31,81 Q 27,80 29,77 Z"
+                    fill="none" stroke="#bbb" stroke-width="1.2" filter="url(#sketchy-roles)"/>
+              <text x="56" y="70" text-anchor="middle" class="role-chip-text">跑者</text>
+            </g>
+            <g>
+              <path d="M 94,52 Q 96,50 144,51 Q 148,52 146,54 L 147,78 Q 146,82 143,80 L 95,81 Q 91,80 93,77 Z"
+                    fill="none" stroke="#bbb" stroke-width="1.2" filter="url(#sketchy-roles)"/>
+              <text x="120" y="70" text-anchor="middle" class="role-chip-text">丈夫</text>
+            </g>
+            <g>
+              <path d="M 158,52 Q 160,50 208,51 Q 212,52 210,54 L 211,78 Q 210,82 207,80 L 159,81 Q 155,80 157,77 Z"
+                    fill="none" stroke="#bbb" stroke-width="1.2" filter="url(#sketchy-roles)"/>
+              <text x="184" y="70" text-anchor="middle" class="role-chip-text">厨师</text>
+            </g>
+            <g>
+              <path d="M 222,52 Q 224,50 282,51 Q 286,52 284,54 L 285,78 Q 284,82 281,80 L 223,81 Q 219,80 221,77 Z"
+                    fill="none" stroke="#bbb" stroke-width="1.2" filter="url(#sketchy-roles)"/>
+              <text x="253" y="70" text-anchor="middle" class="role-chip-text">读书人</text>
+            </g>
+
+            <!-- 第三行 -->
+            <g>
+              <path d="M 50,96 Q 52,94 120,95 Q 124,96 122,98 L 123,122 Q 122,126 119,124 L 51,125 Q 47,124 49,121 Z"
+                    fill="none" stroke="#bbb" stroke-width="1.2" filter="url(#sketchy-roles)"/>
+              <text x="86" y="114" text-anchor="middle" class="role-chip-text">团队领导</text>
+            </g>
+            <g>
+              <path d="M 134,96 Q 136,94 214,95 Q 218,96 216,98 L 217,122 Q 216,126 213,124 L 135,125 Q 131,124 133,121 Z"
+                    fill="none" stroke="#bbb" stroke-width="1.2" filter="url(#sketchy-roles)"/>
+              <text x="175" y="114" text-anchor="middle" class="role-chip-text">摄影爱好者</text>
+            </g>
+            <g>
+              <path d="M 228,96 Q 230,94 268,95 Q 272,96 270,98 L 271,122 Q 270,126 267,124 L 229,125 Q 225,124 227,121 Z"
+                    fill="none" stroke="#bbb" stroke-width="1.2" filter="url(#sketchy-roles)"/>
+              <text x="249" y="114" text-anchor="middle" class="role-chip-text">...</text>
+            </g>
+          </svg>
         </div>
+
         <p class="section-hint">每个角色，都值得好好学习</p>
       </div>
     </section>
@@ -44,41 +104,219 @@
         <div class="section-label">02 · 清晰路径</div>
         <h2 class="section-title">知道先学什么，再学什么</h2>
 
-        <!-- 角色 Tab 切换 -->
-        <div class="role-tabs">
-          <button
-            v-for="(role, index) in roles"
-            :key="role.id"
-            :class="['role-tab', { active: activeRoleIndex === index }]"
-            @click="activeRoleIndex = index"
-          >
-            {{ role.name }}
-          </button>
+        <!-- 角色 Tab 切换 - 手绘风格 -->
+        <div class="role-tabs-sketch">
+          <svg class="role-tabs-svg" viewBox="0 0 200 36" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <filter id="sketchy-tab" x="-5%" y="-5%" width="110%" height="110%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+            </defs>
+            <!-- 程序员 -->
+            <g class="tab-item" @click="activeRoleIndex = 0">
+              <rect x="0" y="0" width="64" height="36" fill="transparent" class="tab-hit-area"/>
+              <path d="M 2,4 Q 4,2 58,3 Q 62,4 60,6 L 61,30 Q 60,34 57,32 L 3,33 Q -1,32 1,29 Z"
+                    :fill="activeRoleIndex === 0 ? 'rgba(var(--v-theme-primary), 0.15)' : 'none'"
+                    :stroke="activeRoleIndex === 0 ? 'rgb(var(--v-theme-primary))' : '#bbb'"
+                    stroke-width="1.5" filter="url(#sketchy-tab)"/>
+              <text x="31" y="22" text-anchor="middle"
+                    :class="['tab-text', { active: activeRoleIndex === 0 }]">程序员</text>
+            </g>
+            <!-- 投资者 -->
+            <g class="tab-item" @click="activeRoleIndex = 1">
+              <rect x="68" y="0" width="64" height="36" fill="transparent" class="tab-hit-area"/>
+              <path d="M 70,4 Q 72,2 128,3 Q 132,4 130,6 L 131,30 Q 130,34 127,32 L 71,33 Q 67,32 69,29 Z"
+                    :fill="activeRoleIndex === 1 ? 'rgba(var(--v-theme-primary), 0.15)' : 'none'"
+                    :stroke="activeRoleIndex === 1 ? 'rgb(var(--v-theme-primary))' : '#bbb'"
+                    stroke-width="1.5" filter="url(#sketchy-tab)"/>
+              <text x="100" y="22" text-anchor="middle"
+                    :class="['tab-text', { active: activeRoleIndex === 1 }]">投资者</text>
+            </g>
+            <!-- 父亲 -->
+            <g class="tab-item" @click="activeRoleIndex = 2">
+              <rect x="136" y="0" width="64" height="36" fill="transparent" class="tab-hit-area"/>
+              <path d="M 140,4 Q 142,2 196,3 Q 200,4 198,6 L 199,30 Q 198,34 195,32 L 141,33 Q 137,32 139,29 Z"
+                    :fill="activeRoleIndex === 2 ? 'rgba(var(--v-theme-primary), 0.15)' : 'none'"
+                    :stroke="activeRoleIndex === 2 ? 'rgb(var(--v-theme-primary))' : '#bbb'"
+                    stroke-width="1.5" filter="url(#sketchy-tab)"/>
+              <text x="169" y="22" text-anchor="middle"
+                    :class="['tab-text', { active: activeRoleIndex === 2 }]">父亲</text>
+            </g>
+          </svg>
         </div>
 
-        <div class="flow-container">
-          <VueFlow
-            :key="activeRoleIndex"
-            :nodes="currentFlowNodes"
-            :edges="currentFlowEdges"
-            :nodes-draggable="false"
-            :nodes-connectable="false"
-            :elements-selectable="false"
-            :zoom-on-scroll="false"
-            :pan-on-scroll="false"
-            :pan-on-drag="false"
-            :prevent-scrolling="false"
-            fit-view-on-init
-            :fit-view-options="{ padding: 0.3 }"
-          >
-            <template #node-custom="{ data }">
-              <div :class="['custom-node', data.type, data.status]">
-                <Handle type="target" :position="Position.Left" />
-                {{ data.label }}
-                <Handle type="source" :position="Position.Right" />
-              </div>
-            </template>
-          </VueFlow>
+        <div class="sketch-container sketch-flow">
+          <svg class="sketch-svg" viewBox="0 0 500 200" preserveAspectRatio="xMidYMid meet">
+            <!-- 手绘风格滤镜 -->
+            <defs>
+              <filter id="sketchy-flow" x="-5%" y="-5%" width="110%" height="110%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+            </defs>
+
+            <!-- 程序员路径 -->
+            <g v-if="activeRoleIndex === 0">
+              <!-- 节点：决策树 (done) -->
+              <rect x="20" y="30" width="70" height="32" rx="6" fill="none" stroke="#66bb6a" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="55" y="51" text-anchor="middle" class="sketch-node-text">决策树</text>
+
+              <!-- 节点：Flask基础 (done) -->
+              <rect x="20" y="120" width="70" height="32" rx="6" fill="none" stroke="#66bb6a" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="55" y="141" text-anchor="middle" class="sketch-node-text">Flask基础</text>
+
+              <!-- 节点：机器学习 (done) -->
+              <rect x="140" y="10" width="70" height="32" rx="6" fill="none" stroke="#66bb6a" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="175" y="31" text-anchor="middle" class="sketch-node-text">机器学习</text>
+
+              <!-- 节点：深度学习 (active) -->
+              <rect x="140" y="55" width="70" height="32" rx="6" fill="none" stroke="#42a5f5" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="175" y="76" text-anchor="middle" class="sketch-node-text">深度学习</text>
+
+              <!-- 节点：Web开发 (done) -->
+              <rect x="140" y="100" width="70" height="32" rx="6" fill="none" stroke="#66bb6a" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="175" y="121" text-anchor="middle" class="sketch-node-text">Web开发</text>
+
+              <!-- 节点：系统设计 (active) -->
+              <rect x="140" y="145" width="70" height="32" rx="6" fill="none" stroke="#42a5f5" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="175" y="166" text-anchor="middle" class="sketch-node-text">系统设计</text>
+
+              <!-- 节点：AI路线 (locked) -->
+              <rect x="260" y="30" width="70" height="32" rx="6" fill="none" stroke="#e0e0e0" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="295" y="51" text-anchor="middle" class="sketch-node-text locked">AI路线</text>
+
+              <!-- 节点：后端路线 (locked) -->
+              <rect x="260" y="120" width="70" height="32" rx="6" fill="none" stroke="#e0e0e0" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="295" y="141" text-anchor="middle" class="sketch-node-text locked">后端路线</text>
+
+              <!-- 节点：程序员 (role) -->
+              <rect x="380" y="75" width="80" height="36" rx="8" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <text x="420" y="98" text-anchor="middle" class="sketch-node-text role-outline">程序员</text>
+
+              <!-- 连接线 - 起点终点都留8px间距，多条线错开 -->
+              <!-- 决策树(90,46) → 机器学习(140,26) -->
+              <path d="M 98,42 Q 118,30 132,26" fill="none" stroke="#66bb6a" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 决策树(90,46) → 深度学习(140,71) -->
+              <path d="M 98,50 Q 118,64 132,71" fill="none" stroke="#42a5f5" stroke-width="2" stroke-dasharray="4,2" filter="url(#sketchy-flow)"/>
+              <!-- Flask基础(90,136) → Web开发(140,116) -->
+              <path d="M 98,132 Q 118,122 132,116" fill="none" stroke="#66bb6a" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- Flask基础(90,136) → 系统设计(140,161) -->
+              <path d="M 98,140 Q 118,154 132,161" fill="none" stroke="#42a5f5" stroke-width="2" stroke-dasharray="4,2" filter="url(#sketchy-flow)"/>
+              <!-- 机器学习(210,26) → AI路线(260,46) -->
+              <path d="M 218,26 Q 238,32 252,40" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 深度学习(210,71) → AI路线(260,46) -->
+              <path d="M 218,71 Q 238,60 252,52" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- Web开发(210,116) → 后端路线(260,136) -->
+              <path d="M 218,116 Q 238,122 252,130" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 系统设计(210,161) → 后端路线(260,136) -->
+              <path d="M 218,161 Q 238,150 252,142" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- AI路线(330,46) → 程序员(380,93) -->
+              <path d="M 338,46 Q 358,64 372,86" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 后端路线(330,136) → 程序员(380,93) -->
+              <path d="M 338,136 Q 358,116 372,100" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+            </g>
+
+            <!-- 投资者路径 -->
+            <g v-if="activeRoleIndex === 1">
+              <!-- 节点：财务报表 (done) -->
+              <rect x="20" y="50" width="70" height="32" rx="6" fill="none" stroke="#66bb6a" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="55" y="71" text-anchor="middle" class="sketch-node-text">财务报表</text>
+
+              <!-- 节点：估值方法 (active) -->
+              <rect x="20" y="110" width="70" height="32" rx="6" fill="none" stroke="#42a5f5" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="55" y="131" text-anchor="middle" class="sketch-node-text">估值方法</text>
+
+              <!-- 节点：价值投资 (done) -->
+              <rect x="150" y="30" width="70" height="32" rx="6" fill="none" stroke="#66bb6a" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="185" y="51" text-anchor="middle" class="sketch-node-text">价值投资</text>
+
+              <!-- 节点：行业分析 (active) -->
+              <rect x="150" y="80" width="70" height="32" rx="6" fill="none" stroke="#42a5f5" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="185" y="101" text-anchor="middle" class="sketch-node-text">行业分析</text>
+
+              <!-- 节点：风险管理 (locked) -->
+              <rect x="150" y="130" width="70" height="32" rx="6" fill="none" stroke="#e0e0e0" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="185" y="151" text-anchor="middle" class="sketch-node-text locked">风险管理</text>
+
+              <!-- 节点：长期投资路线 (locked) -->
+              <rect x="280" y="80" width="80" height="32" rx="6" fill="none" stroke="#e0e0e0" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="320" y="101" text-anchor="middle" class="sketch-node-text locked">长期投资</text>
+
+              <!-- 节点：投资者 (role) -->
+              <rect x="400" y="74" width="70" height="36" rx="8" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <text x="435" y="97" text-anchor="middle" class="sketch-node-text role-outline">投资者</text>
+
+              <!-- 连接线 - 起点终点都留8px间距，多条线错开 -->
+              <!-- 财务报表(90,66) → 价值投资(150,46) -->
+              <path d="M 98,62 Q 124,50 142,46" fill="none" stroke="#66bb6a" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 财务报表(90,66) → 行业分析(150,96) -->
+              <path d="M 98,70 Q 124,86 142,90" fill="none" stroke="#42a5f5" stroke-width="2" stroke-dasharray="4,2" filter="url(#sketchy-flow)"/>
+              <!-- 估值方法(90,126) → 行业分析(150,96) -->
+              <path d="M 98,122 Q 124,108 142,102" fill="none" stroke="#42a5f5" stroke-width="2" stroke-dasharray="4,2" filter="url(#sketchy-flow)"/>
+              <!-- 估值方法(90,126) → 风险管理(150,146) -->
+              <path d="M 98,130 Q 124,142 142,146" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 价值投资(220,46) → 长期投资(280,96) -->
+              <path d="M 228,46 Q 254,66 272,88" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 行业分析(220,96) → 长期投资(280,96) -->
+              <path d="M 228,96 Q 250,91 272,96" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 风险管理(220,146) → 长期投资(280,96) -->
+              <path d="M 228,146 Q 254,124 272,104" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 长期投资(360,96) → 投资者(400,92) -->
+              <path d="M 368,96 Q 384,94 392,92" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+            </g>
+
+            <!-- 父亲路径 -->
+            <g v-if="activeRoleIndex === 2">
+              <!-- 节点：儿童心理 (done) -->
+              <rect x="20" y="50" width="70" height="32" rx="6" fill="none" stroke="#66bb6a" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="55" y="71" text-anchor="middle" class="sketch-node-text">儿童心理</text>
+
+              <!-- 节点：沟通技巧 (done) -->
+              <rect x="20" y="110" width="70" height="32" rx="6" fill="none" stroke="#66bb6a" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="55" y="131" text-anchor="middle" class="sketch-node-text">沟通技巧</text>
+
+              <!-- 节点：亲子教育 (done) -->
+              <rect x="150" y="30" width="70" height="32" rx="6" fill="none" stroke="#66bb6a" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="185" y="51" text-anchor="middle" class="sketch-node-text">亲子教育</text>
+
+              <!-- 节点：情绪管理 (active) -->
+              <rect x="150" y="80" width="70" height="32" rx="6" fill="none" stroke="#42a5f5" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="185" y="101" text-anchor="middle" class="sketch-node-text">情绪管理</text>
+
+              <!-- 节点：学习辅导 (locked) -->
+              <rect x="150" y="130" width="70" height="32" rx="6" fill="none" stroke="#e0e0e0" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="185" y="151" text-anchor="middle" class="sketch-node-text locked">学习辅导</text>
+
+              <!-- 节点：好爸爸路线 (locked) -->
+              <rect x="280" y="80" width="80" height="32" rx="6" fill="none" stroke="#e0e0e0" stroke-width="1.5" filter="url(#sketchy-flow)"/>
+              <text x="320" y="101" text-anchor="middle" class="sketch-node-text locked">好爸爸路线</text>
+
+              <!-- 节点：父亲 (role) -->
+              <rect x="400" y="74" width="70" height="36" rx="8" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <text x="435" y="97" text-anchor="middle" class="sketch-node-text role-outline">父亲</text>
+
+              <!-- 连接线 - 起点终点都留8px间距，多条线错开 -->
+              <!-- 儿童心理(90,66) → 亲子教育(150,46) -->
+              <path d="M 98,62 Q 124,48 142,44" fill="none" stroke="#66bb6a" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 儿童心理(90,66) → 情绪管理(150,96) -->
+              <path d="M 98,70 Q 124,86 142,90" fill="none" stroke="#42a5f5" stroke-width="2" stroke-dasharray="4,2" filter="url(#sketchy-flow)"/>
+              <!-- 沟通技巧(90,126) → 亲子教育(150,46) -->
+              <path d="M 98,118 Q 124,70 142,52" fill="none" stroke="#66bb6a" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 沟通技巧(90,126) → 情绪管理(150,96) -->
+              <path d="M 98,126 Q 124,108 142,102" fill="none" stroke="#42a5f5" stroke-width="2" stroke-dasharray="4,2" filter="url(#sketchy-flow)"/>
+              <!-- 沟通技巧(90,126) → 学习辅导(150,146) -->
+              <path d="M 98,134 Q 124,144 142,146" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 亲子教育(220,46) → 好爸爸路线(280,96) -->
+              <path d="M 228,46 Q 254,66 272,88" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 情绪管理(220,96) → 好爸爸路线(280,96) -->
+              <path d="M 228,96 Q 250,91 272,96" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 学习辅导(220,146) → 好爸爸路线(280,96) -->
+              <path d="M 228,146 Q 254,124 272,104" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+              <!-- 好爸爸路线(360,96) → 父亲(400,92) -->
+              <path d="M 368,96 Q 384,94 392,92" fill="none" stroke="#e0e0e0" stroke-width="2" filter="url(#sketchy-flow)"/>
+            </g>
+          </svg>
         </div>
         <div class="tree-legend">
           <span class="legend-item"><span class="legend-dot done"></span>已完成</span>
@@ -96,7 +334,7 @@
         <h2 class="section-title">同一知识点，最易懂的排最前</h2>
 
         <div class="sketch-container">
-          <svg class="sketch-svg" viewBox="-80 0 500 300" preserveAspectRatio="xMidYMid meet">
+          <svg class="sketch-svg" viewBox="-100 0 560 300" preserveAspectRatio="xMidYMid meet">
             <!-- 手绘风格滤镜 -->
             <defs>
               <filter id="sketchy" x="-5%" y="-5%" width="110%" height="110%">
@@ -135,51 +373,55 @@
 
             <!-- 文章排名 - 手绘卡片 -->
             <g class="article-row">
-              <text x="155" y="60" class="sketch-medal">🥇</text>
+              <text x="160" y="62" class="sketch-rank">1</text>
               <path d="M 176,44 Q 180,42 322,43 Q 326,45 324,47 L 325,70 Q 324,74 321,72 L 177,73 Q 173,71 175,68 Z"
                     fill="rgba(255,215,0,0.12)" stroke="#e6c200" stroke-width="1.2" filter="url(#sketchy)"/>
-              <text x="250" y="62" text-anchor="middle" class="sketch-article-hand">3分钟搞懂决策树</text>
+              <!-- 文章内容用线条表示 -->
+              <path d="M 185,55 Q 200,54 240,56 Q 280,55 310,56" fill="none" stroke="#999" stroke-width="1.2" filter="url(#sketchy)"/>
+              <path d="M 185,65 Q 210,64 250,66 Q 270,65 295,66" fill="none" stroke="#bbb" stroke-width="1" filter="url(#sketchy)"/>
             </g>
 
             <g class="article-row">
-              <text x="155" y="100" class="sketch-medal">🥈</text>
+              <text x="160" y="102" class="sketch-rank">2</text>
               <path d="M 176,84 Q 179,82 322,83 Q 326,85 324,87 L 325,110 Q 324,114 321,112 L 177,113 Q 173,111 175,108 Z"
                     fill="#fafafa" stroke="#ccc" stroke-width="1.2" filter="url(#sketchy)"/>
-              <text x="250" y="102" text-anchor="middle" class="sketch-article-hand">决策树图解教程</text>
+              <path d="M 185,95 Q 205,94 245,96 Q 285,95 315,96" fill="none" stroke="#999" stroke-width="1.2" filter="url(#sketchy)"/>
+              <path d="M 185,105 Q 215,104 255,106 Q 275,105 300,106" fill="none" stroke="#bbb" stroke-width="1" filter="url(#sketchy)"/>
             </g>
 
             <g class="article-row">
-              <text x="155" y="140" class="sketch-medal">🥉</text>
+              <text x="160" y="142" class="sketch-rank">3</text>
               <path d="M 176,124 Q 180,122 322,123 Q 326,125 324,127 L 325,150 Q 324,154 321,152 L 177,153 Q 173,151 175,148 Z"
                     fill="#fafafa" stroke="#ccc" stroke-width="1.2" filter="url(#sketchy)"/>
-              <text x="250" y="142" text-anchor="middle" class="sketch-article-hand">从零实现决策树</text>
+              <path d="M 185,135 Q 200,134 235,136 Q 275,135 305,136" fill="none" stroke="#999" stroke-width="1.2" filter="url(#sketchy)"/>
+              <path d="M 185,145 Q 220,144 260,146 Q 280,145 290,146" fill="none" stroke="#bbb" stroke-width="1" filter="url(#sketchy)"/>
             </g>
 
             <!-- 省略号 -->
             <text x="250" y="178" text-anchor="middle" fill="#999" class="sketch-dots">· · ·</text>
 
             <!-- 左侧标注 - 手绘曲线箭头 -->
-            <path d="M 18,100 C 0,100 -10,80 -20,65" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" stroke-linecap="round" filter="url(#sketchy)"/>
-            <path d="M -25,72 L -20,65 L -13,70" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#sketchy)"/>
-            <text x="-30" y="50" text-anchor="middle" class="sketch-annotation-hand">
+            <path d="M 30,110 C 10,110 -5,85 -20,65" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" stroke-linecap="round" filter="url(#sketchy)"/>
+            <path d="M -20,74 L -20,65 L -11,65" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#sketchy)"/>
+            <text x="-30" y="40" text-anchor="middle" class="sketch-annotation-hand">
               <tspan x="-30" dy="0">社区贡献节点</tspan>
               <tspan x="-30" dy="16">自选组成目录</tspan>
             </text>
 
             <!-- 堆叠目录标注 - 指向目录框右上角的堆叠部分 -->
             <path d="M 18,180 C -5,180 -15,200 -25,215" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" stroke-linecap="round" filter="url(#sketchy)"/>
-            <path d="M -30,208 L -25,215 L -18,210" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#sketchy)"/>
+            <path d="M -31,206 L -25,215 L -17,212" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#sketchy)"/>
             <text x="-35" y="235" text-anchor="middle" class="sketch-annotation-hand">
               <tspan x="-35" dy="0">多个目录组</tspan>
-              <tspan x="-35" dy="16">不同学习路径</tspan>
+              <tspan x="-35" dy="16">支持不同学习路径</tspan>
             </text>
 
-            <!-- 右侧标注 - 手绘曲线箭头 -->
-            <path d="M 343,95 C 360,95 370,115 380,135" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" stroke-linecap="round" filter="url(#sketchy)"/>
-            <path d="M 373,128 L 380,135 L 385,127" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#sketchy)"/>
-            <text x="390" y="155" text-anchor="middle" class="sketch-annotation-hand">
-              <tspan x="390" dy="0">用户投票</tspan>
-              <tspan x="390" dy="16">易懂优先</tspan>
+            <!-- 右侧标注 - 手绘曲线箭头，从第一篇文章开始 -->
+            <path d="M 310,75 C 330,85 360,115 380,135" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" stroke-linecap="round" filter="url(#sketchy)"/>
+            <path d="M 371,135 L 380,135 L 380,126" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#sketchy)"/>
+            <text x="400" y="155" text-anchor="middle" class="sketch-annotation-hand">
+              <tspan x="400" dy="0">用户投票</tspan>
+              <tspan x="400" dy="16">易懂文章优先展示</tspan>
             </text>
 
             <!-- 底部标注 - 从省略号指向文字（箭头朝下） -->
@@ -197,31 +439,82 @@
 
     <!-- 第五屏：科学复习 -->
     <section class="intro-screen screen-5">
-      <div class="screen-inner">
+      <div class="screen-inner screen-inner-full">
         <div class="section-label">04 · 科学复习</div>
         <h2 class="section-title">学完不忘，真正掌握</h2>
-        <div class="review-demo">
-          <div class="flashcard">
-            <div class="card-face front">
-              <div class="card-label">Q</div>
-              <div class="card-text">决策树如何选择最佳分裂点？</div>
-            </div>
-          </div>
-          <div class="review-stats">
-            <div class="stat-item today">
-              <div class="stat-num">12</div>
-              <div class="stat-label">今日待复习</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-num">89%</div>
-              <div class="stat-label">记忆保持率</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-num">7</div>
-              <div class="stat-label">连续打卡</div>
-            </div>
-          </div>
+
+        <div class="sketch-container sketch-review">
+          <svg class="sketch-svg" viewBox="0 0 300 190" preserveAspectRatio="xMidYMid meet">
+            <!-- 手绘风格滤镜 -->
+            <defs>
+              <filter id="sketchy-review" x="-5%" y="-5%" width="110%" height="110%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+            </defs>
+
+            <!-- 顶部统计行 -->
+            <g class="review-stats-sketch">
+              <text x="75" y="16" text-anchor="middle" class="sketch-stat-inline">今日待复习 <tspan class="primary" font-weight="700">12</tspan></text>
+              <text x="150" y="16" text-anchor="middle" class="sketch-stat-inline">·</text>
+              <text x="225" y="16" text-anchor="middle" class="sketch-stat-inline">连续打卡 <tspan font-weight="700">7</tspan> 天</text>
+            </g>
+
+            <!-- 记忆卡片 - 手绘风格 -->
+            <g class="flashcard-sketch">
+              <!-- 卡片背景 -->
+              <path d="M 20,28 Q 22,26 278,27 Q 282,28 280,30 L 281,128 Q 280,132 277,130 L 21,131 Q 17,130 19,127 Z"
+                    fill="rgba(var(--v-theme-primary), 0.08)" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" filter="url(#sketchy-review)"/>
+
+              <!-- 问题图标 -->
+              <circle cx="42" cy="55" r="12" fill="none" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" filter="url(#sketchy-review)"/>
+              <text x="42" y="59" text-anchor="middle" class="sketch-icon-text">?</text>
+
+              <!-- 问题标签 -->
+              <text x="62" y="49" class="sketch-card-label">问题</text>
+
+              <!-- 问题内容 - 手绘线条 -->
+              <path d="M 62,59 Q 100,58 150,60 Q 200,59 260,60" fill="none" stroke="rgba(var(--v-theme-on-surface), 0.45)" stroke-width="1.5" filter="url(#sketchy-review)"/>
+
+              <!-- 分隔虚线 -->
+              <path d="M 32,78 Q 150,77 268,78" fill="none" stroke="rgba(var(--v-theme-on-surface), 0.15)" stroke-width="1" stroke-dasharray="5,3" filter="url(#sketchy-review)"/>
+
+              <!-- 答案图标 -->
+              <circle cx="42" cy="106" r="12" fill="none" stroke="#66bb6a" stroke-width="1.5" filter="url(#sketchy-review)"/>
+              <text x="42" y="110" text-anchor="middle" class="sketch-icon-text answer">✓</text>
+
+              <!-- 答案标签 -->
+              <text x="62" y="100" class="sketch-card-label answer">答案</text>
+
+              <!-- 答案内容 - 手绘线条 -->
+              <path d="M 62,110 Q 95,109 140,111 Q 175,110 220,111" fill="none" stroke="rgba(var(--v-theme-on-surface), 0.35)" stroke-width="1.5" filter="url(#sketchy-review)"/>
+            </g>
+
+            <!-- 评价按钮区域 -->
+            <g class="rating-buttons">
+              <!-- 忘记按钮 -->
+              <path d="M 20,142 Q 22,140 70,141 Q 74,142 72,144 L 73,168 Q 72,172 69,170 L 21,171 Q 17,170 19,167 Z"
+                    fill="none" stroke="#ef5350" stroke-width="1.5" filter="url(#sketchy-review)"/>
+              <text x="46" y="160" text-anchor="middle" class="sketch-btn-text forgot">忘记</text>
+
+              <!-- 困难按钮 -->
+              <path d="M 82,142 Q 84,140 132,141 Q 136,142 134,144 L 135,168 Q 134,172 131,170 L 83,171 Q 79,170 81,167 Z"
+                    fill="none" stroke="#ffa726" stroke-width="1.5" filter="url(#sketchy-review)"/>
+              <text x="108" y="160" text-anchor="middle" class="sketch-btn-text hard">困难</text>
+
+              <!-- 良好按钮 -->
+              <path d="M 144,142 Q 146,140 194,141 Q 198,142 196,144 L 197,168 Q 196,172 193,170 L 145,171 Q 141,170 143,167 Z"
+                    fill="none" stroke="#66bb6a" stroke-width="1.5" filter="url(#sketchy-review)"/>
+              <text x="170" y="160" text-anchor="middle" class="sketch-btn-text good">良好</text>
+
+              <!-- 简单按钮 -->
+              <path d="M 206,142 Q 208,140 278,141 Q 282,142 280,144 L 281,168 Q 280,172 277,170 L 207,171 Q 203,170 205,167 Z"
+                    fill="rgba(var(--v-theme-primary), 0.12)" stroke="rgb(var(--v-theme-primary))" stroke-width="1.5" filter="url(#sketchy-review)"/>
+              <text x="243" y="160" text-anchor="middle" class="sketch-btn-text easy">简单</text>
+            </g>
+          </svg>
         </div>
+
         <p class="section-hint">艾宾浩斯曲线，智能安排复习</p>
       </div>
     </section>
@@ -229,9 +522,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { VueFlow, Handle, Position } from '@vue-flow/core'
-import type { Node, Edge } from '@vue-flow/core'
+import { ref } from 'vue'
 
 const scrollContainer = ref<HTMLElement | null>(null)
 const activeRoleIndex = ref(0)
@@ -242,116 +533,6 @@ const roles = [
   { id: 'investor', name: '投资者' },
   { id: 'father', name: '父亲' },
 ]
-
-// 各角色的学习路径数据
-const rolesData = {
-  programmer: {
-    nodes: [
-      { id: '1', position: { x: 0, y: -5 }, data: { label: '决策树', type: 'node', status: 'done' } },
-      { id: '2', position: { x: 0, y: 135 }, data: { label: 'Flask基础', type: 'node', status: 'done' } },
-      { id: '3', position: { x: 160, y: -40 }, data: { label: '机器学习', type: 'course', status: 'done' } },
-      { id: '4', position: { x: 160, y: 30 }, data: { label: '深度学习', type: 'course', status: 'active' } },
-      { id: '5', position: { x: 160, y: 100 }, data: { label: 'Web开发', type: 'course', status: 'done' } },
-      { id: '6', position: { x: 160, y: 170 }, data: { label: '系统设计', type: 'course', status: 'active' } },
-      { id: '7', position: { x: 320, y: -5 }, data: { label: 'AI路线', type: 'roadmap', status: 'locked' } },
-      { id: '8', position: { x: 320, y: 135 }, data: { label: '后端路线', type: 'roadmap', status: 'locked' } },
-      { id: '9', position: { x: 480, y: 65 }, data: { label: '程序员', type: 'role', status: '' } },
-    ],
-    edges: [
-      { id: 'e1-3', source: '1', target: '3', status: 'done' },
-      { id: 'e1-4', source: '1', target: '4', status: 'active' },
-      { id: 'e2-5', source: '2', target: '5', status: 'done' },
-      { id: 'e2-6', source: '2', target: '6', status: 'active' },
-      { id: 'e3-7', source: '3', target: '7', status: 'locked' },
-      { id: 'e4-7', source: '4', target: '7', status: 'locked' },
-      { id: 'e5-8', source: '5', target: '8', status: 'locked' },
-      { id: 'e6-8', source: '6', target: '8', status: 'locked' },
-      { id: 'e7-9', source: '7', target: '9', status: 'locked' },
-      { id: 'e8-9', source: '8', target: '9', status: 'locked' },
-    ],
-  },
-  investor: {
-    nodes: [
-      { id: '1', position: { x: 0, y: 0 }, data: { label: '财务报表', type: 'node', status: 'done' } },
-      { id: '2', position: { x: 0, y: 80 }, data: { label: '估值方法', type: 'node', status: 'active' } },
-      { id: '3', position: { x: 160, y: -20 }, data: { label: '价值投资', type: 'course', status: 'done' } },
-      { id: '4', position: { x: 160, y: 60 }, data: { label: '行业分析', type: 'course', status: 'active' } },
-      { id: '5', position: { x: 160, y: 140 }, data: { label: '风险管理', type: 'course', status: 'locked' } },
-      { id: '6', position: { x: 320, y: 60 }, data: { label: '长期投资路线', type: 'roadmap', status: 'locked' } },
-      { id: '7', position: { x: 480, y: 60 }, data: { label: '投资者', type: 'role', status: '' } },
-    ],
-    edges: [
-      { id: 'e1-3', source: '1', target: '3', status: 'done' },
-      { id: 'e1-4', source: '1', target: '4', status: 'active' },
-      { id: 'e2-4', source: '2', target: '4', status: 'active' },
-      { id: 'e2-5', source: '2', target: '5', status: 'locked' },
-      { id: 'e3-6', source: '3', target: '6', status: 'locked' },
-      { id: 'e4-6', source: '4', target: '6', status: 'locked' },
-      { id: 'e5-6', source: '5', target: '6', status: 'locked' },
-      { id: 'e6-7', source: '6', target: '7', status: 'locked' },
-    ],
-  },
-  father: {
-    nodes: [
-      { id: '1', position: { x: 0, y: 0 }, data: { label: '儿童心理', type: 'node', status: 'done' } },
-      { id: '2', position: { x: 0, y: 80 }, data: { label: '沟通技巧', type: 'node', status: 'done' } },
-      { id: '3', position: { x: 160, y: -20 }, data: { label: '亲子教育', type: 'course', status: 'done' } },
-      { id: '4', position: { x: 160, y: 60 }, data: { label: '情绪管理', type: 'course', status: 'active' } },
-      { id: '5', position: { x: 160, y: 140 }, data: { label: '学习辅导', type: 'course', status: 'locked' } },
-      { id: '6', position: { x: 320, y: 60 }, data: { label: '好爸爸路线', type: 'roadmap', status: 'locked' } },
-      { id: '7', position: { x: 480, y: 60 }, data: { label: '父亲', type: 'role', status: '' } },
-    ],
-    edges: [
-      { id: 'e1-3', source: '1', target: '3', status: 'done' },
-      { id: 'e1-4', source: '1', target: '4', status: 'active' },
-      { id: 'e2-3', source: '2', target: '3', status: 'done' },
-      { id: 'e2-4', source: '2', target: '4', status: 'active' },
-      { id: 'e2-5', source: '2', target: '5', status: 'locked' },
-      { id: 'e3-6', source: '3', target: '6', status: 'locked' },
-      { id: 'e4-6', source: '4', target: '6', status: 'locked' },
-      { id: 'e5-6', source: '5', target: '6', status: 'locked' },
-      { id: 'e6-7', source: '6', target: '7', status: 'locked' },
-    ],
-  },
-}
-
-// 根据状态获取边的样式
-const getEdgeStyle = (status: string) => {
-  switch (status) {
-    case 'done':
-      return { animated: false, style: { stroke: '#66bb6a', strokeWidth: 2 } }
-    case 'active':
-      return { animated: true, style: { stroke: '#42a5f5', strokeWidth: 2 } }
-    default:
-      return { animated: false, style: { stroke: '#bdbdbd', strokeWidth: 2 } }
-  }
-}
-
-// 当前角色的节点
-const currentFlowNodes = computed<Node[]>(() => {
-  const roleId = roles[activeRoleIndex.value].id
-  const data = rolesData[roleId as keyof typeof rolesData]
-  return data.nodes.map((node) => ({
-    id: node.id,
-    type: 'custom',
-    position: node.position,
-    data: node.data,
-    sourcePosition: Position.Right,
-    targetPosition: Position.Left,
-  }))
-})
-
-// 当前角色的边
-const currentFlowEdges = computed<Edge[]>(() => {
-  const roleId = roles[activeRoleIndex.value].id
-  const data = rolesData[roleId as keyof typeof rolesData]
-  return data.edges.map((edge) => ({
-    id: edge.id,
-    source: edge.source,
-    target: edge.target,
-    ...getEdgeStyle(edge.status),
-  }))
-})
 </script>
 
 <style scoped>
@@ -459,149 +640,84 @@ const currentFlowEdges = computed<Edge[]>(() => {
 .section-hint {
   font-size: 0.95rem;
   color: rgba(var(--v-theme-on-surface), 0.5);
-  margin: 24px 0 0 0;
+  margin: 48px 0 0 0;
 }
 
-/* ========== 第二屏：角色 ========== */
-.roles-cloud {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
+/* ========== 第二屏：角色（手绘风格） ========== */
+.sketch-roles {
+  margin-bottom: 24px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.role-chip {
-  font-size: 1rem;
-  padding: 10px 20px;
-  border-radius: 24px;
+.role-chip-text {
+  font-size: 11px;
   font-weight: 500;
-  background: rgba(var(--v-theme-surface-variant), 0.5);
-  color: rgba(var(--v-theme-on-surface), 0.85);
+  fill: rgba(var(--v-theme-on-surface), 0.7);
 }
 
-/* ========== 第三屏：Vue Flow 路径 ========== */
+/* ========== 第三屏：手绘路径 ========== */
 .screen-inner-flow {
   max-width: 600px;
 }
 
-/* 角色 Tab 切换 */
-.role-tabs {
+/* 角色 Tab 切换 - 手绘风格 */
+.role-tabs-sketch {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 36px;
 }
 
-.role-tab {
-  padding: 8px 20px;
-  border: none;
-  border-radius: 20px;
-  background: rgba(var(--v-theme-surface-variant), 0.5);
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  font-size: 0.95rem;
-  font-weight: 500;
+.role-tabs-svg {
+  width: 220px;
+  height: 40px;
+}
+
+.tab-item {
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.role-tab:hover {
-  background: rgba(var(--v-theme-surface-variant), 0.8);
+.tab-hit-area {
+  cursor: pointer;
 }
 
-.role-tab.active {
-  background: rgb(var(--v-theme-primary));
-  color: white;
+.tab-text {
+  font-size: 11px;
+  font-weight: 500;
+  fill: rgba(var(--v-theme-on-surface), 0.6);
+  pointer-events: none;
 }
 
-.flow-container {
-  width: 100%;
-  height: 280px;
-  border-radius: 16px;
-  overflow: hidden;
-  background: transparent;
-  margin-bottom: 12px;
-}
-
-/* 自定义节点样式 */
-.custom-node {
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 14px;
+.tab-text.active {
+  fill: rgb(var(--v-theme-primary));
   font-weight: 600;
-  white-space: nowrap;
-  border: 2px solid;
-  transition: all 0.2s ease;
 }
 
-/* 节点类型样式 */
-.custom-node.node {
-  background: #fff;
-  border-color: #bdbdbd;
-  color: #616161;
+.sketch-flow {
+  height: 220px;
+  margin-bottom: 24px;
 }
 
-.custom-node.course {
-  background: #fff;
-  border-color: #90caf9;
-  color: #1565c0;
+/* 手绘节点文字 */
+.sketch-node-text {
+  font-size: 11px;
+  font-weight: 500;
+  fill: #333;
 }
 
-.custom-node.roadmap {
-  background: #fff;
-  border-color: #a5d6a7;
-  color: #2e7d32;
+.sketch-node-text.locked {
+  fill: #9e9e9e;
 }
 
-.custom-node.role {
-  background: linear-gradient(135deg, rgb(var(--v-theme-primary)), rgba(var(--v-theme-primary), 0.8));
-  border-color: rgb(var(--v-theme-primary));
-  color: white;
-  font-size: 16px;
-  padding: 12px 24px;
+.sketch-node-text.role {
+  fill: white;
+  font-weight: 600;
 }
 
-/* 节点状态样式 */
-.custom-node.done {
-  background: #e8f5e9;
-  border-color: #66bb6a;
-  color: #2e7d32;
-}
-
-.custom-node.active {
-  background: #e3f2fd;
-  border-color: #42a5f5;
-  color: #1565c0;
-  box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.3);
-}
-
-.custom-node.locked {
-  background: #f5f5f5;
-  border-color: #e0e0e0;
-  color: #9e9e9e;
-}
-
-.custom-node.role.active {
-  box-shadow: 0 0 0 4px rgba(var(--v-theme-primary), 0.3);
-}
-
-/* Vue Flow 覆盖样式 */
-.flow-container :deep(.vue-flow__node) {
-  cursor: default;
-}
-
-.flow-container :deep(.vue-flow__edge-path) {
-  stroke-width: 2;
-}
-
-.flow-container :deep(.vue-flow__controls) {
-  display: none;
-}
-
-.flow-container :deep(.vue-flow__handle) {
-  width: 8px;
-  height: 8px;
-  background: transparent;
-  border: none;
+.sketch-node-text.role-outline {
+  fill: rgb(var(--v-theme-primary));
+  font-weight: 600;
 }
 
 /* ========== 第四屏：手绘风格课程图示 ========== */
@@ -634,6 +750,12 @@ const currentFlowEdges = computed<Edge[]>(() => {
   font-size: 14px;
 }
 
+.sketch-rank {
+  font-size: 11px;
+  font-weight: 600;
+  fill: #666;
+}
+
 .sketch-article-hand {
   font-size: 11px;
   fill: #444;
@@ -655,6 +777,7 @@ const currentFlowEdges = computed<Edge[]>(() => {
   display: flex;
   justify-content: center;
   gap: 20px;
+  margin-bottom: 16px;
 }
 
 .legend-item {
@@ -688,69 +811,62 @@ const currentFlowEdges = computed<Edge[]>(() => {
   border-color: #e0e0e0;
 }
 
-/* ========== 第五屏：复习 ========== */
-.review-demo {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+/* ========== 第五屏：复习（手绘风格） ========== */
+.sketch-review {
+  margin-bottom: 24px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.flashcard {
-  perspective: 1000px;
+.sketch-stat-inline {
+  font-size: 10px;
+  fill: rgba(var(--v-theme-on-surface), 0.6);
 }
 
-.card-face {
-  background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgba(var(--v-theme-primary), 0.8) 100%);
-  border-radius: 16px;
-  padding: 24px 20px;
-  color: white;
-  text-align: left;
+.sketch-stat-inline .primary {
+  fill: rgb(var(--v-theme-primary));
 }
 
-.card-label {
-  font-size: 0.85rem;
+.sketch-icon-text {
+  font-size: 16px;
   font-weight: 700;
-  opacity: 0.7;
-  margin-bottom: 10px;
+  fill: rgb(var(--v-theme-primary));
 }
 
-.card-text {
-  font-size: 1.1rem;
+.sketch-icon-text.answer {
+  fill: #66bb6a;
+}
+
+.sketch-card-label {
+  font-size: 11px;
+  font-weight: 600;
+  fill: rgb(var(--v-theme-primary));
+}
+
+.sketch-card-label.answer {
+  fill: #66bb6a;
+}
+
+.sketch-btn-text {
+  font-size: 11px;
   font-weight: 500;
-  line-height: 1.5;
 }
 
-.review-stats {
-  display: flex;
-  gap: 8px;
+.sketch-btn-text.forgot {
+  fill: #ef5350;
 }
 
-.stat-item {
-  flex: 1;
-  background: rgba(var(--v-theme-surface-variant), 0.4);
-  border-radius: 12px;
-  padding: 14px 8px;
-  text-align: center;
+.sketch-btn-text.hard {
+  fill: #ffa726;
 }
 
-.stat-item.today {
-  background: rgba(var(--v-theme-primary), 0.1);
+.sketch-btn-text.good {
+  fill: #66bb6a;
 }
 
-.stat-num {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: rgb(var(--v-theme-on-surface));
-  margin-bottom: 4px;
-}
-
-.stat-item.today .stat-num {
-  color: rgb(var(--v-theme-primary));
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+.sketch-btn-text.easy {
+  fill: rgb(var(--v-theme-primary));
 }
 
 /* ========== 响应式 ========== */
