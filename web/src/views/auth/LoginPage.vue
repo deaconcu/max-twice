@@ -781,7 +781,10 @@ const goToRegister = () => {
 
 /* Introduction Section */
 .intro-section {
-  padding: 40px;
+  height: calc(100vh - v-bind('`${HEADER_HEIGHT}px`') - 40px);
+  max-height: calc(100vh - v-bind('`${HEADER_HEIGHT}px`') - 40px);
+  overflow: hidden;
+  padding: 0;
 }
 
 /* Login Card */
