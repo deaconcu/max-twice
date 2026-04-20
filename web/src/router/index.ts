@@ -47,12 +47,27 @@ router.beforeEach(async (to, from, next) => {
     })
   }
 
-  // 检查是否需要登录
-  if (to.meta.requireAuth && !authStore.isAuthenticated) {
-    next({
-      path: '/login',
-      query: { redirect: to.fullPath },
-    })
+  // 不需要登录的白名单页面
+  const authWhitelist = ['login', 'register', 'verify-email']
+  const isAuthPage = authWhitelist.includes(to.name as string)
+
+  // 未登录且不是认证页面，跳转到登录页
+  if (!authStore.isAuthenticated && !isAuthPage) {
+    // 如果目标是首页，不需要 redirect 参数
+    if (to.fullPath === '/') {
+      next({ path: '/login' })
+    } else {
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath },
+      })
+    }
+    return
+  }
+
+  // 已登录访问登录页，跳转到首页
+  if (authStore.isAuthenticated && isAuthPage) {
+    next({ path: '/' })
     return
   }
 

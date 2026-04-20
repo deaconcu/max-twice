@@ -7,6 +7,7 @@ interface TurnstileOptions {
   theme?: 'light' | 'dark' | 'auto'
   size?: 'normal' | 'compact'
   appearance?: 'always' | 'execute' | 'interaction-only'
+  retry?: 'auto' | 'never'
   callback?: (token: string) => void
   'error-callback'?: () => void
   'expired-callback'?: () => void
