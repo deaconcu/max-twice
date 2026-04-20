@@ -771,7 +771,7 @@ const goToRegister = () => {
 .login-container {
   height: calc(100vh - v-bind('`${HEADER_HEIGHT}px`'));
   padding-top: 20px;
-  padding-bottom: 100px;
+  padding-bottom: 20px;
   position: relative;
   z-index: 1;
   display: flex;
