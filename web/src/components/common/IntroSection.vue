@@ -15,7 +15,11 @@
     <div class="slides-wrapper" :style="{ transform: `translateY(-${currentPage * 100}%)` }">
       <!-- 第一屏：核心价值主张 -->
       <section class="intro-screen screen-1">
-      <div class="screen-inner">
+      <div class="screen-inner screen-inner-hero">
+        <div class="hero-statement">
+          <div class="hero-question">{{ t('intro.heroQuestion') }}</div>
+          <div class="hero-answer">{{ t('intro.heroAnswer') }}</div>
+        </div>
         <div class="tagline">{{ t('intro.tagline') }}</div>
         <h1 class="main-title">
           {{ t('intro.mainTitle') }}<span class="highlight">{{ t('intro.mainTitleHighlight') }}</span>
@@ -669,6 +673,12 @@ const roles = [
   text-align: center;
 }
 
+/* 第一屏容器加宽，防止英文 hero 问题换行 */
+.screen-inner-hero {
+  max-width: 560px;
+  text-align: left;
+}
+
 /* ========== 第一屏：核心价值 ========== */
 
 .tagline {
@@ -679,18 +689,37 @@ const roles = [
   background: rgba(var(--v-theme-primary), 0.1);
   padding: 6px 16px;
   border-radius: 20px;
-  margin-bottom: 24px;
+  margin-bottom: 14px;
   letter-spacing: 2px;
 }
 
 .main-title {
-  font-size: 2.2rem;
-  font-weight: 800;
-  line-height: 1.3;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.4;
   color: rgb(var(--v-theme-on-surface));
-  margin: 0 0 20px 0;
-  text-align: left;
-  padding-left: 6px;
+  margin: 0 0 32px 0;
+}
+
+.hero-statement {
+  margin-bottom: 48px;
+}
+
+.hero-question {
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  margin-bottom: 10px;
+  white-space: nowrap;
+}
+
+.hero-answer {
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+  color: rgb(var(--v-theme-primary));
 }
 
 .main-title .highlight {
@@ -706,7 +735,7 @@ const roles = [
 
 .feature-list {
   list-style: none;
-  padding: 0 0 0 6px;
+  padding: 0;
   margin: 0 0 48px 0;
   text-align: left;
 }
@@ -1024,7 +1053,15 @@ const roles = [
   }
 
   .main-title {
-    font-size: 1.5rem;
+    font-size: 1.15rem;
+  }
+
+  .hero-question {
+    font-size: 1rem;
+  }
+
+  .hero-answer {
+    font-size: 1.8rem;
   }
 
   .section-title {
@@ -1047,7 +1084,15 @@ const roles = [
 
 @media (max-width: 1400px) {
   .main-title {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
+  }
+
+  .hero-question {
+    font-size: 1rem;
+  }
+
+  .hero-answer {
+    font-size: 1.8rem;
   }
 
   .section-title {

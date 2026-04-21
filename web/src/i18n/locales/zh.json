@@ -1916,6 +1916,8 @@
   },
   "intro": {
     "tagline": "TwiceMax · 学习平台",
+    "heroQuestion": "学习一个知识点应该花多久？",
+    "heroAnswer": "最多两遍",
     "mainTitle": "快速学习，",
     "mainTitleHighlight": "胜任多重角色",
     "feature1": "给你承担的每个角色提供清晰学习路径",

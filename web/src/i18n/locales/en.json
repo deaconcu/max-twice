@@ -1915,6 +1915,8 @@
   },
   "intro": {
     "tagline": "TwiceMax · Learning Platform",
+    "heroQuestion": "What should it take to learn a bite of knowledge?",
+    "heroAnswer": "Twice, Max",
     "mainTitle": "Learn Fast, ",
     "mainTitleHighlight": "Master Multiple Roles",
     "feature1": "Clear learning paths for every role you take on",
