@@ -2,17 +2,23 @@ package com.twicemax.application.service;
 
 import com.twicemax.analytics.monitoring.service.ErrorLogService;
 import com.twicemax.shared.infrastructure.config.SystemProperties;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
-import org.springframework.mail.SimpleMailMessage;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.Locale;
 
 /**
@@ -20,11 +26,16 @@ import java.util.Locale;
  *
  * 负责发送各类邮件通知，使用异步方式避免阻塞主业务流程
  * 支持根据用户语言站发送对应语言的邮件
+ * 邮件采用 multipart/alternative，同时发送 HTML 和纯文本，兼容所有客户端
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService {
+
+    private static final String BRAND_NAME = "TwiceMax";
+    private static final String TEMPLATE_PATH_ZH = "templates/email/verification-zh.html";
+    private static final String TEMPLATE_PATH_EN = "templates/email/verification-en.html";
 
     private final JavaMailSender mailSender;
     private final ErrorLogService errorLogService;
@@ -50,7 +61,7 @@ public class EmailService {
     @Async
     public void sendVerificationEmailAsync(String toEmail, String code, String language) {
         try {
-            SimpleMailMessage message = buildVerificationEmail(toEmail, code, language);
+            MimeMessage message = buildVerificationEmail(toEmail, code, language);
             mailSender.send(message);
             log.info("验证邮件发送成功: {}, language={}", toEmail, language);
 
@@ -90,7 +101,7 @@ public class EmailService {
      */
     public boolean sendVerificationEmailSync(String toEmail, String code, String language) {
         try {
-            SimpleMailMessage message = buildVerificationEmail(toEmail, code, language);
+            MimeMessage message = buildVerificationEmail(toEmail, code, language);
             mailSender.send(message);
             log.info("验证邮件发送成功: {}, language={}", toEmail, language);
             return true;
@@ -102,25 +113,45 @@ public class EmailService {
     }
 
     /**
-     * 构建验证邮件
+     * 构建验证邮件（multipart/alternative，HTML + 纯文本）
      */
-    private SimpleMailMessage buildVerificationEmail(String toEmail, String code, String language) {
-        Locale locale = "zh".equals(language) ? Locale.CHINESE : Locale.ENGLISH;
+    private MimeMessage buildVerificationEmail(String toEmail, String code, String language)
+            throws MessagingException, IOException {
+        boolean isZh = "zh".equals(language);
+        Locale locale = isZh ? Locale.CHINESE : Locale.ENGLISH;
         int expiryMinutes = systemProperties.getUser().getVerificationCodeExpiryMinutes();
 
-        String senderName = messageSource.getMessage("email.sender.name", null, "Max Twice", locale);
+        String senderName = messageSource.getMessage("email.sender.name", null, BRAND_NAME, locale);
         String subject = messageSource.getMessage("email.subject.verification", null, "Verification Code", locale);
-        String text = messageSource.getMessage("email.verification.text",
+        String plainText = messageSource.getMessage("email.verification.text",
                 new Object[]{code, expiryMinutes},
                 "Your verification code is: " + code, locale);
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(senderName + " <" + mailFrom + ">");
-        message.setTo(toEmail);
-        message.setSubject(subject);
-        message.setText(text);
+        String templatePath = isZh ? TEMPLATE_PATH_ZH : TEMPLATE_PATH_EN;
+        String htmlText = renderTemplate(templatePath, code, String.valueOf(expiryMinutes));
+
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
+        helper.setFrom(mailFrom, senderName);
+        helper.setTo(toEmail);
+        helper.setSubject(subject);
+        // 第二个参数 true 表示第一个是 plainText，第二个是 HTML（multipart/alternative）
+        helper.setText(plainText, htmlText);
 
         return message;
+    }
+
+    /**
+     * 加载并渲染 HTML 模板
+     *
+     * 使用 MessageFormat 占位符 {0} {1}，与 messages.properties 保持一致
+     */
+    private String renderTemplate(String classpath, Object... args) throws IOException {
+        ClassPathResource resource = new ClassPathResource(classpath);
+        try (var is = resource.getInputStream()) {
+            String template = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            return MessageFormat.format(template, args);
+        }
     }
 
     private String getStackTrace(Exception e) {
