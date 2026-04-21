@@ -21,9 +21,6 @@
           <div class="hero-answer">{{ t('intro.heroAnswer') }}</div>
         </div>
         <div class="tagline">{{ t('intro.tagline') }}</div>
-        <h1 class="main-title">
-          {{ t('intro.mainTitle') }}<span class="highlight">{{ t('intro.mainTitleHighlight') }}</span>
-        </h1>
         <ul class="feature-list">
           <li>{{ t('intro.feature1') }}</li>
           <li>{{ t('intro.feature2Before') }}<strong class="highlight-text">{{ t('intro.feature2Highlight') }}</strong>{{ t('intro.feature2After') }}</li>
@@ -676,7 +673,7 @@ const roles = [
 /* 第一屏容器加宽，防止英文 hero 问题换行 */
 .screen-inner-hero {
   max-width: 560px;
-  text-align: left;
+  text-align: center;
 }
 
 /* ========== 第一屏：核心价值 ========== */
@@ -685,19 +682,19 @@ const roles = [
   display: inline-block;
   font-size: 0.85rem;
   font-weight: 600;
-  color: rgb(var(--v-theme-primary));
-  background: rgba(var(--v-theme-primary), 0.1);
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  background: rgba(var(--v-theme-on-surface), 0.06);
   padding: 6px 16px;
   border-radius: 20px;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
   letter-spacing: 2px;
 }
 
 .main-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1.4;
-  color: rgb(var(--v-theme-on-surface));
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: rgba(var(--v-theme-on-surface), 0.65);
   margin: 0 0 32px 0;
 }
 
@@ -736,8 +733,9 @@ const roles = [
 .feature-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 48px 0;
+  margin: 0 auto 48px auto;
   text-align: left;
+  width: fit-content;
 }
 
 .feature-list li {
@@ -1053,7 +1051,7 @@ const roles = [
   }
 
   .main-title {
-    font-size: 1.15rem;
+    font-size: 0.95rem;
   }
 
   .hero-question {
@@ -1084,7 +1082,7 @@ const roles = [
 
 @media (max-width: 1400px) {
   .main-title {
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
 
   .hero-question {
