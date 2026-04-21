@@ -4,19 +4,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.prosper</groupId>
+        <groupId>com.twicemax</groupId>
         <artifactId>twicemax</artifactId>
         <version>1.0.0</version>
     </parent>
 
     <artifactId>user</artifactId>
-    <name>learn-user</name>
     <description>用户域：User、Auth、Notification</description>
 
     <dependencies>
-        <!-- 依赖 learn-shared -->
+        <!-- 依赖 shared -->
         <dependency>
-            <groupId>com.prosper</groupId>
+            <groupId>com.twicemax</groupId>
             <artifactId>shared</artifactId>
             <version>1.0.0</version>
         </dependency>

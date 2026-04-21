@@ -83,7 +83,7 @@ public Object rateLimit(ProceedingJoinPoint joinPoint) throws Throwable {
 
 **问题**:
 1. 切点表达式引用的包名是 `com.prosper.learn.api.ratelimit.RateLimit`
-2. 但实际的注解包名是 `com.prosper.learn.web.ratelimit.RateLimit`
+2. 但实际的注解包名是 `ratelimit.com.twicemax.web.RateLimit`
 3. **这会导致限流功能完全失效**，所有标注了 `@RateLimit` 的方法都不会被拦截
 
 **验证方式**:
@@ -95,7 +95,7 @@ grep -r "package.*ratelimit" backend/learn-web/
 
 **修复建议**:
 ```java
-@Around("@annotation(com.prosper.learn.web.ratelimit.RateLimit) || @within(com.prosper.learn.web.ratelimit.RateLimit)")
+@Around("@annotation(ratelimit.com.twicemax.web.RateLimit) || @within(ratelimit.com.twicemax.web.RateLimit)")
 public Object rateLimit(ProceedingJoinPoint joinPoint) throws Throwable {
     // ...
 }

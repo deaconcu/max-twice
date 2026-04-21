@@ -26,7 +26,7 @@
     "projectCreated": "You've successfully created a project with"
   },
   "site": {
-    "name": "Max Twice!",
+    "name": "TwiceMax!",
     "slogan": "Learn most content on this site in at most two views, preferably once",
     "about": "Why does this website exist?",
     "rightsDeclaration": [
@@ -45,7 +45,7 @@
     "missionQuote": "Any knowledge point here can be understood in just two reads"
   },
   "home": {
-    "welcome": "Welcome to Max Twice",
+    "welcome": "Welcome to TwiceMax",
     "initSuccess": "Project initialized successfully!",
     "toggleTheme": "Toggle theme",
     "greeting": "Hello, {name}!",
@@ -1461,14 +1461,14 @@
     "dataLoadFailed": "Data Loading Failed",
     "retry": "Retry",
     "articleViews": "Article Views",
-    "maxTwiceLikes": "Max Twice Likes",
+    "maxTwiceLikes": "TwiceMax Likes",
     "helpfulLikes": "Helpful Likes",
     "comments": "Comments",
     "dataTrend": "Data Trend",
     "dailyDetails": "Daily Data Details",
     "date": "Date",
     "views": "Views",
-    "maxTwice": "Max Twice",
+    "maxTwice": "TwiceMax",
     "helpful": "Helpful",
     "commentsCount": "Comments",
     "today": "Today",

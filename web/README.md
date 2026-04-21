@@ -1,10 +1,10 @@
-# Max Twice - Web Frontend
+# TwiceMax - Web Frontend
 
 基于 Vue 3 + TypeScript + Vuetify 3 的现代化前端项目
 
 ## 📋 项目简介
 
-Max Twice 是一个学习管理平台的前端项目，采用最新的前端技术栈和最佳实践构建。
+TwiceMax 是一个学习管理平台的前端项目，采用最新的前端技术栈和最佳实践构建。
 
 ## 🚀 技术栈
 
@@ -91,10 +91,12 @@ npm run type-check
 创建 `.env.local` 文件（不会被提交到 git）：
 
 ```env
-# 应用配置
-VITE_APP_TITLE=Max Twice
+# API 地址
 VITE_API_URL=http://localhost:9202
+# 本地开发端口（可选）
 VITE_APP_PORT=5174
+# Cloudflare Turnstile Site Key
+VITE_TURNSTILE_SITE_KEY=your_site_key_here
 ```
 
 ## 🎨 代码规范

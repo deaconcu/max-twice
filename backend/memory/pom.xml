@@ -4,26 +4,25 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.prosper</groupId>
+        <groupId>com.twicemax</groupId>
         <artifactId>twicemax</artifactId>
         <version>1.0.0</version>
     </parent>
 
     <artifactId>memory</artifactId>
-    <name>learn-memory</name>
     <description>记忆域：MemoryCard、Deck、Review、Bank</description>
 
     <dependencies>
-        <!-- 依赖 learn-shared -->
+        <!-- 依赖 shared -->
         <dependency>
-            <groupId>com.prosper</groupId>
+            <groupId>com.twicemax</groupId>
             <artifactId>shared</artifactId>
             <version>1.0.0</version>
         </dependency>
 
-        <!-- 依赖 learn-infrastructure（用于 RedisKeyPrefix） -->
+        <!-- 依赖 infrastructure（用于 RedisKeyPrefix） -->
         <dependency>
-            <groupId>com.prosper</groupId>
+            <groupId>com.twicemax</groupId>
             <artifactId>infrastructure</artifactId>
             <version>1.0.0</version>
         </dependency>

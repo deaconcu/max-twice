@@ -1,0 +1,24 @@
+package com.twicemax.application.converter;
+
+import com.twicemax.application.dto.response.message.MessageDTO;
+import com.twicemax.interaction.message.MessageDO;
+import org.mapstruct.*;
+
+import java.util.List;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = CommonConverter.class)
+public interface MessageConverter {
+    
+    @Named("toDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "senderId")
+    @Mapping(target = "receiverId")
+    @Mapping(target = "content")
+    @Mapping(target = "type")
+    @Mapping(target = "createdAt")
+    MessageDTO toDTO(MessageDO messageDO);
+    
+    @IterableMapping(qualifiedByName = "toDTO")
+    List<MessageDTO> toDTO(List<MessageDO> messageDOList);
+}

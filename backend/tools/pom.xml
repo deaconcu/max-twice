@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.prosper</groupId>
+        <groupId>com.twicemax</groupId>
         <artifactId>twicemax</artifactId>
         <version>1.0.0</version>
     </parent>
@@ -14,19 +14,18 @@
     <artifactId>tools</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>learn-tools</name>
     <description>数据迁移和运维工具</description>
 
     <dependencies>
         <!-- 依赖业务模块 -->
         <dependency>
-            <groupId>com.prosper</groupId>
+            <groupId>com.twicemax</groupId>
             <artifactId>content</artifactId>
             <version>1.0.0</version>
         </dependency>
 
         <dependency>
-            <groupId>com.prosper</groupId>
+            <groupId>com.twicemax</groupId>
             <artifactId>shared</artifactId>
             <version>1.0.0</version>
         </dependency>
@@ -64,7 +63,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.6.3</version>
                 <configuration>
-                    <mainClass>com.prosper.learn.tools.runner.SpringMethodRunner</mainClass>
+                    <mainClass>com.twicemax.tools.runner.SpringMethodRunner</mainClass>
                 </configuration>
             </plugin>
         </plugins>

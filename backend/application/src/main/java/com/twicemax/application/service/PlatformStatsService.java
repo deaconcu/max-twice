@@ -1,0 +1,76 @@
+package com.twicemax.application.service;
+
+import com.twicemax.application.dto.response.PlatformStatsDTO;
+import com.twicemax.content.course.CourseDataService;
+import com.twicemax.content.node.NodeDataService;
+import com.twicemax.content.post.PostDataService;
+import com.twicemax.content.role.RoleDataService;
+import com.twicemax.content.roadmap.RoadmapDataService;
+import com.twicemax.shared.domain.exception.StatusCode;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+
+/**
+ * 平台统计服务
+ * 
+ * @author Claude
+ * @since 2024-01-20
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class PlatformStatsService {
+    
+    private final CourseDataService courseDataService;
+    private final RoleDataService roleDataService;
+    private final RoadmapDataService roadmapDataService;
+    private final NodeDataService nodeDataService;
+    private final PostDataService postDataService;
+    
+    // ========== 常量定义 ==========
+    public static final String CACHE_KEY = "stats";
+    
+    /**
+     * 获取平台统计数据（带缓存）
+     * 
+     * @return 平台统计数据
+     */
+    @Cacheable(value = "platformStats", key = "'stats'", sync = true)
+    public PlatformStatsDTO getPlatformStats() {
+        log.info("开始计算平台统计数据");
+        
+        try {
+            // 统计课程总数（只统计已发布的课程）
+            Long courseCount = courseDataService.countActiveCourses();
+            
+            // 统计角色路径总数（只统计已发布的角色）
+            Long careerPathCount = roleDataService.countActiveRoles();
+            
+            // 统计学习路线图总数（只统计公开的路线图）
+            Long roadmapCount = roadmapDataService.countPublicRoadmaps();
+            
+            // 统计知识节点总数（所有有效节点）
+            Long knowledgeNodeCount = nodeDataService.countActiveNodes();
+            
+            // 统计文章总数（只统计已发布的文章）
+            Long articleCount = postDataService.countActiveArticles();
+            
+            PlatformStatsDTO stats = new PlatformStatsDTO(
+                courseCount, 
+                careerPathCount, 
+                roadmapCount, 
+                knowledgeNodeCount,
+                articleCount
+            );
+            
+            log.info("平台统计数据计算完成: {}", stats);
+            return stats;
+            
+        } catch (Exception e) {
+            log.error("计算平台统计数据失败", e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
+        }
+    }
+}

@@ -1,0 +1,267 @@
+package com.twicemax.application.converter;
+
+import com.twicemax.application.dto.response.node.NodeAdminDTO;
+import com.twicemax.application.dto.response.node.NodeDTO;
+import com.twicemax.application.dto.response.node.NodeBriefDTO;
+import com.twicemax.application.dto.response.node.NodeDetailDTO;
+import com.twicemax.application.dto.response.node.NodeSummaryDTO;
+import com.twicemax.application.dto.response.node.NodeWithCourseDTO;
+import com.twicemax.application.dto.response.node.NodeWithCourseBriefDTO;
+import com.twicemax.application.dto.response.node.NodeWithProgressDTO;
+import com.twicemax.content.node.NodeDO;
+import com.twicemax.shared.domain.Enums;
+import org.mapstruct.*;
+
+import java.util.List;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = CommonConverter.class)
+public interface NodeConverter {
+    
+    @Named("toDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "courseId")
+    @Mapping(target = "isCourseRoot")
+    @Mapping(target = "creatorId")
+    @Mapping(target = "state")
+    @Mapping(target = "createdAt")
+    @Mapping(target = "updatedAt")
+    NodeDTO toDTOInternal(NodeDO nodeDO);
+
+    default NodeDTO toDTO(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+
+        NodeDTO dto = toDTOInternal(nodeDO);
+
+        if (nodeDO.getState() != null && nodeDO.getState() == Enums.ContentState.BANNED.value()) {
+            dto.setName("目录节点已被屏蔽");
+            dto.setDescription("");
+        }
+
+        return dto;
+    }
+
+    @IterableMapping(qualifiedByName = "toDTO")
+    default List<NodeDTO> toDTO(List<NodeDO> nodeDOList) {
+        if (nodeDOList == null) return null;
+        return nodeDOList.stream().map(this::toDTO).toList();
+    }
+    
+    @Named("toDTOV1")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    NodeDTO toDTOV1Internal(NodeDO nodeDO);
+
+    // ========== 新版语义化方法 ==========
+
+    /**
+     * 转换为摘要DTO（基础信息）
+     */
+    @Named("toSummaryDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "state")
+    NodeSummaryDTO toSummaryDTOInternal(NodeDO nodeDO);
+
+    default NodeSummaryDTO toSummaryDTO(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+
+        NodeSummaryDTO dto = toSummaryDTOInternal(nodeDO);
+
+        if (nodeDO.getState() != null && nodeDO.getState() == Enums.ContentState.BANNED.value()) {
+            dto.setName("目录节点已被屏蔽");
+            dto.setDescription("");
+        }
+
+        return dto;
+    }
+
+    @IterableMapping(qualifiedByName = "toSummaryDTO")
+    default List<NodeSummaryDTO> toSummaryDTO(List<NodeDO> nodeDOList) {
+        if (nodeDOList == null) return null;
+        return nodeDOList.stream().map(this::toSummaryDTO).toList();
+    }
+
+    /**
+     * 转换为详情DTO（包含管理信息）
+     */
+    @Named("toDetailDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "courseId")
+    @Mapping(target = "creatorId")
+    @Mapping(target = "state")
+    @Mapping(target = "createdAt")
+    @Mapping(target = "updatedAt")
+    NodeDetailDTO toDetailDTOInternal(NodeDO nodeDO);
+
+    default NodeDetailDTO toDetailDTO(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+
+        NodeDetailDTO dto = toDetailDTOInternal(nodeDO);
+
+        if (nodeDO.getState() != null && nodeDO.getState() == Enums.ContentState.BANNED.value()) {
+            dto.setName("目录节点已被屏蔽");
+            dto.setDescription("");
+        }
+
+        return dto;
+    }
+
+    @IterableMapping(qualifiedByName = "toDetailDTO")
+    default List<NodeDetailDTO> toDetailDTO(List<NodeDO> nodeDOList) {
+        if (nodeDOList == null) return null;
+        return nodeDOList.stream().map(this::toDetailDTO).toList();
+    }
+
+    /**
+     * 转换为带课程的DTO（不含 course 对象，由 Service 层填充）
+     */
+    @Named("toWithCourseDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "courseId")
+    @Mapping(target = "creatorId")
+    @Mapping(target = "state")
+    @Mapping(target = "createdAt")
+    @Mapping(target = "updatedAt")
+    NodeWithCourseDTO toWithCourseDTOInternal(NodeDO nodeDO);
+
+    default NodeWithCourseDTO toWithCourseDTO(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+
+        NodeWithCourseDTO dto = toWithCourseDTOInternal(nodeDO);
+
+        if (nodeDO.getState() != null && nodeDO.getState() == Enums.ContentState.BANNED.value()) {
+            dto.setName("目录节点已被屏蔽");
+            dto.setDescription("");
+        }
+
+        return dto;
+    }
+
+    @IterableMapping(qualifiedByName = "toWithCourseDTO")
+    default List<NodeWithCourseDTO> toWithCourseDTO(List<NodeDO> nodeDOList) {
+        if (nodeDOList == null) return null;
+        return nodeDOList.stream().map(this::toWithCourseDTO).toList();
+    }
+
+    /**
+     * 转换为带进度的DTO
+     */
+    @Named("toWithProgressDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "state")
+    NodeWithProgressDTO toWithProgressDTOInternal(NodeDO nodeDO);
+
+    default NodeWithProgressDTO toWithProgressDTO(NodeDO nodeDO, boolean isCompleted) {
+        if (nodeDO == null) return null;
+
+        NodeWithProgressDTO dto = toWithProgressDTOInternal(nodeDO);
+        dto.setIsCompleted(isCompleted);
+
+        if (nodeDO.getState() != null && nodeDO.getState() == Enums.ContentState.BANNED.value()) {
+            dto.setName("目录节点已被屏蔽");
+            dto.setDescription("");
+        }
+
+        return dto;
+    }
+
+    /**
+     * 转换为 NodeWithCourseBriefDTO（节点名称 + 课程简要信息）
+     * 用途：帖子详情中的节点引用
+     * 注意：course 字段需要在 Service 层额外填充
+     */
+    @Named("toWithCourseBriefDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    NodeWithCourseBriefDTO toWithCourseBriefDTOInternal(NodeDO nodeDO);
+
+    default NodeWithCourseBriefDTO toWithCourseBriefDTO(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+
+        NodeWithCourseBriefDTO dto = toWithCourseBriefDTOInternal(nodeDO);
+
+        if (nodeDO.getState() != null && nodeDO.getState() == Enums.ContentState.BANNED.value()) {
+            dto.setName("目录节点已被屏蔽");
+        }
+
+        return dto;
+    }
+
+    @IterableMapping(qualifiedByName = "toWithCourseBriefDTO")
+    default List<NodeWithCourseBriefDTO> toWithCourseBriefDTO(List<NodeDO> nodeDOList) {
+        if (nodeDOList == null) return null;
+        return nodeDOList.stream().map(this::toWithCourseBriefDTO).toList();
+    }
+
+    /**
+     * 转换为 NodeBriefDTO（ID + 名称）
+     */
+    @Named("toBriefDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    NodeBriefDTO toBriefDTOInternal(NodeDO nodeDO);
+
+    default NodeBriefDTO toBriefDTO(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+
+        NodeBriefDTO dto = toBriefDTOInternal(nodeDO);
+
+        if (nodeDO.getState() != null && nodeDO.getState() == Enums.ContentState.BANNED.value()) {
+            dto.setName("目录节点已被屏蔽");
+        }
+
+        return dto;
+    }
+
+    @IterableMapping(qualifiedByName = "toBriefDTO")
+    default List<NodeBriefDTO> toBriefDTO(List<NodeDO> nodeDOList) {
+        if (nodeDOList == null) return null;
+        return nodeDOList.stream().map(this::toBriefDTO).toList();
+    }
+
+    /**
+     * 转换为管理后台DTO（包含 reason）
+     * 注意：creator 需要在 Service 层额外填充
+     */
+    @Named("toAdminDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "courseId")
+    @Mapping(target = "creatorId")
+    @Mapping(target = "state")
+    @Mapping(target = "reason")
+    @Mapping(target = "createdAt")
+    @Mapping(target = "updatedAt")
+    NodeAdminDTO toAdminDTOInternal(NodeDO nodeDO);
+
+    default NodeAdminDTO toAdminDTO(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+        return toAdminDTOInternal(nodeDO);
+    }
+
+    @IterableMapping(qualifiedByName = "toAdminDTO")
+    default List<NodeAdminDTO> toAdminDTO(List<NodeDO> nodeDOList) {
+        if (nodeDOList == null) return null;
+        return nodeDOList.stream().map(this::toAdminDTO).toList();
+    }
+}

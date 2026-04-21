@@ -60,5 +60,5 @@ app:
 logging:
   level:
     root: INFO
-    com.prosper.learn: DEBUG
-    com.prosper.learn.tools: DEBUG
+    com.twicemax: DEBUG
+    com.twicemax.tools: DEBUG

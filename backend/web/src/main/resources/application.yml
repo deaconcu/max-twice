@@ -1,7 +1,7 @@
 spring:
   application:
     # 服务标识
-    name: learn-service
+    name: twicemax-service
   autoconfigure:
     # 项目使用自定义多数据源（DataSourceConfig.java），必须排除默认的单数据源自动配置，否则会冲突。
     exclude:
@@ -130,15 +130,15 @@ turnstile:
 logging:
   level:
     # 业务代码
-    com.prosper.learn: INFO
+    com.twicemax: INFO
     # 框架日志
     org.springframework: WARN
     org.apache.ibatis: WARN
     org.mybatis: WARN
     java.sql: WARN
     # 按需开启调试（默认关闭）
-    # com.prosper.learn.infrastructure.image: DEBUG  # R2 上传
-    # com.prosper.learn.persistence.mapper: DEBUG    # SQL 日志
+    # com.twicemax.infrastructure.image: DEBUG  # R2 上传
+    # com.twicemax.persistence.mapper: DEBUG    # SQL 日志
 
 app:
   # 默认语言

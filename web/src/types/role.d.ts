@@ -1,6 +1,6 @@
 /**
  * 角色相关的类型定义
- * 参考：backend/learn-application/src/main/java/com/prosper/learn/application/dto/response/RoleDTO.java
+ * 参考：backend/application/src/main/java/com/twicemax/application/dto/response/RoleDTO.java
  */
 
 /**

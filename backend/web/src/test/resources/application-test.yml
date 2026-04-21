@@ -37,5 +37,5 @@ app:
 # 日志级别（测试环境可以更详细）
 logging:
   level:
-    com.prosper.learn: DEBUG
+    com.twicemax: DEBUG
     org.springframework.test: INFO
