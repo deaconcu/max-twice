@@ -34,6 +34,9 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String mailUsername;
 
+    @Value("${spring.mail.from}")
+    private String mailFrom;
+
     /**
      * 异步发送验证邮件
      *
@@ -112,7 +115,7 @@ public class EmailService {
                 "Your verification code is: " + code, locale);
 
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(senderName + " <" + mailUsername + ">");
+        message.setFrom(senderName + " <" + mailFrom + ">");
         message.setTo(toEmail);
         message.setSubject(subject);
         message.setText(text);

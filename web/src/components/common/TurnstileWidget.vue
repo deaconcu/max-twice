@@ -10,8 +10,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  // 从环境变量读取，默认使用测试 key（始终通过）
-  siteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA',
+  siteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
   theme: 'auto',
   size: 'normal',
   appearance: 'always',
@@ -20,8 +19,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'verify', token: string): void
-  (e: 'error'): void
-  (e: 'expire'): void
+  (e: 'error' | 'expire'): void
 }>()
 
 const containerRef = ref<HTMLDivElement | null>(null)
@@ -63,12 +61,16 @@ const checkIframeLoaded = () => {
     const iframe = containerRef.value?.querySelector('iframe')
     if (iframe) {
       isLoading.value = false
-      clearInterval(checkInterval!)
+      if (checkInterval) {
+        clearInterval(checkInterval)
+      }
       checkInterval = null
     } else if (attempts > 50) {
       // 5秒超时
       isLoading.value = false
-      clearInterval(checkInterval!)
+      if (checkInterval) {
+        clearInterval(checkInterval)
+      }
       checkInterval = null
     }
   }, 100)
@@ -150,12 +152,22 @@ watch(
 </script>
 
 <template>
-  <div class="turnstile-wrapper">
-    <div v-if="isLoading" class="turnstile-loading">
+  <div
+    class="turnstile-wrapper"
+    :class="{ 'interaction-only': props.appearance === 'interaction-only' }"
+  >
+    <div v-if="isLoading && props.appearance !== 'interaction-only'" class="turnstile-loading">
       <div class="loading-spinner"></div>
       <span class="loading-text">加载验证中...</span>
     </div>
-    <div ref="containerRef" class="turnstile-container" :style="{ visibility: isLoading ? 'hidden' : 'visible', position: isLoading ? 'absolute' : 'static' }" />
+    <div
+      ref="containerRef"
+      class="turnstile-container"
+      :style="{
+        visibility: isLoading ? 'hidden' : 'visible',
+        position: isLoading ? 'absolute' : 'static',
+      }"
+    />
   </div>
 </template>
 
@@ -165,6 +177,10 @@ watch(
   justify-content: center;
   align-items: center;
   min-height: 65px;
+}
+
+.turnstile-wrapper.interaction-only {
+  min-height: 0;
 }
 
 .turnstile-container {

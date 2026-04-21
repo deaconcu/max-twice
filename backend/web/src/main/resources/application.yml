@@ -52,6 +52,7 @@ spring:
     port: ${MAIL_PORT}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
+    from: ${MAIL_FROM}
     protocol: smtp
     properties:
       mail:
@@ -71,7 +72,8 @@ spring:
       password: ${REDIS_PASSWORD}
 
 server:
-  port: ${PORT}
+  port: ${SERVER_PORT}
+  address: ${SERVER_ADDRESS}
 
 # Meilisearch 配置
 meilisearch:

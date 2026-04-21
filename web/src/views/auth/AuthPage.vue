@@ -236,6 +236,7 @@
 
                     <TurnstileWidget
                       ref="registerTurnstileRef"
+                      appearance="interaction-only"
                       class="mb-4"
                       @verify="onRegisterTurnstileVerify"
                       @error="onTurnstileError"
