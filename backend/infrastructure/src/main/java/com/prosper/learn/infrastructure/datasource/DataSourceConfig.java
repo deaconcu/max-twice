@@ -1,5 +1,6 @@
 package com.prosper.learn.infrastructure.datasource;
 
+import com.prosper.learn.shared.mybatis.TimestampInterceptor;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
@@ -88,7 +89,8 @@ public class DataSourceConfig {
      */
     @Bean(name = "userSqlSessionFactory")
     public SqlSessionFactory userSqlSessionFactory(
-            @Qualifier("userDataSource") DataSource dataSource) throws Exception {
+            @Qualifier("userDataSource") DataSource dataSource,
+            TimestampInterceptor timestampInterceptor) throws Exception {
         SqlSessionFactoryBean factory = new SqlSessionFactoryBean();
         factory.setDataSource(dataSource);
 
@@ -96,6 +98,9 @@ public class DataSourceConfig {
         org.apache.ibatis.session.Configuration configuration = new org.apache.ibatis.session.Configuration();
         configuration.setMapUnderscoreToCamelCase(true);
         factory.setConfiguration(configuration);
+
+        // 注册 MyBatis 拦截器（自动填充 createdAt / updatedAt）
+        factory.setPlugins(timestampInterceptor);
 
         return factory.getObject();
     }
@@ -106,7 +111,8 @@ public class DataSourceConfig {
     @Bean(name = "businessSqlSessionFactory")
     @Primary
     public SqlSessionFactory businessSqlSessionFactory(
-            @Qualifier("businessDataSource") DataSource dataSource) throws Exception {
+            @Qualifier("businessDataSource") DataSource dataSource,
+            TimestampInterceptor timestampInterceptor) throws Exception {
         SqlSessionFactoryBean factory = new SqlSessionFactoryBean();
         factory.setDataSource(dataSource);
 
@@ -114,6 +120,9 @@ public class DataSourceConfig {
         org.apache.ibatis.session.Configuration configuration = new org.apache.ibatis.session.Configuration();
         configuration.setMapUnderscoreToCamelCase(true);
         factory.setConfiguration(configuration);
+
+        // 注册 MyBatis 拦截器（自动填充 createdAt / updatedAt）
+        factory.setPlugins(timestampInterceptor);
 
         return factory.getObject();
     }

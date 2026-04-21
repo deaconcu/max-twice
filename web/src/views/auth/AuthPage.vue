@@ -299,7 +299,13 @@
                     ref="verifyFormRef"
                     @submit.prevent="handleVerify"
                   >
-                    <v-alert type="info" variant="tonal" density="compact" class="mb-4">
+                    <v-alert
+                      color="primary"
+                      variant="tonal"
+                      density="compact"
+                      rounded="lg"
+                      class="mb-4"
+                    >
                       <div class="d-flex align-center">
                         <v-icon size="20" class="mr-2">mdi-email-outline</v-icon>
                         <span class="text-body-2">
