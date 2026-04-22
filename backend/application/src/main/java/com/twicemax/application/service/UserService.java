@@ -22,9 +22,9 @@ import com.twicemax.learning.enrollment.UserLearningDomainService;
 import com.twicemax.shared.domain.Enums;
 import com.twicemax.shared.domain.exception.StatusCode;
 import com.twicemax.shared.infrastructure.config.SystemProperties;
-import com.twicemax.user.auth.EmailVerificationCodeService;
-import com.twicemax.user.auth.EmailVerifySessionService;
-import com.twicemax.user.auth.PasswordResetService;
+import com.twicemax.user.auth.OtpCodeService;
+import com.twicemax.user.auth.OtpScene;
+import com.twicemax.user.auth.OtpSessionService;
 import com.twicemax.user.profile.UserDO;
 import com.twicemax.user.profile.UserDataService;
 import com.twicemax.user.profile.UserDomainService;
@@ -57,9 +57,8 @@ public class UserService {
     private final UserStatsDataService userStatsDataService;
     private final UserLearningDomainService userLearningDomainService;
     private final EmailService emailService;
-    private final EmailVerifySessionService emailVerifySessionService;
-    private final EmailVerificationCodeService emailVerificationCodeService;
-    private final PasswordResetService passwordResetService;
+    private final OtpSessionService otpSessionService;
+    private final OtpCodeService otpCodeService;
     private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
@@ -260,7 +259,7 @@ public class UserService {
         }
 
         // 未验证：若已有活跃验证码则复用（避免重复发送），否则签发
-        PendingSessionDTO pending = emailVerificationCodeService.exists(email)
+        PendingSessionDTO pending = otpCodeService.exists(OtpScene.REGISTER, email)
                 ? createPendingSessionWithoutSendingEmail(email)
                 : issuePendingSessionAndSendEmail(email);
         return AuthLoginResponseDTO.builder().pending(pending).build();
@@ -273,10 +272,10 @@ public class UserService {
     public UserProfileDTO verifyEmailWithCode(String pendingSessionToken, String code) {
         validateVerificationCode(code);
 
-        String email = emailVerifySessionService.requireEmail(pendingSessionToken);
+        String email = otpSessionService.requireEmail(OtpScene.REGISTER, pendingSessionToken);
 
         // 校验验证码（失败会抛对应异常；成功会删除 code 记录）
-        emailVerificationCodeService.verify(email, code);
+        otpCodeService.verify(OtpScene.REGISTER, email, code, false);
 
         UserDO user = userDataService.getByEmail(email);
         if (user == null) {
@@ -289,7 +288,7 @@ public class UserService {
         }
 
         // 验证成功后立即失效 session
-        emailVerifySessionService.invalidate(pendingSessionToken);
+        otpSessionService.invalidate(OtpScene.REGISTER, pendingSessionToken);
 
         return toProfileDTO(user);
     }
@@ -298,7 +297,7 @@ public class UserService {
      * 重新发送验证码 - 凭 pending session token
      */
     public PendingSessionDTO resendVerificationCode(String pendingSessionToken) {
-        String email = emailVerifySessionService.requireEmail(pendingSessionToken);
+        String email = otpSessionService.requireEmail(OtpScene.REGISTER, pendingSessionToken);
 
         UserDO user = userDataService.getByEmail(email);
         if (user == null) {
@@ -308,17 +307,16 @@ public class UserService {
             throw StatusCode.INVALID_PARAMETER.exception("邮箱已验证，无需重新发送");
         }
 
-        String code = emailVerificationCodeService.resend(email);
+        String code = otpCodeService.resend(OtpScene.REGISTER, email);
         String language = DataSourceContextHolder.getLanguage();
         emailService.sendVerificationEmailAsync(email, code, language);
 
-        long expiresIn = Optional.ofNullable(
-                stringRedisTemplateTtlForToken(pendingSessionToken)).orElse(0L);
+        long expiresIn = otpSessionService.ttlSeconds(OtpScene.REGISTER, pendingSessionToken);
         return PendingSessionDTO.builder()
                 .pendingSessionToken(pendingSessionToken)
                 .email(email)
                 .expiresIn(expiresIn)
-                .resendAvailableIn(emailVerificationCodeService.secondsUntilResendAvailable(email))
+                .resendAvailableIn(otpCodeService.secondsUntilResendAvailable(OtpScene.REGISTER, email))
                 .build();
     }
 
@@ -344,15 +342,17 @@ public class UserService {
                     .build();
         }
 
-        PasswordResetService.Created created = passwordResetService.createSessionAndIssueCode(email);
+        // 创建 session + 签发验证码
+        OtpSessionService.Created session = otpSessionService.create(OtpScene.PASSWORD_RESET, email);
+        String code = otpCodeService.issue(OtpScene.PASSWORD_RESET, email);
         String language = DataSourceContextHolder.getLanguage();
-        emailService.sendVerificationEmailAsync(email, created.code(), language);
+        emailService.sendVerificationEmailAsync(email, code, language);
 
         return PasswordResetSessionDTO.builder()
-                .resetSessionToken(created.token())
+                .resetSessionToken(session.token())
                 .email(email)
-                .expiresIn(created.expiresInSeconds())
-                .resendAvailableIn(created.resendAvailableInSeconds())
+                .expiresIn(session.expiresInSeconds())
+                .resendAvailableIn(otpCodeService.secondsUntilResendAvailable(OtpScene.PASSWORD_RESET, email))
                 .build();
     }
 
@@ -360,15 +360,16 @@ public class UserService {
      * 忘记密码：重发验证码。
      */
     public PasswordResetSessionDTO resendPasswordResetCode(String resetSessionToken) {
-        PasswordResetService.Resent resent = passwordResetService.resend(resetSessionToken);
+        String email = otpSessionService.requireEmail(OtpScene.PASSWORD_RESET, resetSessionToken);
+        String code = otpCodeService.resend(OtpScene.PASSWORD_RESET, email);
         String language = DataSourceContextHolder.getLanguage();
-        emailService.sendVerificationEmailAsync(resent.email(), resent.code(), language);
+        emailService.sendVerificationEmailAsync(email, code, language);
 
         return PasswordResetSessionDTO.builder()
                 .resetSessionToken(resetSessionToken)
-                .email(resent.email())
-                .expiresIn(resent.expiresInSeconds())
-                .resendAvailableIn(resent.resendAvailableInSeconds())
+                .email(email)
+                .expiresIn(otpSessionService.ttlSeconds(OtpScene.PASSWORD_RESET, resetSessionToken))
+                .resendAvailableIn(otpCodeService.secondsUntilResendAvailable(OtpScene.PASSWORD_RESET, email))
                 .build();
     }
 
@@ -377,7 +378,14 @@ public class UserService {
      */
     public void verifyPasswordResetCode(String resetSessionToken, String code) {
         validateVerificationCode(code);
-        passwordResetService.verifyCode(resetSessionToken, code);
+        // 凭 token 取 email（session 不存在抛 PASSWORD_RESET_SESSION_INVALID）
+        String email = otpSessionService.requireEmail(OtpScene.PASSWORD_RESET, resetSessionToken);
+        // 校验 code；keepOnSuccess=true 保留 code key，让 session 的 verified 标记生效后再清理
+        otpCodeService.verify(OtpScene.PASSWORD_RESET, email, code, true);
+        // 标记 session 已验证，供 confirm 阶段读取
+        otpSessionService.markVerified(OtpScene.PASSWORD_RESET, resetSessionToken);
+        // code 已校验成功，可主动清理（避免复用）
+        otpCodeService.invalidate(OtpScene.PASSWORD_RESET, email);
     }
 
     /**
@@ -390,9 +398,11 @@ public class UserService {
     @Transactional
     public Long confirmPasswordReset(String resetSessionToken, String newPassword) {
         validatePassword(newPassword);
-        String email = passwordResetService.requireVerifiedEmail(resetSessionToken);
+        String email = otpSessionService.requireVerifiedEmail(
+                OtpScene.PASSWORD_RESET, resetSessionToken,
+                StatusCode.PASSWORD_RESET_NOT_VERIFIED);
         Long userId = userDomainService.updatePasswordByEmail(email, newPassword);
-        passwordResetService.invalidate(resetSessionToken);
+        otpSessionService.invalidate(OtpScene.PASSWORD_RESET, resetSessionToken);
         log.info("密码重置完成: userId={}, email={}", userId, email);
         return userId;
     }
@@ -409,7 +419,7 @@ public class UserService {
      * 签发 pending session 并发送验证邮件（注册 / 登录未验证且无活跃 code 场景）。
      */
     private PendingSessionDTO issuePendingSessionAndSendEmail(String email) {
-        String code = emailVerificationCodeService.issue(email);
+        String code = otpCodeService.issue(OtpScene.REGISTER, email);
         String language = DataSourceContextHolder.getLanguage();
         emailService.sendVerificationEmailAsync(email, code, language);
         return createPendingSessionWithoutSendingEmail(email);
@@ -419,23 +429,13 @@ public class UserService {
      * 仅创建 pending session token，不触发邮件发送（用于复用已有验证码的场景）。
      */
     private PendingSessionDTO createPendingSessionWithoutSendingEmail(String email) {
-        EmailVerifySessionService.Created created = emailVerifySessionService.create(email);
+        OtpSessionService.Created created = otpSessionService.create(OtpScene.REGISTER, email);
         return PendingSessionDTO.builder()
                 .pendingSessionToken(created.token())
                 .email(email)
                 .expiresIn(created.expiresInSeconds())
-                .resendAvailableIn(emailVerificationCodeService.secondsUntilResendAvailable(email))
+                .resendAvailableIn(otpCodeService.secondsUntilResendAvailable(OtpScene.REGISTER, email))
                 .build();
-    }
-
-    /**
-     * 查询 token 剩余 TTL（秒）。不存在返回 null。
-     */
-    private Long stringRedisTemplateTtlForToken(String token) {
-        // 委托给 session service 的 findEmailByToken 仅确认存在性；TTL 读取复用其 template
-        // 此处采用简化实现：直接返回一个固定 30min（session TTL），避免额外注入 redis template。
-        // 若 session 即将过期由前端按快照倒计时即可，不影响功能。
-        return emailVerifySessionService.findEmailByToken(token).isPresent() ? 30L * 60 : 0L;
     }
 
     //=========== DTO转换方法 ==========

@@ -15,14 +15,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 邮箱验证码服务 —— 管理验证码、失败次数、重发限频。
+ * OTP 验证码服务 —— 按 scene 管理验证码、尝试次数、重发限频。
  * <p>
- * 与 {@link EmailVerifySessionService} 职责分离：此服务不关心 session token，
- * 只以 email 为键管理"验证码及其尝试/重发记录"。
+ * 不同 scene 使用独立 Redis key 前缀，互不影响。
  * <p>
  * Redis 结构：
  * <pre>
- *   Key:   email_verify_code:{email}
+ *   Key:   otp:code:{scene}:{identifier}
  *   Type:  Hash
  *   Field: code / codeExpiresAt / attemptsLeft / resendCount / lastResendAt
  *   TTL:   由 SystemProperties.user.verificationCodeExpiryMinutes 决定（默认 10min）
@@ -31,9 +30,9 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class EmailVerificationCodeService {
+public class OtpCodeService {
 
-    private static final String KEY_PREFIX = "email_verify_code:";
+    private static final String KEY_PREFIX = "otp:code:";
 
     private static final String F_CODE = "code";
     private static final String F_CODE_EXPIRES_AT = "codeExpiresAt";
@@ -51,19 +50,17 @@ public class EmailVerificationCodeService {
     // ========== 对外 API ==========
 
     /**
-     * 判断指定 email 是否存在有效验证码记录。
+     * 判断指定 scene + identifier 是否存在有效验证码。
      */
-    public boolean exists(String email) {
-        Boolean hasKey = stringRedisTemplate.hasKey(key(email));
+    public boolean exists(OtpScene scene, String identifier) {
+        Boolean hasKey = stringRedisTemplate.hasKey(key(scene, identifier));
         return Boolean.TRUE.equals(hasKey);
     }
 
     /**
-     * 首次签发验证码（注册场景）。
-     * <p>
-     * 会覆盖已有记录。返回生成的 6 位数字验证码。
+     * 首次签发验证码（会覆盖已有记录）。返回 6 位数字验证码。
      */
-    public String issue(String email) {
+    public String issue(OtpScene scene, String identifier) {
         String code = generateCode();
         long now = Instant.now().getEpochSecond();
         long expiresAt = now + expirySeconds();
@@ -75,25 +72,18 @@ public class EmailVerificationCodeService {
         fields.put(F_RESEND_COUNT, "0");
         fields.put(F_LAST_RESEND_AT, String.valueOf(now));
 
-        String k = key(email);
+        String k = key(scene, identifier);
         stringRedisTemplate.opsForHash().putAll(k, fields);
         stringRedisTemplate.expire(k, Duration.ofSeconds(expirySeconds()));
-        log.info("签发验证码成功: email={}", email);
+        log.info("签发OTP: scene={}, identifier={}", scene, identifier);
         return code;
     }
 
     /**
-     * 重发验证码（用户点击"重新发送"）。
-     * <p>
-     * 规则：
-     * <ul>
-     *   <li>距离上次 lastResendAt 不足 sendInterval → 抛 USER_VERIFICATION_CODE_SEND_TOO_FREQUENT</li>
-     *   <li>resendCount 达到 {@link #MAX_RESEND_COUNT} → 抛 USER_VERIFICATION_CODE_SEND_TOO_FREQUENT</li>
-     *   <li>否则：生成新 code、重置 attemptsLeft、resendCount+1、刷新 TTL</li>
-     * </ul>
+     * 重发验证码。触发频控时抛 USER_VERIFICATION_CODE_SEND_TOO_FREQUENT。
      */
-    public String resend(String email) {
-        String k = key(email);
+    public String resend(OtpScene scene, String identifier) {
+        String k = key(scene, identifier);
         Map<Object, Object> raw = stringRedisTemplate.opsForHash().entries(k);
         long now = Instant.now().getEpochSecond();
 
@@ -122,21 +112,23 @@ public class EmailVerificationCodeService {
 
         stringRedisTemplate.opsForHash().putAll(k, fields);
         stringRedisTemplate.expire(k, Duration.ofSeconds(expirySeconds()));
-        log.info("重发验证码成功: email={}, resendCount={}", email, resendCount + 1);
+        log.info("重发OTP: scene={}, identifier={}, resendCount={}", scene, identifier, resendCount + 1);
         return code;
     }
 
     /**
      * 校验验证码。
+     * <p>
+     * 行为：
      * <ul>
-     *   <li>记录不存在 / 已过期 → 抛 USER_VERIFICATION_CODE_NOT_FOUND / EXPIRED</li>
-     *   <li>匹配失败且 attemptsLeft &gt; 1 → 递减 attemptsLeft，抛 INVALID</li>
-     *   <li>匹配失败且 attemptsLeft == 1 → 删除 key，抛 ATTEMPTS_EXCEEDED</li>
-     *   <li>匹配成功 → 删除 key，返回</li>
+     *   <li>keepOnSuccess=false（默认）：匹配成功后删除 key</li>
+     *   <li>keepOnSuccess=true：匹配成功后保留 key（供后续流程使用，例如密码重置需要保留到 confirm 阶段）</li>
      * </ul>
+     * 匹配失败且 attemptsLeft &gt; 1：递减，抛 INVALID；
+     * 匹配失败且 attemptsLeft == 1：删除 code 相关字段，抛 ATTEMPTS_EXCEEDED。
      */
-    public void verify(String email, String inputCode) {
-        String k = key(email);
+    public void verify(OtpScene scene, String identifier, String inputCode, boolean keepOnSuccess) {
+        String k = key(scene, identifier);
         List<Object> values = stringRedisTemplate.opsForHash()
                 .multiGet(k, List.of(F_CODE, F_CODE_EXPIRES_AT, F_ATTEMPTS_LEFT));
         Object codeObj = values.get(0);
@@ -151,13 +143,16 @@ public class EmailVerificationCodeService {
 
         String expected = codeObj.toString();
         if (expected.equals(inputCode)) {
-            stringRedisTemplate.delete(k);
+            if (!keepOnSuccess) {
+                stringRedisTemplate.delete(k);
+            }
             return;
         }
 
         int attemptsLeft = parseInt(values.get(2), 0);
         if (attemptsLeft <= 1) {
-            stringRedisTemplate.delete(k);
+            // 清掉 code 字段（保留 key 让调用方决定是否继续）
+            stringRedisTemplate.opsForHash().delete(k, F_CODE, F_CODE_EXPIRES_AT, F_ATTEMPTS_LEFT);
             throw StatusCode.USER_VERIFICATION_CODE_ATTEMPTS_EXCEEDED.exception();
         }
         stringRedisTemplate.opsForHash().increment(k, F_ATTEMPTS_LEFT, -1);
@@ -165,10 +160,18 @@ public class EmailVerificationCodeService {
     }
 
     /**
+     * 主动删除验证码（例如流程确认后清理残留）。
+     */
+    public void invalidate(OtpScene scene, String identifier) {
+        stringRedisTemplate.delete(key(scene, identifier));
+    }
+
+    /**
      * 返回距离可重发的剩余秒数（0 表示立即可重发）。
      */
-    public long secondsUntilResendAvailable(String email) {
-        Object lastResend = stringRedisTemplate.opsForHash().get(key(email), F_LAST_RESEND_AT);
+    public long secondsUntilResendAvailable(OtpScene scene, String identifier) {
+        Object lastResend = stringRedisTemplate.opsForHash()
+                .get(key(scene, identifier), F_LAST_RESEND_AT);
         if (lastResend == null) return 0;
         long last = parseLong(lastResend, 0);
         long intervalSec = systemProperties.getUser().getVerificationCodeSendIntervalSeconds();
@@ -178,8 +181,8 @@ public class EmailVerificationCodeService {
 
     // ========== 工具 ==========
 
-    private static String key(String email) {
-        return KEY_PREFIX + email;
+    private static String key(OtpScene scene, String identifier) {
+        return KEY_PREFIX + scene.key() + ":" + identifier;
     }
 
     private int expirySeconds() {

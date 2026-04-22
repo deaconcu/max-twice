@@ -14,7 +14,7 @@
     <!-- 滑动容器 -->
     <div class="slides-wrapper" :style="{ transform: `translateY(-${currentPage * 100}%)` }">
       <!-- 第一屏：核心价值主张 -->
-      <section class="intro-screen screen-1">
+      <section class="intro-screen screen-1" :class="{ active: currentPage === 0 }">
       <div class="screen-inner screen-inner-hero">
         <div class="hero-statement">
           <div class="hero-question">{{ t('intro.heroQuestion') }}</div>
@@ -38,7 +38,7 @@
     </section>
 
     <!-- 第二屏：角色驱动 -->
-    <section class="intro-screen screen-2">
+    <section class="intro-screen screen-2" :class="{ active: currentPage === 1 }">
       <div class="screen-inner">
         <div class="section-label">{{ t('intro.screen2Label') }}</div>
         <h2 class="section-title">{{ t('intro.screen2Title') }}</h2>
@@ -120,7 +120,7 @@
     </section>
 
     <!-- 第三屏：学习路径 -->
-    <section class="intro-screen screen-3">
+    <section class="intro-screen screen-3" :class="{ active: currentPage === 2 }">
       <div class="screen-inner screen-inner-flow">
         <div class="section-label">{{ t('intro.screen3Label') }}</div>
         <h2 class="section-title">{{ t('intro.screen3Title') }}</h2>
@@ -349,7 +349,7 @@
     </section>
 
     <!-- 第四屏：课程阅读 -->
-    <section class="intro-screen screen-4">
+    <section class="intro-screen screen-4" :class="{ active: currentPage === 3 }">
       <div class="screen-inner screen-inner-full">
         <div class="section-label">{{ t('intro.screen4Label') }}</div>
         <h2 class="section-title">{{ t('intro.screen4Title') }}</h2>
@@ -459,7 +459,7 @@
     </section>
 
     <!-- 第五屏：科学复习 -->
-    <section class="intro-screen screen-5">
+    <section class="intro-screen screen-5" :class="{ active: currentPage === 4 }">
       <div class="screen-inner screen-inner-full">
         <div class="section-label">{{ t('intro.screen5Label') }}</div>
         <h2 class="section-title">{{ t('intro.screen5Title') }}</h2>
@@ -541,7 +541,7 @@
     </section>
 
     <!-- 第六屏：欢迎加入 -->
-    <section class="intro-screen screen-6">
+    <section class="intro-screen screen-6" :class="{ active: currentPage === 5 }">
       <div class="screen-inner screen-inner-welcome">
         <img :src="frontImage" alt="开始学习之旅" class="front-image" />
         <h2 class="welcome-title">{{ t('intro.welcomeTitle') }}</h2>
@@ -662,6 +662,15 @@ const roles = [
   justify-content: center;
   padding: 48px 24px;
   box-sizing: border-box;
+  opacity: 0;
+  /* 非激活：离开时立即淡出（前 0.3s） */
+  transition: opacity 0.3s ease-out;
+}
+
+.intro-screen.active {
+  opacity: 1;
+  /* 激活：等滚动进行中，最后 0.3s 内淡入 */
+  transition: opacity 0.3s ease-in 0.2s;
 }
 
 .screen-inner {
