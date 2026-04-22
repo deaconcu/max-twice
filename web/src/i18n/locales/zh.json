@@ -505,6 +505,26 @@
       "sendFailed": "发送失败，请稍后重试",
       "emailInvalidRedirect": "邮箱地址无效，请重新注册"
     },
+    "forgotPassword": {
+      "title": "重置密码",
+      "subtitle": "输入注册邮箱，我们将发送验证码",
+      "emailLabel": "邮箱",
+      "emailPlaceholder": "请输入注册邮箱",
+      "submitButton": "发送验证码",
+      "submitting": "发送中...",
+      "backToLogin": "返回登录",
+      "requestFailed": "请求失败，请稍后重试",
+      "resetTitle": "设置新密码",
+      "resetSubtitle": "请设置一个安全的新密码",
+      "newPassword": "新密码",
+      "confirmPassword": "确认新密码",
+      "submitReset": "确认修改",
+      "submittingReset": "提交中...",
+      "resetSuccess": "密码已重置，请使用新密码登录",
+      "resetFailed": "重置失败，请稍后重试",
+      "sessionExpired": "会话已过期，请重新发起重置",
+      "notVerified": "请先完成验证码校验"
+    },
     "profile": {
       "title": "个人资料",
       "personalInfo": "个人信息",
@@ -1348,7 +1368,14 @@
     "fieldLabel": "字段",
     "cannotBeEmpty": "{label}不能为空",
     "minLength": "{label}长度必须至少{min}个字符",
-    "maxLength": "{label}长度不能超过{max}个字符"
+    "maxLength": "{label}长度不能超过{max}个字符",
+    "passwordStrength": {
+      "tooWeak": "密码太弱",
+      "weak": "弱",
+      "fair": "一般",
+      "good": "良好",
+      "strong": "强"
+    }
   },
   "message": {
     "center": "消息中心",

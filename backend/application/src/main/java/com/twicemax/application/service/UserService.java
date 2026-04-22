@@ -10,6 +10,7 @@ import com.twicemax.application.dto.response.KeysetPageResponse;
 import com.twicemax.application.dto.response.course.CourseFullDTO;
 import com.twicemax.application.dto.response.user.*;
 import com.twicemax.application.dto.response.user.AuthLoginResponseDTO;
+import com.twicemax.application.dto.response.user.PasswordResetSessionDTO;
 import com.twicemax.application.dto.response.user.PendingSessionDTO;
 import com.twicemax.content.course.CourseDO;
 import com.twicemax.content.course.CourseDataService;
@@ -23,6 +24,7 @@ import com.twicemax.shared.domain.exception.StatusCode;
 import com.twicemax.shared.infrastructure.config.SystemProperties;
 import com.twicemax.user.auth.EmailVerificationCodeService;
 import com.twicemax.user.auth.EmailVerifySessionService;
+import com.twicemax.user.auth.PasswordResetService;
 import com.twicemax.user.profile.UserDO;
 import com.twicemax.user.profile.UserDataService;
 import com.twicemax.user.profile.UserDomainService;
@@ -57,6 +59,7 @@ public class UserService {
     private final EmailService emailService;
     private final EmailVerifySessionService emailVerifySessionService;
     private final EmailVerificationCodeService emailVerificationCodeService;
+    private final PasswordResetService passwordResetService;
     private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
@@ -319,6 +322,87 @@ public class UserService {
                 .build();
     }
 
+    // ========== 忘记密码 ==========
+
+    /**
+     * 忘记密码第 1 步：请求发送重置验证码。
+     * <p>
+     * 无论邮箱是否存在都返回成功（防枚举）。邮箱不存在时返回一个伪 token，
+     * 前端可照常走后续流程，用户在输验证码时会收到"会话无效"提示。
+     */
+    public PasswordResetSessionDTO requestPasswordReset(String email) {
+        validateEmailFormat(email);
+
+        UserDO user = userDataService.getByEmail(email);
+        if (user == null) {
+            log.info("忘记密码：邮箱不存在，返回伪响应防枚举: email={}", email);
+            return PasswordResetSessionDTO.builder()
+                    .resetSessionToken(generateFakeResetToken())
+                    .email(email)
+                    .expiresIn(30L * 60)
+                    .resendAvailableIn(systemProperties.getUser().getVerificationCodeSendIntervalSeconds())
+                    .build();
+        }
+
+        PasswordResetService.Created created = passwordResetService.createSessionAndIssueCode(email);
+        String language = DataSourceContextHolder.getLanguage();
+        emailService.sendVerificationEmailAsync(email, created.code(), language);
+
+        return PasswordResetSessionDTO.builder()
+                .resetSessionToken(created.token())
+                .email(email)
+                .expiresIn(created.expiresInSeconds())
+                .resendAvailableIn(created.resendAvailableInSeconds())
+                .build();
+    }
+
+    /**
+     * 忘记密码：重发验证码。
+     */
+    public PasswordResetSessionDTO resendPasswordResetCode(String resetSessionToken) {
+        PasswordResetService.Resent resent = passwordResetService.resend(resetSessionToken);
+        String language = DataSourceContextHolder.getLanguage();
+        emailService.sendVerificationEmailAsync(resent.email(), resent.code(), language);
+
+        return PasswordResetSessionDTO.builder()
+                .resetSessionToken(resetSessionToken)
+                .email(resent.email())
+                .expiresIn(resent.expiresInSeconds())
+                .resendAvailableIn(resent.resendAvailableInSeconds())
+                .build();
+    }
+
+    /**
+     * 忘记密码第 2 步：校验验证码（成功后在 Redis 里标记 verified）。
+     */
+    public void verifyPasswordResetCode(String resetSessionToken, String code) {
+        validateVerificationCode(code);
+        passwordResetService.verifyCode(resetSessionToken, code);
+    }
+
+    /**
+     * 忘记密码第 3 步：确认新密码并落库。
+     * <p>
+     * 要求 session 已经通过验证码校验；成功后立即失效 session。
+     *
+     * @return 被重置密码的用户 id（Controller 据此踢掉其所有已登录 token）
+     */
+    @Transactional
+    public Long confirmPasswordReset(String resetSessionToken, String newPassword) {
+        validatePassword(newPassword);
+        String email = passwordResetService.requireVerifiedEmail(resetSessionToken);
+        Long userId = userDomainService.updatePasswordByEmail(email, newPassword);
+        passwordResetService.invalidate(resetSessionToken);
+        log.info("密码重置完成: userId={}, email={}", userId, email);
+        return userId;
+    }
+
+    private static String generateFakeResetToken() {
+        byte[] bytes = new byte[48];
+        new java.security.SecureRandom().nextBytes(bytes);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
     // ========== 辅助：pending session 构造 ==========
 
     /**
@@ -510,11 +594,9 @@ public class UserService {
             throw StatusCode.USER_INVALID_PASSWORD_LENGTH.exception();
         }
 
-        // 强度检查：必须包含字母和数字
-        boolean hasLetter = password.matches(".*[a-zA-Z].*");
-        boolean hasDigit = password.matches(".*[0-9].*");
-
-        if (!hasLetter || !hasDigit) {
+        // 强度检查：使用 zxcvbn 算法（nbvcxz 实现），分数 < 2 视为过弱
+        int score = new me.gosimple.nbvcxz.Nbvcxz().estimate(password).getBasicScore();
+        if (score < 2) {
             throw StatusCode.USER_PASSWORD_TOO_WEAK.exception();
         }
     }

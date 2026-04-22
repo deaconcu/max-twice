@@ -3,10 +3,16 @@ import { ref, computed } from 'vue'
 import { authApi } from '@/api'
 import { useUserStore } from './user'
 import { logger } from '@/utils/logger'
-import type { LoginResponseData, PendingSession, User } from '@/types/user'
+import type {
+  LoginResponseData,
+  PasswordResetSession,
+  PendingSession,
+  User,
+} from '@/types/user'
 import i18n from '@/i18n'
 
 const PENDING_SESSION_STORAGE_KEY = 'pendingSession'
+const RESET_SESSION_STORAGE_KEY = 'passwordResetSession'
 
 /**
  * 读取 sessionStorage 中的 pending session（只在浏览器环境）
@@ -17,6 +23,20 @@ const loadPendingSession = (): PendingSession | null => {
   if (!raw) return null
   try {
     return JSON.parse(raw) as PendingSession
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 读取 sessionStorage 中的 password reset session
+ */
+const loadResetSession = (): PasswordResetSession | null => {
+  if (typeof window === 'undefined') return null
+  const raw = sessionStorage.getItem(RESET_SESSION_STORAGE_KEY)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as PasswordResetSession
   } catch {
     return null
   }
@@ -36,6 +56,7 @@ export const useAuthStore = defineStore(
     const isLoggingIn = ref(false)
     const isRegistering = ref(false)
     const pendingSession = ref<PendingSession | null>(loadPendingSession())
+    const resetSession = ref<PasswordResetSession | null>(loadResetSession())
 
     // 计算属性
     const isAuthenticated = computed(() => !!userStore.currentUser)
@@ -49,6 +70,16 @@ export const useAuthStore = defineStore(
         sessionStorage.setItem(PENDING_SESSION_STORAGE_KEY, JSON.stringify(session))
       } else {
         sessionStorage.removeItem(PENDING_SESSION_STORAGE_KEY)
+      }
+    }
+
+    const setResetSession = (session: PasswordResetSession | null) => {
+      resetSession.value = session
+      if (typeof window === 'undefined') return
+      if (session) {
+        sessionStorage.setItem(RESET_SESSION_STORAGE_KEY, JSON.stringify(session))
+      } else {
+        sessionStorage.removeItem(RESET_SESSION_STORAGE_KEY)
       }
     }
 
@@ -162,6 +193,85 @@ export const useAuthStore = defineStore(
       setPendingSession(null)
     }
 
+    // ========== 忘记密码 ==========
+
+    /**
+     * 请求发送重置验证码；成功后把 resetSession 存入 store
+     */
+    const requestPasswordReset = async (
+      email: string,
+      turnstileToken: string
+    ): Promise<PasswordResetSession> => {
+      const response = await authApi.requestPasswordReset(email, turnstileToken)
+      if (response.code === 200 && response.data) {
+        setResetSession(response.data)
+        return response.data
+      }
+      throw new Error(
+        response.message ?? i18n.global.t('user.forgotPassword.requestFailed')
+      )
+    }
+
+    /**
+     * 重发重置验证码（使用 store 中的 resetSessionToken）
+     */
+    const resendPasswordResetCode = async (): Promise<PasswordResetSession | null> => {
+      const session = resetSession.value
+      if (!session) return null
+      const response = await authApi.resendPasswordResetCode(session.resetSessionToken)
+      if (response.code === 200 && response.data) {
+        setResetSession(response.data)
+        return response.data
+      }
+      throw new Error(
+        response.message ?? i18n.global.t('user.verifyEmail.sendFailed')
+      )
+    }
+
+    /**
+     * 校验重置验证码
+     */
+    const verifyPasswordResetCode = async (code: string): Promise<boolean> => {
+      const session = resetSession.value
+      if (!session) return false
+      try {
+        const response = await authApi.verifyPasswordResetCode(
+          session.resetSessionToken,
+          code
+        )
+        return response.code === 200
+      } catch (error) {
+        logger.error('密码重置验证码校验失败', error)
+        throw error
+      }
+    }
+
+    /**
+     * 确认新密码；成功后清理 resetSession
+     */
+    const confirmPasswordReset = async (newPassword: string): Promise<boolean> => {
+      const session = resetSession.value
+      if (!session) return false
+      const response = await authApi.confirmPasswordReset(
+        session.resetSessionToken,
+        newPassword
+      )
+      if (response.code === 200) {
+        setResetSession(null)
+        return true
+      }
+      throw new Error(
+        response.message ?? i18n.global.t('user.forgotPassword.resetFailed')
+      )
+    }
+
+    /**
+     * 清除 reset session
+     */
+    const clearResetSession = () => {
+      setResetSession(null)
+    }
+
     /**
      * 退出登录
      */
@@ -169,6 +279,7 @@ export const useAuthStore = defineStore(
       token.value = null
       userStore.logout()
       setPendingSession(null)
+      setResetSession(null)
       localStorage.removeItem('token')
       localStorage.removeItem('user')
     }
@@ -187,6 +298,7 @@ export const useAuthStore = defineStore(
       isRegistering,
       isAuthenticated,
       pendingSession,
+      resetSession,
 
       // 方法
       login,
@@ -194,6 +306,11 @@ export const useAuthStore = defineStore(
       validateEmail,
       resendVerificationCode,
       clearPendingSession,
+      requestPasswordReset,
+      resendPasswordResetCode,
+      verifyPasswordResetCode,
+      confirmPasswordReset,
+      clearResetSession,
       logout,
       restoreToken,
     }

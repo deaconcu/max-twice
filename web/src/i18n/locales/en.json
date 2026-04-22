@@ -504,6 +504,26 @@
       "sendFailed": "Failed to send, please try again later",
       "emailInvalidRedirect": "Invalid email address, please register again"
     },
+    "forgotPassword": {
+      "title": "Reset Password",
+      "subtitle": "Enter your registered email to receive a verification code",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Enter your registered email",
+      "submitButton": "Send Code",
+      "submitting": "Sending...",
+      "backToLogin": "Back to login",
+      "requestFailed": "Request failed, please try again",
+      "resetTitle": "Set New Password",
+      "resetSubtitle": "Please set a secure new password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "submitReset": "Confirm",
+      "submittingReset": "Submitting...",
+      "resetSuccess": "Password reset successfully. Please sign in with your new password.",
+      "resetFailed": "Reset failed, please try again",
+      "sessionExpired": "Session expired, please start over",
+      "notVerified": "Please verify the code first"
+    },
     "profile": {
       "title": "Profile",
       "personalInfo": "Personal Information",
@@ -1348,7 +1368,14 @@
     "fieldLabel": "Field",
     "cannotBeEmpty": "{label} cannot be empty",
     "minLength": "{label} must be at least {min} characters",
-    "maxLength": "{label} cannot exceed {max} characters"
+    "maxLength": "{label} cannot exceed {max} characters",
+    "passwordStrength": {
+      "tooWeak": "Too weak",
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong"
+    }
   },
   "message": {
     "center": "Message Center",

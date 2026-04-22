@@ -3,12 +3,16 @@ package com.twicemax.web.v1.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import com.twicemax.application.dto.request.LoginRequest;
+import com.twicemax.application.dto.request.PasswordResetConfirmRequest;
+import com.twicemax.application.dto.request.PasswordResetRequest;
+import com.twicemax.application.dto.request.PasswordResetVerifyRequest;
 import com.twicemax.application.dto.request.RegisterRequest;
 import com.twicemax.application.dto.request.ResendVerificationCodeRequest;
 import com.twicemax.application.dto.request.UpdateUserRequest;
 import com.twicemax.application.dto.request.VerifyEmailRequest;
 import com.twicemax.application.dto.response.ImageUploadResponse;
 import com.twicemax.application.dto.response.user.AuthLoginResponseDTO;
+import com.twicemax.application.dto.response.user.PasswordResetSessionDTO;
 import com.twicemax.application.dto.response.user.PendingSessionDTO;
 import com.twicemax.application.dto.response.user.UserBriefDTO;
 import com.twicemax.application.dto.response.user.UserProfileDTO;
@@ -207,5 +211,62 @@ public class UsersController {
     public ApiResponse<PendingSessionDTO> resendVerificationCode(@RequestBody @Valid ResendVerificationCodeRequest request) {
         PendingSessionDTO pending = userService.resendVerificationCode(request.getPendingSessionToken());
         return ApiResponse.success(pending);
+    }
+
+    /**
+     * 忘记密码 - 第 1 步：请求发送重置验证码
+     * POST /api/v1/auth/password-reset/request
+     */
+    @PostMapping("/auth/password-reset/request")
+    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
+    public ApiResponse<PasswordResetSessionDTO> requestPasswordReset(
+            @RequestBody @Valid PasswordResetRequest request,
+            HttpServletRequest httpRequest) {
+        // Turnstile 强制校验
+        String remoteIp = IpUtils.getIpAddress(httpRequest);
+        if (!turnstileService.verify(request.getTurnstileToken(), remoteIp)) {
+            throw StatusCode.CAPTCHA_INVALID.exception();
+        }
+        PasswordResetSessionDTO session = userService.requestPasswordReset(request.getEmail());
+        return ApiResponse.success(session);
+    }
+
+    /**
+     * 忘记密码 - 重发验证码
+     * POST /api/v1/auth/password-reset/resend
+     */
+    @PostMapping("/auth/password-reset/resend")
+    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
+    public ApiResponse<PasswordResetSessionDTO> resendPasswordResetCode(
+            @RequestBody @Valid ResendVerificationCodeRequest request) {
+        // 复用 ResendVerificationCodeRequest（pendingSessionToken 字段语义上就是一个"会话 token"）
+        PasswordResetSessionDTO session = userService.resendPasswordResetCode(request.getPendingSessionToken());
+        return ApiResponse.success(session);
+    }
+
+    /**
+     * 忘记密码 - 第 2 步：校验验证码
+     * POST /api/v1/auth/password-reset/verify-code
+     */
+    @PostMapping("/auth/password-reset/verify-code")
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
+    public ApiResponse<Void> verifyPasswordResetCode(@RequestBody @Valid PasswordResetVerifyRequest request) {
+        userService.verifyPasswordResetCode(request.getResetSessionToken(), request.getCode());
+        return ApiResponse.success();
+    }
+
+    /**
+     * 忘记密码 - 第 3 步：确认新密码
+     * POST /api/v1/auth/password-reset/confirm
+     * <p>
+     * 成功后踢掉该用户已登录的所有 Sa-Token 会话，强制重新登录。
+     */
+    @PostMapping("/auth/password-reset/confirm")
+    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
+    public ApiResponse<Void> confirmPasswordReset(@RequestBody @Valid PasswordResetConfirmRequest request) {
+        Long userId = userService.confirmPasswordReset(request.getResetSessionToken(), request.getNewPassword());
+        // 踢掉该用户所有已登录 token（含当前设备之外的其他端）
+        StpUtil.logout(userId);
+        return ApiResponse.success();
     }
 }

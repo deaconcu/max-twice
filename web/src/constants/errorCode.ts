@@ -25,6 +25,10 @@ export const BUSINESS_ERROR = {
   PENDING_SESSION_INVALID: 1122,
   /** 验证码错误次数过多 */
   USER_VERIFICATION_CODE_ATTEMPTS_EXCEEDED: 1123,
+  /** 密码重置会话失效 */
+  PASSWORD_RESET_SESSION_INVALID: 1124,
+  /** 密码重置未完成邮箱验证 */
+  PASSWORD_RESET_NOT_VERIFIED: 1125,
   /** 需要验证码 */
   CAPTCHA_REQUIRED: 2604,
 } as const

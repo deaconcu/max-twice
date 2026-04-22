@@ -157,6 +157,25 @@ public class UserDomainService {
     }
 
     /**
+     * 按邮箱更新密码（忘记密码流程使用）
+     *
+     * @param email 邮箱
+     * @param newPlainPassword 新密码（明文，将被 BCrypt 加密）
+     * @return 被更新的用户 id（供调用方踢掉该用户所有 token 使用）
+     */
+    @Transactional
+    public Long updatePasswordByEmail(String email, String newPlainPassword) {
+        UserDO user = userDataService.getByEmail(email);
+        if (user == null) {
+            throw StatusCode.USER_NOT_FOUND.exception();
+        }
+        String encoded = passwordEncoder.encode(newPlainPassword);
+        userDataService.updatePassword(user.getId(), encoded);
+        log.info("用户密码更新成功: userId={}", user.getId());
+        return user.getId();
+    }
+
+    /**
      * 创建邮箱验证码
      *
      * @param email 邮箱

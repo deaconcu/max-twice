@@ -524,6 +524,7 @@
                       :placeholder="t('user.login.emailPlaceholder')"
                       :rules="emailRules"
                       :counter="emailMaxLength"
+                      :maxlength="emailMaxLength"
                       :disabled="isLoggingIn"
                       validate-on="blur"
                       variant="outlined"
@@ -536,16 +537,29 @@
                       :label="t('user.login.password')"
                       :placeholder="t('user.login.passwordPlaceholder')"
                       :type="showLoginPassword ? 'text' : 'password'"
+                      :maxlength="passwordMaxLength"
                       :disabled="isLoggingIn"
-                      :append-inner-icon="showLoginPassword ? 'mdi-eye-off' : 'mdi-eye'"
                       variant="outlined"
                       density="comfortable"
                       class="mb-2"
-                      @click:append-inner="showLoginPassword = !showLoginPassword"
-                    />
+                    >
+                      <template #append-inner>
+                        <v-icon
+                          tabindex="-1"
+                          style="cursor: pointer"
+                          @click="showLoginPassword = !showLoginPassword"
+                        >
+                          {{ showLoginPassword ? 'mdi-eye-off' : 'mdi-eye' }}
+                        </v-icon>
+                      </template>
+                    </v-text-field>
 
                     <div class="text-right mb-6">
-                      <a href="#" class="text-caption text-primary text-decoration-none">
+                      <a
+                        href="#"
+                        class="text-caption text-primary text-decoration-none"
+                        @click.prevent="switchToForgot"
+                      >
                         {{ t('user.login.forgotPassword') }}
                       </a>
                     </div>
@@ -623,6 +637,7 @@
                       type="email"
                       :rules="emailRules"
                       :counter="emailMaxLength"
+                      :maxlength="emailMaxLength"
                       :disabled="isRegistering"
                       validate-on="blur"
                       variant="outlined"
@@ -636,14 +651,42 @@
                       :type="showRegisterPassword ? 'text' : 'password'"
                       :rules="passwordRules"
                       :counter="passwordMaxLength"
+                      :maxlength="passwordMaxLength"
                       :disabled="isRegistering"
-                      :append-inner-icon="showRegisterPassword ? 'mdi-eye-off' : 'mdi-eye'"
                       validate-on="blur"
                       variant="outlined"
                       density="comfortable"
                       class="mb-4"
-                      @click:append-inner="showRegisterPassword = !showRegisterPassword"
-                    />
+                    >
+                      <template #append-inner>
+                        <div
+                          v-if="registerData.password"
+                          class="strength-segments mr-2"
+                        >
+                          <span
+                            class="text-caption strength-label"
+                            :class="`text-${passwordStrengthColor}`"
+                          >
+                            {{ passwordStrengthLabel }}
+                          </span>
+                          <span
+                            v-for="i in 5"
+                            :key="i"
+                            class="seg"
+                            :class="i <= passwordScore + 1 ? `bg-${passwordStrengthColor}` : ''"
+                          />
+                        </div>
+                        <v-icon
+                          tabindex="-1"
+                          style="cursor: pointer"
+                          @click="showRegisterPassword = !showRegisterPassword"
+                        >
+                          {{ showRegisterPassword ? 'mdi-eye-off' : 'mdi-eye' }}
+                        </v-icon>
+                      </template>
+                    </v-text-field>
+
+                    <!-- 密码强度条已移入输入框内 -->
 
                     <v-text-field
                       v-model="registerData.confirmPassword"
@@ -651,14 +694,23 @@
                       :type="showConfirmPassword ? 'text' : 'password'"
                       :rules="confirmPasswordRules"
                       :counter="passwordMaxLength"
+                      :maxlength="passwordMaxLength"
                       :disabled="isRegistering"
-                      :append-inner-icon="showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye'"
                       validate-on="blur"
                       variant="outlined"
                       density="comfortable"
                       class="mb-2"
-                      @click:append-inner="showConfirmPassword = !showConfirmPassword"
-                    />
+                    >
+                      <template #append-inner>
+                        <v-icon
+                          tabindex="-1"
+                          style="cursor: pointer"
+                          @click="showConfirmPassword = !showConfirmPassword"
+                        >
+                          {{ showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye' }}
+                        </v-icon>
+                      </template>
+                    </v-text-field>
 
                     <div v-if="errorMessage" class="error-message mb-4">
                       <v-icon size="16" class="mr-1">mdi-alert-circle</v-icon>
@@ -680,6 +732,7 @@
                       :disabled="
                         isRegistering ||
                         !registerFormValid ||
+                        !passwordAcceptable ||
                         !registerData.email ||
                         !registerData.password ||
                         !registerData.confirmPassword
@@ -815,6 +868,282 @@
                       </a>
                     </div>
                   </v-form>
+
+                  <!-- 忘记密码：输入邮箱 -->
+                  <v-form
+                    v-else-if="currentMode === 'forgot'"
+                    key="forgot"
+                    ref="forgotFormRef"
+                    v-model="forgotFormValid"
+                    @submit.prevent="handleRequestReset"
+                  >
+                    <v-text-field
+                      v-model="forgotData.email"
+                      :label="t('user.forgotPassword.emailLabel')"
+                      :placeholder="t('user.forgotPassword.emailPlaceholder')"
+                      :rules="emailRules"
+                      :counter="emailMaxLength"
+                      :maxlength="emailMaxLength"
+                      :disabled="isRequestingReset"
+                      validate-on="blur"
+                      variant="outlined"
+                      density="comfortable"
+                      class="mb-4"
+                    />
+
+                    <div v-if="errorMessage" class="error-message mb-4">
+                      <v-icon size="16" class="mr-1">mdi-alert-circle</v-icon>
+                      {{ errorMessage }}
+                    </div>
+
+                    <TurnstileWidget
+                      ref="forgotTurnstileRef"
+                      appearance="interaction-only"
+                      class="mb-4"
+                      @verify="onForgotTurnstileVerify"
+                      @error="onTurnstileError"
+                      @expire="onForgotTurnstileExpire"
+                    />
+
+                    <v-btn
+                      type="submit"
+                      :loading="isRequestingReset"
+                      :disabled="
+                        isRequestingReset ||
+                        !forgotFormValid ||
+                        !forgotData.email ||
+                        !forgotTurnstileToken
+                      "
+                      block
+                      size="large"
+                      color="primary"
+                      class="text-none font-weight-bold mb-3"
+                    >
+                      {{
+                        isRequestingReset
+                          ? t('user.forgotPassword.submitting')
+                          : t('user.forgotPassword.submitButton')
+                      }}
+                    </v-btn>
+
+                    <v-divider class="my-6" />
+
+                    <div class="text-center">
+                      <a
+                        href="#"
+                        class="text-body-2 text-primary text-decoration-none font-weight-bold"
+                        @click.prevent="switchToLogin"
+                      >
+                        {{ t('user.forgotPassword.backToLogin') }}
+                      </a>
+                    </div>
+                  </v-form>
+
+                  <!-- 忘记密码：输入验证码 -->
+                  <v-form
+                    v-else-if="currentMode === 'reset-verify'"
+                    key="reset-verify"
+                    ref="resetVerifyFormRef"
+                    @submit.prevent="handleVerifyResetCode"
+                  >
+                    <v-alert
+                      color="primary"
+                      variant="tonal"
+                      density="compact"
+                      rounded="lg"
+                      class="mb-4"
+                    >
+                      <div class="d-flex align-center">
+                        <v-icon size="20" class="mr-2">mdi-email-outline</v-icon>
+                        <span class="text-body-2">
+                          {{ t('user.verifyEmail.codeSentTo') }}
+                          <strong>{{ resetEmail }}</strong>
+                        </span>
+                      </div>
+                    </v-alert>
+
+                    <v-text-field
+                      v-model="resetVerifyData.code"
+                      :label="t('user.verifyEmail.codeLabel')"
+                      :placeholder="t('user.verifyEmail.codePlaceholder')"
+                      :rules="[verificationCodeRule]"
+                      :disabled="isVerifyingReset"
+                      validate-on="blur"
+                      variant="outlined"
+                      density="comfortable"
+                      class="mb-4"
+                      counter="6"
+                      maxlength="6"
+                      @input="resetVerifyData.code = resetVerifyData.code.replace(/\D/g, '')"
+                    />
+
+                    <div v-if="errorMessage" class="error-message mb-4">
+                      <v-icon size="16" class="mr-1">mdi-alert-circle</v-icon>
+                      {{ errorMessage }}
+                    </div>
+
+                    <v-btn
+                      type="submit"
+                      :loading="isVerifyingReset"
+                      :disabled="isVerifyingReset || resetVerifyData.code.length !== 6"
+                      block
+                      size="large"
+                      color="primary"
+                      class="text-none font-weight-bold mb-3"
+                    >
+                      {{
+                        isVerifyingReset
+                          ? t('user.verifyEmail.verifying')
+                          : t('user.verifyEmail.verifyButton')
+                      }}
+                    </v-btn>
+
+                    <div class="text-center mb-4">
+                      <v-btn
+                        variant="text"
+                        color="primary"
+                        size="small"
+                        :disabled="isResendingReset || countdown > 0"
+                        :loading="isResendingReset"
+                        @click="handleResendResetCode"
+                      >
+                        {{
+                          countdown > 0
+                            ? t('user.verifyEmail.resendCountdown', { seconds: countdown })
+                            : t('user.verifyEmail.resendButton')
+                        }}
+                      </v-btn>
+                    </div>
+
+                    <v-divider class="my-6" />
+
+                    <div class="text-center">
+                      <a
+                        href="#"
+                        class="text-body-2 text-primary text-decoration-none font-weight-bold"
+                        @click.prevent="switchToLogin"
+                      >
+                        {{ t('user.forgotPassword.backToLogin') }}
+                      </a>
+                    </div>
+                  </v-form>
+
+                  <!-- 忘记密码：设置新密码 -->
+                  <v-form
+                    v-else-if="currentMode === 'reset-confirm'"
+                    key="reset-confirm"
+                    ref="resetConfirmFormRef"
+                    v-model="resetConfirmFormValid"
+                    @submit.prevent="handleConfirmReset"
+                  >
+                    <v-text-field
+                      v-model="resetConfirmData.password"
+                      :label="t('user.forgotPassword.newPassword')"
+                      :type="showResetPassword ? 'text' : 'password'"
+                      :rules="passwordRules"
+                      :counter="passwordMaxLength"
+                      :maxlength="passwordMaxLength"
+                      :disabled="isConfirmingReset"
+                      validate-on="blur"
+                      variant="outlined"
+                      density="comfortable"
+                      class="mb-4"
+                    >
+                      <template #append-inner>
+                        <div
+                          v-if="resetConfirmData.password"
+                          class="strength-segments mr-2"
+                        >
+                          <span
+                            class="text-caption strength-label"
+                            :class="`text-${resetPasswordStrengthColor}`"
+                          >
+                            {{ resetPasswordStrengthLabel }}
+                          </span>
+                          <span
+                            v-for="i in 5"
+                            :key="i"
+                            class="seg"
+                            :class="
+                              i <= resetPasswordScore + 1
+                                ? `bg-${resetPasswordStrengthColor}`
+                                : ''
+                            "
+                          />
+                        </div>
+                        <v-icon
+                          tabindex="-1"
+                          style="cursor: pointer"
+                          @click="showResetPassword = !showResetPassword"
+                        >
+                          {{ showResetPassword ? 'mdi-eye-off' : 'mdi-eye' }}
+                        </v-icon>
+                      </template>
+                    </v-text-field>
+
+                    <v-text-field
+                      v-model="resetConfirmData.confirmPassword"
+                      :label="t('user.forgotPassword.confirmPassword')"
+                      :type="showResetConfirmPassword ? 'text' : 'password'"
+                      :rules="resetConfirmPasswordRules"
+                      :counter="passwordMaxLength"
+                      :maxlength="passwordMaxLength"
+                      :disabled="isConfirmingReset"
+                      validate-on="blur"
+                      variant="outlined"
+                      density="comfortable"
+                      class="mb-2"
+                    >
+                      <template #append-inner>
+                        <v-icon
+                          tabindex="-1"
+                          style="cursor: pointer"
+                          @click="showResetConfirmPassword = !showResetConfirmPassword"
+                        >
+                          {{ showResetConfirmPassword ? 'mdi-eye-off' : 'mdi-eye' }}
+                        </v-icon>
+                      </template>
+                    </v-text-field>
+
+                    <div v-if="errorMessage" class="error-message mb-4">
+                      <v-icon size="16" class="mr-1">mdi-alert-circle</v-icon>
+                      {{ errorMessage }}
+                    </div>
+
+                    <v-btn
+                      type="submit"
+                      :loading="isConfirmingReset"
+                      :disabled="
+                        isConfirmingReset ||
+                        !resetConfirmFormValid ||
+                        !resetPasswordAcceptable ||
+                        !resetConfirmData.password ||
+                        !resetConfirmData.confirmPassword
+                      "
+                      block
+                      size="large"
+                      color="primary"
+                      class="text-none font-weight-bold mb-3"
+                    >
+                      {{
+                        isConfirmingReset
+                          ? t('user.forgotPassword.submittingReset')
+                          : t('user.forgotPassword.submitReset')
+                      }}
+                    </v-btn>
+
+                    <v-divider class="my-6" />
+
+                    <div class="text-center">
+                      <a
+                        href="#"
+                        class="text-body-2 text-primary text-decoration-none font-weight-bold"
+                        @click.prevent="switchToLogin"
+                      >
+                        {{ t('user.forgotPassword.backToLogin') }}
+                      </a>
+                    </div>
+                  </v-form>
                 </Transition>
               </v-card-text>
             </v-card>
@@ -830,6 +1159,7 @@ import { ref, computed, watch, onMounted, onUnmounted, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useAuth } from '@/composables/useAuth'
+import { usePasswordStrength } from '@/composables/usePasswordStrength'
 import {
   useEmailRules,
   useValidationRules,
@@ -846,7 +1176,7 @@ import IntroSection from '@/components/common/IntroSection.vue'
 import TurnstileWidget from '@/components/common/TurnstileWidget.vue'
 import IcosahedronLogo from '@/components/common/IcosahedronLogo.vue'
 
-type AuthMode = 'login' | 'register' | 'verify'
+type AuthMode = 'login' | 'register' | 'verify' | 'forgot' | 'reset-verify' | 'reset-confirm'
 
 const router = useRouter()
 const route = useRoute()
@@ -891,12 +1221,55 @@ const registerData = ref({
   password: '',
   confirmPassword: '',
 })
+const registerPassword = computed(() => registerData.value.password)
+const {
+  score: passwordScore,
+  label: passwordStrengthLabel,
+  color: passwordStrengthColor,
+  isAcceptable: passwordAcceptable,
+} = usePasswordStrength(registerPassword)
 
 // 验证数据
 const verifyData = ref({
   code: '',
 })
 const verifyEmail = computed(() => authStore.pendingSession?.email ?? '')
+
+// 忘记密码 —— 步骤 1：输入邮箱
+const forgotData = ref({ email: '' })
+const forgotFormValid = ref(false)
+const forgotFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
+const isRequestingReset = ref(false)
+const forgotTurnstileToken = ref('')
+const forgotTurnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
+
+// 忘记密码 —— 步骤 2：输入验证码
+const resetVerifyData = ref({ code: '' })
+const resetVerifyFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
+const isVerifyingReset = ref(false)
+const isResendingReset = ref(false)
+const resetEmail = computed(() => authStore.resetSession?.email ?? '')
+
+// 忘记密码 —— 步骤 3：设置新密码
+const resetConfirmData = ref({ password: '', confirmPassword: '' })
+const resetConfirmFormValid = ref(false)
+const resetConfirmFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
+const isConfirmingReset = ref(false)
+const showResetPassword = ref(false)
+const showResetConfirmPassword = ref(false)
+
+const resetPasswordInput = computed(() => resetConfirmData.value.password)
+const {
+  score: resetPasswordScore,
+  label: resetPasswordStrengthLabel,
+  color: resetPasswordStrengthColor,
+  isAcceptable: resetPasswordAcceptable,
+} = usePasswordStrength(resetPasswordInput)
+
+const resetConfirmPasswordRules = computed(() => [
+  ...passwordRules.value,
+  confirmPasswordRule(resetConfirmData.value.password),
+])
 
 // UI 状态
 const showLoginPassword = ref(false)
@@ -935,6 +1308,21 @@ const modeConfig = computed(() => {
       return {
         title: t('user.verifyEmail.title'),
         subtitle: t('user.verifyEmail.subtitle'),
+      }
+    case 'forgot':
+      return {
+        title: t('user.forgotPassword.title'),
+        subtitle: t('user.forgotPassword.subtitle'),
+      }
+    case 'reset-verify':
+      return {
+        title: t('user.verifyEmail.title'),
+        subtitle: t('user.verifyEmail.subtitle'),
+      }
+    case 'reset-confirm':
+      return {
+        title: t('user.forgotPassword.resetTitle'),
+        subtitle: t('user.forgotPassword.resetSubtitle'),
       }
     default:
       return {
@@ -1015,6 +1403,43 @@ const switchToVerify = () => {
     stopCountdown()
   }
   void router.replace('/verify-email')
+}
+
+const switchToForgot = () => {
+  clearError()
+  forgotData.value.email = ''
+  forgotTurnstileToken.value = ''
+  currentMode.value = 'forgot'
+  void router.replace('/forgot-password')
+}
+
+const switchToResetVerify = () => {
+  clearError()
+  resetVerifyData.value.code = ''
+  currentMode.value = 'reset-verify'
+  const reset = authStore.resetSession
+  if (reset && reset.resendAvailableIn > 0) {
+    startCountdown(reset.resendAvailableIn)
+  } else {
+    stopCountdown()
+  }
+  void router.replace('/reset-password/verify')
+}
+
+const switchToResetConfirm = () => {
+  clearError()
+  resetConfirmData.value.password = ''
+  resetConfirmData.value.confirmPassword = ''
+  currentMode.value = 'reset-confirm'
+  void router.replace('/reset-password/confirm')
+}
+
+// Turnstile 回调（忘记密码）
+const onForgotTurnstileVerify = (token: string) => {
+  forgotTurnstileToken.value = token
+}
+const onForgotTurnstileExpire = () => {
+  forgotTurnstileToken.value = ''
 }
 
 // 处理登录
@@ -1171,6 +1596,144 @@ const handleResend = async () => {
   }
 }
 
+// ========== 忘记密码 handlers ==========
+
+const handleRequestReset = async () => {
+  if (!forgotFormRef.value) return
+  const { valid } = await forgotFormRef.value.validate()
+  if (!valid) return
+
+  if (!forgotTurnstileToken.value) {
+    showError(t('user.login.captchaRequired'))
+    return
+  }
+
+  try {
+    isRequestingReset.value = true
+    clearError()
+    await authStore.requestPasswordReset(forgotData.value.email, forgotTurnstileToken.value)
+    switchToResetVerify()
+  } catch (error: unknown) {
+    const err = error as { code?: number; message?: string }
+    if (err.message) {
+      showError(err.message)
+    } else {
+      showError(t('user.forgotPassword.requestFailed'))
+    }
+    forgotTurnstileToken.value = ''
+    forgotTurnstileRef.value?.reset()
+  } finally {
+    isRequestingReset.value = false
+  }
+}
+
+const handleVerifyResetCode = async () => {
+  if (!authStore.resetSession) {
+    showError(t('user.forgotPassword.sessionExpired'))
+    switchToForgot()
+    return
+  }
+
+  try {
+    isVerifyingReset.value = true
+    clearError()
+    const ok = await authStore.verifyPasswordResetCode(resetVerifyData.value.code)
+    if (ok) {
+      switchToResetConfirm()
+    }
+  } catch (error: unknown) {
+    const err = error as { code?: number; message?: string }
+    if (err.code === BUSINESS_ERROR.PASSWORD_RESET_SESSION_INVALID) {
+      authStore.clearResetSession()
+      showError(err.message ?? t('user.forgotPassword.sessionExpired'))
+      switchToForgot()
+      return
+    }
+    if (err.message) {
+      showError(err.message)
+    } else {
+      showError(t('user.verifyEmail.verifyFailedRetry'))
+    }
+  } finally {
+    isVerifyingReset.value = false
+  }
+}
+
+const handleResendResetCode = async () => {
+  if (!authStore.resetSession) {
+    showError(t('user.forgotPassword.sessionExpired'))
+    switchToForgot()
+    return
+  }
+
+  try {
+    isResendingReset.value = true
+    clearError()
+    const next = await authStore.resendPasswordResetCode()
+    showSnackbar?.(t('user.verifyEmail.codeSent'), 'success')
+    if (next) {
+      startCountdown(next.resendAvailableIn > 0 ? next.resendAvailableIn : 60)
+    } else {
+      startCountdown(60)
+    }
+  } catch (error: unknown) {
+    const err = error as { code?: number; message?: string }
+    if (err.code === BUSINESS_ERROR.PASSWORD_RESET_SESSION_INVALID) {
+      authStore.clearResetSession()
+      showError(err.message ?? t('user.forgotPassword.sessionExpired'))
+      switchToForgot()
+      return
+    }
+    if (err.message) {
+      showError(err.message)
+    } else {
+      showError(t('user.verifyEmail.sendFailed'))
+    }
+  } finally {
+    isResendingReset.value = false
+  }
+}
+
+const handleConfirmReset = async () => {
+  if (!resetConfirmFormRef.value) return
+  const { valid } = await resetConfirmFormRef.value.validate()
+  if (!valid) return
+
+  if (!authStore.resetSession) {
+    showError(t('user.forgotPassword.sessionExpired'))
+    switchToForgot()
+    return
+  }
+
+  try {
+    isConfirmingReset.value = true
+    clearError()
+    const ok = await authStore.confirmPasswordReset(resetConfirmData.value.password)
+    if (ok) {
+      showSnackbar?.(t('user.forgotPassword.resetSuccess'), 'success')
+      switchToLogin()
+    }
+  } catch (error: unknown) {
+    const err = error as { code?: number; message?: string }
+    if (
+      err.code === BUSINESS_ERROR.PASSWORD_RESET_SESSION_INVALID ||
+      err.code === BUSINESS_ERROR.PASSWORD_RESET_NOT_VERIFIED
+    ) {
+      authStore.clearResetSession()
+      showError(err.message ?? t('user.forgotPassword.sessionExpired'))
+      switchToForgot()
+      return
+    }
+    if (err.message) {
+      showError(err.message)
+    } else {
+      showError(t('user.forgotPassword.resetFailed'))
+    }
+  } finally {
+    isConfirmingReset.value = false
+  }
+}
+
 // 倒计时
 const startCountdown = (seconds = 60) => {
   countdown.value = seconds
@@ -1211,6 +1774,28 @@ const initModeFromRoute = () => {
     if (pending.resendAvailableIn > 0) {
       startCountdown(pending.resendAvailableIn)
     }
+  } else if (routeName === 'forgot-password') {
+    currentMode.value = 'forgot'
+  } else if (routeName === 'reset-password-verify') {
+    if (!authStore.resetSession) {
+      showSnackbar?.(t('user.forgotPassword.sessionExpired'), 'error')
+      currentMode.value = 'forgot'
+      void router.replace('/forgot-password')
+      return
+    }
+    currentMode.value = 'reset-verify'
+    const reset = authStore.resetSession
+    if (reset.resendAvailableIn > 0) {
+      startCountdown(reset.resendAvailableIn)
+    }
+  } else if (routeName === 'reset-password-confirm') {
+    if (!authStore.resetSession) {
+      showSnackbar?.(t('user.forgotPassword.sessionExpired'), 'error')
+      currentMode.value = 'forgot'
+      void router.replace('/forgot-password')
+      return
+    }
+    currentMode.value = 'reset-confirm'
   } else {
     currentMode.value = 'login'
   }
@@ -1421,6 +2006,30 @@ a:hover {
   align-items: center;
   color: #e53935;
   font-size: 14px;
+}
+
+/* 密码强度条 */
+.strength-segments {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1;
+  flex: none;
+  white-space: nowrap;
+}
+.strength-label {
+  flex: none;
+  min-width: 56px;
+  text-align: right;
+  margin-right: 6px;
+}
+.strength-segments .seg {
+  flex: none;
+  width: 6px;
+  height: 0.7em;
+  border-radius: 2px;
+  background-color: rgba(var(--v-theme-on-surface), 0.12);
+  transition: background-color 0.2s ease;
 }
 
 /* Logo with slogan */

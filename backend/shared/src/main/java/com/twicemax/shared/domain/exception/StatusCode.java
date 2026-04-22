@@ -57,6 +57,8 @@ public enum StatusCode {
     USER_PASSWORD_TOO_WEAK(1120, "密码强度不足,请使用至少8位且包含字母和数字的密码"),
     PENDING_SESSION_INVALID(1122, "验证会话已失效，请重新登录"),
     USER_VERIFICATION_CODE_ATTEMPTS_EXCEEDED(1123, "验证码错误次数过多，请重新获取验证码"),
+    PASSWORD_RESET_SESSION_INVALID(1124, "密码重置会话已失效，请重新发起重置"),
+    PASSWORD_RESET_NOT_VERIFIED(1125, "请先完成邮箱验证码校验"),
 
     // 课程相关 12xx
     COURSE_NOT_FOUND(1201, "课程不存在"),

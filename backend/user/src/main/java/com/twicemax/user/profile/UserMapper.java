@@ -57,6 +57,9 @@ public interface UserMapper {
     @Update("UPDATE user SET email_validated = #{emailValidated}, updated_at = #{updatedAt} WHERE id = #{userId}")
     void updateEmailValidated(@Param("userId") long userId, @Param("emailValidated") boolean emailValidated, @Param("updatedAt") LocalDateTime updatedAt);
 
+    @Update("UPDATE user SET password = #{password} WHERE id = #{userId}")
+    int updatePassword(@Param("userId") long userId, @Param("password") String password);
+
     @Select("SELECT * FROM user ORDER BY id DESC LIMIT #{count}")
     List<UserDO> getList(int count);
 

@@ -1,6 +1,6 @@
 import apiClient from '../client'
 import type { ApiResponse } from '@/types/api'
-import type { User, AuthLoginResponse, PendingSession } from '@/types/user'
+import type { User, AuthLoginResponse, PendingSession, PasswordResetSession } from '@/types/user'
 
 /**
  * 认证相关 API
@@ -54,5 +54,53 @@ export const authApi = {
    */
   resendVerificationCode(pendingSessionToken: string): Promise<ApiResponse<PendingSession>> {
     return apiClient.post('/v1/auth/resend-verification-code', { pendingSessionToken })
+  },
+
+  /**
+   * 忘记密码：请求发送重置验证码
+   */
+  requestPasswordReset(
+    email: string,
+    turnstileToken: string
+  ): Promise<ApiResponse<PasswordResetSession>> {
+    return apiClient.post('/v1/auth/password-reset/request', { email, turnstileToken })
+  },
+
+  /**
+   * 忘记密码：重发验证码
+   */
+  resendPasswordResetCode(
+    resetSessionToken: string
+  ): Promise<ApiResponse<PasswordResetSession>> {
+    // 后端复用 ResendVerificationCodeRequest 结构，字段名为 pendingSessionToken
+    return apiClient.post('/v1/auth/password-reset/resend', {
+      pendingSessionToken: resetSessionToken,
+    })
+  },
+
+  /**
+   * 忘记密码：校验验证码
+   */
+  verifyPasswordResetCode(
+    resetSessionToken: string,
+    code: string
+  ): Promise<ApiResponse<void>> {
+    return apiClient.post('/v1/auth/password-reset/verify-code', {
+      resetSessionToken,
+      code,
+    })
+  },
+
+  /**
+   * 忘记密码：确认新密码
+   */
+  confirmPasswordReset(
+    resetSessionToken: string,
+    newPassword: string
+  ): Promise<ApiResponse<void>> {
+    return apiClient.post('/v1/auth/password-reset/confirm', {
+      resetSessionToken,
+      newPassword,
+    })
   },
 }

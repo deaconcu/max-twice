@@ -62,6 +62,18 @@ export interface PendingSession {
 }
 
 /**
+ * 密码重置会话
+ * <p>
+ * 忘记密码流程：请求重置 → 收到 token → 输入验证码 → 设置新密码
+ */
+export interface PasswordResetSession {
+  resetSessionToken: string
+  email: string
+  expiresIn: number
+  resendAvailableIn: number
+}
+
+/**
  * 登录接口响应：已验证返回 user；未验证返回 pending
  */
 export interface AuthLoginResponse {

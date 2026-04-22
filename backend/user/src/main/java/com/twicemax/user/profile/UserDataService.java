@@ -243,6 +243,14 @@ public class UserDataService {
         userMapper.updateEmailValidated(userId, emailValidated, LocalDateTime.now());
     }
 
+    /**
+     * 更新用户密码（传入的已是 BCrypt 加密后的串）
+     */
+    @CacheEvict(value = "users", key = "#userId")
+    public int updatePassword(long userId, String encodedPassword) {
+        return userMapper.updatePassword(userId, encodedPassword);
+    }
+
     // ==================== 缓存清除（内部使用）====================
 
     @CacheEvict(value = "users", key = "#userId")

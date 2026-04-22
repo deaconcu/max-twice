@@ -63,6 +63,13 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- 密码强度校验 (zxcvbn 的 Java 移植) -->
+        <dependency>
+            <groupId>me.gosimple</groupId>
+            <artifactId>nbvcxz</artifactId>
+            <version>1.5.1</version>
+        </dependency>
+
     </dependencies>
 
 </project>
