@@ -21,6 +21,10 @@ export const BUSINESS_ERROR = {
   NODE_STATE_INVALID: 1309,
   /** 邮箱未验证 */
   USER_EMAIL_NOT_VALIDATED: 1104,
+  /** 验证会话失效 */
+  PENDING_SESSION_INVALID: 1122,
+  /** 验证码错误次数过多 */
+  USER_VERIFICATION_CODE_ATTEMPTS_EXCEEDED: 1123,
   /** 需要验证码 */
   CAPTCHA_REQUIRED: 2604,
 } as const

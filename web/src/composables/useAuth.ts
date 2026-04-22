@@ -5,46 +5,37 @@ import { useUserStore } from '@/stores'
 
 /**
  * 认证组合式函数
- * 提供登录、注册、登出等认证功能
  */
 export function useAuth() {
   const router = useRouter()
   const authStore = useAuthStore()
   const userStore = useUserStore()
 
-  // 状态
   const isAuthenticated = computed(() => authStore.isAuthenticated)
   const isLoggingIn = computed(() => authStore.isLoggingIn)
   const isRegistering = computed(() => authStore.isRegistering)
   const currentUser = computed(() => userStore.currentUser)
+  const pendingSession = computed(() => authStore.pendingSession)
 
   /**
    * 登录
-   * @param email 邮箱
-   * @param password 密码
-   * @param turnstileToken Turnstile 验证 token（可选，失败多次后需要）
-   * @returns Promise<boolean> 登录是否成功
+   * @returns 'success' | 'pending'；'success' 会自动跳转到首页/redirect，'pending' 由调用方决定
    */
   const login = async (
     email: string,
     password: string,
     turnstileToken?: string
-  ): Promise<boolean> => {
-    const success = await authStore.login(email, password, turnstileToken)
-    if (success) {
-      // 登录成功后跳转到首页或重定向地址
+  ): Promise<'success' | 'pending'> => {
+    const result = await authStore.login(email, password, turnstileToken)
+    if (result === 'success') {
       const redirect = router.currentRoute.value.query.redirect as string
       await router.push(redirect || '/')
     }
-    return success
+    return result
   }
 
   /**
    * 注册
-   * @param email 邮箱
-   * @param password 密码
-   * @param turnstileToken Turnstile 验证 token
-   * @returns Promise<boolean> 注册是否成功
    */
   const register = async (
     email: string,
@@ -55,33 +46,23 @@ export function useAuth() {
   }
 
   /**
-   * 验证邮箱
-   * @param email 邮箱
-   * @param code 验证码
-   * @returns Promise<boolean> 验证是否成功
+   * 邮箱验证 - 凭 store 中的 pending token
    */
-  const validateEmail = async (email: string, code: string): Promise<boolean> => {
-    const user = await authStore.validateEmail(email, code)
+  const validateEmail = async (code: string): Promise<boolean> => {
+    const user = await authStore.validateEmail(code)
     if (user) {
-      // 验证成功后跳转到首页
       await router.push('/')
       return true
     }
     return false
   }
 
-  /**
-   * 登出
-   */
   const logout = async () => {
     authStore.logout()
     userStore.logout()
     await router.push('/login')
   }
 
-  /**
-   * 检查是否已登录，如果未登录则跳转到登录页
-   */
   const requireAuth = () => {
     if (!isAuthenticated.value) {
       void router.push({
@@ -94,12 +75,11 @@ export function useAuth() {
   }
 
   return {
-    // 状态
     isAuthenticated,
     isLoggingIn,
     isRegistering,
     currentUser,
-    // 方法
+    pendingSession,
     login,
     register,
     validateEmail,

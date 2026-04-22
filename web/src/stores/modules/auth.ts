@@ -3,8 +3,24 @@ import { ref, computed } from 'vue'
 import { authApi } from '@/api'
 import { useUserStore } from './user'
 import { logger } from '@/utils/logger'
-import type { LoginResponseData, User } from '@/types/user'
+import type { LoginResponseData, PendingSession, User } from '@/types/user'
 import i18n from '@/i18n'
+
+const PENDING_SESSION_STORAGE_KEY = 'pendingSession'
+
+/**
+ * 读取 sessionStorage 中的 pending session（只在浏览器环境）
+ */
+const loadPendingSession = (): PendingSession | null => {
+  if (typeof window === 'undefined') return null
+  const raw = sessionStorage.getItem(PENDING_SESSION_STORAGE_KEY)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as PendingSession
+  } catch {
+    return null
+  }
+}
 
 /**
  * 认证 Store
@@ -19,45 +35,61 @@ export const useAuthStore = defineStore(
     const token = ref<string | null>(null)
     const isLoggingIn = ref(false)
     const isRegistering = ref(false)
+    const pendingSession = ref<PendingSession | null>(loadPendingSession())
 
     // 计算属性
     const isAuthenticated = computed(() => !!userStore.currentUser)
 
+    // ========== 内部工具 ==========
+
+    const setPendingSession = (session: PendingSession | null) => {
+      pendingSession.value = session
+      if (typeof window === 'undefined') return
+      if (session) {
+        sessionStorage.setItem(PENDING_SESSION_STORAGE_KEY, JSON.stringify(session))
+      } else {
+        sessionStorage.removeItem(PENDING_SESSION_STORAGE_KEY)
+      }
+    }
+
+    // ========== 登录 ==========
+
     /**
      * 登录
-     * @throws {Error} 当登录失败时抛出错误，包含错误码和错误信息
+     * 返回值：
+     * - 'success'：已验证邮箱，登录成功
+     * - 'pending'：密码对但邮箱未验证，需要跳转验证码页，pending 已存入 store
+     * @throws {Error} 带 code 字段的业务错误
      */
     const login = async (
       email: string,
       password: string,
       turnstileToken?: string
-    ): Promise<boolean> => {
+    ): Promise<'success' | 'pending'> => {
       try {
         isLoggingIn.value = true
         const response = await authApi.login(email, password, turnstileToken)
 
         if (response.code === 200 && response.data) {
-          const loginData: LoginResponseData = response.data
-
-          // 保存 token (假设后端返回 token，如果没有需要调整)
-          // TODO: 根据实际后端响应调整 token 获取方式
-          const userToken = localStorage.getItem('token')
-          if (userToken) {
-            token.value = userToken
+          if (response.data.user) {
+            const loginData: LoginResponseData = response.data.user
+            userStore.setUser({
+              id: loginData.id,
+              name: loginData.name,
+              avatar: loginData.avatar,
+            } as User)
+            setPendingSession(null)
+            return 'success'
           }
-
-          // 保存用户信息
-          userStore.setUser({
-            id: loginData.id,
-            name: loginData.name,
-            avatar: loginData.avatar,
-          } as User)
-
-          return true
+          if (response.data.pending) {
+            setPendingSession(response.data.pending)
+            return 'pending'
+          }
         }
 
-        // 业务错误：后端返回非 200 的 code
-        const error: any = new Error(response.message || i18n.global.t('user.login.loginFailed'))
+        const error: Error & { code?: number } = new Error(
+          response.message ?? i18n.global.t('user.login.loginFailed')
+        )
         error.code = response.code
         throw error
       } finally {
@@ -67,7 +99,7 @@ export const useAuthStore = defineStore(
 
     /**
      * 注册
-     * @throws {Error} 当注册失败时抛出错误，错误信息为后端返回的 message
+     * 成功返回 true 并把 pending 存入 store；失败抛出错误
      */
     const register = async (
       email: string,
@@ -78,33 +110,56 @@ export const useAuthStore = defineStore(
         isRegistering.value = true
         const response = await authApi.register(email, password, turnstileToken)
 
-        // 注册成功
-        if (response.code === 200) {
+        if (response.code === 200 && response.data) {
+          setPendingSession(response.data)
           return true
         }
 
-        // 业务错误：后端返回非 200 的 code
-        throw new Error(response.message || i18n.global.t('user.register.registerFailed'))
+        throw new Error(response.message ?? i18n.global.t('user.register.registerFailed'))
       } finally {
         isRegistering.value = false
       }
     }
 
     /**
-     * 邮箱验证
+     * 邮箱验证（凭 store 中的 pendingSessionToken）
      */
-    const validateEmail = async (email: string, code: string): Promise<User | null> => {
+    const validateEmail = async (code: string): Promise<User | null> => {
       try {
-        const response = await authApi.validateEmail(email, code)
+        const pending = pendingSession.value
+        if (!pending) return null
+        const response = await authApi.validateEmail(pending.pendingSessionToken, code)
         if (response.code === 200 && response.data) {
           userStore.setUser(response.data)
+          setPendingSession(null)
           return response.data
         }
         return null
       } catch (error) {
         logger.error('邮箱验证失败', error)
-        return null
+        throw error
       }
+    }
+
+    /**
+     * 重发验证码，返回新的 pending（包含新的倒计时快照）
+     */
+    const resendVerificationCode = async (): Promise<PendingSession | null> => {
+      const pending = pendingSession.value
+      if (!pending) return null
+      const response = await authApi.resendVerificationCode(pending.pendingSessionToken)
+      if (response.code === 200 && response.data) {
+        setPendingSession(response.data)
+        return response.data
+      }
+      throw new Error(response.message ?? i18n.global.t('user.verifyEmail.sendFailed'))
+    }
+
+    /**
+     * 清除 pending session（用户主动放弃验证 / token 失效）
+     */
+    const clearPendingSession = () => {
+      setPendingSession(null)
     }
 
     /**
@@ -113,13 +168,11 @@ export const useAuthStore = defineStore(
     const logout = () => {
       token.value = null
       userStore.logout()
+      setPendingSession(null)
       localStorage.removeItem('token')
       localStorage.removeItem('user')
     }
 
-    /**
-     * 从 localStorage 恢复 token
-     */
     const restoreToken = () => {
       const savedToken = localStorage.getItem('token')
       if (savedToken) {
@@ -133,11 +186,14 @@ export const useAuthStore = defineStore(
       isLoggingIn,
       isRegistering,
       isAuthenticated,
+      pendingSession,
 
       // 方法
       login,
       register,
       validateEmail,
+      resendVerificationCode,
+      clearPendingSession,
       logout,
       restoreToken,
     }
@@ -145,7 +201,7 @@ export const useAuthStore = defineStore(
   {
     persist: {
       key: 'auth',
-      paths: ['token'], // 只持久化 token
+      paths: ['token'],
     },
   }
 )
