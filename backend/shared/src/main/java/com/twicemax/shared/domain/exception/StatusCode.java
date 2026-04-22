@@ -55,6 +55,8 @@ public enum StatusCode {
     USER_LOGIN_FAILED(1121, "登录失败，请检查用户名和密码"),
     USER_VERIFICATION_CODE_SEND_TOO_FREQUENT(1119, "验证码发送过于频繁,请稍后再试"),
     USER_PASSWORD_TOO_WEAK(1120, "密码强度不足,请使用至少8位且包含字母和数字的密码"),
+    PENDING_SESSION_INVALID(1122, "验证会话已失效，请重新登录"),
+    USER_VERIFICATION_CODE_ATTEMPTS_EXCEEDED(1123, "验证码错误次数过多，请重新获取验证码"),
 
     // 课程相关 12xx
     COURSE_NOT_FOUND(1201, "课程不存在"),

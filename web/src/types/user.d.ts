@@ -47,10 +47,33 @@ export interface LoginResponseData {
 }
 
 /**
+ * 邮箱验证待处理会话
+ * <p>
+ * 注册 / 登录未验证邮箱场景下后端返回，前端用于：
+ * - 存 pendingSessionToken 到 sessionStorage
+ * - 跳转验证码输入页
+ * - 按 resendAvailableIn 起重发倒计时
+ */
+export interface PendingSession {
+  pendingSessionToken: string
+  email: string
+  expiresIn: number
+  resendAvailableIn: number
+}
+
+/**
+ * 登录接口响应：已验证返回 user；未验证返回 pending
+ */
+export interface AuthLoginResponse {
+  user?: LoginResponseData
+  pending?: PendingSession
+}
+
+/**
  * 邮箱验证请求
  */
 export interface EmailValidationRequest {
-  email: string
+  pendingSessionToken: string
   code: string
 }
 

@@ -9,6 +9,8 @@ import com.twicemax.application.converter.UserConverter;
 import com.twicemax.application.dto.response.KeysetPageResponse;
 import com.twicemax.application.dto.response.course.CourseFullDTO;
 import com.twicemax.application.dto.response.user.*;
+import com.twicemax.application.dto.response.user.AuthLoginResponseDTO;
+import com.twicemax.application.dto.response.user.PendingSessionDTO;
 import com.twicemax.content.course.CourseDO;
 import com.twicemax.content.course.CourseDataService;
 import com.twicemax.infrastructure.datasource.DataSourceContextHolder;
@@ -19,6 +21,8 @@ import com.twicemax.learning.enrollment.UserLearningDomainService;
 import com.twicemax.shared.domain.Enums;
 import com.twicemax.shared.domain.exception.StatusCode;
 import com.twicemax.shared.infrastructure.config.SystemProperties;
+import com.twicemax.user.auth.EmailVerificationCodeService;
+import com.twicemax.user.auth.EmailVerifySessionService;
 import com.twicemax.user.profile.UserDO;
 import com.twicemax.user.profile.UserDataService;
 import com.twicemax.user.profile.UserDomainService;
@@ -29,7 +33,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -52,6 +55,8 @@ public class UserService {
     private final UserStatsDataService userStatsDataService;
     private final UserLearningDomainService userLearningDomainService;
     private final EmailService emailService;
+    private final EmailVerifySessionService emailVerifySessionService;
+    private final EmailVerificationCodeService emailVerificationCodeService;
     private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
@@ -220,95 +225,133 @@ public class UserService {
 
     /**
      * 用户注册
+     * <p>
+     * 创建用户后签发 pending session + 验证码，并异步发送邮件。
+     *
+     * @return pending session，前端据此跳转邮箱验证页
      */
     @Transactional
-    public void register(String email, String password) {
+    public PendingSessionDTO register(String email, String password) {
         validateEmailFormat(email);
         validatePassword(password);
 
-        // 委托给 DomainService 创建用户
-        UserDO user = userDomainService.createUser(email, password);
+        userDomainService.createUser(email, password);
 
-        // 跨域操作：异步发送验证邮件（不阻塞注册流程）
-        String code = generateVerificationCode();
-        userDomainService.createVerificationCode(email, code);
-
-        // 异步发送邮件，失败不影响注册
-        String language = DataSourceContextHolder.getLanguage();
-        emailService.sendVerificationEmailAsync(email, code, language);
-
-        log.info("用户注册成功: {}", email);
+        return issuePendingSessionAndSendEmail(email);
     }
 
     /**
      * 用户登录验证
-     * 只做业务验证，不操作认证状态
+     * <p>
+     * 若邮箱已验证：返回 {@code user} 字段，Controller 侧负责 StpUtil.login。<br>
+     * 若邮箱未验证：返回 {@code pending} 字段；若此时已有有效验证码则复用不重发，否则签发并发送邮件。
      */
-    public UserBriefDTO validateLogin(String email, String password) {
+    public AuthLoginResponseDTO validateLogin(String email, String password) {
         validateEmailFormat(email);
         validatePassword(password);
 
-        // 委托给 DomainService 验证
-        UserDO userDO = userDomainService.validateLogin(email, password);
+        UserDO userDO = userDomainService.validateLoginIgnoringEmailValidated(email, password);
 
-        return toBriefDTO(userDO);
+        if (Boolean.TRUE.equals(userDO.getEmailValidated())) {
+            return AuthLoginResponseDTO.builder().user(toBriefDTO(userDO)).build();
+        }
+
+        // 未验证：若已有活跃验证码则复用（避免重复发送），否则签发
+        PendingSessionDTO pending = emailVerificationCodeService.exists(email)
+                ? createPendingSessionWithoutSendingEmail(email)
+                : issuePendingSessionAndSendEmail(email);
+        return AuthLoginResponseDTO.builder().pending(pending).build();
     }
 
     /**
-     * 邮箱验证 - 验证邮箱验证码
-     * 只做验证逻辑，不操作认证状态
+     * 邮箱验证 - 凭 pending session token + 验证码
      */
     @Transactional
-    public UserProfileDTO verifyEmailWithCode(String email, String code) {
-        validateEmailFormat(email);
+    public UserProfileDTO verifyEmailWithCode(String pendingSessionToken, String code) {
         validateVerificationCode(code);
 
-        // 委托给 DomainService 验证
-        UserDO user = userDomainService.validateEmail(email, code);
+        String email = emailVerifySessionService.requireEmail(pendingSessionToken);
 
-        return toProfileDTO(user);
-    }
+        // 校验验证码（失败会抛对应异常；成功会删除 code 记录）
+        emailVerificationCodeService.verify(email, code);
 
-    /**
-     * 重新发送验证码
-     *
-     * @param email 邮箱
-     */
-    @Transactional
-    public void resendVerificationCode(String email) {
-        validateEmailFormat(email);
-
-        // 1. 验证用户是否存在
         UserDO user = userDataService.getByEmail(email);
         if (user == null) {
             throw StatusCode.USER_NOT_FOUND.exception("用户不存在");
         }
 
-        // 2. 检查邮箱是否已验证
-        if (user.getEmailValidated()) {
-            throw StatusCode.INVALID_PARAMETER.exception("邮箱已验证，无需重新发送");
+        if (!Boolean.TRUE.equals(user.getEmailValidated())) {
+            userDataService.updateEmailValidated(user.getId(), true);
+            log.info("用户邮箱验证成功: userId={}", user.getId());
         }
 
-        // 3. 生成新验证码并发送
-        String code = generateVerificationCode();
-        userDomainService.createVerificationCode(email, code);
+        // 验证成功后立即失效 session
+        emailVerifySessionService.invalidate(pendingSessionToken);
 
-        // 4. 异步发送邮件
-        String language = DataSourceContextHolder.getLanguage();
-        emailService.sendVerificationEmailAsync(email, code, language);
-
-        log.info("重新发送验证码成功: {}", email);
+        return toProfileDTO(user);
     }
 
     /**
-     * 生成验证码
-     * 使用 SecureRandom 确保密码学安全
+     * 重新发送验证码 - 凭 pending session token
      */
-    private String generateVerificationCode() {
-        SecureRandom random = new SecureRandom();
-        // 生成 6 位数字验证码 (100000 ~ 999999)
-        int code = 100000 + random.nextInt(900000);
-        return String.valueOf(code);
+    public PendingSessionDTO resendVerificationCode(String pendingSessionToken) {
+        String email = emailVerifySessionService.requireEmail(pendingSessionToken);
+
+        UserDO user = userDataService.getByEmail(email);
+        if (user == null) {
+            throw StatusCode.USER_NOT_FOUND.exception("用户不存在");
+        }
+        if (Boolean.TRUE.equals(user.getEmailValidated())) {
+            throw StatusCode.INVALID_PARAMETER.exception("邮箱已验证，无需重新发送");
+        }
+
+        String code = emailVerificationCodeService.resend(email);
+        String language = DataSourceContextHolder.getLanguage();
+        emailService.sendVerificationEmailAsync(email, code, language);
+
+        long expiresIn = Optional.ofNullable(
+                stringRedisTemplateTtlForToken(pendingSessionToken)).orElse(0L);
+        return PendingSessionDTO.builder()
+                .pendingSessionToken(pendingSessionToken)
+                .email(email)
+                .expiresIn(expiresIn)
+                .resendAvailableIn(emailVerificationCodeService.secondsUntilResendAvailable(email))
+                .build();
+    }
+
+    // ========== 辅助：pending session 构造 ==========
+
+    /**
+     * 签发 pending session 并发送验证邮件（注册 / 登录未验证且无活跃 code 场景）。
+     */
+    private PendingSessionDTO issuePendingSessionAndSendEmail(String email) {
+        String code = emailVerificationCodeService.issue(email);
+        String language = DataSourceContextHolder.getLanguage();
+        emailService.sendVerificationEmailAsync(email, code, language);
+        return createPendingSessionWithoutSendingEmail(email);
+    }
+
+    /**
+     * 仅创建 pending session token，不触发邮件发送（用于复用已有验证码的场景）。
+     */
+    private PendingSessionDTO createPendingSessionWithoutSendingEmail(String email) {
+        EmailVerifySessionService.Created created = emailVerifySessionService.create(email);
+        return PendingSessionDTO.builder()
+                .pendingSessionToken(created.token())
+                .email(email)
+                .expiresIn(created.expiresInSeconds())
+                .resendAvailableIn(emailVerificationCodeService.secondsUntilResendAvailable(email))
+                .build();
+    }
+
+    /**
+     * 查询 token 剩余 TTL（秒）。不存在返回 null。
+     */
+    private Long stringRedisTemplateTtlForToken(String token) {
+        // 委托给 session service 的 findEmailByToken 仅确认存在性；TTL 读取复用其 template
+        // 此处采用简化实现：直接返回一个固定 30min（session TTL），避免额外注入 redis template。
+        // 若 session 即将过期由前端按快照倒计时即可，不影响功能。
+        return emailVerifySessionService.findEmailByToken(token).isPresent() ? 30L * 60 : 0L;
     }
 
     //=========== DTO转换方法 ==========

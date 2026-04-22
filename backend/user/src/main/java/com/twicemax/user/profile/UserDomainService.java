@@ -231,7 +231,30 @@ public class UserDomainService {
     }
 
     /**
-     * 验证用户登录
+     * 验证用户登录（忽略邮箱是否已验证）
+     * <p>
+     * 用于登录流程：密码正确但邮箱未验证时，需要返回用户对象让上层引导到邮箱验证流程，
+     * 而不是直接抛 USER_EMAIL_NOT_VALIDATED。
+     */
+    public UserDO validateLoginIgnoringEmailValidated(String email, String password) {
+        UserDO userDO = userDataService.getByEmail(email);
+        if (userDO == null) {
+            throw StatusCode.USER_LOGIN_FAILED.exception();
+        }
+
+        if (!passwordEncoder.matches(password, userDO.getPassword())) {
+            throw StatusCode.USER_LOGIN_FAILED.exception();
+        }
+
+        if (userDO.getState() != null && userDO.getState() == UserState.BANNED.value()) {
+            throw StatusCode.USER_BANNED.exception();
+        }
+
+        return userDO;
+    }
+
+    /**
+     * 验证用户登录（要求邮箱已验证）
      *
      * @param email 邮箱
      * @param password 密码（明文，将被BCrypt验证）

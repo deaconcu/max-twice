@@ -8,6 +8,8 @@ import com.twicemax.application.dto.request.ResendVerificationCodeRequest;
 import com.twicemax.application.dto.request.UpdateUserRequest;
 import com.twicemax.application.dto.request.VerifyEmailRequest;
 import com.twicemax.application.dto.response.ImageUploadResponse;
+import com.twicemax.application.dto.response.user.AuthLoginResponseDTO;
+import com.twicemax.application.dto.response.user.PendingSessionDTO;
 import com.twicemax.application.dto.response.user.UserBriefDTO;
 import com.twicemax.application.dto.response.user.UserProfileDTO;
 import com.twicemax.application.dto.response.user.UserPublicDTO;
@@ -128,50 +130,53 @@ public class UsersController {
      */
     @PostMapping("/auth/register")
     @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<Void> register(@RequestBody @Valid RegisterRequest request, HttpServletRequest httpRequest) {
+    public ApiResponse<PendingSessionDTO> register(@RequestBody @Valid RegisterRequest request, HttpServletRequest httpRequest) {
         // 验证 Turnstile
         String remoteIp = IpUtils.getIpAddress(httpRequest);
         if (!turnstileService.verify(request.getTurnstileToken(), remoteIp)) {
             throw StatusCode.CAPTCHA_INVALID.exception();
         }
 
-        userService.register(request.getEmail(), request.getPassword());
-        return ApiResponse.success();
+        PendingSessionDTO pending = userService.register(request.getEmail(), request.getPassword());
+        return ApiResponse.success(pending);
     }
 
     /**
      * 用户登录
      * 映射: POST /login → POST /api/v1/auth/login
+     * <p>
+     * 响应 data：
+     * <ul>
+     *   <li>邮箱已验证：{@code user} 非空，Controller 已完成 StpUtil.login</li>
+     *   <li>邮箱未验证：{@code pending} 非空，前端跳转验证码页</li>
+     * </ul>
      */
     @PostMapping("/auth/login")
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<UserBriefDTO> login(@RequestBody @Valid LoginRequest request, HttpServletRequest httpRequest) {
+    public ApiResponse<AuthLoginResponseDTO> login(@RequestBody @Valid LoginRequest request, HttpServletRequest httpRequest) {
         String remoteIp = IpUtils.getIpAddress(httpRequest);
 
         // 检查是否需要验证码
         if (userDomainService.isCaptchaRequired(remoteIp)) {
-            // 需要验证码但未提供
             if (request.getTurnstileToken() == null || request.getTurnstileToken().isEmpty()) {
                 throw StatusCode.CAPTCHA_REQUIRED.exception();
             }
-            // 验证 Turnstile
             if (!turnstileService.verify(request.getTurnstileToken(), remoteIp)) {
                 throw StatusCode.CAPTCHA_INVALID.exception();
             }
-            // 验证码通过，清除失败记录（证明是人类，不再要求验证码）
             userDomainService.clearLoginFailures(remoteIp);
         }
 
         try {
-            // Service 负责业务验证
-            UserBriefDTO userDTO = userService.validateLogin(request.getEmail(), request.getPassword());
+            AuthLoginResponseDTO response = userService.validateLogin(request.getEmail(), request.getPassword());
 
-            // Controller 负责认证状态管理
-            StpUtil.login(userDTO.getId());
+            // 邮箱已验证 → 走正式登录；未验证 → 仅返回 pending
+            if (response.getUser() != null) {
+                StpUtil.login(response.getUser().getId());
+            }
 
-            return ApiResponse.success(userDTO);
+            return ApiResponse.success(response);
         } catch (Exception e) {
-            // 登录失败，记录失败次数
             userDomainService.recordLoginFailure(remoteIp);
             throw e;
         }
@@ -184,10 +189,10 @@ public class UsersController {
     @PostMapping("/auth/validate-email")
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ApiResponse<UserProfileDTO> validateEmail(@RequestBody @Valid VerifyEmailRequest request) {
-        // Service 负责验证逻辑
-        UserProfileDTO userDTO = userService.verifyEmailWithCode(request.getEmail(), request.getCode());
+        UserProfileDTO userDTO = userService.verifyEmailWithCode(
+                request.getPendingSessionToken(), request.getCode());
 
-        // Controller 负责认证状态管理（验证成功后自动登录）
+        // 验证成功后自动登录
         StpUtil.login(userDTO.getId());
 
         return ApiResponse.success(userDTO);
@@ -199,8 +204,8 @@ public class UsersController {
      */
     @PostMapping("/auth/resend-verification-code")
     @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<Void> resendVerificationCode(@RequestBody @Valid ResendVerificationCodeRequest request) {
-        userService.resendVerificationCode(request.getEmail());
-        return ApiResponse.success();
+    public ApiResponse<PendingSessionDTO> resendVerificationCode(@RequestBody @Valid ResendVerificationCodeRequest request) {
+        PendingSessionDTO pending = userService.resendVerificationCode(request.getPendingSessionToken());
+        return ApiResponse.success(pending);
     }
 }
