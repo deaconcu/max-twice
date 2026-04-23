@@ -10,7 +10,7 @@
     <!-- 背面棱 - 浅色，先画 -->
     <line
       v-for="edge in backEdges"
-      :key="`back-${edge.i}-${edge.j}`"
+      :key="`back-edge-${edge.i}-${edge.j}`"
       :x1="edge.x1"
       :y1="edge.y1"
       :x2="edge.x2"
@@ -19,16 +19,36 @@
       :stroke-width="strokeWidth * 0.75"
       opacity="0.25"
     />
+    <!-- 背面顶点 -->
+    <circle
+      v-for="vertex in backVertices"
+      :key="`back-v-${vertex.i}`"
+      :cx="vertex.x"
+      :cy="vertex.y"
+      :r="vertexRadius * 0.75"
+      :fill="color"
+      opacity="0.3"
+    />
     <!-- 正面棱 - 实线，后画（覆盖） -->
     <line
       v-for="edge in frontEdges"
-      :key="`front-${edge.i}-${edge.j}`"
+      :key="`front-edge-${edge.i}-${edge.j}`"
       :x1="edge.x1"
       :y1="edge.y1"
       :x2="edge.x2"
       :y2="edge.y2"
       :stroke="color"
       :stroke-width="strokeWidth"
+    />
+    <!-- 正面顶点 -->
+    <circle
+      v-for="vertex in frontVertices"
+      :key="`front-v-${vertex.i}`"
+      :cx="vertex.x"
+      :cy="vertex.y"
+      :r="vertexRadius"
+      :fill="color"
+      opacity="0.85"
     />
   </svg>
 </template>
@@ -49,6 +69,9 @@ const props = withDefaults(defineProps<Props>(), {
   strokeWidth: 1.5,
   speed: 120,
 })
+
+// 顶点半径随 size 缩放
+const vertexRadius = computed(() => Math.max(1.6, props.size * 0.028))
 
 // 正二十面体的 12 个顶点
 // 使用黄金比例 φ = (1 + √5) / 2
@@ -142,11 +165,11 @@ const angleZ = ref(0)
 // hover 状态
 const isHovered = ref(false)
 
-// 呼吸效果
+// 呼吸效果（弱化：幅度更小，周期更慢）
 const breathScale = ref(1)
 const breathDirection = ref(1)
 
-// 随机旋转速度
+// 随机旋转速度（在 setup 内生成，确保多个实例独立）
 const speedX = (Math.random() - 0.5) * 2
 const speedY = (Math.random() - 0.5) * 2 + 1
 const speedZ = (Math.random() - 0.5) * 2
@@ -190,6 +213,7 @@ const projectedVertices = computed(() => {
   return rotatedVertices.value.map((v) => ({
     x: center + v[0] * s,
     y: center - v[1] * s,
+    z: v[2],
   }))
 })
 
@@ -249,6 +273,19 @@ const allEdges = computed(() => {
 const frontEdges = computed(() => allEdges.value.filter((e) => e.isFront))
 const backEdges = computed(() => allEdges.value.filter((e) => !e.isFront))
 
+// 顶点按深度（z）拆为正面 / 背面
+// 正面：z < 0（朝向观察者，因为投影时 y 轴翻转了，z 越小越靠前）
+const frontVertices = computed(() =>
+  projectedVertices.value
+    .map((p, i) => ({ ...p, i }))
+    .filter((p) => p.z <= 0)
+)
+const backVertices = computed(() =>
+  projectedVertices.value
+    .map((p, i) => ({ ...p, i }))
+    .filter((p) => p.z > 0)
+)
+
 function animate(time: number) {
   if (!isVisible) {
     lastTime = 0
@@ -257,19 +294,19 @@ function animate(time: number) {
   if (lastTime) {
     const delta = (time - lastTime) / 1000
 
-    // hover 时慢速旋转
+    // hover 时慢速旋转（×0.2）
     const speedMultiplier = isHovered.value ? 0.2 : 1
     const baseSpeed = ((props.speed * Math.PI) / 180) * delta * speedMultiplier
     angleX.value += baseSpeed * speedX
     angleY.value += baseSpeed * speedY
     angleZ.value += baseSpeed * speedZ
 
-    // 呼吸效果
-    const breathSpeed = 0.3 * delta
+    // 呼吸效果（弱化：幅度 ±0.02，周期约 5s）
+    const breathSpeed = 0.04 * delta
     breathScale.value += breathDirection.value * breathSpeed
-    if (breathScale.value > 1.05) {
+    if (breathScale.value > 1.02) {
       breathDirection.value = -1
-    } else if (breathScale.value < 0.95) {
+    } else if (breathScale.value < 0.98) {
       breathDirection.value = 1
     }
   }
