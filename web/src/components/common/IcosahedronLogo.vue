@@ -62,9 +62,9 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   size: 100,
   color: '#3aa876',
-  focusColor: '#1f6b47',
-  strokeWidth: 1.5,
-  speed: 120,
+  focusColor: '#268359',
+  strokeWidth: 1.0,
+  speed: 170,
 })
 
 // 顶点半径随 size 缩放
@@ -371,8 +371,8 @@ function animate(time: number) {
     if (isHovered.value) {
       speedMultiplier = 0.2
     } else {
-      // intensity 0 → 1.3，intensity 1 → 0.35（线性插值）
-      speedMultiplier = 1.3 - 0.95 * focusIntensity.value
+      // intensity 0 → 1.3，intensity 1 → 0.2（focus 时更慢）
+      speedMultiplier = 1.3 - 1.05 * focusIntensity.value
     }
 
     const baseSpeed = ((props.speed * Math.PI) / 180) * delta * speedMultiplier
