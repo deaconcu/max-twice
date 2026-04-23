@@ -11,6 +11,8 @@ interface TurnstileOptions {
   callback?: (token: string) => void
   'error-callback'?: () => void
   'expired-callback'?: () => void
+  'before-interactive-callback'?: () => void
+  'after-interactive-callback'?: () => void
 }
 
 interface Turnstile {
