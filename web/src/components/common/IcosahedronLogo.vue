@@ -363,24 +363,26 @@ function animate(time: number) {
   if (lastTime) {
     const delta = (time - lastTime) / 1000
 
-    // hover 慢速 ×0.2；focus 中减速到 ×0.45 以便看清高亮面
-    let speedMultiplier = 1
-    if (isHovered.value) speedMultiplier = 0.2
-    else if (isFocusing.value) speedMultiplier = 0.45
+    // 速度策略：
+    // - hover：×0.2
+    // - 非 focus（休息期 intensity=0）：×1.3 略快
+    // - focus 高亮中：随 intensity 减速，最低 ×0.35
+    let speedMultiplier: number
+    if (isHovered.value) {
+      speedMultiplier = 0.2
+    } else {
+      // intensity 0 → 1.3，intensity 1 → 0.35（线性插值）
+      speedMultiplier = 1.3 - 0.95 * focusIntensity.value
+    }
 
     const baseSpeed = ((props.speed * Math.PI) / 180) * delta * speedMultiplier
     angleX.value += baseSpeed * speedX
     angleY.value += baseSpeed * speedY
     angleZ.value += baseSpeed * speedZ
 
-    // 呼吸效果（弱化：幅度 ±0.02，周期约 5s）
-    const breathSpeed = 0.04 * delta
-    breathScale.value += breathDirection.value * breathSpeed
-    if (breathScale.value > 1.02) {
-      breathDirection.value = -1
-    } else if (breathScale.value < 0.98) {
-      breathDirection.value = 1
-    }
+    // focus 时整体放大（替代恒定呼吸效果）
+    // intensity 0 → scale 1.0，intensity 1 → scale 1.12
+    breathScale.value = 1 + 0.12 * focusIntensity.value
 
     // 焦点面填充脉冲：节奏 = 淡入(0.4s) → 保持(1.0s) → 淡出(0.4s) → 休息(1.5s)
     // 总周期 3.3s；切面发生在淡出结束、休息开始的那一刻，避免亮着的时候被切走
