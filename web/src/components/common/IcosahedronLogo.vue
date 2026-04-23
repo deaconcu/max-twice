@@ -62,7 +62,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   size: 100,
   color: '#3aa876',
-  focusColor: '#e53935',
+  focusColor: '#1f6b47',
   strokeWidth: 1.5,
   speed: 120,
 })
