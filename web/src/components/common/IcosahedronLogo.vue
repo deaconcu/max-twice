@@ -15,9 +15,11 @@
       :y1="edge.y1"
       :x2="edge.x2"
       :y2="edge.y2"
-      :stroke="isFocusEdge(edge.i, edge.j) ? focusColor : color"
+      :stroke="isFocusEdge(edge.i, edge.j) && focusIntensity > 0.05 ? focusColor : color"
       :stroke-width="strokeWidth * 0.75"
-      :opacity="isFocusEdge(edge.i, edge.j) ? 0.35 : 0.25"
+      :opacity="
+        isFocusEdge(edge.i, edge.j) ? 0.25 + 0.15 * focusIntensity : 0.25
+      "
     />
     <!-- 焦点面：红色三角形填充 + 脉冲（正面/背面都画，背面更淡） -->
     <polygon
@@ -34,8 +36,14 @@
       :y1="edge.y1"
       :x2="edge.x2"
       :y2="edge.y2"
-      :stroke="isFocusEdge(edge.i, edge.j) ? focusColor : color"
-      :stroke-width="isFocusEdge(edge.i, edge.j) ? strokeWidth * 1.4 : strokeWidth"
+      :stroke="
+        isFocusEdge(edge.i, edge.j) && focusIntensity > 0.05 ? focusColor : color
+      "
+      :stroke-width="
+        isFocusEdge(edge.i, edge.j)
+          ? strokeWidth * (1 + 0.4 * focusIntensity)
+          : strokeWidth
+      "
     />
   </svg>
 </template>
@@ -158,10 +166,11 @@ const isHovered = ref(false)
 const breathScale = ref(1)
 const breathDirection = ref(1)
 
-// 焦点面：每隔几秒挑一个正面面进行红色脉冲
+// 焦点面：每个周期淡入淡出，进入休息期时切换到下一面
 const focusFace = ref<number>(-1)
 const focusFillOpacity = ref(0)
-let focusTimer: ReturnType<typeof setInterval> | null = null
+const focusIntensity = ref(0) // 0 ~ 1 包络（含淡入/保持/淡出/休息）
+let focusCycleStart = 0 // 当前周期的起始时间（秒）
 
 // 随机旋转速度（在 setup 内生成，确保多个实例独立）
 const speedX = (Math.random() - 0.5) * 2
@@ -373,16 +382,40 @@ function animate(time: number) {
       breathDirection.value = 1
     }
 
-    // 焦点面填充脉冲：opacity 在 0.15 ↔ 0.55 之间，约 1.6s 一周期；背面减半
+    // 焦点面填充脉冲：节奏 = 淡入(0.4s) → 保持(1.0s) → 淡出(0.4s) → 休息(1.5s)
+    // 总周期 3.3s；切面发生在淡出结束、休息开始的那一刻，避免亮着的时候被切走
     if (focusFace.value >= 0) {
-      const period = 1.6
-      const t = (time / 1000) % period
-      // 平滑余弦插值
-      const k = 0.5 - 0.5 * Math.cos((t / period) * Math.PI * 2)
-      const base = 0.15 + 0.4 * k
+      const cycle = 3.3
+      const fadeIn = 0.4
+      const hold = 1.0
+      const fadeOut = 0.4
+      const tNow = time / 1000
+      let t = tNow - focusCycleStart
+
+      // 周期结束 → 进入新周期，先切面再算包络
+      if (t >= cycle) {
+        focusCycleStart = tNow
+        pickFocusFace()
+        t = 0
+      }
+
+      let envelope: number
+      if (t < fadeIn) {
+        envelope = t / fadeIn
+      } else if (t < fadeIn + hold) {
+        envelope = 1
+      } else if (t < fadeIn + hold + fadeOut) {
+        envelope = 1 - (t - fadeIn - hold) / fadeOut
+      } else {
+        envelope = 0 // 休息
+      }
+
+      const base = 0.55 * envelope
       focusFillOpacity.value = isFocusFaceFront.value ? base : base * 0.4
+      focusIntensity.value = envelope
     } else {
       focusFillOpacity.value = 0
+      focusIntensity.value = 0
     }
   }
   lastTime = time
@@ -401,18 +434,15 @@ function handleVisibilityChange() {
 onMounted(() => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
   animationId = requestAnimationFrame(animate)
-  // 启动焦点切换：每 3.5 秒换一个正面面
+  // 启动焦点：第一次挑面，周期由 animate 内部驱动
   pickFocusFace()
-  focusTimer = setInterval(pickFocusFace, 3500)
+  focusCycleStart = performance.now() / 1000
 })
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   if (animationId) {
     cancelAnimationFrame(animationId)
-  }
-  if (focusTimer) {
-    clearInterval(focusTimer)
   }
 })
 </script>
