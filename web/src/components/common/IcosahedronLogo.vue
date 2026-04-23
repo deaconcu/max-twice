@@ -7,6 +7,17 @@
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
   >
+    <defs>
+      <!-- 发光滤镜：用于焦点面和焦点棱 -->
+      <filter :id="glowFilterId" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur :stdDeviation="glowBlur" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+
     <!-- 背面棱 - 浅色，先画 -->
     <line
       v-for="edge in backEdges"
@@ -21,12 +32,13 @@
         isFocusEdge(edge.i, edge.j) ? 0.25 + 0.15 * focusIntensity : 0.25
       "
     />
-    <!-- 焦点面：红色三角形填充 + 脉冲（正面/背面都画，背面更淡） -->
+    <!-- 焦点面：三角形填充 + 脉冲 + 发光 -->
     <polygon
       v-if="focusFaceTriangle"
       :points="focusFaceTriangle"
       :fill="focusColor"
       :opacity="focusFillOpacity"
+      :filter="focusIntensity > 0.05 ? `url(#${glowFilterId})` : undefined"
     />
     <!-- 正面棱 - 实线，后画（覆盖） -->
     <line
@@ -43,6 +55,11 @@
         isFocusEdge(edge.i, edge.j)
           ? strokeWidth * (1 + 0.4 * focusIntensity)
           : strokeWidth
+      "
+      :filter="
+        isFocusEdge(edge.i, edge.j) && focusIntensity > 0.05
+          ? `url(#${glowFilterId})`
+          : undefined
       "
     />
   </svg>
@@ -62,13 +79,17 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   size: 100,
   color: '#3aa876',
-  focusColor: '#268359',
+  focusColor: '#5cc795',
   strokeWidth: 1.0,
   speed: 170,
 })
 
 // 顶点半径随 size 缩放
 const vertexRadius = computed(() => Math.max(1.6, props.size * 0.028))
+
+// 发光滤镜 ID（唯一，避免多实例冲突）
+const instanceId = Math.random().toString(36).slice(2, 9)
+const glowFilterId = `icoso-glow-${instanceId}`
 
 // 正二十面体的 12 个顶点
 // 使用黄金比例 φ = (1 + √5) / 2
@@ -171,6 +192,9 @@ const focusFace = ref<number>(-1)
 const focusFillOpacity = ref(0)
 const focusIntensity = ref(0) // 0 ~ 1 包络（含淡入/保持/淡出/休息）
 let focusCycleStart = 0 // 当前周期的起始时间（秒）
+
+// 发光模糊半径：随 intensity 变化，最大 4px
+const glowBlur = computed(() => Math.max(0.01, 4 * focusIntensity.value))
 
 // 随机旋转速度（在 setup 内生成，确保多个实例独立）
 const speedX = (Math.random() - 0.5) * 2
