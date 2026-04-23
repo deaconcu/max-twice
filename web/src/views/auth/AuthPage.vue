@@ -109,7 +109,7 @@
 
                     <v-btn
                       type="submit"
-                      :disabled="isLoggingIn || !loginFormValid || !loginData.email || waitingForTurnstile === 'login'"
+                      :disabled="isLoggingIn || !loginFormValid || !loginData.email || waitingForTurnstile === 'login' || isInviteBlocked"
                       block
                       size="large"
                       color="primary"
@@ -219,7 +219,8 @@
                         !passwordFormValid ||
                         !loginData.email ||
                         !passwordData.password ||
-                        waitingForTurnstile === 'password-login'
+                        waitingForTurnstile === 'password-login' ||
+                        isInviteBlocked
                       "
                       block
                       size="large"
@@ -445,7 +446,7 @@ const heatmapCells = computed(() => {
 
   // 顶部每列堆几行 / 底部每列堆几行
   // 顶部只有薄薄一层（"头轻"），底部更饱满、参差不齐
-  const topRowCounts = [2, 1, 1, 1, 1, 1, 1, 2]
+  const topRowCounts = [3, 2, 3, 2, 3, 1, 3, 2]
   const bottomRowCounts = [5, 9, 6, 8, 4, 7, 10, 5]
 
   // 固定 seed 线性同余：每次渲染结果一致
@@ -506,7 +507,7 @@ const heatmapCells = computed(() => {
         cells.push({
           key: `b-${col}-${r}-${c}`,
           x: colStartX + c * STEP,
-          y: (rowsAvail - 1 - r) * STEP,
+          y: VB_H - CELL - r * STEP,
           ...pickCell(bottomColor),
         })
       }
@@ -544,6 +545,10 @@ const loginTurnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
 // token 一旦到达，自动触发真正的提交（用户无需再点）
 const waitingForTurnstile = ref<null | 'login' | 'password-login'>(null)
 
+// 命中内测拦截：禁用表单并保留错误提示，刷新页面才能再试
+// 设计意图：避免再次点击触发 Turnstile reset → CF 弹挑战框，观感突兀
+const isInviteBlocked = ref(false)
+
 const isLoggingIn = computed(() => authStore.isLoggingIn)
 const isVerifying = ref(false)
 const isResending = ref(false)
@@ -572,12 +577,13 @@ const modeConfig = computed(() => {
   }
 })
 
-const showError = (message: string) => {
+const showError = (message: string, persistent = false) => {
   if (errorTimer) clearTimeout(errorTimer)
   errorMessage.value = message
+  if (persistent) return
   errorTimer = setTimeout(() => {
     errorMessage.value = ''
-  }, 5000)
+  }, 10000)
 }
 
 const clearError = () => {
@@ -674,10 +680,16 @@ const doLoginSendCode = async () => {
     switchToVerify()
   } catch (error: unknown) {
     const err = error as { code?: number; message?: string }
+    const isInvite = err.code === BUSINESS_ERROR.INVITE_ONLY
     if (err.message) {
-      showError(err.message)
+      showError(err.message, isInvite)
     } else {
       showError(t('user.login.sendCodeFailed'))
+    }
+    if (isInvite) {
+      // 内测拒绝：锁住表单，避免重置 Turnstile 让 CF 再次弹挑战框
+      isInviteBlocked.value = true
+      return
     }
     loginTurnstileToken.value = ''
     loginTurnstileRef.value?.reset()
@@ -715,10 +727,15 @@ const doPasswordLogin = async () => {
     }
   } catch (error: unknown) {
     const err = error as { code?: number; message?: string }
+    const isInvite = err.code === BUSINESS_ERROR.INVITE_ONLY
     if (err.message) {
-      showError(err.message)
+      showError(err.message, isInvite)
     } else {
       showError(t('user.login.loginFailed'))
+    }
+    if (isInvite) {
+      isInviteBlocked.value = true
+      return
     }
     loginTurnstileToken.value = ''
     loginTurnstileRef.value?.reset()
@@ -956,9 +973,15 @@ a:hover {
 /* 错误提示 */
 .error-message {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   color: #e53935;
   font-size: 14px;
+  line-height: 1.5;
+}
+
+.error-message .v-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 /* 协议文案：区域按内容宽度居中，内部文本左对齐 */

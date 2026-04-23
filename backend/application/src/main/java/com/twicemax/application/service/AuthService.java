@@ -19,12 +19,14 @@ import com.twicemax.user.profile.UserDataService;
 import com.twicemax.user.profile.UserDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
 
+import static com.twicemax.shared.domain.Enums.UserRole;
 import static com.twicemax.shared.domain.Enums.UserState;
 
 /**
@@ -55,9 +57,28 @@ public class AuthService {
     private final UserConverter userConverter;
     private final SystemProperties systemProperties;
 
+    /**
+     * 内测开关：开启后非管理员无法登录（发送验证码 / 密码登录都会在入口处被拦），
+     * 给人"邀请制早期产品"的观感。默认 false，生产 yml 显式开启。
+     */
+    @Value("${app.invite-only-mode:false}")
+    private boolean inviteOnlyMode;
+
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
     );
+
+    /**
+     * 内测期：拒绝非管理员（包含邮箱尚未注册的新人）。
+     * 注意：对不存在的邮箱也要拦，否则泄露"该邮箱是否已注册"。
+     */
+    private void guardInviteOnly(String email) {
+        if (!inviteOnlyMode) return;
+        UserDO user = userDataService.getByEmail(email);
+        if (user == null || !user.hasRole(UserRole.ADMIN)) {
+            throw StatusCode.INVITE_ONLY.exception();
+        }
+    }
 
     // ========== 邮箱验证码登录 ==========
 
@@ -69,6 +90,8 @@ public class AuthService {
         if (!turnstileService.verify(turnstileToken, remoteIp)) {
             throw StatusCode.CAPTCHA_INVALID.exception();
         }
+
+        guardInviteOnly(email);
 
         OtpSessionService.Created session = otpSessionService.create(OtpScene.LOGIN, email);
         String code = otpCodeService.issue(OtpScene.LOGIN, email);
@@ -157,6 +180,8 @@ public class AuthService {
             validateEmailFormat(email);
             validatePassword(password);
 
+            guardInviteOnly(email);
+
             UserDO userDO = userDomainService.validateLoginIgnoringEmailValidated(email, password);
 
             if (Boolean.TRUE.equals(userDO.getEmailValidated())) {
@@ -183,6 +208,8 @@ public class AuthService {
     public PendingSessionDTO register(String email, String password) {
         validateEmailFormat(email);
         validatePassword(password);
+
+        guardInviteOnly(email);
 
         userDomainService.createUser(email, password);
 

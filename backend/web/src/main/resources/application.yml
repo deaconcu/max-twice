@@ -143,6 +143,8 @@ logging:
 app:
   # 默认语言
   default-language: en
+  # 内测模式：true 时仅管理员可登录/注册（通过环境变量 APP_INVITE_ONLY_MODE 控制）
+  invite-only-mode: ${INVITE_ONLY_MODE:false}
   # 图片上传配置
   upload:
     quota:

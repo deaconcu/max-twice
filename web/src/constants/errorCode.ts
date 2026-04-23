@@ -29,6 +29,8 @@ export const BUSINESS_ERROR = {
   PASSWORD_RESET_SESSION_INVALID: 1124,
   /** 密码重置未完成邮箱验证 */
   PASSWORD_RESET_NOT_VERIFIED: 1125,
+  /** 内测模式，仅受邀用户可用 */
+  INVITE_ONLY: 1127,
   /** 需要验证码 */
   CAPTCHA_REQUIRED: 2604,
 } as const
