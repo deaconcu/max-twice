@@ -15,19 +15,16 @@
       :y1="edge.y1"
       :x2="edge.x2"
       :y2="edge.y2"
-      :stroke="color"
+      :stroke="isFocusEdge(edge.i, edge.j) ? focusColor : color"
       :stroke-width="strokeWidth * 0.75"
-      opacity="0.25"
+      :opacity="isFocusEdge(edge.i, edge.j) ? 0.35 : 0.25"
     />
-    <!-- 背面顶点 -->
-    <circle
-      v-for="vertex in backVertices"
-      :key="`back-v-${vertex.i}`"
-      :cx="vertex.x"
-      :cy="vertex.y"
-      :r="vertexRadius * 0.75"
-      :fill="color"
-      opacity="0.3"
+    <!-- 焦点面：红色三角形填充 + 脉冲（正面/背面都画，背面更淡） -->
+    <polygon
+      v-if="focusFaceTriangle"
+      :points="focusFaceTriangle"
+      :fill="focusColor"
+      :opacity="focusFillOpacity"
     />
     <!-- 正面棱 - 实线，后画（覆盖） -->
     <line
@@ -37,18 +34,8 @@
       :y1="edge.y1"
       :x2="edge.x2"
       :y2="edge.y2"
-      :stroke="color"
-      :stroke-width="strokeWidth"
-    />
-    <!-- 正面顶点 -->
-    <circle
-      v-for="vertex in frontVertices"
-      :key="`front-v-${vertex.i}`"
-      :cx="vertex.x"
-      :cy="vertex.y"
-      :r="vertexRadius"
-      :fill="color"
-      opacity="0.85"
+      :stroke="isFocusEdge(edge.i, edge.j) ? focusColor : color"
+      :stroke-width="isFocusEdge(edge.i, edge.j) ? strokeWidth * 1.4 : strokeWidth"
     />
   </svg>
 </template>
@@ -59,6 +46,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 interface Props {
   size?: number
   color?: string
+  focusColor?: string
   strokeWidth?: number
   speed?: number
 }
@@ -66,6 +54,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   size: 100,
   color: '#3aa876',
+  focusColor: '#e53935',
   strokeWidth: 1.5,
   speed: 120,
 })
@@ -168,6 +157,11 @@ const isHovered = ref(false)
 // 呼吸效果（弱化：幅度更小，周期更慢）
 const breathScale = ref(1)
 const breathDirection = ref(1)
+
+// 焦点面：每隔几秒挑一个正面面进行红色脉冲
+const focusFace = ref<number>(-1)
+const focusFillOpacity = ref(0)
+let focusTimer: ReturnType<typeof setInterval> | null = null
 
 // 随机旋转速度（在 setup 内生成，确保多个实例独立）
 const speedX = (Math.random() - 0.5) * 2
@@ -286,6 +280,72 @@ const backVertices = computed(() =>
     .filter((p) => p.z > 0)
 )
 
+// 焦点面相关：当前焦点面的顶点 / 棱集合
+const focusVertexSet = computed<Set<number>>(() => {
+  if (focusFace.value < 0) return new Set()
+  return new Set(faces[focusFace.value])
+})
+
+const focusEdgeKeySet = computed<Set<string>>(() => {
+  const set = new Set<string>()
+  if (focusFace.value < 0) return set
+  const [a, b, c] = faces[focusFace.value]
+  const pairs: [number, number][] = [
+    [a, b],
+    [b, c],
+    [c, a],
+  ]
+  pairs.forEach(([i, j]) => {
+    set.add(`${Math.min(i, j)}-${Math.max(i, j)}`)
+  })
+  return set
+})
+
+function isFocusVertex(i: number): boolean {
+  return focusVertexSet.value.has(i)
+}
+
+function isFocusEdge(i: number, j: number): boolean {
+  return focusEdgeKeySet.value.has(`${Math.min(i, j)}-${Math.max(i, j)}`)
+}
+
+// 焦点面三角形 SVG points 字符串；不论正面背面都返回（背面会用更淡的 opacity）
+const focusFaceTriangle = computed<string | null>(() => {
+  if (focusFace.value < 0) return null
+  const [a, b, c] = faces[focusFace.value]
+  const pa = projectedVertices.value[a]
+  const pb = projectedVertices.value[b]
+  const pc = projectedVertices.value[c]
+  return `${pa.x},${pa.y} ${pb.x},${pb.y} ${pc.x},${pc.y}`
+})
+
+// 焦点面是否当前朝向观察者（正面）
+const isFocusFaceFront = computed(() => {
+  if (focusFace.value < 0) return false
+  return faceNormalZ(focusFace.value) < 0
+})
+
+// 当前是否处于"焦点高亮"状态（用于减慢旋转）
+const isFocusing = computed(() => focusFace.value >= 0)
+
+function pickFocusFace() {
+  // 找出所有正面面
+  const candidates: number[] = []
+  for (let i = 0; i < faces.length; i++) {
+    if (faceNormalZ(i) < 0) candidates.push(i)
+  }
+  if (candidates.length === 0) {
+    focusFace.value = -1
+    return
+  }
+  // 避免连续两次选到同一个
+  let pick = candidates[Math.floor(Math.random() * candidates.length)]
+  if (candidates.length > 1 && pick === focusFace.value) {
+    pick = candidates[(candidates.indexOf(pick) + 1) % candidates.length]
+  }
+  focusFace.value = pick
+}
+
 function animate(time: number) {
   if (!isVisible) {
     lastTime = 0
@@ -294,8 +354,11 @@ function animate(time: number) {
   if (lastTime) {
     const delta = (time - lastTime) / 1000
 
-    // hover 时慢速旋转（×0.2）
-    const speedMultiplier = isHovered.value ? 0.2 : 1
+    // hover 慢速 ×0.2；focus 中减速到 ×0.45 以便看清高亮面
+    let speedMultiplier = 1
+    if (isHovered.value) speedMultiplier = 0.2
+    else if (isFocusing.value) speedMultiplier = 0.45
+
     const baseSpeed = ((props.speed * Math.PI) / 180) * delta * speedMultiplier
     angleX.value += baseSpeed * speedX
     angleY.value += baseSpeed * speedY
@@ -308,6 +371,18 @@ function animate(time: number) {
       breathDirection.value = -1
     } else if (breathScale.value < 0.98) {
       breathDirection.value = 1
+    }
+
+    // 焦点面填充脉冲：opacity 在 0.15 ↔ 0.55 之间，约 1.6s 一周期；背面减半
+    if (focusFace.value >= 0) {
+      const period = 1.6
+      const t = (time / 1000) % period
+      // 平滑余弦插值
+      const k = 0.5 - 0.5 * Math.cos((t / period) * Math.PI * 2)
+      const base = 0.15 + 0.4 * k
+      focusFillOpacity.value = isFocusFaceFront.value ? base : base * 0.4
+    } else {
+      focusFillOpacity.value = 0
     }
   }
   lastTime = time
@@ -326,12 +401,18 @@ function handleVisibilityChange() {
 onMounted(() => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
   animationId = requestAnimationFrame(animate)
+  // 启动焦点切换：每 3.5 秒换一个正面面
+  pickFocusFace()
+  focusTimer = setInterval(pickFocusFace, 3500)
 })
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   if (animationId) {
     cancelAnimationFrame(animationId)
+  }
+  if (focusTimer) {
+    clearInterval(focusTimer)
   }
 })
 </script>
