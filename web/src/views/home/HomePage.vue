@@ -240,6 +240,10 @@ const openRoadmap = (roadmapId: number): void => {
   router.push(`/roadmap/${String(roadmapId)}`)
 }
 
+const goSetPassword = (): void => {
+  router.push('/settings/password')
+}
+
 // 暴露 homeLoading 供模板使用（可选，用于显示加载状态）
 void homeLoading
 </script>
@@ -272,6 +276,18 @@ void homeLoading
                 >
                   {{ t('home.greeting', { name: userName }) }}
                 </h1>
+                <!-- 设置密码入口（仅无密码用户可见） -->
+                <v-btn
+                  v-if="userStore.currentUser?.hasPassword === false"
+                  icon="mdi-lock-plus-outline"
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  :title="t('home.setPasswordHint')"
+                  :aria-label="t('home.setPasswordHint')"
+                  class="flex-shrink-0"
+                  @click="goSetPassword"
+                />
                 <!-- 连续学习天数 -->
                 <v-chip
                   v-if="stats.learningDays > 0"

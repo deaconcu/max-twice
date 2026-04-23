@@ -25,6 +25,8 @@ const emit = defineEmits<{
 const containerRef = ref<HTMLDivElement | null>(null)
 const widgetId = ref<string | null>(null)
 const isLoading = ref(true)
+// Cloudflare 弹出可见挑战框（interaction-only 模式下偶发）
+const isInteracting = ref(false)
 let checkInterval: ReturnType<typeof setInterval> | null = null
 
 // 加载 Turnstile 脚本
@@ -95,15 +97,22 @@ const renderWidget = () => {
     retry: props.retry,
     callback: (token: string) => {
       isLoading.value = false
+      // 不撤 isInteracting：验证成功后 widget 显示"已验证"状态，撤掉会导致布局跳动
       emit('verify', token)
     },
     'error-callback': () => {
       isLoading.value = false
+      isInteracting.value = false
       emit('error')
     },
     'expired-callback': () => {
       emit('expire')
     },
+    'before-interactive-callback': () => {
+      isInteracting.value = true
+    },
+    // after-interactive-callback 不撤间距：验证完成后 widget 仍显示"已验证"状态，
+    // 撤掉会导致布局跳动；统一在 reset() 里清空
   })
 
   // 开始检查 iframe
@@ -115,6 +124,7 @@ const reset = () => {
   if (widgetId.value && window.turnstile) {
     isLoading.value = true
     window.turnstile.reset(widgetId.value)
+    isInteracting.value = false
     checkIframeLoaded()
   }
 }
@@ -154,7 +164,10 @@ watch(
 <template>
   <div
     class="turnstile-wrapper"
-    :class="{ 'interaction-only': props.appearance === 'interaction-only' }"
+    :class="{
+      'interaction-only': props.appearance === 'interaction-only',
+      'is-interacting': isInteracting,
+    }"
   >
     <div v-if="isLoading && props.appearance !== 'interaction-only'" class="turnstile-loading">
       <div class="loading-spinner"></div>
@@ -181,6 +194,12 @@ watch(
 
 .turnstile-wrapper.interaction-only {
   min-height: 0;
+}
+
+/* 挑战框弹出时与上下元素留出间距 */
+.turnstile-wrapper.interaction-only.is-interacting {
+  margin-top: 16px;
+  margin-bottom: 16px;
 }
 
 .turnstile-container {

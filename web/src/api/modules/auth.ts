@@ -7,6 +7,36 @@ import type { User, AuthLoginResponse, PendingSession, PasswordResetSession } fr
  */
 export const authApi = {
   /**
+   * 邮箱验证码登录 - 发送验证码
+   */
+  loginSendCode(
+    email: string,
+    turnstileToken: string
+  ): Promise<ApiResponse<PendingSession>> {
+    return apiClient.post('/v1/auth/login/send-code', { email, turnstileToken })
+  },
+
+  /**
+   * 邮箱验证码登录 - 校验验证码（不存在用户时自动创建）
+   */
+  loginVerifyCode(
+    pendingSessionToken: string,
+    code: string
+  ): Promise<ApiResponse<User>> {
+    return apiClient.post('/v1/auth/login/verify-code', {
+      pendingSessionToken,
+      code,
+    })
+  },
+
+  /**
+   * 重新发送登录验证码
+   */
+  resendLoginCode(pendingSessionToken: string): Promise<ApiResponse<PendingSession>> {
+    return apiClient.post('/v1/auth/login/resend-code', { pendingSessionToken })
+  },
+
+  /**
    * 用户登录
    * 响应 data：
    * - 已验证邮箱：{ user: {...} }
@@ -17,7 +47,7 @@ export const authApi = {
     password: string,
     turnstileToken?: string
   ): Promise<ApiResponse<AuthLoginResponse>> {
-    return apiClient.post('/v1/auth/login', {
+    return apiClient.post('/v1/auth/login/password', {
       email,
       password,
       turnstileToken,

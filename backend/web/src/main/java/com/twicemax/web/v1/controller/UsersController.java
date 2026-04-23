@@ -1,34 +1,18 @@
 package com.twicemax.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.stp.StpUtil;
-import com.twicemax.application.dto.request.LoginRequest;
-import com.twicemax.application.dto.request.PasswordResetConfirmRequest;
-import com.twicemax.application.dto.request.PasswordResetRequest;
-import com.twicemax.application.dto.request.PasswordResetVerifyRequest;
-import com.twicemax.application.dto.request.RegisterRequest;
-import com.twicemax.application.dto.request.ResendVerificationCodeRequest;
 import com.twicemax.application.dto.request.UpdateUserRequest;
-import com.twicemax.application.dto.request.VerifyEmailRequest;
 import com.twicemax.application.dto.response.ImageUploadResponse;
-import com.twicemax.application.dto.response.user.AuthLoginResponseDTO;
-import com.twicemax.application.dto.response.user.PasswordResetSessionDTO;
-import com.twicemax.application.dto.response.user.PendingSessionDTO;
 import com.twicemax.application.dto.response.user.UserBriefDTO;
 import com.twicemax.application.dto.response.user.UserProfileDTO;
 import com.twicemax.application.dto.response.user.UserPublicDTO;
 import com.twicemax.application.service.ImageUploadService;
 import com.twicemax.application.service.UserService;
-import com.twicemax.infrastructure.captcha.TurnstileService;
-import com.twicemax.shared.domain.exception.StatusCode;
 import com.twicemax.user.profile.UserDO;
-import com.twicemax.user.profile.UserDomainService;
 import com.twicemax.web.ratelimit.LimitType;
 import com.twicemax.web.ratelimit.RateLimit;
-import com.twicemax.web.util.IpUtils;
 import com.twicemax.web.v1.annotation.CurrentUser;
 import com.twicemax.application.dto.ApiResponse;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -52,8 +36,6 @@ public class UsersController {
 
     private final UserService userService;
     private final ImageUploadService imageUploadService;
-    private final TurnstileService turnstileService;
-    private final UserDomainService userDomainService;
 
     /**
      * 获取当前用户信息
@@ -126,147 +108,5 @@ public class UsersController {
     public ApiResponse<List<UserBriefDTO>> searchUsers(@RequestParam @NotBlank(message = "搜索名称不能为空") String name) {
         List<UserBriefDTO> users = userService.searchUsers(name);
         return ApiResponse.success(users);
-    }
-
-    /**
-     * 用户注册
-     * 映射: POST /user → POST /api/v1/auth/register
-     */
-    @PostMapping("/auth/register")
-    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<PendingSessionDTO> register(@RequestBody @Valid RegisterRequest request, HttpServletRequest httpRequest) {
-        // 验证 Turnstile
-        String remoteIp = IpUtils.getIpAddress(httpRequest);
-        if (!turnstileService.verify(request.getTurnstileToken(), remoteIp)) {
-            throw StatusCode.CAPTCHA_INVALID.exception();
-        }
-
-        PendingSessionDTO pending = userService.register(request.getEmail(), request.getPassword());
-        return ApiResponse.success(pending);
-    }
-
-    /**
-     * 用户登录
-     * 映射: POST /login → POST /api/v1/auth/login
-     * <p>
-     * 响应 data：
-     * <ul>
-     *   <li>邮箱已验证：{@code user} 非空，Controller 已完成 StpUtil.login</li>
-     *   <li>邮箱未验证：{@code pending} 非空，前端跳转验证码页</li>
-     * </ul>
-     */
-    @PostMapping("/auth/login")
-    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<AuthLoginResponseDTO> login(@RequestBody @Valid LoginRequest request, HttpServletRequest httpRequest) {
-        String remoteIp = IpUtils.getIpAddress(httpRequest);
-
-        // 检查是否需要验证码
-        if (userDomainService.isCaptchaRequired(remoteIp)) {
-            if (request.getTurnstileToken() == null || request.getTurnstileToken().isEmpty()) {
-                throw StatusCode.CAPTCHA_REQUIRED.exception();
-            }
-            if (!turnstileService.verify(request.getTurnstileToken(), remoteIp)) {
-                throw StatusCode.CAPTCHA_INVALID.exception();
-            }
-            userDomainService.clearLoginFailures(remoteIp);
-        }
-
-        try {
-            AuthLoginResponseDTO response = userService.validateLogin(request.getEmail(), request.getPassword());
-
-            // 邮箱已验证 → 走正式登录；未验证 → 仅返回 pending
-            if (response.getUser() != null) {
-                StpUtil.login(response.getUser().getId());
-            }
-
-            return ApiResponse.success(response);
-        } catch (Exception e) {
-            userDomainService.recordLoginFailure(remoteIp);
-            throw e;
-        }
-    }
-
-    /**
-     * 邮箱验证
-     * 映射: POST /user/validate → POST /api/v1/auth/validate-email
-     */
-    @PostMapping("/auth/validate-email")
-    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<UserProfileDTO> validateEmail(@RequestBody @Valid VerifyEmailRequest request) {
-        UserProfileDTO userDTO = userService.verifyEmailWithCode(
-                request.getPendingSessionToken(), request.getCode());
-
-        // 验证成功后自动登录
-        StpUtil.login(userDTO.getId());
-
-        return ApiResponse.success(userDTO);
-    }
-
-    /**
-     * 重新发送验证码
-     * POST /api/v1/auth/resend-verification-code
-     */
-    @PostMapping("/auth/resend-verification-code")
-    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<PendingSessionDTO> resendVerificationCode(@RequestBody @Valid ResendVerificationCodeRequest request) {
-        PendingSessionDTO pending = userService.resendVerificationCode(request.getPendingSessionToken());
-        return ApiResponse.success(pending);
-    }
-
-    /**
-     * 忘记密码 - 第 1 步：请求发送重置验证码
-     * POST /api/v1/auth/password-reset/request
-     */
-    @PostMapping("/auth/password-reset/request")
-    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<PasswordResetSessionDTO> requestPasswordReset(
-            @RequestBody @Valid PasswordResetRequest request,
-            HttpServletRequest httpRequest) {
-        // Turnstile 强制校验
-        String remoteIp = IpUtils.getIpAddress(httpRequest);
-        if (!turnstileService.verify(request.getTurnstileToken(), remoteIp)) {
-            throw StatusCode.CAPTCHA_INVALID.exception();
-        }
-        PasswordResetSessionDTO session = userService.requestPasswordReset(request.getEmail());
-        return ApiResponse.success(session);
-    }
-
-    /**
-     * 忘记密码 - 重发验证码
-     * POST /api/v1/auth/password-reset/resend
-     */
-    @PostMapping("/auth/password-reset/resend")
-    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<PasswordResetSessionDTO> resendPasswordResetCode(
-            @RequestBody @Valid ResendVerificationCodeRequest request) {
-        // 复用 ResendVerificationCodeRequest（pendingSessionToken 字段语义上就是一个"会话 token"）
-        PasswordResetSessionDTO session = userService.resendPasswordResetCode(request.getPendingSessionToken());
-        return ApiResponse.success(session);
-    }
-
-    /**
-     * 忘记密码 - 第 2 步：校验验证码
-     * POST /api/v1/auth/password-reset/verify-code
-     */
-    @PostMapping("/auth/password-reset/verify-code")
-    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<Void> verifyPasswordResetCode(@RequestBody @Valid PasswordResetVerifyRequest request) {
-        userService.verifyPasswordResetCode(request.getResetSessionToken(), request.getCode());
-        return ApiResponse.success();
-    }
-
-    /**
-     * 忘记密码 - 第 3 步：确认新密码
-     * POST /api/v1/auth/password-reset/confirm
-     * <p>
-     * 成功后踢掉该用户已登录的所有 Sa-Token 会话，强制重新登录。
-     */
-    @PostMapping("/auth/password-reset/confirm")
-    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<Void> confirmPasswordReset(@RequestBody @Valid PasswordResetConfirmRequest request) {
-        Long userId = userService.confirmPasswordReset(request.getResetSessionToken(), request.getNewPassword());
-        // 踢掉该用户所有已登录 token（含当前设备之外的其他端）
-        StpUtil.logout(userId);
-        return ApiResponse.success();
     }
 }

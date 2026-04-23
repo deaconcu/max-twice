@@ -4,6 +4,7 @@
  */
 
 export { authApi } from './modules/auth'
+export { accountApi } from './modules/account'
 export { userApi, followApi } from './modules/user'
 export { courseApi, subscriptionApi } from './modules/course'
 export { postApi } from './modules/post'

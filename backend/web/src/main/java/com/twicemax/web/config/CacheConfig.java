@@ -28,14 +28,23 @@ import java.util.Map;
  * @since 2024-01-20
  */
 @Configuration
-@ConditionalOnProperty(name = "app.cache.type", havingValue = "redis", matchIfMissing = false)
+@ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = false)
 public class CacheConfig extends CachingConfigurerSupport {
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory, ObjectMapper objectMapper) {
-        // 使用已配置的 ObjectMapper 创建序列化器
+        // 复制全局 ObjectMapper（携带 JavaTimeModule 等已注册模块），再在副本上激活 default typing：
+        //  - 序列化时写入 @class，反序列化时按 @class 还原为原始类型，否则反序列化是 LinkedHashMap
+        //  - 不直接改全局 ObjectMapper，避免 default typing 影响 web 请求/响应 JSON
+        // 与 AppConfiguration.redisTemplate 保持一致的做法。
+        ObjectMapper cacheObjectMapper = objectMapper.copy();
+        cacheObjectMapper.activateDefaultTyping(
+                cacheObjectMapper.getPolymorphicTypeValidator(),
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY);
+
         GenericJackson2JsonRedisSerializer jsonRedisSerializer =
-                new GenericJackson2JsonRedisSerializer(objectMapper);
+                new GenericJackson2JsonRedisSerializer(cacheObjectMapper);
 
         // 默认缓存配置（10分钟，带语言前缀）
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()

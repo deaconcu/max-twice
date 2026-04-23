@@ -202,6 +202,7 @@ public interface UserConverter {
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     @Mapping(target = "timezone")
+    @Mapping(target = "hasPassword", expression = "java(userDO != null && userDO.getPassword() != null && !userDO.getPassword().isEmpty())")
     UserProfileDTO toProfileDTO(UserDO userDO);
 
     /**

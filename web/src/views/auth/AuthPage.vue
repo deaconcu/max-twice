@@ -510,7 +510,7 @@
               <!-- 动态表单区域 -->
               <v-card-text class="px-8 pb-8">
                 <Transition name="slide-fade" mode="out-in">
-                  <!-- 登录表单 -->
+                  <!-- 登录表单（仅邮箱 + Turnstile） -->
                   <v-form
                     v-if="currentMode === 'login'"
                     key="login"
@@ -532,70 +532,55 @@
                       class="mb-4"
                     />
 
-                    <v-text-field
-                      v-model="loginData.password"
-                      :label="t('user.login.password')"
-                      :placeholder="t('user.login.passwordPlaceholder')"
-                      :type="showLoginPassword ? 'text' : 'password'"
-                      :maxlength="passwordMaxLength"
-                      :disabled="isLoggingIn"
-                      variant="outlined"
-                      density="comfortable"
-                      class="mb-2"
-                    >
-                      <template #append-inner>
-                        <v-icon
-                          tabindex="-1"
-                          style="cursor: pointer"
-                          @click="showLoginPassword = !showLoginPassword"
-                        >
-                          {{ showLoginPassword ? 'mdi-eye-off' : 'mdi-eye' }}
-                        </v-icon>
-                      </template>
-                    </v-text-field>
-
-                    <div class="text-right mb-6">
-                      <a
-                        href="#"
-                        class="text-caption text-primary text-decoration-none"
-                        @click.prevent="switchToForgot"
-                      >
-                        {{ t('user.login.forgotPassword') }}
-                      </a>
-                    </div>
-
                     <div v-if="errorMessage" class="error-message mb-4">
                       <v-icon size="16" class="mr-1">mdi-alert-circle</v-icon>
                       {{ errorMessage }}
                     </div>
 
+                    <v-btn
+                      type="submit"
+                      :disabled="isLoggingIn || !loginFormValid || !loginData.email || waitingForTurnstile === 'login'"
+                      block
+                      size="large"
+                      color="primary"
+                      class="text-none font-weight-bold mb-6"
+                    >
+                      <template v-if="waitingForTurnstile === 'login'">
+                        <v-progress-circular indeterminate size="18" width="2" class="mr-2" />
+                        {{ t('user.login.captchaVerifying') }}
+                      </template>
+                      <template v-else-if="isLoggingIn">
+                        <v-progress-circular indeterminate size="18" width="2" class="mr-2" />
+                        {{ t('user.login.loggingIn') }}
+                      </template>
+                      <template v-else>
+                        {{ t('user.login.loginButton') }}
+                      </template>
+                    </v-btn>
+
                     <TurnstileWidget
-                      v-if="showLoginCaptcha"
                       ref="loginTurnstileRef"
-                      class="mb-4"
+                      appearance="interaction-only"
                       @verify="onLoginTurnstileVerify"
                       @error="onTurnstileError"
                       @expire="onLoginTurnstileExpire"
                     />
 
-                    <v-btn
-                      type="submit"
-                      :loading="isLoggingIn"
-                      :disabled="
-                        isLoggingIn ||
-                        !loginFormValid ||
-                        !loginData.email ||
-                        !loginData.password
-                      "
-                      block
-                      size="large"
-                      color="primary"
-                      class="text-none font-weight-bold mb-3"
-                    >
-                      {{ isLoggingIn ? t('user.login.loggingIn') : t('user.login.loginButton') }}
-                    </v-btn>
+                    <p class="text-body-2 text-center mb-4">
+                      <a
+                        href="#"
+                        class="text-primary text-decoration-none"
+                        @click.prevent="switchToPasswordLogin"
+                      >
+                        {{ t('user.login.usePasswordLogin') }}
+                      </a>
+                    </p>
 
-                    <p class="text-caption text-center text-medium-emphasis mb-4">
+                    <p class="text-caption text-center text-medium-emphasis mb-2">
+                      {{ t('user.login.autoRegisterHint') }}
+                    </p>
+
+                    <p class="text-caption text-medium-emphasis mb-0 agreement-text">
                       {{ t('user.login.agreementPrefix') }}
                       <a href="#" class="text-primary text-decoration-none">{{
                         t('user.login.userAgreement')
@@ -603,42 +588,27 @@
                       {{ t('user.login.agreementMiddle') }}
                       <a href="#" class="text-primary text-decoration-none">{{
                         t('user.login.privacyPolicy')
-                      }}</a
-                      >。
+                      }}</a>
                     </p>
-
-                    <v-divider class="my-6" />
-
-                    <div class="text-center">
-                      <span class="text-body-2 text-medium-emphasis">
-                        {{ t('user.login.registerLink') }}
-                      </span>
-                      <a
-                        href="#"
-                        class="text-body-2 text-primary text-decoration-none font-weight-bold ml-1"
-                        @click.prevent="switchToRegister"
-                      >
-                        {{ t('user.login.registerNow') }}
-                      </a>
-                    </div>
                   </v-form>
 
-                  <!-- 注册表单 -->
+
+                  <!-- 密码登录表单 -->
                   <v-form
-                    v-else-if="currentMode === 'register'"
-                    key="register"
-                    ref="registerFormRef"
-                    v-model="registerFormValid"
-                    @submit.prevent="handleRegister"
+                    v-else-if="currentMode === 'password-login'"
+                    key="password-login"
+                    ref="passwordFormRef"
+                    v-model="passwordFormValid"
+                    @submit.prevent="handlePasswordLogin"
                   >
                     <v-text-field
-                      v-model="registerData.email"
-                      :label="t('user.register.email')"
-                      type="email"
+                      v-model="loginData.email"
+                      :label="t('user.login.email')"
+                      :placeholder="t('user.login.emailPlaceholder')"
                       :rules="emailRules"
                       :counter="emailMaxLength"
                       :maxlength="emailMaxLength"
-                      :disabled="isRegistering"
+                      :disabled="isLoggingIn"
                       validate-on="blur"
                       variant="outlined"
                       density="comfortable"
@@ -646,68 +616,23 @@
                     />
 
                     <v-text-field
-                      v-model="registerData.password"
-                      :label="t('user.register.password')"
-                      :type="showRegisterPassword ? 'text' : 'password'"
-                      :rules="passwordRules"
-                      :counter="passwordMaxLength"
-                      :maxlength="passwordMaxLength"
-                      :disabled="isRegistering"
-                      validate-on="blur"
+                      v-model="passwordData.password"
+                      :label="t('user.login.password')"
+                      :placeholder="t('user.login.passwordPlaceholder')"
+                      :type="passwordData.showPassword ? 'text' : 'password'"
+                      :disabled="isLoggingIn"
+                      autocomplete="current-password"
                       variant="outlined"
                       density="comfortable"
                       class="mb-4"
                     >
                       <template #append-inner>
-                        <div
-                          v-if="registerData.password"
-                          class="strength-segments mr-2"
-                        >
-                          <span
-                            class="text-caption strength-label"
-                            :class="`text-${passwordStrengthColor}`"
-                          >
-                            {{ passwordStrengthLabel }}
-                          </span>
-                          <span
-                            v-for="i in 5"
-                            :key="i"
-                            class="seg"
-                            :class="i <= passwordScore + 1 ? `bg-${passwordStrengthColor}` : ''"
-                          />
-                        </div>
                         <v-icon
                           tabindex="-1"
                           style="cursor: pointer"
-                          @click="showRegisterPassword = !showRegisterPassword"
+                          @click="passwordData.showPassword = !passwordData.showPassword"
                         >
-                          {{ showRegisterPassword ? 'mdi-eye-off' : 'mdi-eye' }}
-                        </v-icon>
-                      </template>
-                    </v-text-field>
-
-                    <!-- 密码强度条已移入输入框内 -->
-
-                    <v-text-field
-                      v-model="registerData.confirmPassword"
-                      :label="t('user.register.confirmPassword')"
-                      :type="showConfirmPassword ? 'text' : 'password'"
-                      :rules="confirmPasswordRules"
-                      :counter="passwordMaxLength"
-                      :maxlength="passwordMaxLength"
-                      :disabled="isRegistering"
-                      validate-on="blur"
-                      variant="outlined"
-                      density="comfortable"
-                      class="mb-2"
-                    >
-                      <template #append-inner>
-                        <v-icon
-                          tabindex="-1"
-                          style="cursor: pointer"
-                          @click="showConfirmPassword = !showConfirmPassword"
-                        >
-                          {{ showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye' }}
+                          {{ passwordData.showPassword ? 'mdi-eye-off' : 'mdi-eye' }}
                         </v-icon>
                       </template>
                     </v-text-field>
@@ -717,39 +642,52 @@
                       {{ errorMessage }}
                     </div>
 
-                    <TurnstileWidget
-                      ref="registerTurnstileRef"
-                      appearance="interaction-only"
-                      class="mb-4"
-                      @verify="onRegisterTurnstileVerify"
-                      @error="onTurnstileError"
-                      @expire="onRegisterTurnstileExpire"
-                    />
-
                     <v-btn
                       type="submit"
-                      :loading="isRegistering"
                       :disabled="
-                        isRegistering ||
-                        !registerFormValid ||
-                        !passwordAcceptable ||
-                        !registerData.email ||
-                        !registerData.password ||
-                        !registerData.confirmPassword
+                        isLoggingIn ||
+                        !passwordFormValid ||
+                        !loginData.email ||
+                        !passwordData.password ||
+                        waitingForTurnstile === 'password-login'
                       "
                       block
                       size="large"
                       color="primary"
-                      class="text-none font-weight-bold mb-3"
+                      class="text-none font-weight-bold mb-6"
                     >
-                      {{
-                        isRegistering
-                          ? t('user.register.registering')
-                          : t('user.register.registerButton')
-                      }}
+                      <template v-if="waitingForTurnstile === 'password-login'">
+                        <v-progress-circular indeterminate size="18" width="2" class="mr-2" />
+                        {{ t('user.login.captchaVerifying') }}
+                      </template>
+                      <template v-else-if="isLoggingIn">
+                        <v-progress-circular indeterminate size="18" width="2" class="mr-2" />
+                        {{ t('user.login.loggingIn') }}
+                      </template>
+                      <template v-else>
+                        {{ t('user.login.loginWithPasswordButton') }}
+                      </template>
                     </v-btn>
 
-                    <p class="text-caption text-center text-medium-emphasis mb-4">
+                    <TurnstileWidget
+                      ref="loginTurnstileRef"
+                      appearance="interaction-only"
+                      @verify="onLoginTurnstileVerify"
+                      @error="onTurnstileError"
+                      @expire="onLoginTurnstileExpire"
+                    />
+
+                    <p class="text-body-2 text-center mb-4">
+                      <a
+                        href="#"
+                        class="text-primary text-decoration-none"
+                        @click.prevent="switchToCodeLogin"
+                      >
+                        {{ t('user.login.useCodeLogin') }}
+                      </a>
+                    </p>
+
+                    <p class="text-caption text-medium-emphasis mb-0 agreement-text">
                       {{ t('user.login.agreementPrefix') }}
                       <a href="#" class="text-primary text-decoration-none">{{
                         t('user.login.userAgreement')
@@ -757,25 +695,10 @@
                       {{ t('user.login.agreementMiddle') }}
                       <a href="#" class="text-primary text-decoration-none">{{
                         t('user.login.privacyPolicy')
-                      }}</a
-                      >。
+                      }}</a>
                     </p>
-
-                    <v-divider class="my-6" />
-
-                    <div class="text-center">
-                      <span class="text-body-2 text-medium-emphasis">
-                        {{ t('user.register.loginLink') }}
-                      </span>
-                      <a
-                        href="#"
-                        class="text-body-2 text-primary text-decoration-none font-weight-bold ml-1"
-                        @click.prevent="switchToLogin"
-                      >
-                        {{ t('user.register.loginNow') }}
-                      </a>
-                    </div>
                   </v-form>
+
 
                   <!-- 邮箱验证表单 -->
                   <v-form
@@ -856,291 +779,12 @@
                     <v-divider class="my-6" />
 
                     <div class="text-center">
-                      <span class="text-body-2 text-medium-emphasis">
-                        {{ t('user.verifyEmail.alreadyVerified') }}
-                      </span>
-                      <a
-                        href="#"
-                        class="text-body-2 text-primary text-decoration-none font-weight-bold ml-1"
-                        @click.prevent="switchToLogin"
-                      >
-                        {{ t('user.verifyEmail.loginNow') }}
-                      </a>
-                    </div>
-                  </v-form>
-
-                  <!-- 忘记密码：输入邮箱 -->
-                  <v-form
-                    v-else-if="currentMode === 'forgot'"
-                    key="forgot"
-                    ref="forgotFormRef"
-                    v-model="forgotFormValid"
-                    @submit.prevent="handleRequestReset"
-                  >
-                    <v-text-field
-                      v-model="forgotData.email"
-                      :label="t('user.forgotPassword.emailLabel')"
-                      :placeholder="t('user.forgotPassword.emailPlaceholder')"
-                      :rules="emailRules"
-                      :counter="emailMaxLength"
-                      :maxlength="emailMaxLength"
-                      :disabled="isRequestingReset"
-                      validate-on="blur"
-                      variant="outlined"
-                      density="comfortable"
-                      class="mb-4"
-                    />
-
-                    <div v-if="errorMessage" class="error-message mb-4">
-                      <v-icon size="16" class="mr-1">mdi-alert-circle</v-icon>
-                      {{ errorMessage }}
-                    </div>
-
-                    <TurnstileWidget
-                      ref="forgotTurnstileRef"
-                      appearance="interaction-only"
-                      class="mb-4"
-                      @verify="onForgotTurnstileVerify"
-                      @error="onTurnstileError"
-                      @expire="onForgotTurnstileExpire"
-                    />
-
-                    <v-btn
-                      type="submit"
-                      :loading="isRequestingReset"
-                      :disabled="
-                        isRequestingReset ||
-                        !forgotFormValid ||
-                        !forgotData.email ||
-                        !forgotTurnstileToken
-                      "
-                      block
-                      size="large"
-                      color="primary"
-                      class="text-none font-weight-bold mb-3"
-                    >
-                      {{
-                        isRequestingReset
-                          ? t('user.forgotPassword.submitting')
-                          : t('user.forgotPassword.submitButton')
-                      }}
-                    </v-btn>
-
-                    <v-divider class="my-6" />
-
-                    <div class="text-center">
                       <a
                         href="#"
                         class="text-body-2 text-primary text-decoration-none font-weight-bold"
                         @click.prevent="switchToLogin"
                       >
-                        {{ t('user.forgotPassword.backToLogin') }}
-                      </a>
-                    </div>
-                  </v-form>
-
-                  <!-- 忘记密码：输入验证码 -->
-                  <v-form
-                    v-else-if="currentMode === 'reset-verify'"
-                    key="reset-verify"
-                    ref="resetVerifyFormRef"
-                    @submit.prevent="handleVerifyResetCode"
-                  >
-                    <v-alert
-                      color="primary"
-                      variant="tonal"
-                      density="compact"
-                      rounded="lg"
-                      class="mb-4"
-                    >
-                      <div class="d-flex align-center">
-                        <v-icon size="20" class="mr-2">mdi-email-outline</v-icon>
-                        <span class="text-body-2">
-                          {{ t('user.verifyEmail.codeSentTo') }}
-                          <strong>{{ resetEmail }}</strong>
-                        </span>
-                      </div>
-                    </v-alert>
-
-                    <v-text-field
-                      v-model="resetVerifyData.code"
-                      :label="t('user.verifyEmail.codeLabel')"
-                      :placeholder="t('user.verifyEmail.codePlaceholder')"
-                      :rules="[verificationCodeRule]"
-                      :disabled="isVerifyingReset"
-                      validate-on="blur"
-                      variant="outlined"
-                      density="comfortable"
-                      class="mb-4"
-                      counter="6"
-                      maxlength="6"
-                      @input="resetVerifyData.code = resetVerifyData.code.replace(/\D/g, '')"
-                    />
-
-                    <div v-if="errorMessage" class="error-message mb-4">
-                      <v-icon size="16" class="mr-1">mdi-alert-circle</v-icon>
-                      {{ errorMessage }}
-                    </div>
-
-                    <v-btn
-                      type="submit"
-                      :loading="isVerifyingReset"
-                      :disabled="isVerifyingReset || resetVerifyData.code.length !== 6"
-                      block
-                      size="large"
-                      color="primary"
-                      class="text-none font-weight-bold mb-3"
-                    >
-                      {{
-                        isVerifyingReset
-                          ? t('user.verifyEmail.verifying')
-                          : t('user.verifyEmail.verifyButton')
-                      }}
-                    </v-btn>
-
-                    <div class="text-center mb-4">
-                      <v-btn
-                        variant="text"
-                        color="primary"
-                        size="small"
-                        :disabled="isResendingReset || countdown > 0"
-                        :loading="isResendingReset"
-                        @click="handleResendResetCode"
-                      >
-                        {{
-                          countdown > 0
-                            ? t('user.verifyEmail.resendCountdown', { seconds: countdown })
-                            : t('user.verifyEmail.resendButton')
-                        }}
-                      </v-btn>
-                    </div>
-
-                    <v-divider class="my-6" />
-
-                    <div class="text-center">
-                      <a
-                        href="#"
-                        class="text-body-2 text-primary text-decoration-none font-weight-bold"
-                        @click.prevent="switchToLogin"
-                      >
-                        {{ t('user.forgotPassword.backToLogin') }}
-                      </a>
-                    </div>
-                  </v-form>
-
-                  <!-- 忘记密码：设置新密码 -->
-                  <v-form
-                    v-else-if="currentMode === 'reset-confirm'"
-                    key="reset-confirm"
-                    ref="resetConfirmFormRef"
-                    v-model="resetConfirmFormValid"
-                    @submit.prevent="handleConfirmReset"
-                  >
-                    <v-text-field
-                      v-model="resetConfirmData.password"
-                      :label="t('user.forgotPassword.newPassword')"
-                      :type="showResetPassword ? 'text' : 'password'"
-                      :rules="passwordRules"
-                      :counter="passwordMaxLength"
-                      :maxlength="passwordMaxLength"
-                      :disabled="isConfirmingReset"
-                      validate-on="blur"
-                      variant="outlined"
-                      density="comfortable"
-                      class="mb-4"
-                    >
-                      <template #append-inner>
-                        <div
-                          v-if="resetConfirmData.password"
-                          class="strength-segments mr-2"
-                        >
-                          <span
-                            class="text-caption strength-label"
-                            :class="`text-${resetPasswordStrengthColor}`"
-                          >
-                            {{ resetPasswordStrengthLabel }}
-                          </span>
-                          <span
-                            v-for="i in 5"
-                            :key="i"
-                            class="seg"
-                            :class="
-                              i <= resetPasswordScore + 1
-                                ? `bg-${resetPasswordStrengthColor}`
-                                : ''
-                            "
-                          />
-                        </div>
-                        <v-icon
-                          tabindex="-1"
-                          style="cursor: pointer"
-                          @click="showResetPassword = !showResetPassword"
-                        >
-                          {{ showResetPassword ? 'mdi-eye-off' : 'mdi-eye' }}
-                        </v-icon>
-                      </template>
-                    </v-text-field>
-
-                    <v-text-field
-                      v-model="resetConfirmData.confirmPassword"
-                      :label="t('user.forgotPassword.confirmPassword')"
-                      :type="showResetConfirmPassword ? 'text' : 'password'"
-                      :rules="resetConfirmPasswordRules"
-                      :counter="passwordMaxLength"
-                      :maxlength="passwordMaxLength"
-                      :disabled="isConfirmingReset"
-                      validate-on="blur"
-                      variant="outlined"
-                      density="comfortable"
-                      class="mb-2"
-                    >
-                      <template #append-inner>
-                        <v-icon
-                          tabindex="-1"
-                          style="cursor: pointer"
-                          @click="showResetConfirmPassword = !showResetConfirmPassword"
-                        >
-                          {{ showResetConfirmPassword ? 'mdi-eye-off' : 'mdi-eye' }}
-                        </v-icon>
-                      </template>
-                    </v-text-field>
-
-                    <div v-if="errorMessage" class="error-message mb-4">
-                      <v-icon size="16" class="mr-1">mdi-alert-circle</v-icon>
-                      {{ errorMessage }}
-                    </div>
-
-                    <v-btn
-                      type="submit"
-                      :loading="isConfirmingReset"
-                      :disabled="
-                        isConfirmingReset ||
-                        !resetConfirmFormValid ||
-                        !resetPasswordAcceptable ||
-                        !resetConfirmData.password ||
-                        !resetConfirmData.confirmPassword
-                      "
-                      block
-                      size="large"
-                      color="primary"
-                      class="text-none font-weight-bold mb-3"
-                    >
-                      {{
-                        isConfirmingReset
-                          ? t('user.forgotPassword.submittingReset')
-                          : t('user.forgotPassword.submitReset')
-                      }}
-                    </v-btn>
-
-                    <v-divider class="my-6" />
-
-                    <div class="text-center">
-                      <a
-                        href="#"
-                        class="text-body-2 text-primary text-decoration-none font-weight-bold"
-                        @click.prevent="switchToLogin"
-                      >
-                        {{ t('user.forgotPassword.backToLogin') }}
+                        {{ t('user.verifyEmail.changeEmail') }}
                       </a>
                     </div>
                   </v-form>
@@ -1158,13 +802,9 @@
 import { ref, computed, watch, onMounted, onUnmounted, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
-import { useAuth } from '@/composables/useAuth'
-import { usePasswordStrength } from '@/composables/usePasswordStrength'
 import {
   useEmailRules,
-  useValidationRules,
   useMaxLength,
-  useConfirmPasswordRule,
   useVerificationCodeRule,
 } from '@/composables/useValidation'
 import { HEADER_HEIGHT } from '@/constants/layout'
@@ -1176,122 +816,51 @@ import IntroSection from '@/components/common/IntroSection.vue'
 import TurnstileWidget from '@/components/common/TurnstileWidget.vue'
 import IcosahedronLogo from '@/components/common/IcosahedronLogo.vue'
 
-type AuthMode = 'login' | 'register' | 'verify' | 'forgot' | 'reset-verify' | 'reset-confirm'
+type AuthMode = 'login' | 'verify' | 'password-login'
 
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
-const { login, register, isLoggingIn, isRegistering } = useAuth()
 const authStore = useAuthStore()
 const userStore = useUserStore()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
-// 当前模式
 const currentMode = ref<AuthMode>('login')
 
-// 验证规则
 const emailRules = useEmailRules()
-const passwordRules = useValidationRules('password')
-const confirmPasswordRule = useConfirmPasswordRule()
 const verificationCodeRule = useVerificationCodeRule()
 const emailMaxLength = useMaxLength('email')
-const passwordMaxLength = useMaxLength('password')
 
-// 表单引用
 const loginFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
-const registerFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
 const verifyFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
-
-// 表单校验状态（由 v-form v-model 同步）
+const passwordFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
 const loginFormValid = ref(false)
-const registerFormValid = ref(false)
+const passwordFormValid = ref(false)
 
-// Logo slogan
 const showSlogan = ref(false)
 
-// 登录数据
-const loginData = ref({
-  email: '',
-  password: '',
-})
-
-// 注册数据
-const registerData = ref({
-  email: '',
-  password: '',
-  confirmPassword: '',
-})
-const registerPassword = computed(() => registerData.value.password)
-const {
-  score: passwordScore,
-  label: passwordStrengthLabel,
-  color: passwordStrengthColor,
-  isAcceptable: passwordAcceptable,
-} = usePasswordStrength(registerPassword)
-
-// 验证数据
-const verifyData = ref({
-  code: '',
-})
+// 邮箱字段在「验证码登录」与「密码登录」之间共享
+const loginData = ref({ email: '' })
+const passwordData = ref({ password: '', showPassword: false })
+const verifyData = ref({ code: '' })
 const verifyEmail = computed(() => authStore.pendingSession?.email ?? '')
 
-// 忘记密码 —— 步骤 1：输入邮箱
-const forgotData = ref({ email: '' })
-const forgotFormValid = ref(false)
-const forgotFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
-const isRequestingReset = ref(false)
-const forgotTurnstileToken = ref('')
-const forgotTurnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
-
-// 忘记密码 —— 步骤 2：输入验证码
-const resetVerifyData = ref({ code: '' })
-const resetVerifyFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
-const isVerifyingReset = ref(false)
-const isResendingReset = ref(false)
-const resetEmail = computed(() => authStore.resetSession?.email ?? '')
-
-// 忘记密码 —— 步骤 3：设置新密码
-const resetConfirmData = ref({ password: '', confirmPassword: '' })
-const resetConfirmFormValid = ref(false)
-const resetConfirmFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
-const isConfirmingReset = ref(false)
-const showResetPassword = ref(false)
-const showResetConfirmPassword = ref(false)
-
-const resetPasswordInput = computed(() => resetConfirmData.value.password)
-const {
-  score: resetPasswordScore,
-  label: resetPasswordStrengthLabel,
-  color: resetPasswordStrengthColor,
-  isAcceptable: resetPasswordAcceptable,
-} = usePasswordStrength(resetPasswordInput)
-
-const resetConfirmPasswordRules = computed(() => [
-  ...passwordRules.value,
-  confirmPasswordRule(resetConfirmData.value.password),
-])
-
-// UI 状态
-const showLoginPassword = ref(false)
-const showRegisterPassword = ref(false)
-const showConfirmPassword = ref(false)
 const errorMessage = ref('')
 let errorTimer: ReturnType<typeof setTimeout> | null = null
 
-// Turnstile 状态
-const showLoginCaptcha = ref(false)
 const loginTurnstileToken = ref('')
-const registerTurnstileToken = ref('')
 const loginTurnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
-const registerTurnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
 
-// 验证页面状态
+// 用户已点击提交，但 Turnstile token 还没拿到 → 进入"等待验证"状态
+// token 一旦到达，自动触发真正的提交（用户无需再点）
+const waitingForTurnstile = ref<null | 'login' | 'password-login'>(null)
+
+const isLoggingIn = computed(() => authStore.isLoggingIn)
 const isVerifying = ref(false)
 const isResending = ref(false)
 const countdown = ref(0)
 let countdownTimer: number | null = null
 
-// 模式配置
 const modeConfig = computed(() => {
   switch (currentMode.value) {
     case 'login':
@@ -1299,103 +868,92 @@ const modeConfig = computed(() => {
         title: t('user.login.title'),
         subtitle: t('user.login.subtitle'),
       }
-    case 'register':
-      return {
-        title: t('user.register.title'),
-        subtitle: t('user.register.subtitle'),
-      }
     case 'verify':
       return {
         title: t('user.verifyEmail.title'),
         subtitle: t('user.verifyEmail.subtitle'),
       }
-    case 'forgot':
+    case 'password-login':
       return {
-        title: t('user.forgotPassword.title'),
-        subtitle: t('user.forgotPassword.subtitle'),
-      }
-    case 'reset-verify':
-      return {
-        title: t('user.verifyEmail.title'),
-        subtitle: t('user.verifyEmail.subtitle'),
-      }
-    case 'reset-confirm':
-      return {
-        title: t('user.forgotPassword.resetTitle'),
-        subtitle: t('user.forgotPassword.resetSubtitle'),
+        title: t('user.login.passwordLoginTitle'),
+        subtitle: t('user.login.passwordLoginSubtitle'),
       }
     default:
-      return {
-        title: '',
-        subtitle: '',
-      }
+      return { title: '', subtitle: '' }
   }
 })
 
-// 确认密码验证规则
-const confirmPasswordRules = computed(() => [
-  ...passwordRules.value,
-  confirmPasswordRule(registerData.value.password),
-])
-
-// 显示错误消息，5秒后自动消失
 const showError = (message: string) => {
-  if (errorTimer) {
-    clearTimeout(errorTimer)
-  }
+  if (errorTimer) clearTimeout(errorTimer)
   errorMessage.value = message
   errorTimer = setTimeout(() => {
     errorMessage.value = ''
   }, 5000)
 }
 
-// 清除错误
 const clearError = () => {
   errorMessage.value = ''
-  if (errorTimer) {
-    clearTimeout(errorTimer)
-  }
+  if (errorTimer) clearTimeout(errorTimer)
 }
 
-// Turnstile 回调
 const onLoginTurnstileVerify = (token: string) => {
   loginTurnstileToken.value = token
 }
-
-const onRegisterTurnstileVerify = (token: string) => {
-  registerTurnstileToken.value = token
+const onLoginTurnstileExpire = () => {
+  loginTurnstileToken.value = ''
 }
-
 const onTurnstileError = () => {
   showError(t('user.login.captchaLoadFailed'))
 }
 
-const onLoginTurnstileExpire = () => {
-  loginTurnstileToken.value = ''
+const startCountdown = (seconds = 60) => {
+  countdown.value = seconds
+  if (countdownTimer) clearInterval(countdownTimer)
+  countdownTimer = window.setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) stopCountdown()
+  }, 1000)
 }
 
-const onRegisterTurnstileExpire = () => {
-  registerTurnstileToken.value = ''
+const stopCountdown = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+  countdown.value = 0
 }
 
-// 切换模式
 const switchToLogin = () => {
   clearError()
+  authStore.clearPendingSession()
+  waitingForTurnstile.value = null
   currentMode.value = 'login'
   void router.replace('/login')
 }
 
-const switchToRegister = () => {
+const switchToPasswordLogin = () => {
   clearError()
-  currentMode.value = 'register'
-  void router.replace('/register')
+  authStore.clearPendingSession()
+  waitingForTurnstile.value = null
+  passwordData.value.password = ''
+  passwordData.value.showPassword = false
+  loginTurnstileToken.value = ''
+  loginTurnstileRef.value?.reset()
+  currentMode.value = 'password-login'
+}
+
+const switchToCodeLogin = () => {
+  clearError()
+  waitingForTurnstile.value = null
+  loginTurnstileToken.value = ''
+  loginTurnstileRef.value?.reset()
+  currentMode.value = 'login'
 }
 
 const switchToVerify = () => {
   clearError()
   verifyData.value.code = ''
   currentMode.value = 'verify'
-  // 基于后端返回的 resendAvailableIn 起倒计时
   const pending = authStore.pendingSession
   if (pending && pending.resendAvailableIn > 0) {
     startCountdown(pending.resendAvailableIn)
@@ -1405,117 +963,79 @@ const switchToVerify = () => {
   void router.replace('/verify-email')
 }
 
-const switchToForgot = () => {
-  clearError()
-  forgotData.value.email = ''
-  forgotTurnstileToken.value = ''
-  currentMode.value = 'forgot'
-  void router.replace('/forgot-password')
-}
-
-const switchToResetVerify = () => {
-  clearError()
-  resetVerifyData.value.code = ''
-  currentMode.value = 'reset-verify'
-  const reset = authStore.resetSession
-  if (reset && reset.resendAvailableIn > 0) {
-    startCountdown(reset.resendAvailableIn)
-  } else {
-    stopCountdown()
-  }
-  void router.replace('/reset-password/verify')
-}
-
-const switchToResetConfirm = () => {
-  clearError()
-  resetConfirmData.value.password = ''
-  resetConfirmData.value.confirmPassword = ''
-  currentMode.value = 'reset-confirm'
-  void router.replace('/reset-password/confirm')
-}
-
-// Turnstile 回调（忘记密码）
-const onForgotTurnstileVerify = (token: string) => {
-  forgotTurnstileToken.value = token
-}
-const onForgotTurnstileExpire = () => {
-  forgotTurnstileToken.value = ''
-}
-
-// 处理登录
 const handleLogin = async () => {
   if (!loginFormRef.value) return
   const { valid } = await loginFormRef.value.validate()
   if (!valid) return
 
-  if (showLoginCaptcha.value && !loginTurnstileToken.value) {
-    showError(t('user.login.captchaRequired'))
+  clearError()
+
+  // 如果 token 还没拿到（首次验证慢/上次过期续签中），进入等待态，
+  // watch 会在 token 到达时自动调 doLoginSendCode
+  if (!loginTurnstileToken.value) {
+    waitingForTurnstile.value = 'login'
     return
   }
+  await doLoginSendCode()
+}
 
+const doLoginSendCode = async () => {
   try {
-    clearError()
-    const token = showLoginCaptcha.value ? loginTurnstileToken.value : undefined
-    const result = await login(loginData.value.email, loginData.value.password, token)
-    if (result === 'pending') {
+    await authStore.loginSendCode(loginData.value.email, loginTurnstileToken.value)
+    switchToVerify()
+  } catch (error: unknown) {
+    const err = error as { code?: number; message?: string }
+    if (err.message) {
+      showError(err.message)
+    } else {
+      showError(t('user.login.sendCodeFailed'))
+    }
+    loginTurnstileToken.value = ''
+    loginTurnstileRef.value?.reset()
+  }
+}
+
+const handlePasswordLogin = async () => {
+  if (!passwordFormRef.value) return
+  const { valid } = await passwordFormRef.value.validate()
+  if (!valid) return
+
+  clearError()
+
+  if (!loginTurnstileToken.value) {
+    waitingForTurnstile.value = 'password-login'
+    return
+  }
+  await doPasswordLogin()
+}
+
+const doPasswordLogin = async () => {
+  try {
+    const result = await authStore.login(
+      loginData.value.email,
+      passwordData.value.password,
+      loginTurnstileToken.value
+    )
+    if (result === 'success') {
+      showSnackbar?.(t('user.login.loginSuccess'), 'success')
+      const redirect = route.query.redirect as string
+      await router.push(redirect || '/')
+    } else if (result === 'pending') {
+      // 邮箱未验证：复用现有验证码流程
       switchToVerify()
     }
   } catch (error: unknown) {
     const err = error as { code?: number; message?: string }
-
-    if (err.code === BUSINESS_ERROR.CAPTCHA_REQUIRED) {
-      showLoginCaptcha.value = true
-      showError(t('user.login.captchaTooManyFailed'))
-      return
-    }
-
     if (err.message) {
       showError(err.message)
     } else {
       showError(t('user.login.loginFailed'))
     }
-
-    if (showLoginCaptcha.value) {
-      loginTurnstileToken.value = ''
-      loginTurnstileRef.value?.reset()
-    }
+    loginTurnstileToken.value = ''
+    loginTurnstileRef.value?.reset()
   }
 }
 
-// 处理注册
-const handleRegister = async () => {
-  if (!registerFormRef.value) return
-  const { valid } = await registerFormRef.value.validate()
-  if (!valid) return
-
-  if (!registerTurnstileToken.value) {
-    showError(t('user.register.captchaRequired'))
-    return
-  }
-
-  try {
-    clearError()
-    const success = await register(
-      registerData.value.email,
-      registerData.value.password,
-      registerTurnstileToken.value
-    )
-
-    if (success) {
-      switchToVerify()
-    }
-  } catch (error: unknown) {
-    if (error instanceof Error && error.message) {
-      showError(error.message)
-    } else {
-      showError(t('user.register.registerFailed'))
-    }
-    registerTurnstileToken.value = ''
-    registerTurnstileRef.value?.reset()
-  }
-}
-
-// 处理邮箱验证
 const handleVerify = async () => {
   if (!verifyFormRef.value) return
   const { valid } = await verifyFormRef.value.validate()
@@ -1530,19 +1050,17 @@ const handleVerify = async () => {
   try {
     isVerifying.value = true
     clearError()
-
-    const user = await authStore.validateEmail(verifyData.value.code)
-
+    const user = await authStore.verifyLoginCode(verifyData.value.code)
     if (user) {
       userStore.setUser(user)
       showSnackbar?.(t('user.verifyEmail.verifySuccess'), 'success')
-      await router.push('/')
+      const redirect = route.query.redirect as string
+      await router.push(redirect || '/')
     } else {
       showError(t('user.verifyEmail.verifyFailed'))
     }
   } catch (error: unknown) {
     const err = error as { code?: number; message?: string }
-    // pending session 失效 → 回登录页
     if (err.code === BUSINESS_ERROR.PENDING_SESSION_INVALID) {
       authStore.clearPendingSession()
       showError(err.message ?? t('user.verifyEmail.emailInvalid'))
@@ -1559,7 +1077,6 @@ const handleVerify = async () => {
   }
 }
 
-// 重新发送验证码
 const handleResend = async () => {
   if (!authStore.pendingSession) {
     showError(t('user.verifyEmail.emailInvalid'))
@@ -1570,8 +1087,7 @@ const handleResend = async () => {
   try {
     isResending.value = true
     clearError()
-
-    const next = await authStore.resendVerificationCode()
+    const next = await authStore.resendLoginCode()
     showSnackbar?.(t('user.verifyEmail.codeSent'), 'success')
     if (next) {
       startCountdown(next.resendAvailableIn > 0 ? next.resendAvailableIn : 60)
@@ -1596,173 +1112,9 @@ const handleResend = async () => {
   }
 }
 
-// ========== 忘记密码 handlers ==========
-
-const handleRequestReset = async () => {
-  if (!forgotFormRef.value) return
-  const { valid } = await forgotFormRef.value.validate()
-  if (!valid) return
-
-  if (!forgotTurnstileToken.value) {
-    showError(t('user.login.captchaRequired'))
-    return
-  }
-
-  try {
-    isRequestingReset.value = true
-    clearError()
-    await authStore.requestPasswordReset(forgotData.value.email, forgotTurnstileToken.value)
-    switchToResetVerify()
-  } catch (error: unknown) {
-    const err = error as { code?: number; message?: string }
-    if (err.message) {
-      showError(err.message)
-    } else {
-      showError(t('user.forgotPassword.requestFailed'))
-    }
-    forgotTurnstileToken.value = ''
-    forgotTurnstileRef.value?.reset()
-  } finally {
-    isRequestingReset.value = false
-  }
-}
-
-const handleVerifyResetCode = async () => {
-  if (!authStore.resetSession) {
-    showError(t('user.forgotPassword.sessionExpired'))
-    switchToForgot()
-    return
-  }
-
-  try {
-    isVerifyingReset.value = true
-    clearError()
-    const ok = await authStore.verifyPasswordResetCode(resetVerifyData.value.code)
-    if (ok) {
-      switchToResetConfirm()
-    }
-  } catch (error: unknown) {
-    const err = error as { code?: number; message?: string }
-    if (err.code === BUSINESS_ERROR.PASSWORD_RESET_SESSION_INVALID) {
-      authStore.clearResetSession()
-      showError(err.message ?? t('user.forgotPassword.sessionExpired'))
-      switchToForgot()
-      return
-    }
-    if (err.message) {
-      showError(err.message)
-    } else {
-      showError(t('user.verifyEmail.verifyFailedRetry'))
-    }
-  } finally {
-    isVerifyingReset.value = false
-  }
-}
-
-const handleResendResetCode = async () => {
-  if (!authStore.resetSession) {
-    showError(t('user.forgotPassword.sessionExpired'))
-    switchToForgot()
-    return
-  }
-
-  try {
-    isResendingReset.value = true
-    clearError()
-    const next = await authStore.resendPasswordResetCode()
-    showSnackbar?.(t('user.verifyEmail.codeSent'), 'success')
-    if (next) {
-      startCountdown(next.resendAvailableIn > 0 ? next.resendAvailableIn : 60)
-    } else {
-      startCountdown(60)
-    }
-  } catch (error: unknown) {
-    const err = error as { code?: number; message?: string }
-    if (err.code === BUSINESS_ERROR.PASSWORD_RESET_SESSION_INVALID) {
-      authStore.clearResetSession()
-      showError(err.message ?? t('user.forgotPassword.sessionExpired'))
-      switchToForgot()
-      return
-    }
-    if (err.message) {
-      showError(err.message)
-    } else {
-      showError(t('user.verifyEmail.sendFailed'))
-    }
-  } finally {
-    isResendingReset.value = false
-  }
-}
-
-const handleConfirmReset = async () => {
-  if (!resetConfirmFormRef.value) return
-  const { valid } = await resetConfirmFormRef.value.validate()
-  if (!valid) return
-
-  if (!authStore.resetSession) {
-    showError(t('user.forgotPassword.sessionExpired'))
-    switchToForgot()
-    return
-  }
-
-  try {
-    isConfirmingReset.value = true
-    clearError()
-    const ok = await authStore.confirmPasswordReset(resetConfirmData.value.password)
-    if (ok) {
-      showSnackbar?.(t('user.forgotPassword.resetSuccess'), 'success')
-      switchToLogin()
-    }
-  } catch (error: unknown) {
-    const err = error as { code?: number; message?: string }
-    if (
-      err.code === BUSINESS_ERROR.PASSWORD_RESET_SESSION_INVALID ||
-      err.code === BUSINESS_ERROR.PASSWORD_RESET_NOT_VERIFIED
-    ) {
-      authStore.clearResetSession()
-      showError(err.message ?? t('user.forgotPassword.sessionExpired'))
-      switchToForgot()
-      return
-    }
-    if (err.message) {
-      showError(err.message)
-    } else {
-      showError(t('user.forgotPassword.resetFailed'))
-    }
-  } finally {
-    isConfirmingReset.value = false
-  }
-}
-
-// 倒计时
-const startCountdown = (seconds = 60) => {
-  countdown.value = seconds
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-  }
-  countdownTimer = window.setInterval(() => {
-    countdown.value--
-    if (countdown.value <= 0) {
-      stopCountdown()
-    }
-  }, 1000)
-}
-
-const stopCountdown = () => {
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-    countdownTimer = null
-  }
-  countdown.value = 0
-}
-
-// 根据路由初始化模式
 const initModeFromRoute = () => {
   const routeName = route.name as string
-  if (routeName === 'register') {
-    currentMode.value = 'register'
-  } else if (routeName === 'verify-email') {
-    // 必须有 pending session 才能进入验证页；否则回登录
+  if (routeName === 'verify-email') {
     if (!authStore.pendingSession) {
       showSnackbar?.(t('user.verifyEmail.emailInvalidRedirect'), 'error')
       currentMode.value = 'login'
@@ -1771,37 +1123,12 @@ const initModeFromRoute = () => {
     }
     currentMode.value = 'verify'
     const pending = authStore.pendingSession
-    if (pending.resendAvailableIn > 0) {
-      startCountdown(pending.resendAvailableIn)
-    }
-  } else if (routeName === 'forgot-password') {
-    currentMode.value = 'forgot'
-  } else if (routeName === 'reset-password-verify') {
-    if (!authStore.resetSession) {
-      showSnackbar?.(t('user.forgotPassword.sessionExpired'), 'error')
-      currentMode.value = 'forgot'
-      void router.replace('/forgot-password')
-      return
-    }
-    currentMode.value = 'reset-verify'
-    const reset = authStore.resetSession
-    if (reset.resendAvailableIn > 0) {
-      startCountdown(reset.resendAvailableIn)
-    }
-  } else if (routeName === 'reset-password-confirm') {
-    if (!authStore.resetSession) {
-      showSnackbar?.(t('user.forgotPassword.sessionExpired'), 'error')
-      currentMode.value = 'forgot'
-      void router.replace('/forgot-password')
-      return
-    }
-    currentMode.value = 'reset-confirm'
+    if (pending.resendAvailableIn > 0) startCountdown(pending.resendAvailableIn)
   } else {
     currentMode.value = 'login'
   }
 }
 
-// 监听路由变化
 watch(
   () => route.name,
   () => {
@@ -1809,15 +1136,22 @@ watch(
   }
 )
 
+// Turnstile token 到达时，若用户已点过提交按钮（在等待中），自动继续提交
+watch(loginTurnstileToken, (token) => {
+  if (!token || !waitingForTurnstile.value) return
+  const action = waitingForTurnstile.value
+  waitingForTurnstile.value = null
+  if (action === 'login') void doLoginSendCode()
+  else if (action === 'password-login') void doPasswordLogin()
+})
+
 onMounted(() => {
   initModeFromRoute()
 })
 
 onUnmounted(() => {
   stopCountdown()
-  if (errorTimer) {
-    clearTimeout(errorTimer)
-  }
+  if (errorTimer) clearTimeout(errorTimer)
 })
 </script>
 
@@ -2006,6 +1340,16 @@ a:hover {
   align-items: center;
   color: #e53935;
   font-size: 14px;
+}
+
+/* 协议文案：区域按内容宽度居中，内部文本左对齐 */
+.agreement-text {
+  width: fit-content;
+  max-width: 402px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+  line-height: 1.6;
 }
 
 /* 密码强度条 */

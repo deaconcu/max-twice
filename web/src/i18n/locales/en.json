@@ -50,6 +50,7 @@
     "toggleTheme": "Toggle theme",
     "greeting": "Hello, {name}!",
     "keepLearning": "Keep up the great learning today 🎯",
+    "setPasswordHint": "Set password",
     "todayLearning": "Today's Learning (min)",
     "guideTitle": "Start Your Learning Journey",
     "guideSubtitle": "Begin systematic learning in 3 steps, with vast resources to help you achieve your role goals",
@@ -141,6 +142,32 @@
         "title": "Did I master it",
         "description": "Memory cards are auto-generated while learning, review scientifically"
       }
+    }
+  },
+  "settings": {
+    "password": {
+      "title": "Set Password",
+      "description": "You currently sign in via email code. Set a password so you can log in directly with it.",
+      "emailLabel": "Verification code will be sent to",
+      "emailLabelSent": "Verification code sent to",
+      "sendCode": "Send code",
+      "resendIn": "Resend in {seconds}s",
+      "resend": "Resend code",
+      "codeSent": "Verification code sent to your email",
+      "codeLabel": "Verification code",
+      "codePlaceholder": "Enter the 6-digit code",
+      "newPasswordLabel": "New password",
+      "newPasswordPlaceholder": "At least 8 characters, letters and numbers",
+      "strength": {
+        "weak": "Weak",
+        "fair": "Fair",
+        "good": "Good",
+        "strong": "Strong",
+        "veryStrong": "Very strong"
+      },
+      "confirm": "Confirm",
+      "success": "Password set successfully",
+      "alreadySet": "You already have a password set"
     }
   },
   "common": {
@@ -442,30 +469,38 @@
   },
   "user": {
     "login": {
-      "title": "Login",
-      "subtitle": "Continue your learning journey",
+      "title": "Welcome",
+      "subtitle": "Just your email to get started",
       "email": "Email",
       "emailPlaceholder": "Enter your email address",
       "password": "Password",
       "passwordPlaceholder": "Enter your password",
       "rememberMe": "Remember me",
       "forgotPassword": "Forgot password?",
-      "loginButton": "Login",
-      "loggingIn": "Logging in...",
+      "loginButton": "Continue",
+      "loggingIn": "Sending...",
       "registerLink": "Don't have an account?",
       "registerNow": "Register now",
       "loginSuccess": "Login successful!",
       "loginFailed": "Login failed",
       "welcome": "Welcome back, continue your learning journey",
       "hint": "Login with email and password",
+      "autoRegisterHint": "A new account will be created if you're a new user",
       "agreementPrefix": "By continuing, you agree to our",
       "userAgreement": "Terms of Service",
       "agreementMiddle": "and acknowledge our",
       "privacyPolicy": "Privacy Policy",
       "captchaLoadFailed": "Captcha failed to load, please refresh the page",
       "captchaRequired": "Please complete the captcha verification",
+      "captchaVerifying": "Verifying security...",
       "captchaTooManyFailed": "Too many failed login attempts, please complete the captcha",
-      "captchaRetry": "Retry"
+      "captchaRetry": "Retry",
+      "sendCodeFailed": "Failed to send code, please try again later",
+      "usePasswordLogin": "Sign in with password",
+      "useCodeLogin": "Sign in with email code",
+      "passwordLoginTitle": "Password sign in",
+      "passwordLoginSubtitle": "Enter your email and password",
+      "loginWithPasswordButton": "Sign in"
     },
     "register": {
       "title": "Register",
@@ -485,24 +520,23 @@
       "captchaRequired": "Please complete the captcha verification"
     },
     "verifyEmail": {
-      "title": "Verify Email",
-      "subtitle": "Please enter the verification code sent to your email",
+      "title": "Enter verification code",
+      "subtitle": "Please enter the 6-digit code sent to your email",
       "codeSentTo": "Verification code sent to:",
       "codeLabel": "Verification Code",
       "codePlaceholder": "Enter 6-digit verification code",
-      "verifyButton": "Verify Email",
-      "verifying": "Verifying...",
+      "verifyButton": "Sign in",
+      "verifying": "Signing in...",
       "resendButton": "Resend Code",
       "resendCountdown": "Resend ({seconds}s)",
-      "alreadyVerified": "Already verified?",
-      "loginNow": "Login now",
-      "emailInvalid": "Invalid email address",
-      "verifySuccess": "Email verified successfully!",
+      "changeEmail": "Change email",
+      "emailInvalid": "Session expired, please enter email again",
+      "verifySuccess": "Signed in successfully!",
       "verifyFailed": "Verification failed",
       "verifyFailedRetry": "Verification failed, please try again",
       "codeSent": "Verification code sent, please check your email",
       "sendFailed": "Failed to send, please try again later",
-      "emailInvalidRedirect": "Invalid email address, please register again"
+      "emailInvalidRedirect": "Session expired, please enter email again"
     },
     "forgotPassword": {
       "title": "Reset Password",
@@ -1347,6 +1381,13 @@
     "banned": "Banned"
   },
   "validation": {
+    "passwordStrength": {
+      "tooWeak": "Too weak",
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong"
+    },
     "required": {
       "courseName": "Please enter course name!",
       "courseDescription": "Please enter course description!",

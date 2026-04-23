@@ -4,6 +4,7 @@ import { authRoutes } from './auth'
 import { courseRoutes } from './course'
 import { roleRoutes } from './role'
 import reviewRoutes from './review'
+import { settingsRoutes } from './settings'
 
 /**
  * 所有路由模块的统一导出
@@ -14,6 +15,7 @@ export const routes: RouteRecordRaw[] = [
   ...courseRoutes,
   ...roleRoutes,
   ...reviewRoutes,
+  ...settingsRoutes,
   // TODO: 添加更多路由模块
   // ...learningRoutes,
 ]

@@ -33,17 +33,7 @@ export interface User {
   followed?: number // 关注人数
   isFollowing?: boolean // 是否已关注
   timezone?: string // 用户时区（IANA格式，如 America/Los_Angeles）
-}
-
-/**
- * 用户登录响应数据
- */
-export interface LoginResponseData {
-  id: number
-  name: string
-  avatar?: string // 用户头像
-  subscriptions: SubscriptionInfo[] // 订阅的课程信息列表
-  role?: UserRole // 用户角色
+  hasPassword?: boolean // 是否已设置密码（邮箱验证码登录自动建号时为 false）
 }
 
 /**
@@ -58,6 +48,13 @@ export interface PendingSession {
   pendingSessionToken: string
   email: string
   expiresIn: number
+  resendAvailableIn: number
+}
+
+/**
+ * 设置密码 OTP 发送后的会话信息（用户已登录，仅需重发倒计时）
+ */
+export interface SetPasswordSession {
   resendAvailableIn: number
 }
 
@@ -77,7 +74,7 @@ export interface PasswordResetSession {
  * 登录接口响应：已验证返回 user；未验证返回 pending
  */
 export interface AuthLoginResponse {
-  user?: LoginResponseData
+  user?: User
   pending?: PendingSession
 }
 

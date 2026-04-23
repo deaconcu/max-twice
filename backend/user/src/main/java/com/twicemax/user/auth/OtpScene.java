@@ -16,9 +16,19 @@ public enum OtpScene {
     REGISTER("register", StatusCode.PENDING_SESSION_INVALID),
 
     /**
+     * 邮箱验证码登录（不存在用户时自动建号）。
+     */
+    LOGIN("login", StatusCode.PENDING_SESSION_INVALID),
+
+    /**
      * 忘记密码重置流程。
      */
-    PASSWORD_RESET("password_reset", StatusCode.PASSWORD_RESET_SESSION_INVALID);
+    PASSWORD_RESET("password_reset", StatusCode.PASSWORD_RESET_SESSION_INVALID),
+
+    /**
+     * 已登录用户为空密码账号设置密码。
+     */
+    SET_PASSWORD("set_password", StatusCode.PENDING_SESSION_INVALID);
 
     private final String key;
     private final StatusCode sessionInvalidCode;

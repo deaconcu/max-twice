@@ -48,7 +48,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // 不需要登录的白名单页面
-  const authWhitelist = ['login', 'register', 'verify-email']
+  const authWhitelist = ['login', 'verify-email']
   const isAuthPage = authWhitelist.includes(to.name as string)
 
   // 未登录且不是认证页面，跳转到登录页

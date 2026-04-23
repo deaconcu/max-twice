@@ -73,8 +73,8 @@ export async function handleApiCall<T>(
       if (options.showToast !== false && options.successMessage) {
         showSnackbar?.(options.successMessage, 'success')
       }
-      if (options.onSuccess && response.data !== undefined) {
-        await options.onSuccess(response.data)
+      if (options.onSuccess) {
+        await options.onSuccess(response.data as T)
       }
       return response.data ?? null
     } else {

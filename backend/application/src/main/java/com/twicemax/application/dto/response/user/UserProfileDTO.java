@@ -71,4 +71,10 @@ public class UserProfileDTO extends UserSummaryDTO {
      * 说明：IANA 时区格式，如 America/Los_Angeles
      */
     private String timezone;
+
+    /**
+     * 是否已设置密码
+     * 说明：邮箱验证码登录自动建号时 password=null；用户可在登录后单独设置密码
+     */
+    private Boolean hasPassword;
 }

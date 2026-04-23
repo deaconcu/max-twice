@@ -4,7 +4,6 @@ import { authApi } from '@/api'
 import { useUserStore } from './user'
 import { logger } from '@/utils/logger'
 import type {
-  LoginResponseData,
   PasswordResetSession,
   PendingSession,
   User,
@@ -83,6 +82,65 @@ export const useAuthStore = defineStore(
       }
     }
 
+    // ========== 邮箱验证码登录 ==========
+
+    /**
+     * 发送登录验证码；成功后把 pending session 存入 store
+     */
+    const loginSendCode = async (
+      email: string,
+      turnstileToken: string
+    ): Promise<PendingSession> => {
+      try {
+        isLoggingIn.value = true
+        const response = await authApi.loginSendCode(email, turnstileToken)
+        if (response.code === 200 && response.data) {
+          setPendingSession(response.data)
+          return response.data
+        }
+        const error: Error & { code?: number } = new Error(
+          response.message ?? i18n.global.t('user.login.sendCodeFailed')
+        )
+        error.code = response.code
+        throw error
+      } finally {
+        isLoggingIn.value = false
+      }
+    }
+
+    /**
+     * 校验登录验证码（不存在时后端自动建号）
+     */
+    const verifyLoginCode = async (code: string): Promise<User | null> => {
+      const pending = pendingSession.value
+      if (!pending) return null
+      const response = await authApi.loginVerifyCode(pending.pendingSessionToken, code)
+      if (response.code === 200 && response.data) {
+        userStore.setUser(response.data)
+        setPendingSession(null)
+        return response.data
+      }
+      const error: Error & { code?: number } = new Error(
+        response.message ?? i18n.global.t('user.verifyEmail.verifyFailed')
+      )
+      error.code = response.code
+      throw error
+    }
+
+    /**
+     * 重发登录验证码
+     */
+    const resendLoginCode = async (): Promise<PendingSession | null> => {
+      const pending = pendingSession.value
+      if (!pending) return null
+      const response = await authApi.resendLoginCode(pending.pendingSessionToken)
+      if (response.code === 200 && response.data) {
+        setPendingSession(response.data)
+        return response.data
+      }
+      throw new Error(response.message ?? i18n.global.t('user.verifyEmail.sendFailed'))
+    }
+
     // ========== 登录 ==========
 
     /**
@@ -103,12 +161,7 @@ export const useAuthStore = defineStore(
 
         if (response.code === 200 && response.data) {
           if (response.data.user) {
-            const loginData: LoginResponseData = response.data.user
-            userStore.setUser({
-              id: loginData.id,
-              name: loginData.name,
-              avatar: loginData.avatar,
-            } as User)
+            userStore.setUser(response.data.user)
             setPendingSession(null)
             return 'success'
           }
@@ -301,6 +354,9 @@ export const useAuthStore = defineStore(
       resetSession,
 
       // 方法
+      loginSendCode,
+      verifyLoginCode,
+      resendLoginCode,
       login,
       register,
       validateEmail,

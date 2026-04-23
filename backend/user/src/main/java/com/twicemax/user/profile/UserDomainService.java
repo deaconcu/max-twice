@@ -7,12 +7,10 @@ import com.twicemax.user.auth.VerificationDO;
 import com.twicemax.user.auth.VerificationDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -35,15 +33,9 @@ public class UserDomainService {
     private static final String BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    // 登录失败次数相关常量
-    private static final String LOGIN_FAIL_KEY_PREFIX = "login:fail:ip:";
-    private static final int LOGIN_FAIL_MAX_ATTEMPTS = 3;
-    private static final Duration LOGIN_FAIL_EXPIRE_TIME = Duration.ofMinutes(15);
-
     private final UserDataService userDataService;
     private final VerificationDataService verificationDataService;
     private final SystemProperties systemProperties;
-    private final StringRedisTemplate stringRedisTemplate;
 
     // ========== 用户状态和角色管理 ==========
 
@@ -129,7 +121,7 @@ public class UserDomainService {
      * 创建用户（注册）
      *
      * @param email 邮箱
-     * @param password 密码（明文，将被BCrypt加密）
+     * @param password 密码（明文，将被BCrypt加密）；可传 null 表示无密码账号（邮箱验证码登录建号）
      * @return 创建的用户对象
      */
     @Transactional
@@ -143,7 +135,7 @@ public class UserDomainService {
         // 创建用户
         UserDO user = new UserDO();
         user.setName("MT_" + generateRandomBase62(8));
-        user.setPassword(passwordEncoder.encode(password));  // BCrypt加密
+        user.setPassword(password == null ? null : passwordEncoder.encode(password));  // null 表示无密码账号
         user.setEmail(email);
         user.setBiography("");
         user.setAvatar("");
@@ -173,6 +165,26 @@ public class UserDomainService {
         userDataService.updatePassword(user.getId(), encoded);
         log.info("用户密码更新成功: userId={}", user.getId());
         return user.getId();
+    }
+
+    /**
+     * 为空密码账号设置密码（已登录用户首次设置密码）。
+     * <p>
+     * 仅允许当前密码为 null 的用户调用；已设置过密码的用户会抛 USER_PASSWORD_ALREADY_SET，
+     * 需走修改密码流程。
+     *
+     * @param userId 当前用户 ID
+     * @param newPlainPassword 新密码（明文，将被 BCrypt 加密）
+     */
+    @Transactional
+    public void setPasswordForEmptyPasswordUser(Long userId, String newPlainPassword) {
+        UserDO user = userDataService.validateAndGet(userId);
+        if (user.getPassword() != null) {
+            throw StatusCode.USER_PASSWORD_ALREADY_SET.exception();
+        }
+        String encoded = passwordEncoder.encode(newPlainPassword);
+        userDataService.updatePassword(userId, encoded);
+        log.info("空密码账号首次设置密码成功: userId={}", userId);
     }
 
     /**
@@ -298,44 +310,6 @@ public class UserDomainService {
         }
 
         return userDO;
-    }
-
-    // ========== 登录失败次数管理 ==========
-
-    /**
-     * 检查是否需要验证码
-     */
-    public boolean isCaptchaRequired(String ip) {
-        String key = LOGIN_FAIL_KEY_PREFIX + ip;
-        String value = stringRedisTemplate.opsForValue().get(key);
-        if (value == null) {
-            return false;
-        }
-        try {
-            return Integer.parseInt(value) >= LOGIN_FAIL_MAX_ATTEMPTS;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
-
-    /**
-     * 记录登录失败
-     */
-    public void recordLoginFailure(String ip) {
-        String key = LOGIN_FAIL_KEY_PREFIX + ip;
-        Long count = stringRedisTemplate.opsForValue().increment(key);
-        if (count != null && count == 1) {
-            stringRedisTemplate.expire(key, LOGIN_FAIL_EXPIRE_TIME);
-        }
-        log.debug("IP {} 登录失败次数: {}", ip, count);
-    }
-
-    /**
-     * 登录成功，清除失败记录
-     */
-    public void clearLoginFailures(String ip) {
-        String key = LOGIN_FAIL_KEY_PREFIX + ip;
-        stringRedisTemplate.delete(key);
     }
 
     // ========== 私有辅助方法 ==========

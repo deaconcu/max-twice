@@ -9,12 +9,8 @@ import com.twicemax.application.converter.UserConverter;
 import com.twicemax.application.dto.response.KeysetPageResponse;
 import com.twicemax.application.dto.response.course.CourseFullDTO;
 import com.twicemax.application.dto.response.user.*;
-import com.twicemax.application.dto.response.user.AuthLoginResponseDTO;
-import com.twicemax.application.dto.response.user.PasswordResetSessionDTO;
-import com.twicemax.application.dto.response.user.PendingSessionDTO;
 import com.twicemax.content.course.CourseDO;
 import com.twicemax.content.course.CourseDataService;
-import com.twicemax.infrastructure.datasource.DataSourceContextHolder;
 import com.twicemax.interaction.follow.FollowDO;
 import com.twicemax.interaction.follow.FollowDataService;
 import com.twicemax.learning.enrollment.UserLearningDO;
@@ -22,9 +18,6 @@ import com.twicemax.learning.enrollment.UserLearningDomainService;
 import com.twicemax.shared.domain.Enums;
 import com.twicemax.shared.domain.exception.StatusCode;
 import com.twicemax.shared.infrastructure.config.SystemProperties;
-import com.twicemax.user.auth.OtpCodeService;
-import com.twicemax.user.auth.OtpScene;
-import com.twicemax.user.auth.OtpSessionService;
 import com.twicemax.user.profile.UserDO;
 import com.twicemax.user.profile.UserDataService;
 import com.twicemax.user.profile.UserDomainService;
@@ -36,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.twicemax.shared.domain.Enums.*;
@@ -56,21 +48,12 @@ public class UserService {
     private final ContentStatsDataService contentStatsDataService;
     private final UserStatsDataService userStatsDataService;
     private final UserLearningDomainService userLearningDomainService;
-    private final EmailService emailService;
-    private final OtpSessionService otpSessionService;
-    private final OtpCodeService otpCodeService;
     private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
     private final CourseConverter courseConverter;
     private final ApplicationEventPublisher eventPublisher;
     private final MeilisearchService meilisearchService;
-
-    // ========== 常量定义 ==========
-
-    private static final Pattern EMAIL_PATTERN = Pattern.compile(
-        "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-    );
 
     // ========== 公共方法 Query ==========
 
@@ -225,219 +208,6 @@ public class UserService {
         userDomainService.updateUserAvatar(userId, avatarUrl);
     }
 
-    /**
-     * 用户注册
-     * <p>
-     * 创建用户后签发 pending session + 验证码，并异步发送邮件。
-     *
-     * @return pending session，前端据此跳转邮箱验证页
-     */
-    @Transactional
-    public PendingSessionDTO register(String email, String password) {
-        validateEmailFormat(email);
-        validatePassword(password);
-
-        userDomainService.createUser(email, password);
-
-        return issuePendingSessionAndSendEmail(email);
-    }
-
-    /**
-     * 用户登录验证
-     * <p>
-     * 若邮箱已验证：返回 {@code user} 字段，Controller 侧负责 StpUtil.login。<br>
-     * 若邮箱未验证：返回 {@code pending} 字段；若此时已有有效验证码则复用不重发，否则签发并发送邮件。
-     */
-    public AuthLoginResponseDTO validateLogin(String email, String password) {
-        validateEmailFormat(email);
-        validatePassword(password);
-
-        UserDO userDO = userDomainService.validateLoginIgnoringEmailValidated(email, password);
-
-        if (Boolean.TRUE.equals(userDO.getEmailValidated())) {
-            return AuthLoginResponseDTO.builder().user(toBriefDTO(userDO)).build();
-        }
-
-        // 未验证：若已有活跃验证码则复用（避免重复发送），否则签发
-        PendingSessionDTO pending = otpCodeService.exists(OtpScene.REGISTER, email)
-                ? createPendingSessionWithoutSendingEmail(email)
-                : issuePendingSessionAndSendEmail(email);
-        return AuthLoginResponseDTO.builder().pending(pending).build();
-    }
-
-    /**
-     * 邮箱验证 - 凭 pending session token + 验证码
-     */
-    @Transactional
-    public UserProfileDTO verifyEmailWithCode(String pendingSessionToken, String code) {
-        validateVerificationCode(code);
-
-        String email = otpSessionService.requireEmail(OtpScene.REGISTER, pendingSessionToken);
-
-        // 校验验证码（失败会抛对应异常；成功会删除 code 记录）
-        otpCodeService.verify(OtpScene.REGISTER, email, code, false);
-
-        UserDO user = userDataService.getByEmail(email);
-        if (user == null) {
-            throw StatusCode.USER_NOT_FOUND.exception("用户不存在");
-        }
-
-        if (!Boolean.TRUE.equals(user.getEmailValidated())) {
-            userDataService.updateEmailValidated(user.getId(), true);
-            log.info("用户邮箱验证成功: userId={}", user.getId());
-        }
-
-        // 验证成功后立即失效 session
-        otpSessionService.invalidate(OtpScene.REGISTER, pendingSessionToken);
-
-        return toProfileDTO(user);
-    }
-
-    /**
-     * 重新发送验证码 - 凭 pending session token
-     */
-    public PendingSessionDTO resendVerificationCode(String pendingSessionToken) {
-        String email = otpSessionService.requireEmail(OtpScene.REGISTER, pendingSessionToken);
-
-        UserDO user = userDataService.getByEmail(email);
-        if (user == null) {
-            throw StatusCode.USER_NOT_FOUND.exception("用户不存在");
-        }
-        if (Boolean.TRUE.equals(user.getEmailValidated())) {
-            throw StatusCode.INVALID_PARAMETER.exception("邮箱已验证，无需重新发送");
-        }
-
-        String code = otpCodeService.resend(OtpScene.REGISTER, email);
-        String language = DataSourceContextHolder.getLanguage();
-        emailService.sendVerificationEmailAsync(email, code, language);
-
-        long expiresIn = otpSessionService.ttlSeconds(OtpScene.REGISTER, pendingSessionToken);
-        return PendingSessionDTO.builder()
-                .pendingSessionToken(pendingSessionToken)
-                .email(email)
-                .expiresIn(expiresIn)
-                .resendAvailableIn(otpCodeService.secondsUntilResendAvailable(OtpScene.REGISTER, email))
-                .build();
-    }
-
-    // ========== 忘记密码 ==========
-
-    /**
-     * 忘记密码第 1 步：请求发送重置验证码。
-     * <p>
-     * 无论邮箱是否存在都返回成功（防枚举）。邮箱不存在时返回一个伪 token，
-     * 前端可照常走后续流程，用户在输验证码时会收到"会话无效"提示。
-     */
-    public PasswordResetSessionDTO requestPasswordReset(String email) {
-        validateEmailFormat(email);
-
-        UserDO user = userDataService.getByEmail(email);
-        if (user == null) {
-            log.info("忘记密码：邮箱不存在，返回伪响应防枚举: email={}", email);
-            return PasswordResetSessionDTO.builder()
-                    .resetSessionToken(generateFakeResetToken())
-                    .email(email)
-                    .expiresIn(30L * 60)
-                    .resendAvailableIn(systemProperties.getUser().getVerificationCodeSendIntervalSeconds())
-                    .build();
-        }
-
-        // 创建 session + 签发验证码
-        OtpSessionService.Created session = otpSessionService.create(OtpScene.PASSWORD_RESET, email);
-        String code = otpCodeService.issue(OtpScene.PASSWORD_RESET, email);
-        String language = DataSourceContextHolder.getLanguage();
-        emailService.sendVerificationEmailAsync(email, code, language);
-
-        return PasswordResetSessionDTO.builder()
-                .resetSessionToken(session.token())
-                .email(email)
-                .expiresIn(session.expiresInSeconds())
-                .resendAvailableIn(otpCodeService.secondsUntilResendAvailable(OtpScene.PASSWORD_RESET, email))
-                .build();
-    }
-
-    /**
-     * 忘记密码：重发验证码。
-     */
-    public PasswordResetSessionDTO resendPasswordResetCode(String resetSessionToken) {
-        String email = otpSessionService.requireEmail(OtpScene.PASSWORD_RESET, resetSessionToken);
-        String code = otpCodeService.resend(OtpScene.PASSWORD_RESET, email);
-        String language = DataSourceContextHolder.getLanguage();
-        emailService.sendVerificationEmailAsync(email, code, language);
-
-        return PasswordResetSessionDTO.builder()
-                .resetSessionToken(resetSessionToken)
-                .email(email)
-                .expiresIn(otpSessionService.ttlSeconds(OtpScene.PASSWORD_RESET, resetSessionToken))
-                .resendAvailableIn(otpCodeService.secondsUntilResendAvailable(OtpScene.PASSWORD_RESET, email))
-                .build();
-    }
-
-    /**
-     * 忘记密码第 2 步：校验验证码（成功后在 Redis 里标记 verified）。
-     */
-    public void verifyPasswordResetCode(String resetSessionToken, String code) {
-        validateVerificationCode(code);
-        // 凭 token 取 email（session 不存在抛 PASSWORD_RESET_SESSION_INVALID）
-        String email = otpSessionService.requireEmail(OtpScene.PASSWORD_RESET, resetSessionToken);
-        // 校验 code；keepOnSuccess=true 保留 code key，让 session 的 verified 标记生效后再清理
-        otpCodeService.verify(OtpScene.PASSWORD_RESET, email, code, true);
-        // 标记 session 已验证，供 confirm 阶段读取
-        otpSessionService.markVerified(OtpScene.PASSWORD_RESET, resetSessionToken);
-        // code 已校验成功，可主动清理（避免复用）
-        otpCodeService.invalidate(OtpScene.PASSWORD_RESET, email);
-    }
-
-    /**
-     * 忘记密码第 3 步：确认新密码并落库。
-     * <p>
-     * 要求 session 已经通过验证码校验；成功后立即失效 session。
-     *
-     * @return 被重置密码的用户 id（Controller 据此踢掉其所有已登录 token）
-     */
-    @Transactional
-    public Long confirmPasswordReset(String resetSessionToken, String newPassword) {
-        validatePassword(newPassword);
-        String email = otpSessionService.requireVerifiedEmail(
-                OtpScene.PASSWORD_RESET, resetSessionToken,
-                StatusCode.PASSWORD_RESET_NOT_VERIFIED);
-        Long userId = userDomainService.updatePasswordByEmail(email, newPassword);
-        otpSessionService.invalidate(OtpScene.PASSWORD_RESET, resetSessionToken);
-        log.info("密码重置完成: userId={}, email={}", userId, email);
-        return userId;
-    }
-
-    private static String generateFakeResetToken() {
-        byte[] bytes = new byte[48];
-        new java.security.SecureRandom().nextBytes(bytes);
-        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
-
-    // ========== 辅助：pending session 构造 ==========
-
-    /**
-     * 签发 pending session 并发送验证邮件（注册 / 登录未验证且无活跃 code 场景）。
-     */
-    private PendingSessionDTO issuePendingSessionAndSendEmail(String email) {
-        String code = otpCodeService.issue(OtpScene.REGISTER, email);
-        String language = DataSourceContextHolder.getLanguage();
-        emailService.sendVerificationEmailAsync(email, code, language);
-        return createPendingSessionWithoutSendingEmail(email);
-    }
-
-    /**
-     * 仅创建 pending session token，不触发邮件发送（用于复用已有验证码的场景）。
-     */
-    private PendingSessionDTO createPendingSessionWithoutSendingEmail(String email) {
-        OtpSessionService.Created created = otpSessionService.create(OtpScene.REGISTER, email);
-        return PendingSessionDTO.builder()
-                .pendingSessionToken(created.token())
-                .email(email)
-                .expiresIn(created.expiresInSeconds())
-                .resendAvailableIn(otpCodeService.secondsUntilResendAvailable(OtpScene.REGISTER, email))
-                .build();
-    }
-
     //=========== DTO转换方法 ==========
 
     /**
@@ -565,15 +335,6 @@ public class UserService {
     /**
      * 验证邮箱格式
      */
-    private void validateEmailFormat(String email) {
-        if (!StringUtils.hasText(email)) {
-            throw StatusCode.INVALID_PARAMETER.exception();
-        }
-        if (!EMAIL_PATTERN.matcher(email).matches()) {
-            throw StatusCode.USER_INVALID_EMAIL_FORMAT.exception();
-        }
-    }
-
     private void validateUsername(String username) {
         if (!StringUtils.hasText(username)) {
             throw StatusCode.INVALID_PARAMETER.exception();
@@ -585,30 +346,8 @@ public class UserService {
         }
     }
 
-    private void validatePassword(String password) {
-        // 长度检查
-        var validation = systemProperties.getValidation();
-        if (password == null
-                || password.length() < validation.getPasswordMinLength()
-                || password.length() > validation.getPasswordMaxLength()) {
-            throw StatusCode.USER_INVALID_PASSWORD_LENGTH.exception();
-        }
-
-        // 强度检查：使用 zxcvbn 算法（nbvcxz 实现），分数 < 2 视为过弱
-        int score = new me.gosimple.nbvcxz.Nbvcxz().estimate(password).getBasicScore();
-        if (score < 2) {
-            throw StatusCode.USER_PASSWORD_TOO_WEAK.exception();
-        }
-    }
-
     private void validateSearchName(String name) {
         if (!StringUtils.hasText(name)) {
-            throw StatusCode.INVALID_PARAMETER.exception();
-        }
-    }
-
-    private void validateVerificationCode(String code) {
-        if (!StringUtils.hasText(code)) {
             throw StatusCode.INVALID_PARAMETER.exception();
         }
     }

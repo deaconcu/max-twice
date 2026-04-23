@@ -50,6 +50,7 @@
     "toggleTheme": "切换主题",
     "greeting": "你好，{name}！",
     "keepLearning": "今天也要继续加油学习哦 🎯",
+    "setPasswordHint": "设置密码",
     "todayLearning": "今日学习(分钟)",
     "guideTitle": "你正在扮演哪些角色？",
     "guideSubtitle": "父亲、儿子、程序员、投资者、厨师、跑者...每个角色都值得好好学习",
@@ -141,6 +142,32 @@
         "title": "我学会了吗",
         "description": "学习时自动生成记忆卡片，科学复习不遗忘"
       }
+    }
+  },
+  "settings": {
+    "password": {
+      "title": "设置密码",
+      "description": "你目前通过邮箱验证码登录，可以为账号设置一个密码，方便以后用密码直接登录。",
+      "emailLabel": "验证码将发送到",
+      "emailLabelSent": "验证码已发送到",
+      "sendCode": "发送验证码",
+      "resendIn": "{seconds} 秒后可重发",
+      "resend": "重发验证码",
+      "codeSent": "验证码已发送到你的邮箱",
+      "codeLabel": "验证码",
+      "codePlaceholder": "请输入 6 位验证码",
+      "newPasswordLabel": "新密码",
+      "newPasswordPlaceholder": "至少 8 位，包含字母和数字",
+      "strength": {
+        "weak": "弱",
+        "fair": "一般",
+        "good": "较好",
+        "strong": "强",
+        "veryStrong": "很强"
+      },
+      "confirm": "确认设置",
+      "success": "密码设置成功",
+      "alreadySet": "你已经设置过密码，无需重复操作"
     }
   },
   "common": {
@@ -443,30 +470,38 @@
   },
   "user": {
     "login": {
-      "title": "登录",
-      "subtitle": "继续你的学习之旅",
+      "title": "开始学习",
+      "subtitle": "输入邮箱即可开始",
       "email": "邮箱",
       "emailPlaceholder": "请输入邮箱地址",
       "password": "密码",
       "passwordPlaceholder": "请输入密码",
       "rememberMe": "记住我",
       "forgotPassword": "忘记密码？",
-      "loginButton": "登录",
-      "loggingIn": "登录中...",
+      "loginButton": "继续",
+      "loggingIn": "发送中...",
       "registerLink": "没有账号？",
       "registerNow": "立即注册",
       "loginSuccess": "登录成功！",
       "loginFailed": "登录失败",
       "welcome": "欢迎回来，继续你的学习之旅",
       "hint": "使用邮箱和密码登录",
+      "autoRegisterHint": "新用户将自动创建账号",
       "agreementPrefix": "继续操作即表示你同意我们的",
       "userAgreement": "用户协议",
       "agreementMiddle": "并确认已了解",
       "privacyPolicy": "隐私政策",
       "captchaLoadFailed": "人机验证加载失败，请刷新页面重试",
       "captchaRequired": "请完成人机验证",
+      "captchaVerifying": "安全验证中...",
       "captchaTooManyFailed": "登录失败次数过多，请完成人机验证",
-      "captchaRetry": "重试"
+      "captchaRetry": "重试",
+      "sendCodeFailed": "验证码发送失败，请稍后重试",
+      "usePasswordLogin": "使用密码登录",
+      "useCodeLogin": "使用验证码登录",
+      "passwordLoginTitle": "密码登录",
+      "passwordLoginSubtitle": "输入邮箱和密码",
+      "loginWithPasswordButton": "登录"
     },
     "register": {
       "title": "注册",
@@ -486,24 +521,23 @@
       "captchaRequired": "请完成人机验证"
     },
     "verifyEmail": {
-      "title": "验证邮箱",
-      "subtitle": "请输入发送到您邮箱的验证码",
+      "title": "输入验证码",
+      "subtitle": "请输入发送到您邮箱的 6 位验证码",
       "codeSentTo": "验证码已发送至:",
       "codeLabel": "验证码",
       "codePlaceholder": "请输入6位数字验证码",
-      "verifyButton": "验证邮箱",
-      "verifying": "验证中...",
+      "verifyButton": "登录",
+      "verifying": "登录中...",
       "resendButton": "重新发送验证码",
       "resendCountdown": "重新发送 ({seconds}秒)",
-      "alreadyVerified": "已经验证？",
-      "loginNow": "立即登录",
-      "emailInvalid": "邮箱地址无效",
-      "verifySuccess": "邮箱验证成功！",
+      "changeEmail": "更换邮箱",
+      "emailInvalid": "会话已过期，请重新输入邮箱",
+      "verifySuccess": "登录成功！",
       "verifyFailed": "验证失败",
       "verifyFailedRetry": "验证失败，请重试",
       "codeSent": "验证码已重新发送，请查收邮件",
       "sendFailed": "发送失败，请稍后重试",
-      "emailInvalidRedirect": "邮箱地址无效，请重新注册"
+      "emailInvalidRedirect": "会话已过期，请重新输入邮箱"
     },
     "forgotPassword": {
       "title": "重置密码",
@@ -1347,6 +1381,13 @@
     "banned": "已封禁"
   },
   "validation": {
+    "passwordStrength": {
+      "tooWeak": "很弱",
+      "weak": "弱",
+      "fair": "一般",
+      "good": "良好",
+      "strong": "强"
+    },
     "required": {
       "courseName": "请输入课程名称！",
       "courseDescription": "请输入课程描述！",

@@ -59,6 +59,7 @@ public enum StatusCode {
     USER_VERIFICATION_CODE_ATTEMPTS_EXCEEDED(1123, "验证码错误次数过多，请重新获取验证码"),
     PASSWORD_RESET_SESSION_INVALID(1124, "密码重置会话已失效，请重新发起重置"),
     PASSWORD_RESET_NOT_VERIFIED(1125, "请先完成邮箱验证码校验"),
+    USER_PASSWORD_ALREADY_SET(1126, "密码已设置，请使用修改密码流程"),
 
     // 课程相关 12xx
     COURSE_NOT_FOUND(1201, "课程不存在"),

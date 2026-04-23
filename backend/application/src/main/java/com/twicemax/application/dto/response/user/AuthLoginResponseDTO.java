@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 public class AuthLoginResponseDTO {
 
     /** 登录成功用户信息（已验证邮箱时返回） */
-    private UserBriefDTO user;
+    private UserProfileDTO user;
 
     /** 待验证会话（邮箱未验证时返回） */
     private PendingSessionDTO pending;
