@@ -144,7 +144,7 @@ public class UserDomainService {
         user.setEmailValidated(false); // 设置邮箱验证状态默认值
         userDataService.insert(user);
 
-        log.info("用户创建成功: userId={}，email={}", user.getId(), email);
+        log.info("用户创建成功: userId={}", user.getId());
         return user;
     }
 
@@ -192,7 +192,10 @@ public class UserDomainService {
      *
      * @param email 邮箱
      * @param code 验证码
+     * @deprecated OTP 流程已迁移到 Redis 的 {@code OtpCodeService}，此方法（基于数据库表
+     * {@code VerificationDO}）已无调用方，保留用于参考。未来应删除本方法及关联 DAO。
      */
+    @Deprecated
     @Transactional
     public void createVerificationCode(String email, String code) {
         // 1. 检查是否60秒内已发送过验证码
@@ -221,7 +224,9 @@ public class UserDomainService {
      * @param email 邮箱
      * @param code 验证码
      * @return 验证后的用户对象
+     * @deprecated 同 {@link #createVerificationCode}，OTP 流程已改走 Redis，本方法无调用方。
      */
+    @Deprecated
     @Transactional
     public UserDO validateEmail(String email, String code) {
         // 1. 查询未使用的注册类型验证码
@@ -290,7 +295,10 @@ public class UserDomainService {
      * @param email 邮箱
      * @param password 密码（明文，将被BCrypt验证）
      * @return 验证通过的用户对象
+     * @deprecated 当前登录流程使用 {@link #validateLoginIgnoringEmailValidated}（未验证邮箱返回用户对象让上层引导验证），
+     * 本方法已无调用方。保留用于参考，未来应删除。
      */
+    @Deprecated
     public UserDO validateLogin(String email, String password) {
         UserDO userDO = userDataService.getByEmail(email);
         if (userDO == null) {
