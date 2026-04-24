@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.security.SecureRandom;
 import java.util.regex.Pattern;
 
 import static com.twicemax.shared.domain.Enums.UserRole;
@@ -68,6 +69,8 @@ public class AuthService {
             "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
     );
 
+    private static final SecureRandom FAKE_TOKEN_RANDOM = new SecureRandom();
+
     /**
      * 内测期：拒绝非管理员（包含邮箱尚未注册的新人）。
      * 注意：对不存在的邮箱也要拦，否则泄露"该邮箱是否已注册"。
@@ -92,6 +95,9 @@ public class AuthService {
         }
 
         guardInviteOnly(email);
+
+        // 日配额：单邮箱/单 IP 每日上限，防止邮件轰炸
+        authRiskDomainService.checkAndIncrementEmailQuota(email, remoteIp);
 
         OtpSessionService.Created session = otpSessionService.create(OtpScene.LOGIN, email);
         String code = otpCodeService.issue(OtpScene.LOGIN, email);
@@ -137,7 +143,7 @@ public class AuthService {
         UserDO user = userDataService.getByEmail(email);
         if (user == null) {
             user = userDomainService.createUser(email, null);
-            log.info("邮箱验证码登录自动建号: userId={}, email={}", user.getId(), email);
+            log.info("邮箱验证码登录自动建号: userId={}", user.getId());
         }
 
         if (!Boolean.TRUE.equals(user.getEmailValidated())) {
@@ -166,23 +172,32 @@ public class AuthService {
             String email, String password, String turnstileToken, String remoteIp) {
 
         // 失败次数超阈值时强制人机验证
-        if (authRiskDomainService.isCaptchaRequired(remoteIp)) {
+        if (authRiskDomainService.isCaptchaRequired(remoteIp, email)) {
             if (!StringUtils.hasText(turnstileToken)) {
                 throw StatusCode.CAPTCHA_REQUIRED.exception();
             }
             if (!turnstileService.verify(turnstileToken, remoteIp)) {
                 throw StatusCode.CAPTCHA_INVALID.exception();
             }
-            authRiskDomainService.clearFailures(remoteIp);
+            authRiskDomainService.clearFailures(remoteIp, email);
         }
 
+        // 参数格式校验：失败也计入风控（防止脚本乱撞消耗 bcrypt 等后续重算成本）
         try {
             validateEmailFormat(email);
             validatePassword(password);
+        } catch (RuntimeException e) {
+            authRiskDomainService.recordFailure(remoteIp, email);
+            throw e;
+        }
 
-            guardInviteOnly(email);
+        // 内测白名单：产品策略，不计入登录失败次数
+        guardInviteOnly(email);
 
+        try {
             UserDO userDO = userDomainService.validateLoginIgnoringEmailValidated(email, password);
+            // 凭证校验通过即可清零失败计数（含邮箱未验证路径），避免历史计数在 TTL 内误触发强制 Turnstile
+            authRiskDomainService.clearFailures(remoteIp, email);
 
             if (Boolean.TRUE.equals(userDO.getEmailValidated())) {
                 return AuthLoginResponseDTO.builder().user(userConverter.toProfileDTO(userDO)).build();
@@ -194,7 +209,7 @@ public class AuthService {
                     : issuePendingSessionAndSendEmail(email);
             return AuthLoginResponseDTO.builder().pending(pending).build();
         } catch (RuntimeException e) {
-            authRiskDomainService.recordFailure(remoteIp);
+            authRiskDomainService.recordFailure(remoteIp, email);
             throw e;
         }
     }
@@ -203,7 +218,12 @@ public class AuthService {
 
     /**
      * 用户注册（邮箱+密码）。
+     *
+     * @deprecated 当前产品已切换到"邮箱验证码无密码登录"流程（{@link #sendLoginCode} + {@link #verifyLoginCode}），
+     * 不再对外暴露传统注册入口。保留实现用于未来可能恢复的密码注册场景；若恢复，需补齐
+     * Turnstile 校验、日配额（{@link AuthRiskDomainService#checkAndIncrementEmailQuota}）等防护。
      */
+    @Deprecated
     @Transactional
     public PendingSessionDTO register(String email, String password) {
         validateEmailFormat(email);
@@ -284,7 +304,7 @@ public class AuthService {
 
         UserDO user = userDataService.getByEmail(email);
         if (user == null) {
-            log.info("忘记密码：邮箱不存在，返回伪响应防枚举: email={}", email);
+            log.debug("忘记密码：邮箱不存在，返回伪响应防枚举: email={}", email);
             return PasswordResetSessionDTO.builder()
                     .resetSessionToken(generateFakeResetToken())
                     .email(email)
@@ -292,6 +312,9 @@ public class AuthService {
                     .resendAvailableIn(systemProperties.getUser().getVerificationCodeSendIntervalSeconds())
                     .build();
         }
+
+        // 日配额：单邮箱/单 IP 每日上限，防止邮件轰炸
+        authRiskDomainService.checkAndIncrementEmailQuota(email, remoteIp);
 
         OtpSessionService.Created session = otpSessionService.create(OtpScene.PASSWORD_RESET, email);
         String code = otpCodeService.issue(OtpScene.PASSWORD_RESET, email);
@@ -345,7 +368,7 @@ public class AuthService {
                 StatusCode.PASSWORD_RESET_NOT_VERIFIED);
         Long userId = userDomainService.updatePasswordByEmail(email, newPassword);
         otpSessionService.invalidate(OtpScene.PASSWORD_RESET, resetSessionToken);
-        log.info("密码重置完成: userId={}, email={}", userId, email);
+        log.info("密码重置完成: userId={}", userId);
         return userId;
     }
 
@@ -419,9 +442,10 @@ public class AuthService {
                 .build();
     }
 
+
     private static String generateFakeResetToken() {
         byte[] bytes = new byte[48];
-        new java.security.SecureRandom().nextBytes(bytes);
+        FAKE_TOKEN_RANDOM.nextBytes(bytes);
         return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 

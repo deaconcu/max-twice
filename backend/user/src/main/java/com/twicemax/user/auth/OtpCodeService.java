@@ -58,9 +58,15 @@ public class OtpCodeService {
     }
 
     /**
-     * 首次签发验证码（会覆盖已有记录）。返回 6 位数字验证码。
+     * 签发验证码：key 不存在走首发（resendCount=1），已存在则委托给 {@link #resend}
+     * 走同一套频控（间隔 + 窗口期次数上限）。防止调用方无脑覆盖 Redis 造成邮件轰炸。
      */
     public String issue(OtpScene scene, String identifier) {
+        String k = key(scene, identifier);
+        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(k))) {
+            return resend(scene, identifier);
+        }
+
         String code = generateCode();
         long now = Instant.now().getEpochSecond();
         long expiresAt = now + expirySeconds();
@@ -69,35 +75,37 @@ public class OtpCodeService {
         fields.put(F_CODE, code);
         fields.put(F_CODE_EXPIRES_AT, String.valueOf(expiresAt));
         fields.put(F_ATTEMPTS_LEFT, String.valueOf(MAX_ATTEMPTS));
-        fields.put(F_RESEND_COUNT, "0");
+        // 首发算第 1 次发送，后续重发从 2 开始；窗口期内总共 MAX_RESEND_COUNT 封
+        fields.put(F_RESEND_COUNT, "1");
         fields.put(F_LAST_RESEND_AT, String.valueOf(now));
 
-        String k = key(scene, identifier);
         stringRedisTemplate.opsForHash().putAll(k, fields);
         stringRedisTemplate.expire(k, Duration.ofSeconds(expirySeconds()));
-        log.info("签发OTP: scene={}, identifier={}", scene, identifier);
+        log.debug("签发OTP(首发): scene={}, identifier={}", scene, identifier);
         return code;
     }
 
     /**
      * 重发验证码。触发频控时抛 USER_VERIFICATION_CODE_SEND_TOO_FREQUENT。
+     * <p>
+     * 由 {@link #issue} 保证进入此方法时 key 必然存在；空态视为异常，抛 NOT_FOUND。
      */
     public String resend(OtpScene scene, String identifier) {
         String k = key(scene, identifier);
         Map<Object, Object> raw = stringRedisTemplate.opsForHash().entries(k);
+        if (raw.isEmpty()) {
+            throw StatusCode.USER_VERIFICATION_CODE_NOT_FOUND.exception();
+        }
         long now = Instant.now().getEpochSecond();
 
-        int resendCount = 0;
-        if (!raw.isEmpty()) {
-            long lastResendAt = parseLong(raw.get(F_LAST_RESEND_AT), 0);
-            int sendIntervalSec = systemProperties.getUser().getVerificationCodeSendIntervalSeconds();
-            if (now - lastResendAt < sendIntervalSec) {
-                throw StatusCode.USER_VERIFICATION_CODE_SEND_TOO_FREQUENT.exception();
-            }
-            resendCount = parseInt(raw.get(F_RESEND_COUNT), 0);
-            if (resendCount >= MAX_RESEND_COUNT) {
-                throw StatusCode.USER_VERIFICATION_CODE_SEND_TOO_FREQUENT.exception();
-            }
+        long lastResendAt = parseLong(raw.get(F_LAST_RESEND_AT), 0);
+        int sendIntervalSec = systemProperties.getUser().getVerificationCodeSendIntervalSeconds();
+        if (now - lastResendAt < sendIntervalSec) {
+            throw StatusCode.USER_VERIFICATION_CODE_SEND_TOO_FREQUENT.exception();
+        }
+        int resendCount = parseInt(raw.get(F_RESEND_COUNT), 0);
+        if (resendCount >= MAX_RESEND_COUNT) {
+            throw StatusCode.USER_VERIFICATION_CODE_SEND_TOO_FREQUENT.exception();
         }
 
         String code = generateCode();
@@ -112,7 +120,7 @@ public class OtpCodeService {
 
         stringRedisTemplate.opsForHash().putAll(k, fields);
         stringRedisTemplate.expire(k, Duration.ofSeconds(expirySeconds()));
-        log.info("重发OTP: scene={}, identifier={}, resendCount={}", scene, identifier, resendCount + 1);
+        log.debug("重发OTP: scene={}, identifier={}, resendCount={}", scene, identifier, resendCount + 1);
         return code;
     }
 

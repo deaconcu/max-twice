@@ -63,7 +63,7 @@ public class EmailService {
         try {
             MimeMessage message = buildVerificationEmail(toEmail, code, language);
             mailSender.send(message);
-            log.info("验证邮件发送成功: {}, language={}", toEmail, language);
+            log.debug("验证邮件发送成功: {}, language={}", toEmail, language);
 
         } catch (org.springframework.mail.MailAuthenticationException e) {
             log.error("邮件服务认证失败，请检查 SMTP 配置: email={}, error={}", toEmail, e.getMessage());
@@ -103,7 +103,7 @@ public class EmailService {
         try {
             MimeMessage message = buildVerificationEmail(toEmail, code, language);
             mailSender.send(message);
-            log.info("验证邮件发送成功: {}, language={}", toEmail, language);
+            log.debug("验证邮件发送成功: {}, language={}", toEmail, language);
             return true;
 
         } catch (Exception e) {
