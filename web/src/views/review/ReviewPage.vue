@@ -208,9 +208,7 @@
                   {{ t('review.cards') }}
                 </span>
                 <span
-                  v-if="
-                    selectedCourseLearningCards > 0 && (selectedCourse?.dueCardCount || 0) > 0
-                  "
+                  v-if="selectedCourseLearningCards > 0 && (selectedCourse?.dueCardCount || 0) > 0"
                   >·</span
                 >
                 <span v-if="(selectedCourse?.dueCardCount || 0) > 0">

@@ -171,7 +171,9 @@
         {{ statusFilter !== 'all' ? t('user.profile.noArticlesFound') : t('learning.noRoadmaps') }}
       </p>
       <p class="text-caption text-md-body-2 text-grey">
-        {{ statusFilter !== 'all' ? t('user.profile.adjustFilters') : t('roadmap.systematicLearning') }}
+        {{
+          statusFilter !== 'all' ? t('user.profile.adjustFilters') : t('roadmap.systematicLearning')
+        }}
       </p>
     </div>
 

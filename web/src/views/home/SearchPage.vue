@@ -210,9 +210,7 @@ const totalResults = computed(() => {
 
 // 是否有任何分类还有更多数据
 const hasAnyMore = computed(() => {
-  return (
-    hasMoreCourses.value || hasMoreNodes.value || hasMoreUsers.value || hasMoreRoles.value
-  )
+  return hasMoreCourses.value || hasMoreNodes.value || hasMoreUsers.value || hasMoreRoles.value
 })
 
 // 当前显示的结果

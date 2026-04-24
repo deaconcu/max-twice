@@ -429,7 +429,11 @@ const {
 })
 
 // 使用 useFetch 加载子课程列表
-const { data: subCoursesResponse, loading: _loadingSubCourses, refresh: refreshSubCoursesList } = useFetch<{
+const {
+  data: subCoursesResponse,
+  loading: _loadingSubCourses,
+  refresh: refreshSubCoursesList,
+} = useFetch<{
   items: Course[]
   hasMore: boolean
 }>({
@@ -463,10 +467,7 @@ const { execute: executeSubCourseBookmark, loading: subscribingSubCourse } = use
 const subscribingSubCourseId = ref<number | null>(null)
 
 // 使用 useMutation 处理创建子课程
-const {
-  execute: executeCreateSubCourse,
-  loading: creatingSubCourse,
-} = useMutation(
+const { execute: executeCreateSubCourse, loading: creatingSubCourse } = useMutation(
   (payload: { parentId: number; name: string; description: string }) =>
     courseApi.createSubcourse(payload.parentId, payload.name, payload.description),
   {

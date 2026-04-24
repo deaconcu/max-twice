@@ -53,11 +53,7 @@
     <LoadingSpinner v-if="loading && articles.length === 0" />
 
     <!-- 文章列表 -->
-    <v-infinite-scroll
-      v-if="articles.length > 0"
-      :items="articles"
-      @load="onLoadMore"
-    >
+    <v-infinite-scroll v-if="articles.length > 0" :items="articles" @load="onLoadMore">
       <div v-for="(article, index) in articles" :key="article.id">
         <v-card rounded="lg" hover border class="article-card mb-5" @click="goToArticle(article)">
           <v-card-text class="pa-4 pb-2">
@@ -202,10 +198,18 @@
         class="mb-3 mb-md-4"
       />
       <p class="text-body-2 text-md-body-1 text-grey-darken-2">
-        {{ statusFilter !== 'all' ? t('user.profile.noArticlesFound') : t('user.profile.noArticlesCreated') }}
+        {{
+          statusFilter !== 'all'
+            ? t('user.profile.noArticlesFound')
+            : t('user.profile.noArticlesCreated')
+        }}
       </p>
       <p class="text-caption text-md-body-2 text-grey">
-        {{ statusFilter !== 'all' ? t('user.profile.adjustFilters') : t('user.profile.shareExperience') }}
+        {{
+          statusFilter !== 'all'
+            ? t('user.profile.adjustFilters')
+            : t('user.profile.shareExperience')
+        }}
       </p>
     </div>
 

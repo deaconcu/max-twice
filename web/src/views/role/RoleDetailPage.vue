@@ -529,11 +529,7 @@ const {
   reset: resetRoadmaps,
 } = useInfiniteScroll({
   fetchFn: async (params) => {
-    const response = await roadmapApi.getRoleRoadmaps(
-      roleId.value,
-      params.lastId,
-      sortBy.value
-    )
+    const response = await roadmapApi.getRoleRoadmaps(roleId.value, params.lastId, sortBy.value)
     return {
       code: response.code,
       data: response.data || [],
@@ -581,7 +577,11 @@ onMounted(() => {
 })
 
 // 加载更多
-const onLoadMore = async ({ done }: { done: (status: 'ok' | 'empty' | 'loading' | 'error') => void }) => {
+const onLoadMore = async ({
+  done,
+}: {
+  done: (status: 'ok' | 'empty' | 'loading' | 'error') => void
+}) => {
   await loadMoreRoadmaps({
     done: () => {
       done(hasMore.value ? 'ok' : 'empty')

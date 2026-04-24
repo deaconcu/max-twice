@@ -134,7 +134,9 @@
                     <div class="text-subtitle-1 font-weight-bold text-grey-darken-4">
                       {{ t('roleCenter.search.applyJob') }}
                     </div>
-                  <div class="text-caption text-grey">{{ t('roleCenter.search.applyJobHint') }}</div>
+                    <div class="text-caption text-grey">
+                      {{ t('roleCenter.search.applyJobHint') }}
+                    </div>
                   </div>
                   <v-icon icon="mdi-chevron-right" size="20" color="grey-lighten-1" />
                 </div>

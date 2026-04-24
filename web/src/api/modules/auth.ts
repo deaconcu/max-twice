@@ -9,20 +9,14 @@ export const authApi = {
   /**
    * 邮箱验证码登录 - 发送验证码
    */
-  loginSendCode(
-    email: string,
-    turnstileToken: string
-  ): Promise<ApiResponse<PendingSession>> {
+  loginSendCode(email: string, turnstileToken: string): Promise<ApiResponse<PendingSession>> {
     return apiClient.post('/v1/auth/login/send-code', { email, turnstileToken })
   },
 
   /**
    * 邮箱验证码登录 - 校验验证码（不存在用户时自动创建）
    */
-  loginVerifyCode(
-    pendingSessionToken: string,
-    code: string
-  ): Promise<ApiResponse<User>> {
+  loginVerifyCode(pendingSessionToken: string, code: string): Promise<ApiResponse<User>> {
     return apiClient.post('/v1/auth/login/verify-code', {
       pendingSessionToken,
       code,
@@ -99,9 +93,7 @@ export const authApi = {
   /**
    * 忘记密码：重发验证码
    */
-  resendPasswordResetCode(
-    resetSessionToken: string
-  ): Promise<ApiResponse<PasswordResetSession>> {
+  resendPasswordResetCode(resetSessionToken: string): Promise<ApiResponse<PasswordResetSession>> {
     // 后端复用 ResendVerificationCodeRequest 结构，字段名为 pendingSessionToken
     return apiClient.post('/v1/auth/password-reset/resend', {
       pendingSessionToken: resetSessionToken,
@@ -111,10 +103,7 @@ export const authApi = {
   /**
    * 忘记密码：校验验证码
    */
-  verifyPasswordResetCode(
-    resetSessionToken: string,
-    code: string
-  ): Promise<ApiResponse<void>> {
+  verifyPasswordResetCode(resetSessionToken: string, code: string): Promise<ApiResponse<void>> {
     return apiClient.post('/v1/auth/password-reset/verify-code', {
       resetSessionToken,
       code,
@@ -124,10 +113,7 @@ export const authApi = {
   /**
    * 忘记密码：确认新密码
    */
-  confirmPasswordReset(
-    resetSessionToken: string,
-    newPassword: string
-  ): Promise<ApiResponse<void>> {
+  confirmPasswordReset(resetSessionToken: string, newPassword: string): Promise<ApiResponse<void>> {
     return apiClient.post('/v1/auth/password-reset/confirm', {
       resetSessionToken,
       newPassword,

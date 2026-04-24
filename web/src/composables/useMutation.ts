@@ -152,9 +152,13 @@ export function useMutation<TPayload, TResult>(
   let execute = executeCore
 
   if (debounceDelay) {
-    execute = debounce(executeCore, debounceDelay) as (payload?: TPayload) => Promise<TResult | null>
+    execute = debounce(executeCore, debounceDelay) as (
+      payload?: TPayload
+    ) => Promise<TResult | null>
   } else if (throttleDelay) {
-    execute = throttle(executeCore, throttleDelay) as (payload?: TPayload) => Promise<TResult | null>
+    execute = throttle(executeCore, throttleDelay) as (
+      payload?: TPayload
+    ) => Promise<TResult | null>
   }
 
   // 重置状态

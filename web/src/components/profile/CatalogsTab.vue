@@ -53,11 +53,7 @@
     <LoadingSpinner v-if="loading && catalogs.length === 0" />
 
     <!-- 目录列表 -->
-    <v-infinite-scroll
-      v-else-if="catalogs.length > 0"
-      :items="catalogs"
-      @load="onLoadMore"
-    >
+    <v-infinite-scroll v-else-if="catalogs.length > 0" :items="catalogs" @load="onLoadMore">
       <div v-for="(catalog, index) in catalogs" :key="catalog.id">
         <v-card
           rounded="lg"
@@ -222,10 +218,18 @@
         class="mb-3 mb-md-4"
       />
       <p class="text-body-2 text-md-body-1 text-grey-darken-2">
-        {{ statusFilter !== 'all' ? t('user.profile.noCatalogsFound') : t('user.profile.noCatalogsCreated') }}
+        {{
+          statusFilter !== 'all'
+            ? t('user.profile.noCatalogsFound')
+            : t('user.profile.noCatalogsCreated')
+        }}
       </p>
       <p class="text-caption text-md-body-2 text-grey">
-        {{ statusFilter !== 'all' ? t('user.profile.adjustFilters') : t('user.profile.createCatalogHint') }}
+        {{
+          statusFilter !== 'all'
+            ? t('user.profile.adjustFilters')
+            : t('user.profile.createCatalogHint')
+        }}
       </p>
     </div>
 

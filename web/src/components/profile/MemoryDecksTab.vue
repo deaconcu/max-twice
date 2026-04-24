@@ -53,11 +53,7 @@
     <LoadingSpinner v-if="loading && decks.length === 0" />
 
     <!-- 卡片组列表 -->
-    <v-infinite-scroll
-      v-if="decks.length > 0"
-      :items="decks"
-      @load="onLoadMore"
-    >
+    <v-infinite-scroll v-if="decks.length > 0" :items="decks" @load="onLoadMore">
       <div class="deck-grid">
         <v-card
           v-for="deck in decks"
@@ -137,36 +133,16 @@
                 {{ formatDate(deck.createdAt) }}
               </div>
               <template v-if="isOwnProfile">
-                <v-chip
-                  v-if="deck.state === 0"
-                  size="small"
-                  color="grey"
-                  variant="tonal"
-                >
+                <v-chip v-if="deck.state === 0" size="small" color="grey" variant="tonal">
                   {{ t('user.profile.draft') }}
                 </v-chip>
-                <v-chip
-                  v-else-if="deck.state === 1"
-                  size="small"
-                  color="warning"
-                  variant="tonal"
-                >
+                <v-chip v-else-if="deck.state === 1" size="small" color="warning" variant="tonal">
                   {{ t('admin.pending') }}
                 </v-chip>
-                <v-chip
-                  v-else-if="deck.state === 2"
-                  size="small"
-                  color="success"
-                  variant="tonal"
-                >
+                <v-chip v-else-if="deck.state === 2" size="small" color="success" variant="tonal">
                   {{ t('user.profile.published') }}
                 </v-chip>
-                <v-chip
-                  v-else-if="deck.state === 3"
-                  size="small"
-                  color="error"
-                  variant="tonal"
-                >
+                <v-chip v-else-if="deck.state === 3" size="small" color="error" variant="tonal">
                   {{ t('admin.rejected') }}
                 </v-chip>
               </template>

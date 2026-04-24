@@ -19,7 +19,9 @@
               <!-- 目录为空的提示 -->
               <div v-if="data && (!data.toc || data.toc.length === 0)" class="pa-8 text-center">
                 <v-icon icon="mdi-compass-outline" size="56" color="primary" class="mb-4"></v-icon>
-                <div class="text-h6 text-medium-emphasis mb-3">{{ t('read.toc.enableNavigation') }}</div>
+                <div class="text-h6 text-medium-emphasis mb-3">
+                  {{ t('read.toc.enableNavigation') }}
+                </div>
                 <div class="text-body-2 text-medium-emphasis mb-4">
                   {{ t('read.toc.selectCatalog') }}
                 </div>

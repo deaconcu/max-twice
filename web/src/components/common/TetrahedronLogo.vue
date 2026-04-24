@@ -70,7 +70,7 @@ const faces: [number, number, number][] = [
 ]
 
 // 每条棱属于哪两个面
-const edgeToFaces: Map<string, number[]> = new Map()
+const edgeToFaces = new Map<string, number[]>()
 edges.forEach(([i, j], edgeIdx) => {
   const key = `${Math.min(i, j)}-${Math.max(i, j)}`
   const belongFaces: number[] = []
@@ -95,7 +95,7 @@ let animationId: number | null = null
 let lastTime = 0
 
 function rotatePoint(point: number[], ax: number, ay: number, az: number): number[] {
-  let [x, y, z] = point
+  const [x, y, z] = point
 
   // 绕 X 轴旋转
   const cosX = Math.cos(ax)

@@ -28,9 +28,7 @@
       :y2="edge.y2"
       :stroke="isFocusEdge(edge.i, edge.j) && focusIntensity > 0.05 ? focusColor : color"
       :stroke-width="strokeWidth * 0.75"
-      :opacity="
-        isFocusEdge(edge.i, edge.j) ? 0.25 + 0.15 * focusIntensity : 0.25
-      "
+      :opacity="isFocusEdge(edge.i, edge.j) ? 0.25 + 0.15 * focusIntensity : 0.25"
     />
     <!-- 焦点面：三角形填充 + 脉冲 + 发光 -->
     <polygon
@@ -48,18 +46,12 @@
       :y1="edge.y1"
       :x2="edge.x2"
       :y2="edge.y2"
-      :stroke="
-        isFocusEdge(edge.i, edge.j) && focusIntensity > 0.05 ? focusColor : color
-      "
+      :stroke="isFocusEdge(edge.i, edge.j) && focusIntensity > 0.05 ? focusColor : color"
       :stroke-width="
-        isFocusEdge(edge.i, edge.j)
-          ? strokeWidth * (1 + 0.4 * focusIntensity)
-          : strokeWidth
+        isFocusEdge(edge.i, edge.j) ? strokeWidth * (1 + 0.4 * focusIntensity) : strokeWidth
       "
       :filter="
-        isFocusEdge(edge.i, edge.j) && focusIntensity > 0.05
-          ? `url(#${glowFilterId})`
-          : undefined
+        isFocusEdge(edge.i, edge.j) && focusIntensity > 0.05 ? `url(#${glowFilterId})` : undefined
       "
     />
   </svg>
@@ -119,20 +111,40 @@ const baseVertices = [
 // 30 条棱（连接距离为 2 的顶点对）
 const edges: [number, number][] = [
   // 顶部五边形周围
-  [0, 1], [0, 4], [0, 5], [0, 8], [0, 9],
+  [0, 1],
+  [0, 4],
+  [0, 5],
+  [0, 8],
+  [0, 9],
   // 底部五边形周围
-  [3, 2], [3, 6], [3, 7], [3, 10], [3, 11],
+  [3, 2],
+  [3, 6],
+  [3, 7],
+  [3, 10],
+  [3, 11],
   // 上层连接
-  [1, 8], [1, 9], [1, 6], [1, 7],
-  [4, 5], [4, 8], [4, 10],
-  [5, 9], [5, 11],
+  [1, 8],
+  [1, 9],
+  [1, 6],
+  [1, 7],
+  [4, 5],
+  [4, 8],
+  [4, 10],
+  [5, 9],
+  [5, 11],
   // 中层连接
-  [8, 10], [8, 6],
-  [9, 11], [9, 7],
-  [6, 10], [6, 7],
+  [8, 10],
+  [8, 6],
+  [9, 11],
+  [9, 7],
+  [6, 10],
+  [6, 7],
   [7, 11],
   // 下层连接
-  [2, 4], [2, 5], [2, 10], [2, 11],
+  [2, 4],
+  [2, 5],
+  [2, 10],
+  [2, 11],
 ]
 
 // 20 个面（每个面是正三角形，顶点顺序确保从外部看是逆时针）
@@ -164,7 +176,7 @@ const faces: [number, number, number][] = [
 ]
 
 // 每条棱属于哪两个面
-const edgeToFaces: Map<string, number[]> = new Map()
+const edgeToFaces = new Map<string, number[]>()
 edges.forEach(([i, j]) => {
   const key = `${Math.min(i, j)}-${Math.max(i, j)}`
   const belongFaces: number[] = []
@@ -303,14 +315,10 @@ const backEdges = computed(() => allEdges.value.filter((e) => !e.isFront))
 // 顶点按深度（z）拆为正面 / 背面
 // 正面：z < 0（朝向观察者，因为投影时 y 轴翻转了，z 越小越靠前）
 const frontVertices = computed(() =>
-  projectedVertices.value
-    .map((p, i) => ({ ...p, i }))
-    .filter((p) => p.z <= 0)
+  projectedVertices.value.map((p, i) => ({ ...p, i })).filter((p) => p.z <= 0)
 )
 const backVertices = computed(() =>
-  projectedVertices.value
-    .map((p, i) => ({ ...p, i }))
-    .filter((p) => p.z > 0)
+  projectedVertices.value.map((p, i) => ({ ...p, i })).filter((p) => p.z > 0)
 )
 
 // 焦点面相关：当前焦点面的顶点 / 棱集合

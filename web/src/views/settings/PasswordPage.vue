@@ -113,7 +113,9 @@ async function handleConfirm() {
             class="text-caption mb-1"
             :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
           >
-            {{ codeSent ? t('settings.password.emailLabelSent') : t('settings.password.emailLabel') }}
+            {{
+              codeSent ? t('settings.password.emailLabelSent') : t('settings.password.emailLabel')
+            }}
           </div>
           <div class="d-flex align-center ga-3 flex-wrap">
             <div class="text-body-1 font-weight-medium">{{ email }}</div>
@@ -173,11 +175,7 @@ async function handleConfirm() {
                   :class="i <= score + 1 ? `bg-${color}` : ''"
                 />
               </div>
-              <v-icon
-                tabindex="-1"
-                style="cursor: pointer"
-                @click="showPassword = !showPassword"
-              >
+              <v-icon tabindex="-1" style="cursor: pointer" @click="showPassword = !showPassword">
                 {{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}
               </v-icon>
             </template>
