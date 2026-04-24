@@ -122,10 +122,11 @@ public class UserDomainService {
      *
      * @param email 邮箱
      * @param password 密码（明文，将被BCrypt加密）；可传 null 表示无密码账号（邮箱验证码登录建号）
+     * @param locale 用户偏好语言（"zh" / "en"）；调用方负责保证非空合法
      * @return 创建的用户对象
      */
     @Transactional
-    public UserDO createUser(String email, String password) {
+    public UserDO createUser(String email, String password, String locale) {
         // 检查用户是否已存在
         UserDO existingUser = userDataService.getByEmail(email);
         if (existingUser != null) {
@@ -142,10 +143,23 @@ public class UserDomainService {
         user.setState(UserState.ACTIVE.value());
         user.setRole(UserRole.USER.getCode());
         user.setEmailValidated(false); // 设置邮箱验证状态默认值
+        user.setLocale(locale);
         userDataService.insert(user);
 
         log.info("用户创建成功: userId={}", user.getId());
         return user;
+    }
+
+    /**
+     * 更新用户偏好语言。白名单校验在上层（UserService）。
+     */
+    @Transactional
+    public void updateUserLocale(Long userId, String locale) {
+        int updated = userDataService.updateLocale(userId, locale);
+        if (updated == 0) {
+            throw StatusCode.USER_NOT_FOUND.exception();
+        }
+        log.info("用户语言更新: userId={}, locale={}", userId, locale);
     }
 
     /**

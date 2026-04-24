@@ -12,6 +12,7 @@ import com.twicemax.application.dto.response.user.UserProfileDTO;
 import com.twicemax.application.service.AuthService;
 import com.twicemax.web.ratelimit.LimitType;
 import com.twicemax.web.ratelimit.RateLimit;
+import com.twicemax.web.util.AcceptLanguageUtils;
 import com.twicemax.web.util.IpUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -60,9 +61,13 @@ public class AuthController {
 
     @PostMapping("/login/verify-code")
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<UserProfileDTO> verifyLoginCode(@RequestBody @Valid VerifyEmailRequest request) {
+    public ApiResponse<UserProfileDTO> verifyLoginCode(
+            @RequestBody @Valid VerifyEmailRequest request,
+            HttpServletRequest httpRequest) {
+        // 新用户自动建号时用 Accept-Language 决定初始 locale；老用户走已有值，参数被忽略
+        String locale = AcceptLanguageUtils.detectLocale(httpRequest);
         UserProfileDTO userDTO = authService.verifyLoginCode(
-                request.getPendingSessionToken(), request.getCode());
+                request.getPendingSessionToken(), request.getCode(), locale);
         StpUtil.login(userDTO.getId());
         return ApiResponse.success(userDTO);
     }

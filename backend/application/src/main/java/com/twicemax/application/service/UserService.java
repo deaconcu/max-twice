@@ -208,6 +208,18 @@ public class UserService {
         userDomainService.updateUserAvatar(userId, avatarUrl);
     }
 
+    /**
+     * 更新用户偏好语言。入参必须是白名单内的 locale。
+     */
+    @Transactional
+    public void updateCurrentUserLocale(Long userId, String locale) {
+        validateUserId(userId);
+        if (!"zh".equals(locale) && !"en".equals(locale)) {
+            throw StatusCode.INVALID_PARAMETER.exception("不支持的语言");
+        }
+        userDomainService.updateUserLocale(userId, locale);
+    }
+
     //=========== DTO转换方法 ==========
 
     /**

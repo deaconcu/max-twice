@@ -251,6 +251,14 @@ public class UserDataService {
         return userMapper.updatePassword(userId, encodedPassword);
     }
 
+    /**
+     * 更新用户偏好语言（LanguageSwitcher 走这里）
+     */
+    @CacheEvict(value = "users", key = "#userId")
+    public int updateLocale(long userId, String locale) {
+        return userMapper.updateLocale(userId, locale, LocalDateTime.now());
+    }
+
     // ==================== 缓存清除（内部使用）====================
 
     @CacheEvict(value = "users", key = "#userId")

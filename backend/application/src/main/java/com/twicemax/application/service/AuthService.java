@@ -131,9 +131,11 @@ public class AuthService {
 
     /**
      * 校验登录验证码；用户不存在时自动建号（password=null，emailValidated=true）。
+     *
+     * @param locale 新建用户的初始偏好语言（"zh" / "en"）。由 Controller 从 Accept-Language 解析传入。
      */
     @Transactional
-    public UserProfileDTO verifyLoginCode(String pendingSessionToken, String code) {
+    public UserProfileDTO verifyLoginCode(String pendingSessionToken, String code, String locale) {
         validateVerificationCode(code);
 
         String email = otpSessionService.requireEmail(OtpScene.LOGIN, pendingSessionToken);
@@ -142,7 +144,7 @@ public class AuthService {
 
         UserDO user = userDataService.getByEmail(email);
         if (user == null) {
-            user = userDomainService.createUser(email, null);
+            user = userDomainService.createUser(email, null, locale);
             log.info("邮箱验证码登录自动建号: userId={}", user.getId());
         }
 
@@ -225,13 +227,13 @@ public class AuthService {
      */
     @Deprecated
     @Transactional
-    public PendingSessionDTO register(String email, String password) {
+    public PendingSessionDTO register(String email, String password, String locale) {
         validateEmailFormat(email);
         validatePassword(password);
 
         guardInviteOnly(email);
 
-        userDomainService.createUser(email, password);
+        userDomainService.createUser(email, password, locale);
 
         return issuePendingSessionAndSendEmail(email);
     }

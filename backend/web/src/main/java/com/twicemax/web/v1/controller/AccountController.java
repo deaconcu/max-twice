@@ -3,8 +3,10 @@ package com.twicemax.web.v1.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.twicemax.application.dto.ApiResponse;
 import com.twicemax.application.dto.request.SetPasswordConfirmRequest;
+import com.twicemax.application.dto.request.UpdateLocaleRequest;
 import com.twicemax.application.dto.response.user.SetPasswordSessionDTO;
 import com.twicemax.application.service.AuthService;
+import com.twicemax.application.service.UserService;
 import com.twicemax.user.profile.UserDO;
 import com.twicemax.web.ratelimit.LimitType;
 import com.twicemax.web.ratelimit.RateLimit;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 public class AccountController {
 
     private final AuthService authService;
+    private final UserService userService;
 
     /**
      * 发送设置密码 OTP 到当前用户邮箱。仅空密码账号可调用。
@@ -61,6 +65,20 @@ public class AccountController {
             @RequestBody @Valid SetPasswordConfirmRequest request,
             @CurrentUser UserDO currentUser) {
         authService.confirmSetPassword(currentUser, request.getCode(), request.getNewPassword());
+        return ApiResponse.success();
+    }
+
+    /**
+     * 更新当前用户的偏好语言，LanguageSwitcher 切换语言时调用。
+     * 成功后前端负责刷新页面（数据分库，需要重新加载内容）。
+     */
+    @PutMapping("/locale")
+    @SaCheckLogin
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<Void> updateLocale(
+            @RequestBody @Valid UpdateLocaleRequest request,
+            @CurrentUser UserDO currentUser) {
+        userService.updateCurrentUserLocale(currentUser.getId(), request.getLocale());
         return ApiResponse.success();
     }
 }

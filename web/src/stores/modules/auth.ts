@@ -3,11 +3,7 @@ import { ref, computed } from 'vue'
 import { authApi } from '@/api'
 import { useUserStore } from './user'
 import { logger } from '@/utils/logger'
-import type {
-  PasswordResetSession,
-  PendingSession,
-  User,
-} from '@/types/user'
+import type { PasswordResetSession, PendingSession, User } from '@/types/user'
 import i18n from '@/i18n'
 
 const PENDING_SESSION_STORAGE_KEY = 'pendingSession'
@@ -260,9 +256,7 @@ export const useAuthStore = defineStore(
         setResetSession(response.data)
         return response.data
       }
-      throw new Error(
-        response.message ?? i18n.global.t('user.forgotPassword.requestFailed')
-      )
+      throw new Error(response.message ?? i18n.global.t('user.forgotPassword.requestFailed'))
     }
 
     /**
@@ -276,9 +270,7 @@ export const useAuthStore = defineStore(
         setResetSession(response.data)
         return response.data
       }
-      throw new Error(
-        response.message ?? i18n.global.t('user.verifyEmail.sendFailed')
-      )
+      throw new Error(response.message ?? i18n.global.t('user.verifyEmail.sendFailed'))
     }
 
     /**
@@ -288,10 +280,7 @@ export const useAuthStore = defineStore(
       const session = resetSession.value
       if (!session) return false
       try {
-        const response = await authApi.verifyPasswordResetCode(
-          session.resetSessionToken,
-          code
-        )
+        const response = await authApi.verifyPasswordResetCode(session.resetSessionToken, code)
         return response.code === 200
       } catch (error) {
         logger.error('密码重置验证码校验失败', error)
@@ -305,17 +294,12 @@ export const useAuthStore = defineStore(
     const confirmPasswordReset = async (newPassword: string): Promise<boolean> => {
       const session = resetSession.value
       if (!session) return false
-      const response = await authApi.confirmPasswordReset(
-        session.resetSessionToken,
-        newPassword
-      )
+      const response = await authApi.confirmPasswordReset(session.resetSessionToken, newPassword)
       if (response.code === 200) {
         setResetSession(null)
         return true
       }
-      throw new Error(
-        response.message ?? i18n.global.t('user.forgotPassword.resetFailed')
-      )
+      throw new Error(response.message ?? i18n.global.t('user.forgotPassword.resetFailed'))
     }
 
     /**

@@ -34,18 +34,21 @@ public interface UserMapper {
     @Select("SELECT * FROM user WHERE name = #{name} limit 1")
     UserDO getByName(String name);
 
-    @Insert("INSERT INTO user(name, password, phone, email, email_validated, biography, avatar, role, state) " +
-            "VALUES (#{name}, #{password}, #{phone}, #{email}, #{emailValidated}, #{biography}, #{avatar}, #{role}, #{state})")
+    @Insert("INSERT INTO user(name, password, phone, email, email_validated, biography, avatar, role, state, locale) " +
+            "VALUES (#{name}, #{password}, #{phone}, #{email}, #{emailValidated}, #{biography}, #{avatar}, #{role}, #{state}, #{locale})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserDO user);
 
     // 只更新基本信息字段，不更新敏感字段(password, email, email_validated, state, role)
     @Update("UPDATE user SET name = #{name}, phone = #{phone}, biography = #{biography}, " +
-            "avatar = #{avatar}, timezone = #{timezone}, updated_at = #{updatedAt} WHERE id = #{id}")
+            "avatar = #{avatar}, timezone = #{timezone}, locale = #{locale}, updated_at = #{updatedAt} WHERE id = #{id}")
     void update(UserDO user);
 
     @Update("UPDATE user SET avatar = #{avatar} WHERE id = #{userId}")
     int updateAvatar(@Param("userId") long userId, @Param("avatar") String avatar);
+
+    @Update("UPDATE user SET locale = #{locale}, updated_at = #{updatedAt} WHERE id = #{userId}")
+    int updateLocale(@Param("userId") long userId, @Param("locale") String locale, @Param("updatedAt") LocalDateTime updatedAt);
 
     // 敏感字段的专用更新方法
     @Update("UPDATE user SET state = #{state}, updated_at = #{updatedAt} WHERE id = #{userId}")

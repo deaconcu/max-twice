@@ -1,18 +1,49 @@
 <script setup lang="ts">
+import { useMutation } from '@tanstack/vue-query'
 import { useI18n } from '@/composables/useI18n'
+import { useUserStore } from '@/stores/modules/user'
+import { accountApi } from '@/api'
+import { logger } from '@/utils/logger'
 
 const { locale, switchLocale } = useI18n()
+const userStore = useUserStore()
 
-// 只有 zh / en 两种语言，直接 toggle；与登录页 SimpleHeader 的样式保持一致。
-// 切换后 reload 是因为内容按语言分库，必须重新拉数据。
-const toggleLocale = () => {
-  switchLocale(locale.value === 'zh' ? 'en' : 'zh')
+// 登录态：先写后端持久化（跨设备跟随账号），成功后再切本地 + reload
+// 未登录：跳过网络请求，只切本地。两种路径都要 reload —— 内容按语言分库，需要重新拉数据。
+const updateLocaleMutation = useMutation({
+  mutationFn: (next: 'zh' | 'en') => accountApi.updateLocale(next),
+})
+
+const toggleLocale = async () => {
+  const next = locale.value === 'zh' ? 'en' : 'zh'
+
+  if (userStore.isLoggedIn) {
+    try {
+      const resp = await updateLocaleMutation.mutateAsync(next)
+      if (resp.code !== 200) {
+        logger.error('更新语言失败', resp.message)
+        return
+      }
+    } catch (e) {
+      logger.error('更新语言异常', e)
+      return
+    }
+  }
+
+  switchLocale(next)
   window.location.reload()
 }
 </script>
 
 <template>
-  <v-btn variant="text" size="small" class="lang-btn" @click="toggleLocale">
+  <v-btn
+    variant="text"
+    size="small"
+    class="lang-btn"
+    :loading="updateLocaleMutation.isPending.value"
+    :disabled="updateLocaleMutation.isPending.value"
+    @click="toggleLocale"
+  >
     {{ locale === 'zh' ? '中' : 'EN' }}
   </v-btn>
 </template>

@@ -1,0 +1,3 @@
+业务库（twicemax_zh / twicemax_en）的 Flyway migration 目录。
+当前尚无脚本，Flyway baseline 到 V1 后会保持空状态，后续业务库 schema 变更从 V2 起放这里。
+共用一套脚本 → zh 和 en 两个库都会执行同一个 SQL 文件。

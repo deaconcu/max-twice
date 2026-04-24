@@ -37,6 +37,12 @@ public class UserDO {
      */
     private String timezone;
 
+    /**
+     * 用户偏好语言，决定 UI 语言以及内容库路由（zh → twicemax_zh，en → twicemax_en）。
+     * 注册时根据 Accept-Language 决定初始值（zh* → zh，其余 → en），用户可在 UI 切换。
+     */
+    private String locale;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

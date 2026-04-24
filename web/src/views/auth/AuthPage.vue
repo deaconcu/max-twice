@@ -6,7 +6,14 @@
         <svg class="heatmap" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
           <defs>
             <!-- 未打卡的空格子：极淡的背景点阵，让画面没打卡的地方也是"方格"结构 -->
-            <pattern id="cell-grid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+            <pattern
+              id="cell-grid"
+              x="0"
+              y="0"
+              width="24"
+              height="24"
+              patternUnits="userSpaceOnUse"
+            >
               <rect
                 x="1"
                 y="1"
@@ -109,7 +116,13 @@
 
                     <v-btn
                       type="submit"
-                      :disabled="isLoggingIn || !loginFormValid || !loginData.email || waitingForTurnstile === 'login' || isInviteBlocked"
+                      :disabled="
+                        isLoggingIn ||
+                        !loginFormValid ||
+                        !loginData.email ||
+                        waitingForTurnstile === 'login' ||
+                        isInviteBlocked
+                      "
                       block
                       size="large"
                       color="primary"
@@ -161,7 +174,6 @@
                       }}</a>
                     </p>
                   </v-form>
-
 
                   <!-- 密码登录表单 -->
                   <v-form
@@ -270,7 +282,6 @@
                     </p>
                   </v-form>
 
-
                   <!-- 邮箱验证表单 -->
                   <v-form
                     v-else-if="currentMode === 'verify'"
@@ -373,15 +384,10 @@
 import { ref, computed, watch, onMounted, onUnmounted, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
-import {
-  useEmailRules,
-  useMaxLength,
-  useVerificationCodeRule,
-} from '@/composables/useValidation'
+import { useEmailRules, useMaxLength, useVerificationCodeRule } from '@/composables/useValidation'
 import { HEADER_HEIGHT } from '@/constants/layout'
 import { BUSINESS_ERROR } from '@/constants/errorCode'
 import { useAuthStore } from '@/stores'
-import { useUserStore } from '@/stores'
 import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 import IntroSection from '@/components/common/IntroSection.vue'
 import TurnstileWidget from '@/components/common/TurnstileWidget.vue'
@@ -393,7 +399,6 @@ const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 const authStore = useAuthStore()
-const userStore = useUserStore()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
 const currentMode = ref<AuthMode>('login')
@@ -756,9 +761,9 @@ const handleVerify = async () => {
   try {
     isVerifying.value = true
     clearError()
+    // authStore.verifyLoginCode 内部已经 userStore.setUser，这里不再重复
     const user = await authStore.verifyLoginCode(verifyData.value.code)
     if (user) {
-      userStore.setUser(user)
       showSnackbar?.(t('user.verifyEmail.verifySuccess'), 'success')
       const redirect = route.query.redirect as string
       await router.push(redirect || '/')
@@ -900,11 +905,7 @@ onUnmounted(() => {
   right: -10%;
   width: 700px;
   height: 700px;
-  background: radial-gradient(
-    circle,
-    rgba(var(--v-theme-primary), 0.08) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(var(--v-theme-primary), 0.08) 0%, transparent 70%);
   pointer-events: none;
   border-radius: 50%;
 }
@@ -916,15 +917,10 @@ onUnmounted(() => {
   left: -12%;
   width: 800px;
   height: 800px;
-  background: radial-gradient(
-    circle,
-    rgba(124, 58, 237, 0.07) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.07) 0%, transparent 70%);
   pointer-events: none;
   border-radius: 50%;
 }
-
 
 .auth-container {
   height: calc(100vh - v-bind('`${HEADER_HEIGHT}px`'));

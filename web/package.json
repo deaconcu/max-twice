@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
+    "@tanstack/vue-query": "^5.100.1",
     "@tiptap/extension-code-block-lowlight": "^3.10.5",
     "@tiptap/extension-color": "^3.10.7",
     "@tiptap/extension-highlight": "^3.10.7",

@@ -73,6 +73,12 @@ public class UserProfileDTO extends UserSummaryDTO {
     private String timezone;
 
     /**
+     * 用户偏好语言
+     * 说明：'zh' / 'en'，决定 UI 语言和内容库路由
+     */
+    private String locale;
+
+    /**
      * 是否已设置密码
      * 说明：邮箱验证码登录自动建号时 password=null；用户可在登录后单独设置密码
      */

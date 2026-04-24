@@ -20,4 +20,11 @@ export const accountApi = {
   confirmSetPassword(code: string, newPassword: string): Promise<ApiResponse<void>> {
     return apiClient.post('/v1/account/password/confirm', { code, newPassword })
   },
+
+  /**
+   * 更新当前用户偏好语言。成功后前端负责刷新页面（数据分库）。
+   */
+  updateLocale(locale: 'zh' | 'en'): Promise<ApiResponse<void>> {
+    return apiClient.put('/v1/account/locale', { locale })
+  },
 }

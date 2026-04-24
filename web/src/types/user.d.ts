@@ -33,6 +33,7 @@ export interface User {
   followed?: number // 关注人数
   isFollowing?: boolean // 是否已关注
   timezone?: string // 用户时区（IANA格式，如 America/Los_Angeles）
+  locale?: string // 用户偏好语言（'zh' / 'en'），登录后覆盖 localStorage
   hasPassword?: boolean // 是否已设置密码（邮箱验证码登录自动建号时为 false）
 }
 
