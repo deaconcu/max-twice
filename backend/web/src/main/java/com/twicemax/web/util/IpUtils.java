@@ -12,10 +12,12 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class IpUtils {
 
     /**
-     * 获取客户端真实IP地址
-     * 考虑了反向代理的情况（X-Forwarded-For, X-Real-IP）
-     *
-     * @return IP地址，如果无法获取返回null
+     * 获取客户端真实IP地址。
+     * <p>
+     * 部署架构：Client → Cloudflare → 源站（Hetzner Firewall 只放行 CF IP 段）。
+     * 只信任 CF 在回源时添加的 {@code CF-Connecting-IP}（CF 会覆盖客户端伪造的同名 header）；
+     * 读不到时兜底到 TCP 对端地址。不读 {@code X-Forwarded-For} / {@code X-Real-IP}，
+     * 这两个是客户端可伪造的，任何人打 header 都能顶掉 IP 维度的风控。
      */
     public static String getIpAddress() {
         try {
@@ -33,11 +35,7 @@ public class IpUtils {
     }
 
     /**
-     * 从HttpServletRequest获取客户端真实IP地址
-     * 考虑了反向代理的情况（X-Forwarded-For, X-Real-IP）
-     *
-     * @param request HTTP请求对象
-     * @return IP地址，如果无法获取返回null
+     * 从 HttpServletRequest 获取客户端真实 IP 地址。见 {@link #getIpAddress()} 的安全说明。
      */
     public static String getIpAddress(HttpServletRequest request) {
         if (request == null) {
@@ -45,21 +43,11 @@ public class IpUtils {
         }
 
         try {
-            // 考虑反向代理的情况
-            String ip = request.getHeader("X-Forwarded-For");
-            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-                ip = request.getHeader("X-Real-IP");
+            String ip = request.getHeader("CF-Connecting-IP");
+            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+                return ip;
             }
-            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-                ip = request.getRemoteAddr();
-            }
-
-            // X-Forwarded-For 可能包含多个IP，取第一个
-            if (ip != null && ip.contains(",")) {
-                ip = ip.split(",")[0].trim();
-            }
-
-            return ip;
+            return request.getRemoteAddr();
         } catch (Exception e) {
             log.warn("从request获取IP地址失败", e);
             return null;
