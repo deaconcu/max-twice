@@ -35,7 +35,7 @@ public class AppConfiguration implements WebMvcConfigurer {
                 //.allowedOrigins("http://localhost:5175", "http://localhost:5174") // 允许的源
                 .allowedOriginPatterns("*") // 允许的源
                 .allowCredentials(true)
-                .allowedMethods("GET", "POST", "PUT", "DELETE") // 允许的请求方法
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE") // 允许的请求方法
                 .allowedHeaders("*"); // 允许的请求头
     }
 
@@ -74,9 +74,9 @@ public class AppConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 数据源路由拦截器（最先执行）
+        // 数据源路由拦截器（最先执行）：根据 X-Site-Lang 选择 zh/en 数据库
         registry.addInterceptor(dataSourceInterceptor)
-                .addPathPatterns("/v1/**")
+                .addPathPatterns("/v1/**", "/v2/**")
                 .order(0);
 
         // Sa-Token 拦截器

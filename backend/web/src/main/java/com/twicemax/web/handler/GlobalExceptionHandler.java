@@ -68,11 +68,12 @@ public class GlobalExceptionHandler {
     public ApiResponse<Object> handleBusinessException(BusinessException e, HttpServletRequest request) {
         log.warn("业务异常: [{}] {}", e.getCode(), e.getMessage());
 
-        // 根据错误码获取国际化消息，如果没有找到则使用原消息
+        // i18n key 用字符串错误码，比数字 1127 可读
         String errorKey = "error." + e.getCode();
         String localizedMessage = messageUtils.getMessage(errorKey, e.getMessage());
 
-        return ApiResponse.fail(e.getCode(), localizedMessage).path(request.getRequestURI());
+        // v1 ApiResponse 仍然用数字 code（保持 v1 前端兼容）
+        return ApiResponse.fail(e.getLegacyCode(), localizedMessage).path(request.getRequestURI());
     }
     
     /**

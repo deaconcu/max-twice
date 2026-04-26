@@ -2,17 +2,18 @@ package com.twicemax.shared.domain.exception;
 
 /**
  * 错误码枚举
- * 
- * 错误码分段规则：
- * - 200: 成功
- * - 1xxx: 业务异常
- *   - 10xx: 通用错误（参数、权限等）
- *   - 11xx: 用户模块错误
- *   - 12xx: 课程模块错误
- *   - 13xx: 内容管理模块错误
- *   - 14xx: 评论模块错误
- *   - 15xx: 路线图模块错误
- * - 9xxx: 系统错误
+ *
+ * <p>领域层错误码，包含业务码和默认消息。HTTP 状态码映射在 web 层
+ * （{@code com.twicemax.web.v2.handler.StatusCodeHttpMapper}）独立维护，
+ * 保持领域层不依赖 Web 协议细节。
+ *
+ * <p>分段规则：
+ * <ul>
+ *   <li>200: 成功</li>
+ *   <li>1xxx: 业务异常（10xx 通用、11xx 用户、12xx 课程、13xx 内容、14xx 评论、15xx 路线图、16xx 学习进度、17xx 解析、18xx 目录、19xx 排行）</li>
+ *   <li>20xx 消息、21xx 专业、22xx 记忆卡片、23xx 限流、24xx 文件、25xx 互动、26xx 验证码</li>
+ *   <li>9xxx: 系统错误</li>
+ * </ul>
  */
 public enum StatusCode {
 
@@ -77,7 +78,7 @@ public enum StatusCode {
     // 路线图相关 15xx
     ROADMAP_NOT_FOUND(1501, "路线图不存在"),
     ROADMAP_CONTENT_INVALID(1502, "路线图内容格式不正确"),
-    
+
     // 学习进度相关 16xx
     USER_ROADMAP_NOT_FOUND(1601, "学习记录不存在"),
     USER_COURSE_NOT_FOUND(1602, "课程学习记录不存在"),
@@ -94,7 +95,7 @@ public enum StatusCode {
     USER_ROADMAP_ALREADY_STARTED(1613, "路线图已开始学习"),
     USER_ROADMAP_NOT_STARTED(1614, "路线图尚未开始学习"),
     LEARNING_ROADMAP_LIMIT_EXCEEDED(1615, "学习路线图数量超过限制"),
-    
+
     // 数据解析相关 17xx
     JSON_PARSE_ERROR(1701, "数据格式解析失败"),
     CONTENT_HASH_ERROR(1702, "内容哈希计算失败"),
@@ -192,38 +193,38 @@ public enum StatusCode {
 
     private final int code;
     private final String message;
-    
+
     StatusCode(int code, String message) {
         this.code = code;
         this.message = message;
     }
-    
+
     public int getCode() {
         return code;
     }
-    
+
     public String getMessage() {
         return message;
     }
-    
+
     /**
      * 创建业务异常
      */
     public BusinessException exception() {
-        return new BusinessException(this.code, this.message);
+        return new BusinessException(this, this.message);
     }
-    
+
     /**
      * 创建支持国际化的业务异常
      */
     public BusinessException exception(String localizedMessage) {
-        return new BusinessException(this.code, localizedMessage);
+        return new BusinessException(this, localizedMessage);
     }
-    
+
     /**
      * 创建带原因的业务异常
      */
     public BusinessException exception(Throwable cause) {
-        return new BusinessException(this.code, this.message, cause);
+        return new BusinessException(this, this.message, cause);
     }
 }
