@@ -540,6 +540,7 @@ import { useCategoryStore } from '@/stores'
 import { courseApi } from '@/api/modules/course'
 import { searchApi } from '@/api/modules/search'
 import { useRoadmapDetailQuery, useCreateRoadmapMutation, useUpdateRoadmapMutation } from '@/queries/roadmap'
+import { useRoleDetailQuery } from '@/queries/role'
 import { getGlobalSnackbar } from '@/composables/config'
 import type { Course } from '@/types/course'
 import type { SearchResultItem } from '@/api/modules/search'
@@ -582,7 +583,18 @@ const roadmapDescription = ref('')
 const savedDraftDescription = ref('') // 已保存的草稿描述
 const draftRoadmapId = ref<number | null>(null) // 草稿路线图ID
 const roadmapState = ref<number | null>(null) // 路线图状态：0=草稿，1=审核中，2=已发布
-const roleName = ref('') // TODO: 从 API 获取
+// 加载角色信息（创建模式从路由 roleId）
+const { data: roleData } = useRoleDetailQuery(roleId)
+const roleName = computed(() => roleData.value?.name ?? '')
+
+// roleName 变化时同步根节点 label
+watch(roleName, (name) => {
+  if (!name) return
+  const rootNode = nodes.value.find((n) => n.id === '0')
+  if (rootNode) {
+    rootNode.data = { ...rootNode.data, label: name }
+  }
+})
 
 // Tab 切换状态
 const searchTab = ref<'course' | 'node'>('course')

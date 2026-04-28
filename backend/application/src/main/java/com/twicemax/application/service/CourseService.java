@@ -7,7 +7,6 @@ import com.twicemax.application.dto.response.KeysetPageResponse;
 import com.twicemax.application.dto.v2.CursorPage;
 import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.application.dto.response.course.CourseAdminDTO;
-import com.twicemax.application.dto.response.course.CourseBriefDTO;
 import com.twicemax.application.dto.response.course.CourseFullDTO;
 import com.twicemax.application.dto.response.course.CourseSummaryDTO;
 import com.twicemax.content.course.CourseDomainService;
@@ -30,9 +29,14 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.meilisearch.sdk.model.Searchable;
+
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.twicemax.shared.domain.Enums.*;
@@ -95,11 +99,56 @@ public class CourseService {
     }
 
     /**
-     * 用户端按名称搜索已发布的课程（简单搜索，不分页）
+     * 用户端按名称搜索已发布的课程（基于 Meilisearch 全文搜索 + 数据库回查详情）
+     * TODO: 全文搜索暂未启用，先用数据库 LIKE 查询
      */
-    public List<CourseBriefDTO> searchPublishedCourses(String name) {
-        List<CourseDO> courseList = courseDataService.searchPublishedByName(name, 20);
-        return courseAssembler.toBriefDTO(courseList);
+    public List<CourseSummaryDTO> searchPublishedCourses(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 暂时直接走数据库 LIKE 查询
+        List<CourseDO> fallback = courseDataService.searchPublishedByName(name, 20);
+        return courseAssembler.toSummaryDTO(fallback);
+
+        /*
+        // 1. Meilisearch 检索命中 id
+        Searchable searchable = meilisearchService.searchCourses(name, 20, 0);
+        if (searchable == null) {
+            // Meilisearch 不可用时降级到数据库 LIKE 查询
+            List<CourseDO> fallback = courseDataService.searchPublishedByName(name, 20);
+            return courseAssembler.toSummaryDTO(fallback);
+        }
+
+        ArrayList<HashMap<String, Object>> hits = searchable.getHits();
+        if (hits == null || hits.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 保留命中顺序
+        List<Long> ids = hits.stream()
+            .map(h -> h.get("id"))
+            .filter(Objects::nonNull)
+            .map(v -> v instanceof Number ? ((Number) v).longValue() : Long.parseLong(v.toString()))
+            .collect(Collectors.toList());
+
+        if (ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 2. 批量回查 CourseDO，按 Meilisearch 命中顺序排序
+        Map<Long, CourseDO> courseMap = courseDataService.getMapByIds(ids);
+        List<CourseDO> ordered = new ArrayList<>(ids.size());
+        for (Long id : ids) {
+            CourseDO c = courseMap.get(id);
+            if (c != null) {
+                ordered.add(c);
+            }
+        }
+
+        // 3. 转换为 CourseSummaryDTO（包含 rootNodeId）
+        return courseAssembler.toSummaryDTO(ordered);
+        */
     }
 
     /**

@@ -3,7 +3,7 @@ package com.twicemax.web.v2.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.twicemax.application.dto.request.CreateCourseRequest;
 import com.twicemax.application.dto.request.CreateSubcourseRequest;
-import com.twicemax.application.dto.response.course.CourseBriefDTO;
+import com.twicemax.application.dto.response.course.CourseSummaryDTO;
 import com.twicemax.application.dto.response.course.CourseFullDTO;
 import com.twicemax.application.dto.v2.CreateAcceptedResponse;
 import com.twicemax.application.dto.v2.CursorPage;
@@ -65,7 +65,7 @@ public class CoursesController {
 
     @GetMapping("/search")
     @RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public List<CourseBriefDTO> searchCourses(
+    public List<CourseSummaryDTO> searchCourses(
             @RequestParam @NotBlank(message = "搜索名称不能为空") String name) {
         return courseService.searchPublishedCourses(name);
     }
