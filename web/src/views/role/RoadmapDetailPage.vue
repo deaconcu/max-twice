@@ -34,6 +34,18 @@
                 <!-- 点赞和收藏按钮 -->
                 <div class="d-flex align-center gap-2">
                   <v-btn
+                    color="grey-darken-2"
+                    variant="outlined"
+                    :size="$vuetify.display.mobile ? 'small' : 'default'"
+                    rounded="lg"
+                    @click="handleCopy"
+                  >
+                    <v-icon icon="mdi-content-copy" size="18" class="mr-1" />
+                    <span class="d-none d-sm-inline">{{ t('roadmapDetail.copyPath') }}</span>
+                    <span class="d-sm-none">{{ t('common.copy') }}</span>
+                  </v-btn>
+                  <v-divider vertical class="mx-1 align-self-center" style="height: 28px" />
+                  <v-btn
                     :color="roadmap.learning ? 'success' : 'primary'"
                     :variant="roadmap.learning ? 'outlined' : 'flat'"
                     :size="$vuetify.display.mobile ? 'small' : 'default'"
@@ -91,23 +103,7 @@
             </div>
 
             <!-- 流程图 -->
-            <v-card rounded="xl" class="flow-card no-border" flat>
-              <v-card-title class="pa-3 pa-sm-4 d-flex align-center justify-space-between">
-                <span class="text-body-1 font-weight-bold ps-2">{{
-                  t('roadmapDetail.learningPath')
-                }}</span>
-                <v-btn
-                  color="grey-darken-2"
-                  variant="outlined"
-                  size="default"
-                  rounded="lg"
-                  @click="handleCopy"
-                >
-                  <v-icon icon="mdi-content-copy" size="18" class="mr-1" />
-                  <span class="d-none d-sm-inline">{{ t('roadmapDetail.copyPath') }}</span>
-                  <span class="d-sm-none">{{ t('common.copy') }}</span>
-                </v-btn>
-              </v-card-title>
+            <v-card rounded="xl" class="flow-card no-border mt-4" flat>
               <v-card-text class="pa-0">
                 <div class="vue-flow-container">
                   <!-- TODO: 样式调试中，暂用 demo 替换真实路线图 -->

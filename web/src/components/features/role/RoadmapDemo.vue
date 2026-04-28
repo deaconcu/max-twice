@@ -10,9 +10,8 @@
       :zoom-on-pinch="false"
       :zoom-on-double-click="false"
       :prevent-scrolling="false"
-      :min-zoom="1.0"
-      :max-zoom="1.0"
-      :translate-extent="translateExtent"
+      :min-zoom="1.1"
+      :max-zoom="1.1"
     >
       <Background pattern-color="#e0e0e0" :gap="20" :size="1" variant="dots" />
       <template #node-root="{ data }">
@@ -68,16 +67,6 @@ const contentBounds = computed(() => {
   }
 })
 
-// translate-extent: [[minX, minY], [maxX, maxY]] 是世界坐标的允许范围
-// VueFlow 会自动把 viewport 的位移限制在这个范围内
-const translateExtent = computed<[[number, number], [number, number]]>(() => {
-  const b = contentBounds.value
-  return [
-    [b.left - BOUND, b.top - BOUND],
-    [b.right + BOUND, b.bottom + BOUND],
-  ]
-})
-
 // 视口宽度就绪后居中
 watch(
   () => dimensions.value.width,
@@ -85,21 +74,34 @@ watch(
     if (!vw || initialized.value) return
     initialized.value = true
     const b = contentBounds.value
-    const centerX = (vw - (b.right - b.left)) / 2 - b.left
-    setViewport({ x: centerX, y: 0, zoom: 1 })
+    // viewport x 是屏幕坐标：屏幕位置 = nodeX * zoom + x
+    // 居中：x = (vw - contentWidth * zoom) / 2 - left * zoom
+    const centerX = (vw - (b.right - b.left) * ZOOM) / 2 - b.left * ZOOM
+    setViewport({ x: centerX, y: 0, zoom: ZOOM })
   },
   { immediate: true }
 )
 
-// 锁定 y=0：仅当 y 不为 0 时修正一次
+// 锁定 y=0，水平边界夹紧（屏幕像素坐标）
 onViewportChange(({ x, y, zoom }) => {
-  if (y !== 0) setViewport({ x, y: 0, zoom })
+  const vw = dimensions.value.width
+  if (!vw) return
+
+  const b = contentBounds.value
+  // 内容左边界在屏幕上的位置 = b.left * zoom + x，不能小于 -BOUND
+  // => x >= -b.left * zoom - BOUND
+  const minX = -b.right * zoom + vw - BOUND
+  const maxX = -b.left * zoom + BOUND
+
+  const clampedX = Math.min(maxX, Math.max(minX, x))
+  const needClamp = clampedX !== x || y !== 0
+  if (needClamp) setViewport({ x: clampedX, y: 0, zoom })
 })
 
 // ─── 列定义 ───────────────────────────────────────────────
 const NODE_W   = 160
 const NODE_H   = 36
-const COL_GAP  = 24    // 列间距
+const COL_GAP  = 40    // 列间距
 const ROW      = NODE_H + 8   // 同列连续节点的步进
 const PATH_GAP = 20    // 路径与路径之间的额外间距
 
@@ -446,7 +448,7 @@ function placeSection(sec: SectionDef, prevSecId: string | null) {
         source: sec.id, target: topic.id,
         sourceHandle: sHandle, targetHandle: tInHandle,
         type: 'default',
-        style: { stroke: '#bdbdbd', strokeWidth: 1.5, strokeDasharray: '5,4' },
+        style: { stroke: '#bdbdbd', strokeWidth: 1.5, strokeDasharray: '8,4' },
         markerEnd: undefined,
       })
     } else {
@@ -468,7 +470,7 @@ function placeSection(sec: SectionDef, prevSecId: string | null) {
         source: topic.id, target: sec.id,
         sourceHandle: tOutHandle, targetHandle: sInHandle,
         type: 'default',
-        style: { stroke: '#bdbdbd', strokeWidth: 1.5, strokeDasharray: '5,4' },
+        style: { stroke: '#bdbdbd', strokeWidth: 1.5, strokeDasharray: '8,4' },
         markerEnd: undefined,
       })
     }
@@ -498,7 +500,7 @@ function addChildEdges(
         source: parentId, target: child.id,
         sourceHandle: sHandle, targetHandle: tInHandle,
         type: 'default',
-        style: { stroke: '#bdbdbd', strokeWidth: 1.5, strokeDasharray: '5,4' },
+        style: { stroke: '#bdbdbd', strokeWidth: 1.5, strokeDasharray: '8,4' },
         markerEnd: undefined,
       })
     } else {
@@ -524,8 +526,7 @@ function addChildEdges(
     source: lastChild.id, target: parentId,
     sourceHandle: tOutHandle, targetHandle: sHandle,
     type: 'default',
-    style: { stroke: '#bdbdbd', strokeWidth: 1.5, strokeDasharray: '5,4' },
-    markerEnd: undefined,
+    style: { stroke: '#bdbdbd', strokeWidth: 1.5, strokeDasharray: '8,4' },
   })
 }
 
@@ -534,9 +535,10 @@ sections.forEach((sec, si) => {
   placeSection(sec, si > 0 ? sections[si - 1].id : null)
 })
 
-// 根据节点计算图的实际尺寸（最大 x/y + 节点尺寸 + padding）
+// 根据节点计算图的实际尺寸（最大 x/y + 节点尺寸 + padding），乘以 zoom 保证容器够高
+const ZOOM = 1.1
 const PADDING = 40
-const graphHeight = Math.max(...nodes.map((n) => n.position.y)) + NODE_H + PADDING
+const graphHeight = (Math.max(...nodes.map((n) => n.position.y)) + NODE_H + PADDING) * ZOOM
 const graphWidth  = Math.max(...nodes.map((n) => n.position.x)) + NODE_W + PADDING
 
 // 抑制未使用变量警告
