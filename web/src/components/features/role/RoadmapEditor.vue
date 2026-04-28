@@ -1,0 +1,895 @@
+<template>
+  <div class="roadmap-editor">
+    <VueFlow
+      :nodes="vfNodes"
+      :edges="vfEdges"
+      :nodes-draggable="false"
+      :nodes-connectable="false"
+      :elements-selectable="false"
+      :zoom-on-scroll="false"
+      :zoom-on-pinch="false"
+      :zoom-on-double-click="false"
+      :prevent-scrolling="false"
+      :min-zoom="1.1"
+      :max-zoom="1.1"
+      @node-mouse-enter="onNodeMouseEnter"
+      @node-mouse-leave="onNodeMouseLeave"
+      @pane-click="onPaneClick"
+    >
+      <Background pattern-color="#e0e0e0" :gap="20" :size="1" variant="dots" />
+
+      <template #node-root="{ data }">
+        <Handle id="top" type="target" :position="Position.Top" />
+        <div class="node-wrapper">
+          <div class="node-root">{{ data.label }}</div>
+          <div v-if="hoveredNodeId === '__start'" class="node-actions">
+            <button class="node-action-btn" title="在后面插入" @click="insertTrunkAtIndex(0)">
+              <v-icon icon="mdi-arrow-down-bold-outline" size="14" />
+            </button>
+          </div>
+        </div>
+        <Handle id="bottom" type="source" :position="Position.Bottom" />
+      </template>
+
+      <template #node-end="{ data }">
+        <Handle id="top" type="target" :position="Position.Top" />
+        <div class="node-wrapper">
+          <div class="node-end">{{ data.label }}</div>
+          <div v-if="hoveredNodeId === '__end'" class="node-actions">
+            <button
+              class="node-action-btn"
+              title="在前面插入"
+              @click="insertTrunkAtIndex(modelValue.length)"
+            >
+              <v-icon icon="mdi-arrow-up-bold-outline" size="14" />
+            </button>
+          </div>
+        </div>
+        <Handle id="bottom" type="source" :position="Position.Bottom" />
+      </template>
+
+      <template #node-phantom>
+        <Handle id="top" type="target" :position="Position.Top" />
+        <Handle id="bottom" type="source" :position="Position.Bottom" />
+        <div style="width: 0; height: 0" />
+      </template>
+
+      <template #node-topic="{ id, data }">
+        <Handle id="top" type="target" :position="Position.Top" />
+        <Handle id="bottom" type="source" :position="Position.Bottom" />
+        <Handle id="left" type="source" :position="Position.Left" />
+        <Handle id="left-in" type="target" :position="Position.Left" />
+        <Handle id="right" type="source" :position="Position.Right" />
+        <Handle id="right-in" type="target" :position="Position.Right" />
+        <div class="node-wrapper">
+          <div
+            class="node-topic"
+            :class="[
+              data.nodeType === 'course'
+                ? 'node-topic--course'
+                : data.nodeType === 'node'
+                  ? 'node-topic--node'
+                  : 'node-topic--group',
+              { 'node-topic--selected': selectedNodeForBinding === id },
+            ]"
+          >
+            <input
+              v-if="editingNodeId === id"
+              :ref="(el) => bindEditingInput(el as HTMLInputElement | null)"
+              v-model.trim="editingLabel"
+              class="node-label-input"
+              @keydown.enter.prevent="commitLabelEdit"
+              @keydown.esc.prevent="cancelLabelEdit"
+              @blur="commitLabelEdit"
+              @click.stop
+            />
+            <span v-else>{{ data.label }}</span>
+          </div>
+          <div v-if="hoveredNodeId === id && editingNodeId !== id" class="node-actions">
+            <button
+              v-if="data.nodeType !== 'course' && data.nodeType !== 'node'"
+              class="node-action-btn"
+              title="重命名"
+              @click="startLabelEdit(id, data.label)"
+            >
+              <v-icon icon="mdi-pencil-outline" size="14" />
+            </button>
+            <button class="node-action-btn" title="在前面插入" @click="insertBefore(id)">
+              <v-icon icon="mdi-arrow-up-bold-outline" size="14" />
+            </button>
+            <button class="node-action-btn" title="在后面插入" @click="insertAfter(id)">
+              <v-icon icon="mdi-arrow-down-bold-outline" size="14" />
+            </button>
+            <button
+              v-if="!hasChildren(id)"
+              class="node-action-btn"
+              title="设为课程节点"
+              @click="bindAsCourse(id)"
+            >
+              <v-icon icon="mdi-book-outline" size="14" />
+            </button>
+            <button
+              v-if="!hasChildren(id)"
+              class="node-action-btn"
+              title="设为节点"
+              @click="bindAsNode(id)"
+            >
+              <v-icon icon="mdi-file-document-outline" size="14" />
+            </button>
+            <button
+              v-if="!hasChildren(id) && canBranch(id)"
+              class="node-action-btn"
+              title="创建子路径"
+              @click="createBranch(id)"
+            >
+              <v-icon icon="mdi-source-branch" size="14" />
+            </button>
+            <button
+              v-else-if="hasChildren(id)"
+              class="node-action-btn"
+              title="移除子路径"
+              @click="removeBranch(id)"
+            >
+              <v-icon icon="mdi-source-branch-remove" size="14" />
+            </button>
+            <button class="node-action-btn" title="删除节点" @click="deleteNode(id)">
+              <v-icon icon="mdi-close" size="14" />
+            </button>
+          </div>
+        </div>
+      </template>
+    </VueFlow>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { VueFlow, Handle, Position } from '@vue-flow/core'
+import { Background } from '@vue-flow/background'
+import type { Edge as VFEdge, Node as VFNode } from '@vue-flow/core'
+import { useI18n } from '@/composables/useI18n'
+
+/* ========== 类型定义 ========== */
+export interface RoadmapNode {
+  id: string // 'c{courseId}' | 'n{nodeId}' | 'g_{tmp}'（group）
+  label: string
+  nodeType?: 'course' | 'node' | 'group'
+  courseId?: number
+  children?: RoadmapNode[]
+}
+
+export interface BindPayload {
+  type: 'course' | 'node'
+  id: number
+  label: string
+  rootNodeId?: number // course 时使用 rootNodeId 作为 vue-flow id
+}
+
+const props = defineProps<{
+  modelValue: RoadmapNode[]
+  roleName: string
+}>()
+
+const emit = defineEmits<{
+  'update:modelValue': [RoadmapNode[]]
+  'request-bind': [{ nodeId: string; type: 'course' | 'node' }]
+  'cancel-bind': []
+  'show-message': [message: string, type?: string]
+}>()
+
+const { t } = useI18n()
+
+/* ========== 内部状态 ========== */
+const selectedNodeForBinding = ref<string | null>(null)
+const hoveredNodeId = ref<string | null>(null)
+const editingNodeId = ref<string | null>(null)
+const editingLabel = ref('')
+
+let tmpSeq = 0
+const genGroupId = () => `g_${Date.now()}_${++tmpSeq}`
+
+/* ========== 常量 ========== */
+const NODE_W = 160
+const NODE_H = 36
+const COL_GAP = 40
+const ROW = NODE_H + 8
+const PATH_GAP = 60
+const TRUNK_GAP = 60
+const EXTEND = 40
+const MAX_DEPTH = 3
+
+const COLS = ['left3', 'left2', 'left1', 'center', 'right1', 'right2', 'right3'] as const
+type Col = (typeof COLS)[number]
+
+const COL_X: Record<Col, number> = {
+  left3: 300 - (NODE_W + COL_GAP) * 3,
+  left2: 300 - (NODE_W + COL_GAP) * 2,
+  left1: 300 - NODE_W - COL_GAP,
+  center: 300,
+  right1: 300 + NODE_W + COL_GAP,
+  right2: 300 + (NODE_W + COL_GAP) * 2,
+  right3: 300 + (NODE_W + COL_GAP) * 3,
+}
+
+/* ========== 树查找/操作 ========== */
+function findNode(
+  trunk: RoadmapNode[],
+  id: string,
+  depth = 1
+): { node: RoadmapNode; depth: number } | null {
+  for (const n of trunk) {
+    if (n.id === id) return { node: n, depth }
+    if (n.children) {
+      const sub = findNode(n.children, id, depth + 1)
+      if (sub) return sub
+    }
+  }
+  return null
+}
+
+function nodeExists(trunk: RoadmapNode[], id: string): boolean {
+  return findNode(trunk, id) !== null
+}
+
+function insertSibling(
+  trunk: RoadmapNode[],
+  targetId: string,
+  newNode: RoadmapNode,
+  position: 'before' | 'after'
+): RoadmapNode[] {
+  const idx = trunk.findIndex((n) => n.id === targetId)
+  if (idx >= 0) {
+    const result = [...trunk]
+    result.splice(position === 'before' ? idx : idx + 1, 0, newNode)
+    return result
+  }
+  return trunk.map((n) => {
+    if (!n.children) return n
+    const newChildren = insertSibling(n.children, targetId, newNode, position)
+    return newChildren === n.children ? n : { ...n, children: newChildren }
+  })
+}
+
+function setChildrenOf(
+  trunk: RoadmapNode[],
+  targetId: string,
+  children: RoadmapNode[] | undefined
+): RoadmapNode[] {
+  const idx = trunk.findIndex((n) => n.id === targetId)
+  if (idx >= 0) {
+    const result = [...trunk]
+    if (children === undefined || children.length === 0) {
+      const { children: _, ...rest } = result[idx]
+      result[idx] = rest
+    } else {
+      result[idx] = { ...result[idx], children }
+    }
+    return result
+  }
+  return trunk.map((n) => {
+    if (!n.children) return n
+    const newChildren = setChildrenOf(n.children, targetId, children)
+    return newChildren === n.children ? n : { ...n, children: newChildren }
+  })
+}
+
+function deleteNodeFromTree(trunk: RoadmapNode[], id: string): RoadmapNode[] {
+  const idx = trunk.findIndex((n) => n.id === id)
+  if (idx >= 0) {
+    return trunk.filter((_, i) => i !== idx)
+  }
+  return trunk.map((n) => {
+    if (!n.children) return n
+    const newChildren = deleteNodeFromTree(n.children, id)
+    if (newChildren === n.children) return n
+    return newChildren.length ? { ...n, children: newChildren } : (() => {
+      const { children: _c, ...rest } = n
+      return rest
+    })()
+  })
+}
+
+function setLabelOf(
+  trunk: RoadmapNode[],
+  targetId: string,
+  label: string
+): RoadmapNode[] {
+  const idx = trunk.findIndex((n) => n.id === targetId)
+  if (idx >= 0) {
+    const result = [...trunk]
+    result[idx] = { ...result[idx], label }
+    return result
+  }
+  return trunk.map((n) => {
+    if (!n.children) return n
+    const newChildren = setLabelOf(n.children, targetId, label)
+    return newChildren === n.children ? n : { ...n, children: newChildren }
+  })
+}
+
+function replaceNodeAt(
+  trunk: RoadmapNode[],
+  targetId: string,
+  newNode: RoadmapNode
+): RoadmapNode[] {
+  const idx = trunk.findIndex((n) => n.id === targetId)
+  if (idx >= 0) {
+    const result = [...trunk]
+    // 绑定为 course/node 后丢弃原 children（一个具体的课程/节点不应再有子路径）
+    result[idx] = newNode
+    return result
+  }
+  return trunk.map((n) => {
+    if (!n.children) return n
+    const newChildren = replaceNodeAt(n.children, targetId, newNode)
+    return newChildren === n.children ? n : { ...n, children: newChildren }
+  })
+}
+
+/* ========== 渲染：trunk → VueFlow nodes/edges ========== */
+const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
+  const trunk = props.modelValue
+  const vfNodes: VFNode[] = []
+  const vfEdges: VFEdge[] = []
+
+  const colBot: Record<Col, number> = {
+    left3: 10,
+    left2: 10,
+    left1: 10,
+    center: 10,
+    right1: 10,
+    right2: 10,
+    right3: 10,
+  }
+
+  const addBranchEdges = (parentId: string, children: RoadmapNode[], side: 'left' | 'right') => {
+    const sHandle = side === 'right' ? 'right' : 'left'
+    const tInHandle = side === 'right' ? 'left-in' : 'right-in'
+    const tOutHandle = side === 'right' ? 'left' : 'right'
+    const sInHandle = side === 'right' ? 'right-in' : 'left-in'
+
+    children.forEach((child, i) => {
+      if (i === 0) {
+        vfEdges.push({
+          id: `${parentId}-${child.id}`,
+          source: parentId,
+          target: child.id,
+          sourceHandle: sHandle,
+          targetHandle: tInHandle,
+          type: 'default',
+          style: { stroke: '#888', strokeWidth: 1.5, strokeDasharray: '8,4' },
+        })
+      } else {
+        vfEdges.push({
+          id: `${children[i - 1].id}-${child.id}`,
+          source: children[i - 1].id,
+          target: child.id,
+          sourceHandle: 'bottom',
+          targetHandle: 'top',
+          type: 'default',
+          style: { stroke: '#888', strokeWidth: 1.5 },
+        })
+      }
+      if (child.children?.length) {
+        addBranchEdges(child.id, child.children, side)
+      }
+    })
+
+    const last = children[children.length - 1]
+    vfEdges.push({
+      id: `${last.id}-${parentId}`,
+      source: last.id,
+      target: parentId,
+      sourceHandle: tOutHandle,
+      targetHandle: sInHandle,
+      type: 'default',
+      style: { stroke: '#888', strokeWidth: 1.5, strokeDasharray: '8,4' },
+    })
+  }
+
+  // 递归放置一个分支节点（含子孙）
+  const placeBranchNode = (
+    node: RoadmapNode,
+    cols: Col[],
+    side: 'left' | 'right'
+  ): number => {
+    const myCol = cols[0]
+    const childCols = cols.slice(1)
+    const hasKids = !!node.children?.length && childCols.length > 0
+
+    if (!hasKids) {
+      const y = colBot[myCol]
+      vfNodes.push({
+        id: node.id,
+        type: 'topic',
+        position: { x: COL_X[myCol], y },
+        data: { label: node.label, nodeType: node.nodeType },
+      })
+      colBot[myCol] = y + ROW
+      return y
+    }
+
+    const childCol = childCols[0]
+    if (colBot[childCol] > 10) colBot[childCol] += PATH_GAP
+
+    const startIdx = vfNodes.length
+    const childYs: number[] = []
+    node.children!.forEach((c) => {
+      childYs.push(placeBranchNode(c, childCols, side))
+    })
+
+    const childMid = (childYs[0] + childYs[childYs.length - 1]) / 2
+    const myY = Math.max(childMid, colBot[myCol])
+    const shift = myY - childMid
+    if (shift > 0) {
+      for (let i = startIdx; i < vfNodes.length; i++) vfNodes[i].position.y += shift
+      childCols.forEach((c) => {
+        colBot[c] += shift
+      })
+    }
+
+    vfNodes.push({
+      id: node.id,
+      type: 'topic',
+      position: { x: COL_X[myCol], y: myY },
+      data: { label: node.label, nodeType: node.nodeType ?? 'group' },
+    })
+    colBot[myCol] = myY + ROW
+
+    return myY
+  }
+
+  // 主干节点
+  const placeTrunkNode = (node: RoadmapNode) => {
+    // 选更空的一侧：取该侧 3 列中最大的 colBot 作为代表
+    const rightMax = Math.max(colBot.right1, colBot.right2, colBot.right3)
+    const leftMax = Math.max(colBot.left1, colBot.left2, colBot.left3)
+    const side: 'left' | 'right' = rightMax <= leftMax ? 'right' : 'left'
+    const subCols: Col[] =
+      side === 'right' ? ['right1', 'right2', 'right3'] : ['left1', 'left2', 'left3']
+
+    if (node.children?.length) {
+      subCols.forEach((c) => {
+        if (colBot[c] > 10) colBot[c] += PATH_GAP
+      })
+      const startIdx = vfNodes.length
+      const childYs: number[] = []
+      node.children.forEach((c) => {
+        childYs.push(placeBranchNode(c, subCols, side))
+      })
+      const childMid = (childYs[0] + childYs[childYs.length - 1]) / 2
+      let trunkY = Math.max(childMid, colBot.center + TRUNK_GAP)
+      const shift = trunkY - childMid
+      if (shift > 0) {
+        for (let i = startIdx; i < vfNodes.length; i++) vfNodes[i].position.y += shift
+        subCols.forEach((c) => {
+          colBot[c] += shift
+        })
+      }
+
+      vfNodes.push({
+        id: node.id,
+        type: 'topic',
+        position: { x: COL_X.center, y: trunkY },
+        data: { label: node.label, nodeType: node.nodeType ?? 'group' },
+      })
+      colBot.center = trunkY + ROW
+      addBranchEdges(node.id, node.children, side)
+    } else {
+      const y = colBot.center + (colBot.center > 10 ? TRUNK_GAP - ROW : 0)
+      const finalY = Math.max(y, colBot.center)
+      vfNodes.push({
+        id: node.id,
+        type: 'topic',
+        position: { x: COL_X.center, y: finalY },
+        data: { label: node.label, nodeType: node.nodeType },
+      })
+      colBot.center = finalY + ROW
+    }
+  }
+
+  // __start
+  const startY = 20
+  vfNodes.push({
+    id: '__start',
+    type: 'root',
+    position: { x: COL_X.center, y: startY },
+    data: { label: t('roadmapCreate.startLearningHere') },
+  })
+  colBot.center = startY + ROW
+
+  // trunk
+  props.modelValue.forEach((n) => placeTrunkNode(n))
+
+  // __end
+  const endY = colBot.center + TRUNK_GAP - ROW
+  vfNodes.push({
+    id: '__end',
+    type: 'end',
+    position: { x: COL_X.center, y: endY },
+    data: { label: props.roleName },
+  })
+
+  // phantoms
+  vfNodes.push({
+    id: '__phantom_top',
+    type: 'phantom',
+    position: { x: COL_X.center + NODE_W / 2, y: startY - EXTEND },
+    data: {},
+  })
+  vfNodes.push({
+    id: '__phantom_bottom',
+    type: 'phantom',
+    position: { x: COL_X.center + NODE_W / 2, y: endY + NODE_H + EXTEND },
+    data: {},
+  })
+
+  // 主干 edges
+  const trunkChain = [
+    '__phantom_top',
+    '__start',
+    ...trunk.map((n) => n.id),
+    '__end',
+    '__phantom_bottom',
+  ]
+  for (let i = 0; i < trunkChain.length - 1; i++) {
+    const src = trunkChain[i]
+    const tgt = trunkChain[i + 1]
+    const dashed = src.startsWith('__phantom') || tgt.startsWith('__phantom')
+    vfEdges.push({
+      id: `${src}-${tgt}`,
+      source: src,
+      target: tgt,
+      sourceHandle: 'bottom',
+      targetHandle: 'top',
+      type: 'straight',
+      style: {
+        stroke: '#666',
+        strokeWidth: 3,
+        ...(dashed ? { strokeDasharray: '8,5' } : {}),
+      },
+    })
+  }
+
+  return { vfNodes, vfEdges }
+})
+
+const vfNodes = computed(() => renderResult.value.vfNodes)
+const vfEdges = computed(() => renderResult.value.vfEdges)
+
+/* ========== 取消选中 ========== */
+const onNodeMouseEnter = (event: { node: VFNode }) => {
+  hoveredNodeId.value = event.node.id
+}
+const onNodeMouseLeave = () => {
+  hoveredNodeId.value = null
+}
+
+const onPaneClick = () => {
+  if (selectedNodeForBinding.value) {
+    selectedNodeForBinding.value = null
+    emit('cancel-bind')
+  }
+}
+
+/* ========== 操作 ========== */
+const hasChildren = (id: string): boolean => {
+  const f = findNode(props.modelValue, id)
+  return !!f?.node.children?.length
+}
+
+const canBranch = (id: string): boolean => {
+  const f = findNode(props.modelValue, id)
+  if (!f) return false
+  return f.depth < MAX_DEPTH
+}
+
+const insertBefore = (id: string) => {
+  const newId = genGroupId()
+  const newNode: RoadmapNode = { id: newId, label: '新节点' }
+  emit('update:modelValue', insertSibling(props.modelValue, id, newNode, 'before'))
+}
+
+const insertAfter = (id: string) => {
+  const newId = genGroupId()
+  const newNode: RoadmapNode = { id: newId, label: '新节点' }
+  emit('update:modelValue', insertSibling(props.modelValue, id, newNode, 'after'))
+}
+
+// 在主干指定索引位置插入（用于 __start 后插 / __end 前插）
+const insertTrunkAtIndex = (index: number) => {
+  const newNode: RoadmapNode = { id: genGroupId(), label: '新节点' }
+  const result = [...props.modelValue]
+  result.splice(index, 0, newNode)
+  emit('update:modelValue', result)
+}
+
+const deleteNode = (id: string) => {
+  emit('update:modelValue', deleteNodeFromTree(props.modelValue, id))
+  if (selectedNodeForBinding.value === id) {
+    selectedNodeForBinding.value = null
+    emit('cancel-bind')
+  }
+}
+
+const createBranch = (id: string) => {
+  const f = findNode(props.modelValue, id)
+  if (!f) return
+  if (f.depth >= MAX_DEPTH) {
+    emit('show-message', '已达最大分支层级', 'warning')
+    return
+  }
+  if (f.node.children?.length) {
+    emit('show-message', '该节点已有子路径', 'warning')
+    return
+  }
+  const c1: RoadmapNode = { id: genGroupId(), label: '新节点' }
+  const c2: RoadmapNode = { id: genGroupId(), label: '新节点' }
+  emit('update:modelValue', setChildrenOf(props.modelValue, id, [c1, c2]))
+  // 创建子路径后自动激活当前节点的重命名（提示用户给组合节点起名）
+  startLabelEdit(id, f.node.label)
+}
+
+const removeBranch = (id: string) => {
+  emit('update:modelValue', setChildrenOf(props.modelValue, id, undefined))
+}
+
+const bindAsCourse = (id: string) => {
+  selectedNodeForBinding.value = id
+  emit('request-bind', { nodeId: id, type: 'course' })
+}
+
+const bindAsNode = (id: string) => {
+  selectedNodeForBinding.value = id
+  emit('request-bind', { nodeId: id, type: 'node' })
+}
+
+/* ========== 重命名 ========== */
+const startLabelEdit = (id: string, currentLabel: string) => {
+  editingNodeId.value = id
+  editingLabel.value = currentLabel
+}
+
+const bindEditingInput = (el: HTMLInputElement | null) => {
+  if (el) {
+    // 等 Vue 渲染完成后聚焦并全选
+    queueMicrotask(() => {
+      el.focus()
+      el.select()
+    })
+  }
+}
+
+const commitLabelEdit = () => {
+  if (!editingNodeId.value) return
+  const id = editingNodeId.value
+  const label = editingLabel.value.trim() || '新节点'
+  emit('update:modelValue', setLabelOf(props.modelValue, id, label))
+  editingNodeId.value = null
+  editingLabel.value = ''
+}
+
+const cancelLabelEdit = () => {
+  editingNodeId.value = null
+  editingLabel.value = ''
+}
+
+/* ========== 父组件接口 ========== */
+const applyBinding = (oldId: string, payload: BindPayload) => {
+  const newId =
+    payload.type === 'course'
+      ? `c${payload.rootNodeId ?? payload.id}`
+      : `n${payload.id}`
+
+  if (newId !== oldId && nodeExists(props.modelValue, newId)) {
+    emit(
+      'show-message',
+      payload.type === 'course'
+        ? t('roadmapCreate.messages.courseAlreadyAdded')
+        : t('roadmapCreate.messages.nodeAlreadyAdded'),
+      'warning'
+    )
+    return
+  }
+  const newNode: RoadmapNode = {
+    id: newId,
+    label: payload.label,
+    nodeType: payload.type,
+    ...(payload.type === 'course' && payload.id ? { courseId: payload.id } : {}),
+  }
+  emit('update:modelValue', replaceNodeAt(props.modelValue, oldId, newNode))
+  selectedNodeForBinding.value = newId
+}
+
+const isNodeAddedById = (id: string | number, type: 'course' | 'node'): boolean => {
+  const prefix = type === 'course' ? 'c' : 'n'
+  return nodeExists(props.modelValue, `${prefix}${id}`)
+}
+
+const cancelSelection = () => {
+  selectedNodeForBinding.value = null
+}
+
+defineExpose({
+  applyBinding,
+  isNodeAddedById,
+  cancelSelection,
+  getSelectedNodeId: () => selectedNodeForBinding.value,
+})
+</script>
+
+<style scoped>
+.roadmap-editor {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+:deep(.vue-flow__node) {
+  overflow: visible;
+}
+
+:deep(.node-wrapper) {
+  position: relative;
+  display: inline-block;
+}
+
+:deep(.node-actions) {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  grid-template-columns: repeat(4, 24px);
+  gap: 6px;
+  padding: 8px;
+  background: rgba(26, 26, 26, 0.92);
+  border-radius: 10px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.18),
+    0 2px 4px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(6px);
+  z-index: 10;
+  justify-content: center;
+  animation: node-actions-fade-in 0.12s ease-out;
+}
+
+@keyframes node-actions-fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+:deep(.node-action-btn) {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
+}
+
+:deep(.node-action-btn:hover) {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+:deep(.node-action-btn:active) {
+  transform: scale(0.92);
+}
+
+:deep(.node-action-btn) {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
+}
+
+:deep(.node-action-btn:hover) {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+:deep(.node-action-btn:active) {
+  transform: scale(0.92);
+}
+
+:deep(.node-root),
+:deep(.node-end) {
+  background: #1a1a1a;
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  width: 160px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+:deep(.node-topic) {
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+  width: 160px;
+  text-align: center;
+  position: relative;
+}
+
+:deep(.node-topic--group) {
+  background: #fff;
+  color: #1a1a1a;
+  border: 1.5px solid #1a1a1a;
+  font-weight: 600;
+}
+
+:deep(.node-topic--course) {
+  background: #fee2e8;
+  color: #1a1a1a;
+  border: 1.5px solid #1a1a1a;
+  font-weight: 500;
+}
+
+:deep(.node-topic--node) {
+  background: #feeadf;
+  color: #1a1a1a;
+  border: 1.5px solid #1a1a1a;
+  font-weight: 400;
+}
+
+:deep(.node-topic--selected) {
+  outline: 3px solid #ff9800;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px rgba(255, 152, 0, 0.15);
+}
+
+:deep(.node-label-input) {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  text-align: center;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  padding: 0;
+  font-family: inherit;
+}
+
+:deep(.vue-flow__handle) {
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+  min-width: 0;
+  min-height: 0;
+  border: none;
+}
+</style>
