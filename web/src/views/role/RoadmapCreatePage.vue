@@ -87,6 +87,7 @@
                       color="grey-darken-1"
                       rounded="lg"
                       icon
+                      density="comfortable"
                       :disabled="!canUndo"
                       @click="undo"
                     >
@@ -103,6 +104,7 @@
                       color="grey-darken-1"
                       rounded="lg"
                       icon
+                      density="comfortable"
                       :disabled="!canRedo"
                       @click="redo"
                     >
@@ -453,7 +455,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, inject, watch, nextTick } from 'vue'
+import { ref, computed, inject, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -552,6 +554,40 @@ const redo = () => {
     isTimeTraveling = false
   })
 }
+
+/* ========== 快捷键: Cmd/Ctrl+Z = undo, Cmd/Ctrl+Shift+Z 或 Ctrl+Y = redo ========== */
+const isEditableTarget = (el: EventTarget | null): boolean => {
+  if (!(el instanceof HTMLElement)) return false
+  const tag = el.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
+  if (el.isContentEditable) return true
+  return false
+}
+
+const onKeydown = (e: KeyboardEvent) => {
+  // 只在 Mac 用 metaKey，其它平台用 ctrlKey
+  const mod = e.metaKey || e.ctrlKey
+  if (!mod) return
+  // 在输入框内不拦截原生 undo/redo
+  if (isEditableTarget(e.target)) return
+
+  const key = e.key.toLowerCase()
+  if (key === 'z' && !e.shiftKey) {
+    e.preventDefault()
+    undo()
+  } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+    e.preventDefault()
+    redo()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+})
 
 const saving = ref(false)
 const saveType = ref<'draft' | 'publish' | ''>('')
@@ -712,15 +748,15 @@ const showSave = () => {
 /* ========== 校验 + 序列化 ========== */
 // 序列化为后端格式（去 group 的 tmp id；只保留 t/id/label/children）
 interface SerializedNode {
-  t: 'c' | 'n' | 'g'
+  t: 'c' | 'n' | 'g' | 'o'
   id?: number
-  label: string
+  label?: string
   children?: SerializedNode[]
 }
 
 const serialize = (nodes: RoadmapNode[]): SerializedNode[] => {
   return nodes.map((n) => {
-    let t: 'c' | 'n' | 'g' = 'g'
+    let t: 'c' | 'n' | 'g' | 'o' = 'g'
     let id: number | undefined
     if (n.nodeType === 'course') {
       t = 'c'
@@ -730,8 +766,12 @@ const serialize = (nodes: RoadmapNode[]): SerializedNode[] => {
       // node 的 id 形如 "n123"
       const num = parseInt(n.id.replace(/^n/, ''), 10)
       if (!isNaN(num)) id = num
+    } else if (n.nodeType === 'note') {
+      t = 'o'
     }
-    const out: SerializedNode = { t, label: n.label }
+    const out: SerializedNode = { t }
+    // 只有 group / note 的 label 是用户输入数据，需要保存
+    if (t === 'g' || t === 'o') out.label = n.label
     if (id !== undefined) out.id = id
     if (n.children?.length) out.children = serialize(n.children)
     return out
@@ -743,7 +783,7 @@ let loadGroupSeq = 0
 const deserialize = (nodes: SerializedNode[]): RoadmapNode[] => {
   return nodes.map((n) => {
     let id: string
-    let nodeType: 'course' | 'node' | 'group' | undefined
+    let nodeType: 'course' | 'node' | 'group' | 'note' | undefined
     let courseId: number | undefined
     if (n.t === 'c' && n.id != null) {
       id = `c${n.id}`
@@ -752,22 +792,30 @@ const deserialize = (nodes: SerializedNode[]): RoadmapNode[] => {
     } else if (n.t === 'n' && n.id != null) {
       id = `n${n.id}`
       nodeType = 'node'
+    } else if (n.t === 'o') {
+      id = `g_load_${++loadGroupSeq}`
+      nodeType = 'note'
     } else {
       id = `g_load_${++loadGroupSeq}`
       nodeType = n.children?.length ? 'group' : undefined
     }
-    const out: RoadmapNode = { id, label: n.label, nodeType }
+    const out: RoadmapNode = { id, label: n.label ?? '', nodeType }
     if (courseId !== undefined) out.courseId = courseId
     if (n.children?.length) out.children = deserialize(n.children)
     return out
   })
 }
 
-// 校验：所有非 group 必须已绑定（有 nodeType=course/node）
+// 校验：所有叶子节点必须已绑定 course/node/note；中间节点视为 group，无需绑定
 const validateAllBound = (nodes: RoadmapNode[]): boolean => {
   for (const n of nodes) {
-    if (!n.nodeType) return false
-    if (n.children?.length && !validateAllBound(n.children)) return false
+    if (n.children?.length) {
+      // 中间节点：递归校验子节点
+      if (!validateAllBound(n.children)) return false
+    } else {
+      // 叶子节点：必须有明确类型且不是 group
+      if (!n.nodeType || n.nodeType === 'group') return false
+    }
   }
   return true
 }

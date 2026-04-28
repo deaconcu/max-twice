@@ -1,7 +1,5 @@
 package com.twicemax.application.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twicemax.analytics.dto.ContentStatsDTO;
 import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.analytics.stats.dataservice.ContentStatsDataService;
@@ -16,6 +14,8 @@ import com.twicemax.application.dto.response.roadmap.RoadmapBriefDTO;
 import com.twicemax.application.dto.response.roadmap.RoadmapDetailDTO;
 import com.twicemax.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.twicemax.application.dto.response.roadmap.RoadmapWithStatusDTO;
+import com.twicemax.content.course.CourseDO;
+import com.twicemax.content.course.CourseDataService;
 import com.twicemax.content.node.NodeDO;
 import com.twicemax.content.node.NodeDataService;
 import com.twicemax.content.role.RoleDO;
@@ -36,7 +36,6 @@ import com.twicemax.shared.domain.event.content.lifecycle.ContentRestoredEvent;
 
 import static com.twicemax.shared.domain.Enums.*;
 import static com.twicemax.shared.domain.Enums.ContentState;
-import com.twicemax.shared.domain.exception.BusinessException;
 import com.twicemax.shared.domain.exception.StatusCode;
 import com.twicemax.user.profile.UserDO;
 import com.twicemax.user.profile.UserDataService;
@@ -60,11 +59,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class RoadmapService {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
     private final RoadmapDomainService domainService;
     private final RoadmapDataService roadmapDataService;
     private final NodeDataService nodeDataService;
+    private final CourseDataService courseDataService;
     private final UserDataService userDataService;
     private final UserDomainService userDomainService;
     private final UserLearningDomainService userLearningDomainService;
@@ -224,16 +222,16 @@ public class RoadmapService {
         dto.setCommentCount(stats.getCommentCount() != null ? stats.getCommentCount() : 0);
         dto.setLearnerCount(stats.getInProgressUserCount() != null ? stats.getInProgressUserCount() : 0);
 
-        // 设置格式化内容
+        // 设置格式化内容（回填 c/n 节点的 label）
         if (roadmapDO.getContent() != null) {
-            dto.setContent(parseContentToGraphFormat(roadmapDO.getContent(), userId));
+            dto.setContent(enrichContent(roadmapDO.getContent()));
         }
 
         return dto;
     }
 
     /**
-     * 统计路线图内容中的节点数量
+     * 统计路线图内容中的 c/n 叶子节点数量
      * @param content 路线图内容JSON字符串
      * @return 节点数量
      */
@@ -241,14 +239,8 @@ public class RoadmapService {
         if (content == null || content.trim().isEmpty()) {
             return 0;
         }
-
         try {
-            List<List<Object>> contentData = objectMapper.readValue(content, new TypeReference<>() {});
-            if (contentData.size() >= 2) {
-                List<Object> nodeIdsRaw = contentData.get(1);
-                return nodeIdsRaw.size();
-            }
-            return 0;
+            return domainService.countLeafBindings(content);
         } catch (Exception e) {
             log.error("路线图服务 节点数量统计失败", e);
             return 0;
@@ -310,10 +302,8 @@ public class RoadmapService {
                     dto.setLearnerCount(0);
                 }
 
-                if (dto.getContent() != null) {
-                    String formattedContent = parseContentToGraphFormat(dto.getContent(), userId);
-                    dto.setContent(formattedContent);
-                }
+                // 列表场景不返回 content，详情页才需要回填 trunk
+                dto.setContent(null);
             }
         }
         return dtoList;
@@ -368,43 +358,31 @@ public class RoadmapService {
         return toRoadmapWithStatus(roadmapDO, userId);
     }
 
-    public String parseContentToGraphFormat(String content, long userId) {
-        validateContent(content);
-        validateUserId(userId);
-
+    /**
+     * 把内容中的 c/n 节点 label 用数据库中的课程/节点名称回填，输出可供前端渲染的 JSON。
+     */
+    public String enrichContent(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            return content;
+        }
         try {
-            // 解析内容获取节点ID列表
-            List<List<Object>> contentData = objectMapper.readValue(content, new TypeReference<>() {});
-            List<Long> nodeIds = extractNodeIds(contentData);
+            RoadmapDomainService.BoundIds bound = domainService.collectBoundIds(content);
 
-            // 批量查询节点信息
-            Map<Long, NodeDO> nodeMap = nodeDataService.getMapByIds(nodeIds);
+            Map<Long, String> courseNames = bound.getCourseIds().isEmpty()
+                ? Map.of()
+                : courseDataService.getMapByIds(bound.getCourseIds()).entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getName()));
 
-            // 跨域查询：获取节点进度（返回 Map<nodeId, progressPercent>）
-            Map<Long, Integer> nodeProgress = learningProgressService.batchCalculateNodeProgress(userId, nodeIds);
+            Map<Long, String> nodeNames = bound.getNodeIds().isEmpty()
+                ? Map.of()
+                : nodeDataService.getMapByIds(bound.getNodeIds()).entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getName()));
 
-            // 委托给 DomainService 进行纯粹的内容转换
-            return domainService.parseContentToGraphFormat(content, nodeProgress, nodeMap);
+            return domainService.enrichLabels(content, courseNames, nodeNames);
         } catch (Exception e) {
-            log.error("内容解析为图形格式失败", e);
+            log.error("路线图内容回填失败", e);
             throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
         }
-    }
-
-    /**
-     * 从内容数据中提取节点ID列表
-     */
-    private List<Long> extractNodeIds(List<List<Object>> contentData) {
-        List<Long> nodeIds = new ArrayList<>();
-        if (contentData.size() >= 2) {
-            List<Object> nodeIdsRaw = contentData.get(1);
-            for (Object nodeIdObj : nodeIdsRaw) {
-                if (nodeIdObj instanceof Number) {
-                    nodeIds.add(((Number) nodeIdObj).longValue());
-                }
-            }
-        }
-        return nodeIds;
     }
 
     /**
@@ -511,24 +489,14 @@ public class RoadmapService {
             throw StatusCode.INVALID_PARAMETER.exception("已发布的内容不能变回草稿");
         }
 
-        // 根据状态进行不同的内容格式验证
-        if (state.equals(ContentState.DRAFT.value())) {
-            // 草稿模式：验证基本格式只（允许孤立节点）
-            if (!domainService.isValidContentBasicFormat(content)) {
-                throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
-            }
-        } else {
-            // 提交审核模式：验证完整的树结构
-            if (!domainService.isValidContentFormat(content)) {
-                throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
-            }
-        }
+        // 校验内容、剥离 c/n label，并校验引用的课程/节点存在
+        String cleanedContent = validateAndCheckReferences(content);
 
-        // 计算节点数量
-        Integer nodeCount = countNodesInContent(content);
+        // 计算节点数量（c+n 叶子）
+        Integer nodeCount = countNodesInContent(cleanedContent);
 
         // 委托给 DomainService 更新内容和节点数量
-        domainService.updateRoadmap(id, content, nodeCount);
+        domainService.updateRoadmap(id, cleanedContent, nodeCount);
 
         // 更新状态：如果原状态是已发布，用户修改后强制变为提交审核
         Byte newState = roadmapDO.getState().equals(ContentState.PUBLISHED.value())
@@ -564,60 +532,48 @@ public class RoadmapService {
             throw StatusCode.INVALID_PARAMETER.exception("状态只能是草稿(0)或提交审核(1)");
         }
 
-        // 验证内容格式
-        if (state.equals(ContentState.DRAFT.value())) {
-            // 草稿模式：验证基本格式和边的节点存在性（允许孤立节点）
-            if (!domainService.isValidContentBasicFormat(content)) {
-                throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
-            }
-        } else {
-            // 提交审核模式：验证完整的树结构
-            if (!domainService.isValidContentFormat(content)) {
-                throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
-            }
-        }
-
-        // 验证节点在数据库中的存在性
-        try {
-            List<List<Object>> contentData = objectMapper.readValue(content, new TypeReference<List<List<Object>>>() {});
-            List<Long> nodeIds = extractNodeIds(contentData);
-
-            if (!nodeIds.isEmpty()) {
-                // 过滤掉ID为0的根节点（代表角色本身，不需要验证）
-                List<Long> nodeIdsToValidate = nodeIds.stream()
-                    .filter(id -> id != 0)
-                    .collect(Collectors.toList());
-
-                if (!nodeIdsToValidate.isEmpty()) {
-                    // 批量查询节点，检查是否都存在
-                    Map<Long, NodeDO> nodeMap = nodeDataService.getMapByIds(nodeIdsToValidate);
-                    List<Long> missingNodeIds = new ArrayList<>();
-
-                    for (Long nodeId : nodeIdsToValidate) {
-                        if (!nodeMap.containsKey(nodeId)) {
-                            missingNodeIds.add(nodeId);
-                        }
-                    }
-
-                    if (!missingNodeIds.isEmpty()) {
-                        throw StatusCode.INVALID_PARAMETER.exception(
-                            "路径中包含不存在的节点ID: " + missingNodeIds
-                        );
-                    }
-                }
-            }
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("验证节点存在性失败", e);
-            throw StatusCode.ROADMAP_CONTENT_INVALID.exception("路径内容格式错误");
-        }
+        // 校验内容、剥离 c/n label，并校验引用的课程/节点存在
+        String cleanedContent = validateAndCheckReferences(content);
 
         // 计算节点数量
-        Integer nodeCount = countNodesInContent(content);
+        Integer nodeCount = countNodesInContent(cleanedContent);
 
         // 委托给 DomainService
-        return domainService.createRoadmap(roleId, content, description, userId, nodeCount, state);
+        return domainService.createRoadmap(roleId, cleanedContent, description, userId, nodeCount, state);
+    }
+
+    /**
+     * 校验内容格式 + 剥离 c/n 节点 label + 校验引用的 courseId/nodeId 在库中存在。
+     * @return 标准化（已剥离 label）的 JSON 字符串
+     */
+    private String validateAndCheckReferences(String content) {
+        // 1. 结构校验 + 剥离 c/n 的 label
+        String cleaned = domainService.validateAndStrip(content);
+
+        // 2. 引用完整性校验
+        RoadmapDomainService.BoundIds bound = domainService.collectBoundIds(cleaned);
+
+        if (!bound.getCourseIds().isEmpty()) {
+            Map<Long, CourseDO> courseMap = courseDataService.getMapByIds(bound.getCourseIds());
+            List<Long> missing = bound.getCourseIds().stream()
+                .filter(cid -> !courseMap.containsKey(cid))
+                .collect(Collectors.toList());
+            if (!missing.isEmpty()) {
+                throw StatusCode.ROADMAP_CONTENT_INVALID.exception("路线图中包含不存在的课程: " + missing);
+            }
+        }
+
+        if (!bound.getNodeIds().isEmpty()) {
+            Map<Long, NodeDO> nodeMap = nodeDataService.getMapByIds(bound.getNodeIds());
+            List<Long> missing = bound.getNodeIds().stream()
+                .filter(nid -> !nodeMap.containsKey(nid))
+                .collect(Collectors.toList());
+            if (!missing.isEmpty()) {
+                throw StatusCode.ROADMAP_CONTENT_INVALID.exception("路线图中包含不存在的节点: " + missing);
+            }
+        }
+
+        return cleaned;
     }
 
     /**

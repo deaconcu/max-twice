@@ -1201,6 +1201,20 @@
     "isolatedNodesWarning": "{count} node(s) are not connected and will be ignored when publishing",
     "saveAsDraft": "Save as Draft",
     "saveAndPublish": "Submit for Review",
+    "editor": {
+      "newNode": "New Node",
+      "tooltipInsertAbove": "Insert node above",
+      "tooltipInsertBelow": "Insert node below",
+      "tooltipRename": "Rename",
+      "tooltipBindCourse": "Set as course node",
+      "tooltipBindNode": "Set as catalog node",
+      "tooltipSetNote": "Set as note node",
+      "tooltipCreateBranch": "Create branch",
+      "tooltipRemoveBranch": "Remove branch",
+      "tooltipDeleteNode": "Delete node",
+      "maxDepthReached": "Maximum branch depth reached",
+      "alreadyHasBranch": "This node already has a branch"
+    },
     "messages": {
       "addNodesFirst": "Please add nodes first",
       "rootNodeRequired": "Roadmap must contain a root node",
@@ -1412,14 +1426,7 @@
     "fieldLabel": "Field",
     "cannotBeEmpty": "{label} cannot be empty",
     "minLength": "{label} must be at least {min} characters",
-    "maxLength": "{label} cannot exceed {max} characters",
-    "passwordStrength": {
-      "tooWeak": "Too weak",
-      "weak": "Weak",
-      "fair": "Fair",
-      "good": "Good",
-      "strong": "Strong"
-    }
+    "maxLength": "{label} cannot exceed {max} characters"
   },
   "message": {
     "center": "Message Center",

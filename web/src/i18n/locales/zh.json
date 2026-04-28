@@ -240,8 +240,7 @@
     "reachedEnd": "已经到底了",
     "previewImage": "预览图片",
     "user": "用户",
-    "redirecting": "正在跳转...",
-    "all": "全部"
+    "redirecting": "正在跳转..."
   },
   "notification": {
     "title": "消息通知",
@@ -1201,6 +1200,20 @@
     "isolatedNodesWarning": "有 {count} 个节点未连接，发布时将被忽略",
     "saveAsDraft": "保存为草稿",
     "saveAndPublish": "提交审核",
+    "editor": {
+      "newNode": "新节点",
+      "tooltipInsertAbove": "在上面插入节点",
+      "tooltipInsertBelow": "在下面插入节点",
+      "tooltipRename": "重命名",
+      "tooltipBindCourse": "设为课程节点",
+      "tooltipBindNode": "设为目录节点",
+      "tooltipSetNote": "设为说明节点",
+      "tooltipCreateBranch": "创建子路径",
+      "tooltipRemoveBranch": "移除子路径",
+      "tooltipDeleteNode": "删除节点",
+      "maxDepthReached": "已达最大分支层级",
+      "alreadyHasBranch": "该节点已有子路径"
+    },
     "messages": {
       "addNodesFirst": "请先添加节点",
       "rootNodeRequired": "课程表必须包含根节点",
@@ -1412,14 +1425,7 @@
     "fieldLabel": "字段",
     "cannotBeEmpty": "{label}不能为空",
     "minLength": "{label}长度必须至少{min}个字符",
-    "maxLength": "{label}长度不能超过{max}个字符",
-    "passwordStrength": {
-      "tooWeak": "密码太弱",
-      "weak": "弱",
-      "fair": "一般",
-      "good": "良好",
-      "strong": "强"
-    }
+    "maxLength": "{label}长度不能超过{max}个字符"
   },
   "message": {
     "center": "消息中心",

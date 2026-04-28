@@ -15,6 +15,7 @@
       @node-mouse-enter="onNodeMouseEnter"
       @node-mouse-leave="onNodeMouseLeave"
       @pane-click="onPaneClick"
+      @pane-ready="onPaneReady"
     >
       <Background pattern-color="#e0e0e0" :gap="20" :size="1" variant="dots" />
 
@@ -49,7 +50,7 @@
           >
             <input
               v-if="editingNodeId === id"
-              :ref="(el) => bindEditingInput(el as HTMLInputElement | null)"
+              :ref="bindEditingInput"
               v-model.trim="editingLabel"
               :maxlength="editingMaxLength"
               class="node-label-input"
@@ -62,26 +63,26 @@
           </div>
           <div v-if="hoveredNodeId === id && editingNodeId !== id" class="node-actions">
             <!-- __start 只能在下面插入 -->
-            <v-tooltip v-if="id === '__start'" text="在下面插入节点" location="top" :open-delay="100">
+            <v-tooltip v-if="id === '__start'" :text="t('roadmapCreate.editor.tooltipInsertBelow')" location="top" :open-delay="100">
               <template #activator="{ props: tipProps }">
                 <button
                   v-bind="tipProps"
                   class="node-action-btn"
                   @click="insertTrunkAtIndex(0)"
                 >
-                  <v-icon icon="mdi-table-row-plus-after" size="16" />
+                  <v-icon icon="mdi-table-row-plus-after" size="14" />
                 </button>
               </template>
             </v-tooltip>
             <!-- __end 只能在上面插入 -->
-            <v-tooltip v-else-if="id === '__end'" text="在上面插入节点" location="top" :open-delay="100">
+            <v-tooltip v-else-if="id === '__end'" :text="t('roadmapCreate.editor.tooltipInsertAbove')" location="top" :open-delay="100">
               <template #activator="{ props: tipProps }">
                 <button
                   v-bind="tipProps"
                   class="node-action-btn"
                   @click="insertTrunkAtIndex(modelValue.length)"
                 >
-                  <v-icon icon="mdi-table-row-plus-before" size="16" />
+                  <v-icon icon="mdi-table-row-plus-before" size="14" />
                 </button>
               </template>
             </v-tooltip>
@@ -89,7 +90,7 @@
             <template v-else>
               <v-tooltip
                 v-if="data.nodeType === 'group' || data.nodeType === 'note'"
-                text="重命名"
+                :text="t('roadmapCreate.editor.tooltipRename')"
                 location="top"
                 :open-delay="100"
               >
@@ -99,78 +100,78 @@
                     class="node-action-btn"
                     @click="startLabelEdit(id, data.label)"
                   >
-                    <v-icon icon="mdi-pencil-outline" size="16" />
+                    <v-icon icon="mdi-pencil-outline" size="14" />
                   </button>
                 </template>
               </v-tooltip>
-              <v-tooltip text="在上面插入节点" location="top" :open-delay="100">
+              <v-tooltip :text="t('roadmapCreate.editor.tooltipInsertAbove')" location="top" :open-delay="100">
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="insertBefore(id)">
-                    <v-icon icon="mdi-table-row-plus-before" size="16" />
+                    <v-icon icon="mdi-table-row-plus-before" size="14" />
                   </button>
                 </template>
               </v-tooltip>
-              <v-tooltip text="在下面插入节点" location="top" :open-delay="100">
+              <v-tooltip :text="t('roadmapCreate.editor.tooltipInsertBelow')" location="top" :open-delay="100">
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="insertAfter(id)">
-                    <v-icon icon="mdi-table-row-plus-after" size="16" />
+                    <v-icon icon="mdi-table-row-plus-after" size="14" />
                   </button>
                 </template>
               </v-tooltip>
-              <v-tooltip v-if="!hasChildren(id)" text="设为课程节点" location="top" :open-delay="100">
+              <v-tooltip v-if="!hasChildren(id)" :text="t('roadmapCreate.editor.tooltipBindCourse')" location="top" :open-delay="100">
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="bindAsCourse(id)">
-                    <v-icon icon="mdi-book-outline" size="16" />
+                    <v-icon icon="mdi-book-outline" size="14" />
                   </button>
                 </template>
               </v-tooltip>
-              <v-tooltip v-if="!hasChildren(id)" text="设为目录节点" location="top" :open-delay="100">
+              <v-tooltip v-if="!hasChildren(id)" :text="t('roadmapCreate.editor.tooltipBindNode')" location="top" :open-delay="100">
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="bindAsNode(id)">
-                    <v-icon icon="mdi-file-document-outline" size="16" />
+                    <v-icon icon="mdi-file-document-outline" size="14" />
                   </button>
                 </template>
               </v-tooltip>
               <v-tooltip
                 v-if="!hasChildren(id) && data.nodeType !== 'note'"
-                text="设为说明节点"
+                :text="t('roadmapCreate.editor.tooltipSetNote')"
                 location="top"
                 :open-delay="100"
               >
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="bindAsNote(id)">
-                    <v-icon icon="mdi-note-text-outline" size="16" />
+                    <v-icon icon="mdi-note-text-outline" size="14" />
                   </button>
                 </template>
               </v-tooltip>
               <v-tooltip
                 v-if="!hasChildren(id) && canBranch(id)"
-                text="创建子路径"
+                :text="t('roadmapCreate.editor.tooltipCreateBranch')"
                 location="top"
                 :open-delay="100"
               >
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="createBranch(id)">
-                    <v-icon icon="mdi-source-branch" size="16" />
+                    <v-icon icon="mdi-source-branch" size="14" />
                   </button>
                 </template>
               </v-tooltip>
               <v-tooltip
                 v-else-if="hasChildren(id)"
-                text="移除子路径"
+                :text="t('roadmapCreate.editor.tooltipRemoveBranch')"
                 location="top"
                 :open-delay="100"
               >
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="removeBranch(id)">
-                    <v-icon icon="mdi-source-branch-remove" size="16" />
+                    <v-icon icon="mdi-source-branch-remove" size="14" />
                   </button>
                 </template>
               </v-tooltip>
-              <v-tooltip text="删除节点" location="top" :open-delay="100">
+              <v-tooltip :text="t('roadmapCreate.editor.tooltipDeleteNode')" location="top" :open-delay="100">
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="deleteNode(id)">
-                    <v-icon icon="mdi-trash-can-outline" size="16" />
+                    <v-icon icon="mdi-trash-can-outline" size="14" />
                   </button>
                 </template>
               </v-tooltip>
@@ -183,8 +184,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount } from 'vue'
-import { VueFlow, Handle, Position } from '@vue-flow/core'
+import { ref, computed, onBeforeUnmount, nextTick } from 'vue'
+import { VueFlow, Handle, Position, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import type { Edge as VFEdge, Node as VFNode } from '@vue-flow/core'
 import { useI18n } from '@/composables/useI18n'
@@ -229,12 +230,12 @@ let tmpSeq = 0
 const genGroupId = () => `g_${Date.now()}_${++tmpSeq}`
 
 /* ========== 常量 ========== */
-const NODE_W = 160
+const NODE_W = 200
 const NODE_H = 36
 const COL_GAP = 40
 const ROW_GAP = 8
-const PATH_GAP = 60
-const TRUNK_GAP = 60
+const PATH_GAP = 32
+const TRUNK_GAP = 52
 const TRUNK_INTERNODE_GAP = TRUNK_GAP - NODE_H - ROW_GAP // 等高时保持原视觉间距
 const EXTEND = 40
 const MAX_DEPTH = 4
@@ -385,7 +386,7 @@ const ensureMeasureEl = (): HTMLDivElement | null => {
     'left:-9999px',
     `width:${NODE_W}px`,
     'padding:8px 12px',
-    'font-size:13px',
+    'font-size:14px',
     'line-height:1.5',
     'box-sizing:border-box',
     'white-space:normal',
@@ -490,28 +491,31 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
 
     if (!hasKids) {
       const y = colBot[myCol]
+      const h = measureHeight(node.label)
       vfNodes.push({
         id: node.id,
         type: 'topic',
         position: { x: COL_X[myCol], y },
         data: { label: node.label, nodeType: node.nodeType },
       })
-      colBot[myCol] = y + measureHeight(node.label) + ROW_GAP
-      return y
+      colBot[myCol] = y + h + ROW_GAP
+      return y + h / 2
     }
 
     const childCol = childCols[0]
     if (colBot[childCol] > 10) colBot[childCol] += PATH_GAP
 
     const startIdx = vfNodes.length
-    const childYs: number[] = []
+    const childCenters: number[] = []
     node.children!.forEach((c) => {
-      childYs.push(placeBranchNode(c, childCols, side))
+      childCenters.push(placeBranchNode(c, childCols, side))
     })
 
-    const childMid = (childYs[0] + childYs[childYs.length - 1]) / 2
-    const myY = Math.max(childMid, colBot[myCol])
-    const shift = myY - childMid
+    const childMid = (childCenters[0] + childCenters[childCenters.length - 1]) / 2
+    const myH = measureHeight(node.label)
+    const desiredTop = childMid - myH / 2
+    const myY = Math.max(desiredTop, colBot[myCol])
+    const shift = myY - desiredTop
     if (shift > 0) {
       for (let i = startIdx; i < vfNodes.length; i++) vfNodes[i].position.y += shift
       childCols.forEach((c) => {
@@ -525,9 +529,9 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
       position: { x: COL_X[myCol], y: myY },
       data: { label: node.label, nodeType: node.nodeType ?? 'group' },
     })
-    colBot[myCol] = myY + measureHeight(node.label) + ROW_GAP
+    colBot[myCol] = myY + myH + ROW_GAP
 
-    return myY
+    return myY + myH / 2
   }
 
   // 主干节点
@@ -544,14 +548,16 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
         if (colBot[c] > 10) colBot[c] += PATH_GAP
       })
       const startIdx = vfNodes.length
-      const childYs: number[] = []
+      const childCenters: number[] = []
       node.children.forEach((c) => {
-        childYs.push(placeBranchNode(c, subCols, side))
+        childCenters.push(placeBranchNode(c, subCols, side))
       })
-      const childMid = (childYs[0] + childYs[childYs.length - 1]) / 2
+      const childMid = (childCenters[0] + childCenters[childCenters.length - 1]) / 2
+      const myH = measureHeight(node.label)
       const trunkMinY = colBot.center + (colBot.center > 10 ? TRUNK_INTERNODE_GAP : 0)
-      let trunkY = Math.max(childMid, trunkMinY)
-      const shift = trunkY - childMid
+      const desiredTop = childMid - myH / 2
+      const trunkY = Math.max(desiredTop, trunkMinY)
+      const shift = trunkY - desiredTop
       if (shift > 0) {
         for (let i = startIdx; i < vfNodes.length; i++) vfNodes[i].position.y += shift
         subCols.forEach((c) => {
@@ -565,7 +571,7 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
         position: { x: COL_X.center, y: trunkY },
         data: { label: node.label, nodeType: node.nodeType ?? 'group' },
       })
-      colBot.center = trunkY + measureHeight(node.label) + ROW_GAP
+      colBot.center = trunkY + myH + ROW_GAP
       addBranchEdges(node.id, node.children, side)
     } else {
       const y = colBot.center + (colBot.center > 10 ? TRUNK_INTERNODE_GAP : 0)
@@ -639,7 +645,7 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
       type: 'straight',
       style: {
         stroke: '#666',
-        strokeWidth: 3,
+        strokeWidth: 2,
         ...(dashed ? { strokeDasharray: '8,5' } : {}),
       },
     })
@@ -666,6 +672,44 @@ const onPaneClick = () => {
   }
 }
 
+/* ========== 居中显示 ========== */
+const { setViewport, vueFlowRef } = useVueFlow()
+
+const centerView = () => {
+  const nodes = vfNodes.value
+  if (!nodes.length) return
+  const container = vueFlowRef.value
+  if (!container) return
+  const rect = container.getBoundingClientRect()
+  if (rect.width === 0 || rect.height === 0) return
+
+  // 计算图的水平中点（X 中心使用 COL_X.center + NODE_W/2）
+  const graphCenterX = COL_X.center + NODE_W / 2
+  // 计算图的垂直范围
+  let minY = Infinity
+  let maxY = -Infinity
+  for (const n of nodes) {
+    const y = n.position.y
+    const h = typeof n.data?.label === 'string' ? measureHeight(n.data.label) : NODE_H
+    if (y < minY) minY = y
+    if (y + h > maxY) maxY = y + h
+  }
+  const graphCenterY = (minY + maxY) / 2
+  const zoom = 1.1
+  // setViewport 的 x/y 是平移量：viewportCenter = pane center
+  const x = rect.width / 2 - graphCenterX * zoom
+  // 垂直居中偏上：把图的中心放到容器 1/3 的位置
+  const y = rect.height / 3 - graphCenterY * zoom
+  setViewport({ x, y, zoom })
+}
+
+const onPaneReady = () => {
+  // pane 准备好后居中
+  nextTick(() => {
+    centerView()
+  })
+}
+
 /* ========== 操作 ========== */
 const hasChildren = (id: string): boolean => {
   const f = findNode(props.modelValue, id)
@@ -680,19 +724,19 @@ const canBranch = (id: string): boolean => {
 
 const insertBefore = (id: string) => {
   const newId = genGroupId()
-  const newNode: RoadmapNode = { id: newId, label: '新节点' }
+  const newNode: RoadmapNode = { id: newId, label: t('roadmapCreate.editor.newNode') }
   emit('update:modelValue', insertSibling(props.modelValue, id, newNode, 'before'))
 }
 
 const insertAfter = (id: string) => {
   const newId = genGroupId()
-  const newNode: RoadmapNode = { id: newId, label: '新节点' }
+  const newNode: RoadmapNode = { id: newId, label: t('roadmapCreate.editor.newNode') }
   emit('update:modelValue', insertSibling(props.modelValue, id, newNode, 'after'))
 }
 
 // 在主干指定索引位置插入（用于 __start 后插 / __end 前插）
 const insertTrunkAtIndex = (index: number) => {
-  const newNode: RoadmapNode = { id: genGroupId(), label: '新节点' }
+  const newNode: RoadmapNode = { id: genGroupId(), label: t('roadmapCreate.editor.newNode') }
   const result = [...props.modelValue]
   result.splice(index, 0, newNode)
   emit('update:modelValue', result)
@@ -710,16 +754,26 @@ const createBranch = (id: string) => {
   const f = findNode(props.modelValue, id)
   if (!f) return
   if (f.depth >= MAX_DEPTH) {
-    emit('show-message', '已达最大分支层级', 'warning')
+    emit('show-message', t('roadmapCreate.editor.maxDepthReached'), 'warning')
     return
   }
   if (f.node.children?.length) {
-    emit('show-message', '该节点已有子路径', 'warning')
+    emit('show-message', t('roadmapCreate.editor.alreadyHasBranch'), 'warning')
     return
   }
-  const c1: RoadmapNode = { id: genGroupId(), label: '新节点' }
-  const c2: RoadmapNode = { id: genGroupId(), label: '新节点' }
-  emit('update:modelValue', setChildrenOf(props.modelValue, id, [c1, c2]))
+  const c1: RoadmapNode = { id: genGroupId(), label: t('roadmapCreate.editor.newNode') }
+  const c2: RoadmapNode = { id: genGroupId(), label: t('roadmapCreate.editor.newNode') }
+  // 如果当前节点是 note，转成 group（清除便签样式）
+  let nextTrunk = props.modelValue
+  if (f.node.nodeType === 'note') {
+    const groupNode: RoadmapNode = {
+      id: f.node.id,
+      label: f.node.label,
+      nodeType: 'group',
+    }
+    nextTrunk = replaceNodeAt(nextTrunk, id, groupNode)
+  }
+  emit('update:modelValue', setChildrenOf(nextTrunk, id, [c1, c2]))
   // 创建子路径后自动激活当前节点的重命名（提示用户给组合节点起名）
   startLabelEdit(id, f.node.label)
 }
@@ -769,15 +823,16 @@ const startLabelEdit = (id: string, currentLabel: string) => {
 }
 
 const editingInputEl = ref<HTMLInputElement | null>(null)
-const bindEditingInput = (el: HTMLInputElement | null) => {
+const bindEditingInput = (el: unknown) => {
+  const input = el instanceof HTMLInputElement ? el : null
   // 只在首次绑定（el 从无到有）时聚焦并全选；后续重渲染保持光标位置不变
-  if (el && editingInputEl.value !== el) {
-    editingInputEl.value = el
+  if (input && editingInputEl.value !== input) {
+    editingInputEl.value = input
     queueMicrotask(() => {
-      el.focus()
-      el.select()
+      input.focus()
+      input.select()
     })
-  } else if (!el) {
+  } else if (!input) {
     editingInputEl.value = null
   }
 }
@@ -786,7 +841,7 @@ const commitLabelEdit = () => {
   if (!editingNodeId.value) return
   const id = editingNodeId.value
   const max = editingMaxLength.value
-  const label = (editingLabel.value.trim() || '新节点').slice(0, max)
+  const label = (editingLabel.value.trim() || t('roadmapCreate.editor.newNode')).slice(0, max)
   emit('update:modelValue', setLabelOf(props.modelValue, id, label))
   editingNodeId.value = null
   editingLabel.value = ''
@@ -863,12 +918,12 @@ defineExpose({
   top: 0;
   right: 0;
   bottom: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 26px);
+  display: flex;
+  flex-wrap: nowrap;
   gap: 4px;
   z-index: 10;
   justify-content: center;
-  align-content: center;
+  align-items: center;
   padding: 4px;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(2px);
@@ -877,8 +932,8 @@ defineExpose({
 }
 
 :deep(.node-action-btn) {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: #ffffff;
   color: rgb(var(--v-theme-primary));
@@ -888,6 +943,7 @@ defineExpose({
   align-items: center;
   justify-content: center;
   padding: 0;
+  flex-shrink: 0;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transition:
     background 0.15s ease,
@@ -906,11 +962,11 @@ defineExpose({
 :deep(.node-topic) {
   border-radius: 6px;
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: 14px;
   white-space: normal;
   word-break: break-word;
   overflow-wrap: break-word;
-  width: 160px;
+  width: 200px;
   text-align: center;
   position: relative;
 }
@@ -921,7 +977,6 @@ defineExpose({
   color: #5a4a1a;
   border: 1.5px dashed #d4b85a;
   font-weight: 500;
-  font-style: italic;
 }
 
 :deep(.node-topic--group) {
@@ -934,8 +989,8 @@ defineExpose({
 /* 占位节点：未绑定课程/节点/组合的新节点，用虚线边框区分 */
 :deep(.node-topic--placeholder) {
   background: #fff;
-  color: #1a1a1a;
-  border: 1.5px dashed #1a1a1a;
+  color: #9e9e9e;
+  border: 1.5px dashed #bdbdbd;
   font-weight: 500;
 }
 
@@ -954,9 +1009,9 @@ defineExpose({
 }
 
 :deep(.node-topic--selected) {
-  outline: 3px solid #ff9800;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 6px rgba(255, 152, 0, 0.15);
+  border-color: #ff9800 !important;
+  border-width: 3px !important;
+  border-style: solid !important;
 }
 
 :deep(.node-label-input) {
