@@ -15,11 +15,19 @@
     >
       <Background pattern-color="#e0e0e0" :gap="20" :size="1" variant="dots" />
       <template #node-root="{ data }">
+        <Handle id="top" type="target" :position="Position.Top" />
         <div class="node-root">{{ data.label }}</div>
+        <Handle id="bottom" type="source" :position="Position.Bottom" />
       </template>
       <template #node-end="{ data }">
         <Handle id="top" type="target" :position="Position.Top" />
         <div class="node-end">{{ data.label }}</div>
+        <Handle id="bottom" type="source" :position="Position.Bottom" />
+      </template>
+      <template #node-phantom>
+        <Handle id="bottom" type="source" :position="Position.Bottom" />
+        <Handle id="top" type="target" :position="Position.Top" />
+        <div style="width: 0; height: 0;" />
       </template>
       <template #node-section="{ data }">
         <Handle id="top"      type="target" :position="Position.Top" />
@@ -37,7 +45,13 @@
         <Handle id="right"     type="target" :position="Position.Right" />
         <Handle id="left-out"  type="source" :position="Position.Left" />
         <Handle id="right-out" type="source" :position="Position.Right" />
-        <div class="node-topic">{{ data.label }}</div>
+        <div :class="['node-topic',
+          data.hasChildren ? 'node-topic--group' :
+          data.nodeType === 'course' ? 'node-topic--course' : 'node-topic--node'
+        ]">
+          <span v-if="data.done" class="node-done-badge">✓</span>
+          {{ data.label }}
+        </div>
       </template>
     </VueFlow>
   </div>
@@ -104,6 +118,7 @@ const NODE_H   = 36
 const COL_GAP  = 40    // 列间距
 const ROW      = NODE_H + 8   // 同列连续节点的步进
 const PATH_GAP = 20    // 路径与路径之间的额外间距
+const TRUNK_GAP = 20   // 主干节点之间的最小额外间距
 
 const COLS = ['left3', 'left2', 'left1', 'center', 'right1', 'right2', 'right3'] as const
 type Col = typeof COLS[number]
@@ -120,12 +135,12 @@ const COL_X: Record<Col, number> = {
 
 // 每列当前的最低 y（下一个节点不能高于此值）
 const colBot: Record<Col, number> = {
-  left3: 0, left2: 0, left1: 0, center: 0, right1: 0, right2: 0, right3: 0,
+  left3: 10, left2: 10, left1: 10, center: 40, right1: 10, right2: 10, right3: 10,
 }
 
 // ─── 数据定义 ──────────────────────────────────────────────
-interface ChildDef  { id: string; label: string; children?: ChildDef[] }
-interface TopicDef  { id: string; label: string; children?: ChildDef[] }
+interface ChildDef  { id: string; label: string; done?: boolean; nodeType?: 'course' | 'node'; children?: ChildDef[] }
+interface TopicDef  { id: string; label: string; done?: boolean; nodeType?: 'course' | 'node'; children?: ChildDef[] }
 interface SectionDef { id: string; label: string; side: 'left' | 'right'; topics: TopicDef[] }
 
 const sections: SectionDef[] = [
@@ -133,12 +148,12 @@ const sections: SectionDef[] = [
   {
     id: 'internet', label: '互联网基础', side: 'right',
     topics: [
-      { id: 'http',    label: 'HTTP / HTTPS', children: [
-        { id: 'http-methods', label: '请求方法' },
-        { id: 'http-status',  label: '状态码' },
-        { id: 'http-headers', label: '请求头' },
+      { id: 'http',    label: 'HTTP / HTTPS', done: true, children: [
+        { id: 'http-methods', label: '请求方法', done: true, nodeType: 'node' },
+        { id: 'http-status',  label: '状态码', done: true, nodeType: 'node' },
+        { id: 'http-headers', label: '请求头', nodeType: 'node' },
       ]},
-      { id: 'dns',     label: 'DNS & 域名' },
+      { id: 'dns',     label: 'DNS & 域名', done: true },
       { id: 'browser', label: '浏览器原理', children: [
         { id: 'browser-render', label: '渲染流程' },
         { id: 'browser-event',  label: '事件循环' },
@@ -168,15 +183,8 @@ const sections: SectionDef[] = [
     topics: [
       { id: 'css-basic', label: '选择器 & 盒模型' },
       { id: 'css-flex',  label: 'Flexbox', children: [
-        { id: 'css-flex-container', label: 'Container 属性', children: [
-          { id: 'css-flex-direction', label: 'flex-direction' },
-          { id: 'css-flex-wrap',      label: 'flex-wrap' },
-          { id: 'css-flex-justify',   label: 'justify-content' },
-        ]},
-        { id: 'css-flex-item',      label: 'Item 属性', children: [
-          { id: 'css-flex-grow',  label: 'flex-grow' },
-          { id: 'css-flex-shrink',label: 'flex-shrink' },
-        ]},
+        { id: 'css-flex-container', label: 'Container 属性' },
+        { id: 'css-flex-item',      label: 'Item 属性' },
         { id: 'css-flex-align',     label: '对齐方式' },
       ]},
       { id: 'css-grid',  label: 'Grid', children: [
@@ -202,15 +210,8 @@ const sections: SectionDef[] = [
         { id: 'js-async-rx',      label: 'RxJS 基础' },
       ]},
       { id: 'js-ts',     label: 'TypeScript', children: [
-        { id: 'js-ts-type',    label: '类型系统', children: [
-          { id: 'js-ts-primitive', label: '基础类型' },
-          { id: 'js-ts-union',     label: '联合 & 交叉' },
-          { id: 'js-ts-narrow',    label: '类型守卫' },
-        ]},
-        { id: 'js-ts-generic', label: '泛型', children: [
-          { id: 'js-ts-gen-basic', label: '泛型基础' },
-          { id: 'js-ts-gen-utils', label: '工具类型' },
-        ]},
+        { id: 'js-ts-type',    label: '类型系统' },
+        { id: 'js-ts-generic', label: '泛型' },
       ]},
       { id: 'js-module', label: 'ESM 模块化' },
       { id: 'js-fetch',  label: 'Fetch / Ajax' },
@@ -305,62 +306,53 @@ function placeNodeWithChildren(
   cols: Col[],
   side: 'left' | 'right',
   children: ChildDef[] | undefined,
+  depth = 1,
+  done = false,
+  nodeType: 'course' | 'node' = 'course',
 ): number {
   const parentCol = cols[0]
   const childCols = cols.slice(1)
   const childCount = children?.length ?? 0
+  const hasChildren = childCount > 0 && childCols.length > 0
 
-  if (childCount === 0 || childCols.length === 0) {
-    // 无子路径：节点 y = 父列最低值
+  if (!hasChildren) {
     const y = colBot[parentCol]
     nodes.push({
       id, type,
       position: { x: COL_X[parentCol], y },
-      data: { label, side },
+      data: { label, side, depth, done, hasChildren: false, nodeType },
     })
     colBot[parentCol] = y + ROW
     return y
   }
 
-  // 有子路径：先递归放置子节点（在子列序列上），再根据子节点 y 范围确定父节点位置
-  // 1. 子路径理想起始：所有用到的子列中最低值 + PATH_GAP
   const childCol = childCols[0]
-  const childPathBotBefore = colBot[childCol]
-
-  // 先用临时方式预放子节点：直接调用递归，但要先给子列加上 PATH_GAP
-  if (childPathBotBefore > 0) colBot[childCol] += PATH_GAP
+  if (colBot[childCol] > 0) colBot[childCol] += PATH_GAP
 
   const childStartIdx = nodes.length
   const childYs: number[] = []
   children!.forEach((child) => {
     const cy = placeNodeWithChildren(
       child.id, child.label, 'topic',
-      childCols, side, child.children,
+      childCols, side, child.children, depth + 1, child.done ?? false, child.nodeType ?? 'node',
     )
     childYs.push(cy)
   })
-  // 子节点真实中心
   const childMid = (childYs[0] + childYs[childYs.length - 1]) / 2
-
-  // 父节点理想 y = 子节点中心
-  // 父节点实际 y = max(理想, 父列最低)
   const nodeY = Math.max(childMid, colBot[parentCol])
 
-  // 如果父节点被向下推，子节点（含其后代）整体平移
   const shift = nodeY - childMid
   if (shift > 0) {
     for (let i = childStartIdx; i < nodes.length; i++) {
       nodes[i].position.y += shift
     }
-    // 推进所有子列的 colBot
     childCols.forEach((c) => { colBot[c] += shift })
   }
 
-  // 生成父节点
   nodes.push({
     id, type,
     position: { x: COL_X[parentCol], y: nodeY },
-    data: { label, side },
+    data: { label, side, depth, done, hasChildren: true, nodeType },
   })
 
   // 推进父列
@@ -393,7 +385,7 @@ function placeSection(sec: SectionDef, prevSecId: string | null) {
   sec.topics.forEach((topic) => {
     const y = placeNodeWithChildren(
       topic.id, topic.label, 'topic',
-      subCols, sec.side, topic.children,
+      subCols, sec.side, topic.children, 1, topic.done ?? false, topic.nodeType ?? 'course',
     )
     topicYs.push(y)
   })
@@ -417,6 +409,15 @@ function placeSection(sec: SectionDef, prevSecId: string | null) {
   } else {
     sectionY = colBot.center
   }
+  const trunkMin = colBot.center + (prevSecId ? TRUNK_GAP : 0)
+  if (sectionY < trunkMin) {
+    const shift = trunkMin - sectionY
+    for (let i = placedFromIdx; i < nodes.length; i++) {
+      nodes[i].position.y += shift
+    }
+    subCols.forEach((c) => { colBot[c] += shift })
+    sectionY = trunkMin
+  }
 
   // ── 3. 生成 section 节点 ──
   nodes.push({
@@ -434,7 +435,7 @@ function placeSection(sec: SectionDef, prevSecId: string | null) {
       source: prevSecId, target: sec.id,
       sourceHandle: 'bottom', targetHandle: 'top',
       type: 'straight',
-      style: { stroke: '#9e9e9e', strokeWidth: 2 },
+      style: { stroke: '#666', strokeWidth: 3 },
       markerEnd: undefined,
     })
   }
@@ -448,7 +449,7 @@ function placeSection(sec: SectionDef, prevSecId: string | null) {
         source: sec.id, target: topic.id,
         sourceHandle: sHandle, targetHandle: tInHandle,
         type: 'default',
-        style: { stroke: '#bdbdbd', strokeWidth: 1.5, strokeDasharray: '8,4' },
+        style: { stroke: '#888', strokeWidth: 1.5, strokeDasharray: '8,4' },
         markerEnd: undefined,
       })
     } else {
@@ -458,7 +459,7 @@ function placeSection(sec: SectionDef, prevSecId: string | null) {
         source: sec.topics[ti - 1].id, target: topic.id,
         sourceHandle: 'bottom', targetHandle: 'top',
         type: 'default',
-        style: { stroke: '#bdbdbd', strokeWidth: 1.5 },
+        style: { stroke: '#888', strokeWidth: 1.5 },
         markerEnd: undefined,
       })
     }
@@ -470,7 +471,7 @@ function placeSection(sec: SectionDef, prevSecId: string | null) {
         source: topic.id, target: sec.id,
         sourceHandle: tOutHandle, targetHandle: sInHandle,
         type: 'default',
-        style: { stroke: '#bdbdbd', strokeWidth: 1.5, strokeDasharray: '8,4' },
+        style: { stroke: '#888', strokeWidth: 1.5, strokeDasharray: '8,4' },
         markerEnd: undefined,
       })
     }
@@ -500,7 +501,7 @@ function addChildEdges(
         source: parentId, target: child.id,
         sourceHandle: sHandle, targetHandle: tInHandle,
         type: 'default',
-        style: { stroke: '#bdbdbd', strokeWidth: 1.5, strokeDasharray: '8,4' },
+        style: { stroke: '#888', strokeWidth: 1.5, strokeDasharray: '8,4' },
         markerEnd: undefined,
       })
     } else {
@@ -510,7 +511,7 @@ function addChildEdges(
         source: children[ci - 1].id, target: child.id,
         sourceHandle: 'bottom', targetHandle: 'top',
         type: 'default',
-        style: { stroke: '#bdbdbd', strokeWidth: 1.5 },
+        style: { stroke: '#888', strokeWidth: 1.5 },
         markerEnd: undefined,
       })
     }
@@ -526,7 +527,7 @@ function addChildEdges(
     source: lastChild.id, target: parentId,
     sourceHandle: tOutHandle, targetHandle: sHandle,
     type: 'default',
-    style: { stroke: '#bdbdbd', strokeWidth: 1.5, strokeDasharray: '8,4' },
+    style: { stroke: '#888', strokeWidth: 1.5, strokeDasharray: '8,4' },
   })
 }
 
@@ -534,6 +535,43 @@ function addChildEdges(
 sections.forEach((sec, si) => {
   placeSection(sec, si > 0 ? sections[si - 1].id : null)
 })
+
+// ─── 首尾虚线延伸 ──────────────────────────────────────────
+const rootNode = nodes.find((n) => n.id === 'root')
+const endNode  = nodes.find((n) => n.id === 'end')
+const EXTEND   = 40  // 延伸长度
+
+if (rootNode) {
+  nodes.push({
+    id: '__phantom_top',
+    type: 'phantom',
+    position: { x: COL_X.center + NODE_W / 2, y: rootNode.position.y - EXTEND },
+    data: {},
+  })
+  edges.push({
+    id: 'extend-top',
+    source: '__phantom_top', target: 'root',
+    sourceHandle: 'bottom', targetHandle: 'top',
+    type: 'straight',
+    style: { stroke: '#666', strokeWidth: 3, strokeDasharray: '8,5' },
+  })
+}
+
+if (endNode) {
+  nodes.push({
+    id: '__phantom_bottom',
+    type: 'phantom',
+    position: { x: COL_X.center + NODE_W / 2, y: endNode.position.y + NODE_H + EXTEND },
+    data: {},
+  })
+  edges.push({
+    id: 'extend-bottom',
+    source: 'end', target: '__phantom_bottom',
+    sourceHandle: 'bottom', targetHandle: 'top',
+    type: 'straight',
+    style: { stroke: '#666', strokeWidth: 3, strokeDasharray: '8,5' },
+  })
+}
 
 // 根据节点计算图的实际尺寸（最大 x/y + 节点尺寸 + padding），乘以 zoom 保证容器够高
 const ZOOM = 1.1
@@ -578,16 +616,63 @@ void COLS
 }
 
 :deep(.node-topic) {
-  background: #fff;
-  color: #424242;
-  border: 1.5px solid #d0d0d0;
   border-radius: 6px;
-  padding: 8px 0;
+  padding: 8px 12px;
   font-size: 13px;
-  font-weight: 400;
   white-space: nowrap;
   width: 160px;
   text-align: center;
+  position: relative;
+}
+
+/* 组合：白底黑边，与 section 保持一致 */
+:deep(.node-topic--group) {
+  background: #fff;
+  color: #1a1a1a;
+  border: 1.5px solid #1a1a1a;
+  font-weight: 600;
+}
+
+/* 课程：偏粉红 */
+:deep(.node-topic--course) {
+  background: #fee2e8;
+  color: #1a1a1a;
+  border: 1.5px solid #1a1a1a;
+  font-weight: 500;
+}
+
+/* 节点：偏橙粉 */
+:deep(.node-topic--node) {
+  background: #feeadf;
+  color: #1a1a1a;
+  border: 1.5px solid #1a1a1a;
+  font-weight: 400;
+}
+
+/* 已完成角标 */
+:deep(.node-done-badge) {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 16px;
+  height: 16px;
+  background: #16a34a;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #fff;
+}
+
+/* depth class 已废弃，清除旧样式 */
+:deep(.node-topic--depth-1),
+:deep(.node-topic--depth-2),
+:deep(.node-topic--depth-3),
+:deep(.node-topic--done) {
+  all: unset;
 }
 
 :deep(.vue-flow__node:hover .node-section),
