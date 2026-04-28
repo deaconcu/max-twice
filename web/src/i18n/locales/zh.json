@@ -1164,6 +1164,8 @@
     "searchCourses": "搜索课程",
     "deleteSelected": "删除选中",
     "reset": "重置",
+    "undo": "撤销",
+    "redo": "重做",
     "autoLayout": "自动布局",
     "saveWithDescription": "编写描述并保存",
     "editorTitle": "路线图编辑区域",

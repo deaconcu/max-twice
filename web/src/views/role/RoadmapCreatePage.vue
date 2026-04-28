@@ -3,7 +3,7 @@
     <div class="roadmap-create-page">
       <!-- 页面标题 -->
       <div class="mb-6 mb-md-8">
-        <div class="d-flex align-center justify-space-between title-row">
+        <div class="d-flex align-center justify-space-between">
           <div class="d-flex align-center" style="min-width: 0">
             <v-avatar
               color="primary"
@@ -78,6 +78,38 @@
             >
               <span class="text-h6 font-weight-bold">{{ t('roadmapCreate.editorTitle') }}</span>
               <div class="d-flex flex-wrap align-center gap-2">
+                <v-tooltip :text="t('roadmapCreate.undo')" location="top" :open-delay="100">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn
+                      v-bind="tipProps"
+                      :size="$vuetify.display.mobile ? 'small' : 'default'"
+                      variant="tonal"
+                      color="grey-darken-1"
+                      rounded="lg"
+                      icon
+                      :disabled="!canUndo"
+                      @click="undo"
+                    >
+                      <v-icon icon="mdi-undo" size="18" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip :text="t('roadmapCreate.redo')" location="top" :open-delay="100">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn
+                      v-bind="tipProps"
+                      :size="$vuetify.display.mobile ? 'small' : 'default'"
+                      variant="tonal"
+                      color="grey-darken-1"
+                      rounded="lg"
+                      icon
+                      :disabled="!canRedo"
+                      @click="redo"
+                    >
+                      <v-icon icon="mdi-redo" size="18" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
                 <v-btn
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
                   variant="tonal"
@@ -421,7 +453,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, inject, watch } from 'vue'
+import { ref, computed, inject, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -470,6 +502,56 @@ const copyId = ref(route.query.copy ? Number(route.query.copy) : null)
 /* ========== 状态 ========== */
 const trunk = ref<RoadmapNode[]>([])
 const editorRef = ref<InstanceType<typeof RoadmapEditor> | null>(null)
+
+/* ========== 历史栈（撤销/重做） ========== */
+const HISTORY_LIMIT = 50
+const history = ref<RoadmapNode[][]>([[]])
+const historyIndex = ref(0)
+let isTimeTraveling = false
+
+const canUndo = computed(() => historyIndex.value > 0)
+const canRedo = computed(() => historyIndex.value < history.value.length - 1)
+
+const resetHistory = (initial: RoadmapNode[]) => {
+  history.value = [JSON.parse(JSON.stringify(initial))]
+  historyIndex.value = 0
+}
+
+watch(
+  trunk,
+  (newVal) => {
+    if (isTimeTraveling) return
+    const snapshot = JSON.parse(JSON.stringify(newVal)) as RoadmapNode[]
+    // 截断 redo 部分
+    history.value = history.value.slice(0, historyIndex.value + 1)
+    history.value.push(snapshot)
+    if (history.value.length > HISTORY_LIMIT) {
+      history.value.shift()
+    }
+    historyIndex.value = history.value.length - 1
+  },
+  { deep: true }
+)
+
+const undo = () => {
+  if (!canUndo.value) return
+  isTimeTraveling = true
+  historyIndex.value--
+  trunk.value = JSON.parse(JSON.stringify(history.value[historyIndex.value]))
+  nextTick(() => {
+    isTimeTraveling = false
+  })
+}
+
+const redo = () => {
+  if (!canRedo.value) return
+  isTimeTraveling = true
+  historyIndex.value++
+  trunk.value = JSON.parse(JSON.stringify(history.value[historyIndex.value]))
+  nextTick(() => {
+    isTimeTraveling = false
+  })
+}
 
 const saving = ref(false)
 const saveType = ref<'draft' | 'publish' | ''>('')
@@ -825,14 +907,24 @@ watch(roadmapData, (newData) => {
     savedDraftDescription.value = newData.description || ''
     draftRoadmapId.value = newData.id
     roadmapState.value = newData.state ?? null
+    isTimeTraveling = true
     trunk.value = loadFromContent(newData.content)
+    resetHistory(trunk.value)
+    nextTick(() => {
+      isTimeTraveling = false
+    })
   }
 })
 
 watch(copyRoadmapData, (newData) => {
   if (newData && copyId.value) {
     roadmapDescription.value = `${newData.description || t('roadmapCreate.unnamedRoadmap')} ${t('roadmapCreate.copySuffix')}`
+    isTimeTraveling = true
     trunk.value = loadFromContent(newData.content)
+    resetHistory(trunk.value)
+    nextTick(() => {
+      isTimeTraveling = false
+    })
   }
 })
 </script>
@@ -856,12 +948,6 @@ watch(copyRoadmapData, (newData) => {
   top: 16px;
   right: 16px;
   z-index: 1;
-}
-
-@media (min-width: 1800px) {
-  .title-row {
-    margin-left: -56px;
-  }
 }
 
 .content-layout {

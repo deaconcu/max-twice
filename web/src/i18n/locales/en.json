@@ -1164,6 +1164,8 @@
     "searchCourses": "Search Courses",
     "deleteSelected": "Delete Selected",
     "reset": "Reset",
+    "undo": "Undo",
+    "redo": "Redo",
     "autoLayout": "Auto Layout",
     "saveWithDescription": "Write Description and Save",
     "editorTitle": "Roadmap Editor",

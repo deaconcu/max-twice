@@ -219,7 +219,7 @@ const genGroupId = () => `g_${Date.now()}_${++tmpSeq}`
 const NODE_W = 160
 const NODE_H = 36
 const COL_GAP = 40
-const ROW = NODE_H + 8
+const ROW_GAP = 8
 const PATH_GAP = 60
 const TRUNK_GAP = 60
 const EXTEND = 40
@@ -803,7 +803,9 @@ defineExpose({
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 13px;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
   width: 160px;
   text-align: center;
   position: relative;
