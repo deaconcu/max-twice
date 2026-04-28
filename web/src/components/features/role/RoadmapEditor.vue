@@ -18,36 +18,6 @@
     >
       <Background pattern-color="#e0e0e0" :gap="20" :size="1" variant="dots" />
 
-      <template #node-root="{ data }">
-        <Handle id="top" type="target" :position="Position.Top" />
-        <div class="node-wrapper">
-          <div class="node-root">{{ data.label }}</div>
-          <div v-if="hoveredNodeId === '__start'" class="node-actions">
-            <button class="node-action-btn" title="在后面插入" @click="insertTrunkAtIndex(0)">
-              <v-icon icon="mdi-arrow-down-bold-outline" size="14" />
-            </button>
-          </div>
-        </div>
-        <Handle id="bottom" type="source" :position="Position.Bottom" />
-      </template>
-
-      <template #node-end="{ data }">
-        <Handle id="top" type="target" :position="Position.Top" />
-        <div class="node-wrapper">
-          <div class="node-end">{{ data.label }}</div>
-          <div v-if="hoveredNodeId === '__end'" class="node-actions">
-            <button
-              class="node-action-btn"
-              title="在前面插入"
-              @click="insertTrunkAtIndex(modelValue.length)"
-            >
-              <v-icon icon="mdi-arrow-up-bold-outline" size="14" />
-            </button>
-          </div>
-        </div>
-        <Handle id="bottom" type="source" :position="Position.Bottom" />
-      </template>
-
       <template #node-phantom>
         <Handle id="top" type="target" :position="Position.Top" />
         <Handle id="bottom" type="source" :position="Position.Bottom" />
@@ -69,7 +39,11 @@
                 ? 'node-topic--course'
                 : data.nodeType === 'node'
                   ? 'node-topic--node'
-                  : 'node-topic--group',
+                  : data.nodeType === 'note'
+                    ? 'node-topic--note'
+                    : data.nodeType === 'group'
+                      ? 'node-topic--group'
+                      : 'node-topic--placeholder',
               { 'node-topic--selected': selectedNodeForBinding === id },
             ]"
           >
@@ -86,55 +60,108 @@
             <span v-else>{{ data.label }}</span>
           </div>
           <div v-if="hoveredNodeId === id && editingNodeId !== id" class="node-actions">
-            <button
-              v-if="data.nodeType !== 'course' && data.nodeType !== 'node'"
-              class="node-action-btn"
-              title="重命名"
-              @click="startLabelEdit(id, data.label)"
-            >
-              <v-icon icon="mdi-pencil-outline" size="14" />
-            </button>
-            <button class="node-action-btn" title="在前面插入" @click="insertBefore(id)">
-              <v-icon icon="mdi-arrow-up-bold-outline" size="14" />
-            </button>
-            <button class="node-action-btn" title="在后面插入" @click="insertAfter(id)">
-              <v-icon icon="mdi-arrow-down-bold-outline" size="14" />
-            </button>
-            <button
-              v-if="!hasChildren(id)"
-              class="node-action-btn"
-              title="设为课程节点"
-              @click="bindAsCourse(id)"
-            >
-              <v-icon icon="mdi-book-outline" size="14" />
-            </button>
-            <button
-              v-if="!hasChildren(id)"
-              class="node-action-btn"
-              title="设为节点"
-              @click="bindAsNode(id)"
-            >
-              <v-icon icon="mdi-file-document-outline" size="14" />
-            </button>
-            <button
-              v-if="!hasChildren(id) && canBranch(id)"
-              class="node-action-btn"
-              title="创建子路径"
-              @click="createBranch(id)"
-            >
-              <v-icon icon="mdi-source-branch" size="14" />
-            </button>
-            <button
-              v-else-if="hasChildren(id)"
-              class="node-action-btn"
-              title="移除子路径"
-              @click="removeBranch(id)"
-            >
-              <v-icon icon="mdi-source-branch-remove" size="14" />
-            </button>
-            <button class="node-action-btn" title="删除节点" @click="deleteNode(id)">
-              <v-icon icon="mdi-close" size="14" />
-            </button>
+            <!-- __start 只能在后面插入 -->
+            <v-tooltip v-if="id === '__start'" text="在后面插入" location="top" :open-delay="100">
+              <template #activator="{ props: tipProps }">
+                <button
+                  v-bind="tipProps"
+                  class="node-action-btn"
+                  @click="insertTrunkAtIndex(0)"
+                >
+                  <v-icon icon="mdi-arrow-down-bold-outline" size="16" />
+                </button>
+              </template>
+            </v-tooltip>
+            <!-- __end 只能在前面插入 -->
+            <v-tooltip v-else-if="id === '__end'" text="在前面插入" location="top" :open-delay="100">
+              <template #activator="{ props: tipProps }">
+                <button
+                  v-bind="tipProps"
+                  class="node-action-btn"
+                  @click="insertTrunkAtIndex(modelValue.length)"
+                >
+                  <v-icon icon="mdi-arrow-up-bold-outline" size="16" />
+                </button>
+              </template>
+            </v-tooltip>
+            <!-- 普通节点完整菜单 -->
+            <template v-else>
+              <v-tooltip
+                v-if="data.nodeType !== 'course' && data.nodeType !== 'node'"
+                text="重命名"
+                location="top"
+                :open-delay="100"
+              >
+                <template #activator="{ props: tipProps }">
+                  <button
+                    v-bind="tipProps"
+                    class="node-action-btn"
+                    @click="startLabelEdit(id, data.label)"
+                  >
+                    <v-icon icon="mdi-pencil-outline" size="16" />
+                  </button>
+                </template>
+              </v-tooltip>
+              <v-tooltip text="在前面插入" location="top" :open-delay="100">
+                <template #activator="{ props: tipProps }">
+                  <button v-bind="tipProps" class="node-action-btn" @click="insertBefore(id)">
+                    <v-icon icon="mdi-arrow-up-bold-outline" size="16" />
+                  </button>
+                </template>
+              </v-tooltip>
+              <v-tooltip text="在后面插入" location="top" :open-delay="100">
+                <template #activator="{ props: tipProps }">
+                  <button v-bind="tipProps" class="node-action-btn" @click="insertAfter(id)">
+                    <v-icon icon="mdi-arrow-down-bold-outline" size="16" />
+                  </button>
+                </template>
+              </v-tooltip>
+              <v-tooltip v-if="!hasChildren(id)" text="设为课程节点" location="top" :open-delay="100">
+                <template #activator="{ props: tipProps }">
+                  <button v-bind="tipProps" class="node-action-btn" @click="bindAsCourse(id)">
+                    <v-icon icon="mdi-book-outline" size="16" />
+                  </button>
+                </template>
+              </v-tooltip>
+              <v-tooltip v-if="!hasChildren(id)" text="设为节点" location="top" :open-delay="100">
+                <template #activator="{ props: tipProps }">
+                  <button v-bind="tipProps" class="node-action-btn" @click="bindAsNode(id)">
+                    <v-icon icon="mdi-file-document-outline" size="16" />
+                  </button>
+                </template>
+              </v-tooltip>
+              <v-tooltip
+                v-if="!hasChildren(id) && canBranch(id)"
+                text="创建子路径"
+                location="top"
+                :open-delay="100"
+              >
+                <template #activator="{ props: tipProps }">
+                  <button v-bind="tipProps" class="node-action-btn" @click="createBranch(id)">
+                    <v-icon icon="mdi-source-branch" size="16" />
+                  </button>
+                </template>
+              </v-tooltip>
+              <v-tooltip
+                v-else-if="hasChildren(id)"
+                text="移除子路径"
+                location="top"
+                :open-delay="100"
+              >
+                <template #activator="{ props: tipProps }">
+                  <button v-bind="tipProps" class="node-action-btn" @click="removeBranch(id)">
+                    <v-icon icon="mdi-source-branch-remove" size="16" />
+                  </button>
+                </template>
+              </v-tooltip>
+              <v-tooltip text="删除节点" location="top" :open-delay="100">
+                <template #activator="{ props: tipProps }">
+                  <button v-bind="tipProps" class="node-action-btn" @click="deleteNode(id)">
+                    <v-icon icon="mdi-close" size="16" />
+                  </button>
+                </template>
+              </v-tooltip>
+            </template>
           </div>
         </div>
       </template>
@@ -153,7 +180,7 @@ import { useI18n } from '@/composables/useI18n'
 export interface RoadmapNode {
   id: string // 'c{courseId}' | 'n{nodeId}' | 'g_{tmp}'（group）
   label: string
-  nodeType?: 'course' | 'node' | 'group'
+  nodeType?: 'course' | 'node' | 'group' | 'note'
   courseId?: number
   children?: RoadmapNode[]
 }
@@ -492,9 +519,9 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
   const startY = 20
   vfNodes.push({
     id: '__start',
-    type: 'root',
+    type: 'topic',
     position: { x: COL_X.center, y: startY },
-    data: { label: t('roadmapCreate.startLearningHere') },
+    data: { label: t('roadmapCreate.startLearningHere'), nodeType: 'note' },
   })
   colBot.center = startY + ROW
 
@@ -505,9 +532,9 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
   const endY = colBot.center + TRUNK_GAP - ROW
   vfNodes.push({
     id: '__end',
-    type: 'end',
+    type: 'topic',
     position: { x: COL_X.center, y: endY },
-    data: { label: props.roleName },
+    data: { label: props.roleName, nodeType: 'note' },
   })
 
   // phantoms
@@ -740,43 +767,36 @@ defineExpose({
   top: 50%;
   transform: translate(-50%, -50%);
   display: grid;
-  grid-template-columns: repeat(4, 22px);
+  grid-template-columns: repeat(4, 26px);
   gap: 4px;
   z-index: 10;
   justify-content: center;
 }
 
 :deep(.node-action-btn) {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: #1a1a1a;
-  color: #fff;
-  border: none;
+  background: #ffffff;
+  color: #5b6b7c;
+  border: 1px solid #d8dee5;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: background 0.15s;
+  box-shadow: 0 2px 6px rgba(60, 80, 100, 0.12);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
 }
 
 :deep(.node-action-btn:hover) {
-  background: #424242;
-}
-
-:deep(.node-root),
-:deep(.node-end) {
-  background: #1a1a1a;
-  color: #fff;
-  border-radius: 8px;
-  padding: 8px 0;
-  font-size: 14px;
-  font-weight: 700;
-  white-space: nowrap;
-  width: 160px;
-  text-align: center;
-  letter-spacing: 0.5px;
+  background: #f0f7ff;
+  color: #2563eb;
+  border-color: #bcd4f6;
+  transform: scale(1.08);
 }
 
 :deep(.node-topic) {
@@ -789,11 +809,28 @@ defineExpose({
   position: relative;
 }
 
+/* 说明节点：浅黄便签风格 */
+:deep(.node-topic--note) {
+  background: #fff8d8;
+  color: #5a4a1a;
+  border: 1.5px dashed #d4b85a;
+  font-weight: 500;
+  font-style: italic;
+}
+
 :deep(.node-topic--group) {
   background: #fff;
   color: #1a1a1a;
   border: 1.5px solid #1a1a1a;
   font-weight: 600;
+}
+
+/* 占位节点：未绑定课程/节点/组合的新节点，用虚线边框区分 */
+:deep(.node-topic--placeholder) {
+  background: #fff;
+  color: #1a1a1a;
+  border: 1.5px dashed #1a1a1a;
+  font-weight: 500;
 }
 
 :deep(.node-topic--course) {
