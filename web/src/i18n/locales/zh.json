@@ -1154,6 +1154,7 @@
   },
   "roadmapCreate": {
     "title": "创建新课程表",
+    "startLearningHere": "从这里开始学习",
     "createTitle": "创建路线图",
     "editTitle": "编辑路线图",
     "copyTitle": "复制路线图",

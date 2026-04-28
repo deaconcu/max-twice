@@ -1154,6 +1154,7 @@
   },
   "roadmapCreate": {
     "title": "Create New Roadmap",
+    "startLearningHere": "Start Learning Here",
     "createTitle": "Create Roadmap",
     "editTitle": "Edit Roadmap",
     "copyTitle": "Copy Roadmap",
