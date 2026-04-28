@@ -109,6 +109,7 @@
                   <RoadmapViewer
                     :content="roadmap.content"
                     :role-name="roadmap?.role?.name || ''"
+                    fit-parent
                   />
                 </div>
               </v-card-text>

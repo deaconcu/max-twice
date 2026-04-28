@@ -1,5 +1,5 @@
 <template>
-  <div class="roadmap-viewer" :style="{ height: graphHeight + 'px' }">
+  <div class="roadmap-viewer" :style="containerStyle">
     <VueFlow
       :nodes="vfNodes"
       :edges="vfEdges"
@@ -74,10 +74,14 @@ interface SerializedNode {
   children?: SerializedNode[]
 }
 
-const props = defineProps<{
-  content: string | object | null | undefined
-  roleName: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    content: string | object | null | undefined
+    roleName: string
+    fitParent?: boolean
+  }>(),
+  { fitParent: false }
+)
 
 const { t } = useI18n()
 
@@ -436,6 +440,7 @@ const vfEdges = computed(() => renderResult.value.vfEdges)
 const ZOOM = 1.1
 const BOUND = 20 // 内容左右两端允许超出容器的最大像素
 const PADDING = 40 // 容器底部留白
+const TOP_BIAS = 1 / 3 // fitParent 模式下，内容矮于容器时顶部留白占剩余空间的比例（1/3 = 居中偏上）
 
 const { onViewportChange, setViewport, dimensions, vueFlowRef } = useVueFlow()
 
@@ -460,11 +465,18 @@ const contentBounds = computed(() => {
   return { left: minX, right: maxX, top: minY, bottom: maxY }
 })
 
-// 容器高度 = 内容高度（含底部 padding）* zoom
+// 容器高度：fitParent 模式撑满父容器，否则按内容高度
 const graphHeight = computed(() => {
   const b = contentBounds.value
   if (b.bottom <= b.top) return 0
   return Math.ceil((b.bottom - b.top + PADDING) * ZOOM)
+})
+
+const containerStyle = computed(() => {
+  if (props.fitParent) {
+    return { height: '100%' }
+  }
+  return { height: graphHeight.value + 'px' }
 })
 
 // 计算 X 视口位置：内容比容器窄时居中锁死，否则在范围内夹紧
@@ -482,27 +494,48 @@ const computeViewportX = (rawX: number, vw: number): number => {
   return Math.min(maxX, Math.max(minX, rawX))
 }
 
-// 视口宽度就绪后水平居中
+// 计算 Y 视口位置：fitParent 模式下，内容矮于容器时居中偏上，否则锁顶/夹紧
+const computeViewportY = (rawY: number, vh: number): number => {
+  const b = contentBounds.value
+  if (!props.fitParent) {
+    // 非 fitParent：容器贴合内容，Y 锁顶
+    return -b.top * ZOOM
+  }
+  const contentH = (b.bottom - b.top) * ZOOM
+  if (contentH <= vh) {
+    // 内容矮于容器：居中偏上（顶部留 1/3 剩余空间，底部留 2/3）
+    const free = vh - contentH
+    return free * TOP_BIAS - b.top * ZOOM
+  }
+  // 内容高于容器：允许上下拖动，两侧各超出 BOUND
+  const minY = -b.bottom * ZOOM + vh - BOUND
+  const maxY = -b.top * ZOOM + BOUND
+  return Math.min(maxY, Math.max(minY, rawY))
+}
+
+// 视口尺寸就绪后初始化居中
 const initialized = ref(false)
 watch(
-  () => [dimensions.value.width, vfNodes.value.length] as const,
-  ([vw, count]) => {
+  () => [dimensions.value.width, dimensions.value.height, vfNodes.value.length] as const,
+  ([vw, vh, count]) => {
     if (!vw || !count || initialized.value) return
     initialized.value = true
-    const b = contentBounds.value
-    const centerX = (vw - (b.right - b.left) * ZOOM) / 2 - b.left * ZOOM
-    setViewport({ x: centerX, y: -b.top * ZOOM, zoom: ZOOM })
+    setViewport({
+      x: computeViewportX(0, vw),
+      y: computeViewportY(0, vh),
+      zoom: ZOOM,
+    })
   },
   { immediate: true }
 )
 
-// 拖动时：锁定 Y、X 夹紧（或居中）
+// 拖动时：Y 居中/夹紧、X 夹紧（或居中）
 onViewportChange(({ x, y, zoom }) => {
   const vw = dimensions.value.width
+  const vh = dimensions.value.height
   if (!vw) return
-  const b = contentBounds.value
   const clampedX = computeViewportX(x, vw)
-  const targetY = -b.top * zoom
+  const targetY = computeViewportY(y, vh)
   if (clampedX !== x || y !== targetY) {
     setViewport({ x: clampedX, y: targetY, zoom })
   }
