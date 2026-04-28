@@ -42,8 +42,25 @@
       <!-- 加载状态 -->
       <LoadingSpinner v-if="loading" />
 
+      <!-- 草稿描述（顶部，宽屏时跟标题在一行） -->
+      <div v-if="!loading && savedDraftDescription" class="draft-description-top mb-4">
+        <div class="d-flex align-start">
+          <div class="flex-1" style="min-width: 0">
+            <div class="text-caption text-grey-darken-1 mb-1">
+              {{ t('roadmapCreate.draftDescription') }}
+            </div>
+            <div class="text-body-2 font-weight-medium text-grey-darken-3 draft-description-text">
+              {{ savedDraftDescription }}
+            </div>
+          </div>
+          <v-btn icon size="small" variant="text" @click="showSaveDialog = true">
+            <v-icon icon="mdi-file-document-edit-outline" color="grey-darken-1" size="20" />
+          </v-btn>
+        </div>
+      </div>
+
       <div v-else class="content-layout">
-        <!-- 左侧：流程图编辑器 -->
+        <!-- 流程图编辑器（占满页面） -->
         <div class="main-content">
           <v-card border rounded="xl" class="flow-editor-card">
             <v-card-title
@@ -138,23 +155,72 @@
                 <VueFlow
                   :nodes="nodes"
                   :edges="edges"
-                  :min-zoom="0.7"
-                  :max-zoom="1.1"
+                  :nodes-draggable="false"
+                  :nodes-connectable="false"
+                  :elements-selectable="false"
                   :zoom-on-scroll="false"
-                  fit-view-on-init
-                  :snap-to-grid="true"
-                  :snap-grid="[20, 20]"
-                  :nodes-selectable="true"
-                  :edges-selectable="true"
-                  :selection-mode="SelectionMode.Partial"
-                  :multi-selection-key-code="'Shift'"
-                  @connect="onConnect"
-                  @nodes-change="onNodesChange"
-                  @edges-change="onEdgesChange"
+                  :zoom-on-pinch="false"
+                  :zoom-on-double-click="false"
+                  :prevent-scrolling="false"
+                  :min-zoom="1.1"
+                  :max-zoom="1.1"
+                  @node-mouse-enter="onNodeMouseEnter"
+                  @node-mouse-leave="onNodeMouseLeave"
                 >
-                  <Background variant="dots" pattern-color="#bdbdbd" :gap="30" :size="2" />
-                  <MiniMap v-if="$vuetify.display.mdAndUp" />
-                  <Controls :show-interactive="false" />
+                  <Background pattern-color="#e0e0e0" :gap="20" :size="1" variant="dots" />
+                  <template #node-root="{ id, data }">
+                    <Handle id="top" type="target" :position="Position.Top" />
+                    <div class="node-wrapper">
+                      <div class="node-root">{{ data.label }}</div>
+                      <div v-if="hoveredNodeId === id" class="node-actions" @mouseenter="onActionsEnter" @mouseleave="onActionsLeave">
+                        <button class="node-action-btn" title="在后面插入节点" @click="insertNodeAfter(id)">
+                          <v-icon icon="mdi-arrow-down-bold-outline" size="14" />
+                        </button>
+                      </div>
+                    </div>
+                    <Handle id="bottom" type="source" :position="Position.Bottom" />
+                  </template>
+                  <template #node-end="{ id, data }">
+                    <Handle id="top" type="target" :position="Position.Top" />
+                    <div class="node-wrapper">
+                      <div class="node-end">{{ data.label }}</div>
+                      <div v-if="hoveredNodeId === id" class="node-actions" @mouseenter="onActionsEnter" @mouseleave="onActionsLeave">
+                        <button class="node-action-btn" title="在前面插入节点" @click="insertNodeBefore(id)">
+                          <v-icon icon="mdi-arrow-up-bold-outline" size="14" />
+                        </button>
+                      </div>
+                    </div>
+                    <Handle id="bottom" type="source" :position="Position.Bottom" />
+                  </template>
+                  <template #node-topic="{ id, data }">
+                    <Handle id="top" type="target" :position="Position.Top" />
+                    <div class="node-wrapper">
+                      <div class="node-topic node-topic--group">{{ data.label }}</div>
+                      <div v-if="hoveredNodeId === id" class="node-actions" @mouseenter="onActionsEnter" @mouseleave="onActionsLeave">
+                        <button class="node-action-btn" title="在前面插入节点" @click="insertNodeBefore(id)">
+                          <v-icon icon="mdi-arrow-up-bold-outline" size="14" />
+                        </button>
+                        <button class="node-action-btn" title="在后面插入节点" @click="insertNodeAfter(id)">
+                          <v-icon icon="mdi-arrow-down-bold-outline" size="14" />
+                        </button>
+                        <button class="node-action-btn" title="设置为课程节点" @click="setNodeAsCourse(id)">
+                          <v-icon icon="mdi-book-outline" size="14" />
+                        </button>
+                        <button class="node-action-btn" title="设置为 node 节点" @click="setNodeAsNode(id)">
+                          <v-icon icon="mdi-file-document-outline" size="14" />
+                        </button>
+                        <button class="node-action-btn" title="创建新路径" @click="createBranch(id)">
+                          <v-icon icon="mdi-source-branch" size="14" />
+                        </button>
+                      </div>
+                    </div>
+                    <Handle id="bottom" type="source" :position="Position.Bottom" />
+                  </template>
+                  <template #node-phantom>
+                    <Handle id="bottom" type="source" :position="Position.Bottom" />
+                    <Handle id="top" type="target" :position="Position.Top" />
+                    <div style="width: 0; height: 0;" />
+                  </template>
                 </VueFlow>
               </div>
             </v-card-text>
@@ -525,7 +591,7 @@
 <script setup lang="ts">
 import { ref, computed, inject, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { VueFlow, useVueFlow } from '@vue-flow/core'
+import { VueFlow, useVueFlow, Handle } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { MiniMap } from '@vue-flow/minimap'
 import { Controls } from '@vue-flow/controls'
@@ -557,7 +623,7 @@ const showSnackbar = inject<(message: string, type?: string) => void>('showSnack
 const globalSnackbar = getGlobalSnackbar()
 
 // 获取 VueFlow 实例
-const { fitView, setCenter } = useVueFlow()
+const { fitView, setCenter, updateNodeData } = useVueFlow()
 
 // 验证规则
 const roadmapDescriptionRules = useValidationRules('roadmap-description')
@@ -587,13 +653,14 @@ const roadmapState = ref<number | null>(null) // 路线图状态：0=草稿，1=
 const { data: roleData } = useRoleDetailQuery(roleId)
 const roleName = computed(() => roleData.value?.name ?? '')
 
-// roleName 变化时同步根节点 label
+// roleName 变化时同步终结节点 label
 watch(roleName, (name) => {
   if (!name) return
-  const rootNode = nodes.value.find((n) => n.id === '0')
-  if (rootNode) {
-    rootNode.data = { ...rootNode.data, label: name }
+  const endNode = nodes.value.find((n) => n.id === '__end')
+  if (endNode) {
+    endNode.data = { ...endNode.data, label: name }
   }
+  updateNodeData('__end', { label: name })
 })
 
 // Tab 切换状态
@@ -762,20 +829,210 @@ const EDGE_STYLE = {
   strokeWidth: 2,
 }
 
-// 节点和边
-const nodes = ref<Node[]>([
-  {
-    id: '0',
-    type: 'default',
-    data: { label: roleName.value },
-    position: { x: 400, y: 100 },
-    sourcePosition: undefined,
-    targetPosition: Position.Left,
-    style: ROOT_NODE_STYLE,
-  },
-])
+// 布局常量（参考 RoadmapDemo）
+const NODE_W = 160
+const NODE_H = 36
+const CENTER_X = 300
+const TRUNK_GAP = 80 // 起止节点之间的初始间隔
+const EXTEND = 40    // 顶部/底部虚线延伸长度
 
-const edges = ref<Edge[]>([])
+// 构建初始节点：phantom_top → 起始 → 终结 → phantom_bottom
+const buildInitialNodes = (): Node[] => {
+  const startY = 20
+  const endY = startY + TRUNK_GAP
+  return [
+    {
+      id: '__phantom_top',
+      type: 'phantom',
+      position: { x: CENTER_X + NODE_W / 2, y: startY - EXTEND },
+      data: {},
+    },
+    {
+      id: '__start',
+      type: 'root',
+      position: { x: CENTER_X, y: startY },
+      data: { label: '从这里开始学习' },
+    },
+    {
+      id: '__end',
+      type: 'end',
+      position: { x: CENTER_X, y: endY },
+      data: { label: roleName.value },
+    },
+    {
+      id: '__phantom_bottom',
+      type: 'phantom',
+      position: { x: CENTER_X + NODE_W / 2, y: endY + NODE_H + EXTEND },
+      data: {},
+    },
+  ]
+}
+
+const buildInitialEdges = (): Edge[] => [
+  {
+    id: 'extend-top',
+    source: '__phantom_top', target: '__start',
+    sourceHandle: 'bottom', targetHandle: 'top',
+    type: 'straight',
+    style: { stroke: '#666', strokeWidth: 3, strokeDasharray: '8,5' },
+  },
+  {
+    id: 'trunk-start-end',
+    source: '__start', target: '__end',
+    sourceHandle: 'bottom', targetHandle: 'top',
+    type: 'straight',
+    style: { stroke: '#666', strokeWidth: 3 },
+  },
+  {
+    id: 'extend-bottom',
+    source: '__end', target: '__phantom_bottom',
+    sourceHandle: 'bottom', targetHandle: 'top',
+    type: 'straight',
+    style: { stroke: '#666', strokeWidth: 3, strokeDasharray: '8,5' },
+  },
+]
+
+// 节点和边
+const nodes = ref<Node[]>(buildInitialNodes())
+const edges = ref<Edge[]>(buildInitialEdges())
+
+// 当前 hover 的节点 id（用于显示插入菜单）
+const hoveredNodeId = ref<string | null>(null)
+let hoverLeaveTimer: ReturnType<typeof setTimeout> | null = null
+
+const onNodeMouseEnter = (event: { node: Node }) => {
+  if (hoverLeaveTimer) {
+    clearTimeout(hoverLeaveTimer)
+    hoverLeaveTimer = null
+  }
+  hoveredNodeId.value = event.node.id
+}
+const onNodeMouseLeave = () => {
+  // 延时关闭，给鼠标移到菜单按钮的时间
+  hoverLeaveTimer = setTimeout(() => {
+    hoveredNodeId.value = null
+    hoverLeaveTimer = null
+  }, 200)
+}
+// 鼠标进入菜单区域时取消关闭
+const onActionsEnter = () => {
+  if (hoverLeaveTimer) {
+    clearTimeout(hoverLeaveTimer)
+    hoverLeaveTimer = null
+  }
+}
+const onActionsLeave = () => {
+  hoveredNodeId.value = null
+}
+
+// 临时节点 ID 生成
+let tmpIdSeq = 0
+const genTmpId = () => `__tmp_${Date.now()}_${++tmpIdSeq}`
+
+// TODO: 设置为课程节点
+const setNodeAsCourse = (_nodeId: string) => {
+  // 待实现：弹出课程选择器，绑定课程
+}
+
+// TODO: 设置为 node 节点
+const setNodeAsNode = (_nodeId: string) => {
+  // 待实现：弹出 node 选择器，绑定节点
+}
+
+// TODO: 从该节点创建新路径
+const createBranch = (_nodeId: string) => {
+  // 待实现：在该节点旁分支出新子路径
+}
+
+/**
+ * 在指定节点之前插入新节点（变成它的父节点）
+ * - 找到 target=nodeId 的边（必然只有一条父边，主干上的节点）
+ * - 删除该边，新增 parent → newNode 和 newNode → nodeId
+ */
+const insertNodeBefore = (nodeId: string) => {
+  const incoming = edges.value.find((e) => e.target === nodeId)
+  if (!incoming) return
+  const parentId = incoming.source
+  const newId = genTmpId()
+
+  // 计算插入位置：父子之间，并把目标节点及其下方所有节点下移
+  const targetNode = nodes.value.find((n) => n.id === nodeId)
+  if (!targetNode) return
+  const insertY = targetNode.position.y
+  const ROW = NODE_H + 8
+  nodes.value.forEach((n) => {
+    if (n.position.y >= insertY) {
+      n.position = { ...n.position, y: n.position.y + ROW }
+    }
+  })
+
+  nodes.value.push({
+    id: newId,
+    type: 'topic',
+    position: { x: CENTER_X, y: insertY },
+    data: { label: '新节点' },
+  })
+
+  edges.value = edges.value.filter((e) => e.id !== incoming.id)
+  edges.value.push(
+    {
+      id: `${parentId}-${newId}`,
+      source: parentId, target: newId,
+      sourceHandle: 'bottom', targetHandle: 'top',
+      type: 'straight',
+      style: { stroke: '#666', strokeWidth: 3 },
+    },
+    {
+      id: `${newId}-${nodeId}`,
+      source: newId, target: nodeId,
+      sourceHandle: 'bottom', targetHandle: 'top',
+      type: 'straight',
+      style: { stroke: '#666', strokeWidth: 3 },
+    },
+  )
+}
+
+const insertNodeAfter = (nodeId: string) => {
+  const outgoing = edges.value.find((e) => e.source === nodeId)
+  if (!outgoing) return
+  const childId = outgoing.target
+  const newId = genTmpId()
+
+  const sourceNode = nodes.value.find((n) => n.id === nodeId)
+  if (!sourceNode) return
+  const insertY = sourceNode.position.y + NODE_H + 8
+  const ROW = NODE_H + 8
+  nodes.value.forEach((n) => {
+    if (n.position.y >= insertY) {
+      n.position = { ...n.position, y: n.position.y + ROW }
+    }
+  })
+
+  nodes.value.push({
+    id: newId,
+    type: 'topic',
+    position: { x: CENTER_X, y: insertY },
+    data: { label: '新节点' },
+  })
+
+  edges.value = edges.value.filter((e) => e.id !== outgoing.id)
+  edges.value.push(
+    {
+      id: `${nodeId}-${newId}`,
+      source: nodeId, target: newId,
+      sourceHandle: 'bottom', targetHandle: 'top',
+      type: 'straight',
+      style: { stroke: '#666', strokeWidth: 3 },
+    },
+    {
+      id: `${newId}-${childId}`,
+      source: newId, target: childId,
+      sourceHandle: 'bottom', targetHandle: 'top',
+      type: 'straight',
+      style: { stroke: '#666', strokeWidth: 3 },
+    },
+  )
+}
 
 // 计算新节点位置的公共方法
 const calculateNodePosition = (): { x: number; y: number } => {
@@ -1688,6 +1945,87 @@ watch(copyRoadmapData, (newData) => {
   min-height: 400px;
   background: rgb(var(--v-theme-surface));
   position: relative;
+}
+
+/* 节点样式（参考 RoadmapDemo） */
+:deep(.vue-flow__node) {
+  overflow: visible;
+}
+
+:deep(.node-wrapper) {
+  position: relative;
+  display: inline-block;
+}
+
+:deep(.node-actions) {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  z-index: 10;
+}
+
+:deep(.node-action-btn) {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s;
+}
+
+:deep(.node-action-btn:hover) {
+  background: #424242;
+}
+
+:deep(.node-root),
+:deep(.node-end) {
+  background: #1a1a1a;
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  width: 160px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+:deep(.node-topic) {
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+  width: 160px;
+  text-align: center;
+  position: relative;
+}
+
+:deep(.node-topic--group) {
+  background: #fff;
+  color: #1a1a1a;
+  border: 1.5px solid #1a1a1a;
+  font-weight: 600;
+}
+
+:deep(.vue-flow__handle) {
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+  min-width: 0;
+  min-height: 0;
+  border: none;
 }
 
 @media (min-width: 1280px) {
