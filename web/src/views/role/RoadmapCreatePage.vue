@@ -59,7 +59,7 @@
         </div>
       </div>
 
-      <div v-else class="content-layout">
+      <div v-if="!loading" class="content-layout">
         <!-- 流程图编辑器（占满页面） -->
         <div class="main-content">
           <v-card border rounded="xl" class="flow-editor-card">
@@ -166,6 +166,7 @@
                   :max-zoom="1.1"
                   @node-mouse-enter="onNodeMouseEnter"
                   @node-mouse-leave="onNodeMouseLeave"
+                  @pane-click="cancelBinding"
                 >
                   <Background pattern-color="#e0e0e0" :gap="20" :size="1" variant="dots" />
                   <template #node-root="{ id, data }">
@@ -194,8 +195,23 @@
                   </template>
                   <template #node-topic="{ id, data }">
                     <Handle id="top" type="target" :position="Position.Top" />
+                    <Handle id="bottom" type="source" :position="Position.Bottom" />
+                    <Handle id="left" type="source" :position="Position.Left" />
+                    <Handle id="left-in" type="target" :position="Position.Left" />
+                    <Handle id="right" type="source" :position="Position.Right" />
+                    <Handle id="right-in" type="target" :position="Position.Right" />
                     <div class="node-wrapper">
-                      <div class="node-topic node-topic--group">{{ data.label }}</div>
+                      <div
+                        class="node-topic"
+                        :class="[
+                          data.nodeType === 'course'
+                            ? 'node-topic--course'
+                            : data.nodeType === 'node'
+                              ? 'node-topic--node'
+                              : 'node-topic--group',
+                          { 'node-topic--selected': selectedNodeForBinding === id },
+                        ]"
+                      >{{ data.label }}</div>
                       <div v-if="hoveredNodeId === id" class="node-actions" @mouseenter="onActionsEnter" @mouseleave="onActionsLeave">
                         <button class="node-action-btn" title="在前面插入节点" @click="insertNodeBefore(id)">
                           <v-icon icon="mdi-arrow-up-bold-outline" size="14" />
@@ -209,12 +225,14 @@
                         <button class="node-action-btn" title="设置为 node 节点" @click="setNodeAsNode(id)">
                           <v-icon icon="mdi-file-document-outline" size="14" />
                         </button>
-                        <button class="node-action-btn" title="创建新路径" @click="createBranch(id)">
+                        <button v-if="!branchedNodes.has(id)" class="node-action-btn" title="创建新路径" @click="createBranch(id)">
                           <v-icon icon="mdi-source-branch" size="14" />
+                        </button>
+                        <button v-else class="node-action-btn" title="移除子路径" @click="removeBranch(id)">
+                          <v-icon icon="mdi-source-branch-remove" size="14" />
                         </button>
                       </div>
                     </div>
-                    <Handle id="bottom" type="source" :position="Position.Bottom" />
                   </template>
                   <template #node-phantom>
                     <Handle id="bottom" type="source" :position="Position.Bottom" />
@@ -227,62 +245,34 @@
           </v-card>
         </div>
 
-        <!-- 右侧：工具面板 -->
-        <div class="right-sidebar">
-          <!-- 课程/节点搜索区 -->
+        <!-- 右侧：课程/节点搜索面板（仅在绑定时显示） -->
+        <div v-if="bindingType" class="right-sidebar">
           <v-card class="course-search-card sticky-card no-border" elevation="0">
             <v-card-text class="pa-0 ps-4">
-              <!-- 草稿描述显示 -->
-              <div v-if="savedDraftDescription" class="draft-description-section mb-4">
-                <div class="d-flex align-start justify-space-between">
-                  <div class="flex-1" style="min-width: 0">
-                    <div class="text-caption text-grey-darken-1 mb-1">
-                      {{ t('roadmapCreate.draftDescription') }}
-                    </div>
-                    <div
-                      class="text-body-2 font-weight-medium text-grey-darken-3 draft-description-text"
-                    >
-                      {{ savedDraftDescription }}
-                    </div>
-                  </div>
-                  <v-btn icon size="small" variant="text" @click="showSaveDialog = true">
-                    <v-icon icon="mdi-file-document-edit-outline" color="grey-darken-1" size="20" />
-                  </v-btn>
-                </div>
-              </div>
-
-              <!-- 分隔线 -->
-              <v-divider v-if="savedDraftDescription" class="mt-6 mb-6" />
-
-              <!-- Tab 切换 -->
-              <v-tabs v-model="searchTab" color="primary" density="compact" class="mb-3">
-                <v-tab value="course">
-                  <v-icon icon="mdi-book-multiple" size="18" class="mr-1" />
-                  {{ t('roadmapCreate.addCourse') }}
-                </v-tab>
-                <v-tab value="node">
-                  <v-icon icon="mdi-file-tree-outline" size="18" class="mr-1" />
-                  {{ t('roadmapCreate.addNode') }}
-                </v-tab>
-              </v-tabs>
-
-              <!-- 课程搜索 Tab -->
-              <div v-show="searchTab === 'course'">
-                <!-- 标题和统计 -->
+              <!-- 课程搜索 -->
+              <div v-if="bindingType === 'course'">
                 <div class="d-flex align-center justify-space-between mb-3">
                   <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">{{
                     t('roadmapCreate.searchCourses')
                   }}</span>
-                  <a
-                    href="/courses"
-                    target="_blank"
-                    class="text-caption text-primary text-decoration-none"
-                  >
-                    {{ t('common.viewAll') }}
-                  </a>
+                  <div class="d-flex align-center ga-2">
+                    <a
+                      href="/courses"
+                      target="_blank"
+                      class="text-caption text-primary text-decoration-none"
+                    >
+                      {{ t('common.viewAll') }}
+                    </a>
+                    <v-btn
+                      icon="mdi-close"
+                      variant="text"
+                      size="small"
+                      density="comfortable"
+                      @click="cancelBinding"
+                    />
+                  </div>
                 </div>
 
-                <!-- 搜索框 -->
                 <v-text-field
                   v-model="searchText"
                   :placeholder="t('roadmapCreate.searchCoursesPlaceholder')"
@@ -302,13 +292,11 @@
                   </template>
                 </v-text-field>
 
-                <!-- 加载状态 -->
                 <div v-if="coursesLoading" class="text-center py-8">
                   <v-progress-circular indeterminate color="primary" size="40" width="3" />
                   <p class="text-body-2 text-grey-darken-1 mt-3">{{ t('common.loading') }}</p>
                 </div>
 
-                <!-- 空状态 -->
                 <div v-else-if="!searchText.trim()" class="empty-state text-center py-8">
                   <div class="empty-icon-wrapper mb-3">
                     <v-icon icon="mdi-magnify" size="56" color="grey-lighten-1" />
@@ -321,7 +309,6 @@
                   </p>
                 </div>
 
-                <!-- 课程列表 -->
                 <div v-else class="course-list-wrapper">
                   <div v-if="filteredCourses.length > 0" class="course-list">
                     <div v-for="course in filteredCourses" :key="course.id" class="course-item">
@@ -357,7 +344,7 @@
                         color="primary"
                         variant="flat"
                         :disabled="isNodeAdded(course.rootNodeId)"
-                        @click.stop="addCourseNode(course)"
+                        @click.stop="bindCourseToSelected(course)"
                       >
                         <v-icon size="14">{{
                           isNodeAdded(course.rootNodeId) ? 'mdi-check' : 'mdi-plus'
@@ -377,16 +364,21 @@
                 </div>
               </div>
 
-              <!-- 节点搜索 Tab -->
-              <div v-show="searchTab === 'node'">
-                <!-- 标题 -->
-                <div class="mb-3">
+              <!-- 节点搜索 -->
+              <div v-else-if="bindingType === 'node'">
+                <div class="d-flex align-center justify-space-between mb-3">
                   <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">{{
                     t('roadmapCreate.searchNodes')
                   }}</span>
+                  <v-btn
+                    icon="mdi-close"
+                    variant="text"
+                    size="small"
+                    density="comfortable"
+                    @click="cancelBinding"
+                  />
                 </div>
 
-                <!-- 搜索框 -->
                 <v-text-field
                   v-model="nodeSearchText"
                   :placeholder="t('roadmapCreate.searchNodesPlaceholder')"
@@ -406,13 +398,11 @@
                   </template>
                 </v-text-field>
 
-                <!-- 加载状态 -->
                 <div v-if="nodesLoading" class="text-center py-8">
                   <v-progress-circular indeterminate color="success" size="40" width="3" />
                   <p class="text-body-2 text-grey-darken-1 mt-3">{{ t('common.loading') }}</p>
                 </div>
 
-                <!-- 空状态 -->
                 <div v-else-if="!nodeSearchText.trim()" class="empty-state text-center py-8">
                   <div class="empty-icon-wrapper mb-3">
                     <v-icon icon="mdi-magnify" size="56" color="grey-lighten-1" />
@@ -423,7 +413,6 @@
                   <p class="text-caption text-grey">{{ t('roadmapCreate.searchNodesSubHint') }}</p>
                 </div>
 
-                <!-- 节点列表 -->
                 <div v-else class="course-list-wrapper">
                   <div v-if="filteredNodes.length > 0" class="course-list">
                     <div v-for="node in filteredNodes" :key="node.id" class="course-item">
@@ -454,7 +443,7 @@
                         color="success"
                         variant="flat"
                         :disabled="isNodeAdded(node.id)"
-                        @click.stop="addNode(node)"
+                        @click.stop="bindNodeToSelected(node)"
                       >
                         <v-icon size="14">{{
                           isNodeAdded(node.id) ? 'mdi-check' : 'mdi-plus'
@@ -473,31 +462,10 @@
                   </div>
                 </div>
               </div>
-
-              <!-- 操作指南 -->
-              <div class="tips-section">
-                <div class="tips-header">
-                  <v-icon
-                    icon="mdi-information-outline"
-                    size="16"
-                    class="mr-1"
-                    color="grey-darken-1"
-                  />
-                  <span class="text-caption text-grey-darken-1">{{
-                    t('roadmapCreate.operationGuide')
-                  }}</span>
-                </div>
-                <div class="tips-list-simple">
-                  <div class="tip-simple">{{ t('roadmapCreate.tip1') }}</div>
-                  <div class="tip-simple">{{ t('roadmapCreate.tip2') }}</div>
-                  <div class="tip-simple">{{ t('roadmapCreate.tip3') }}</div>
-                  <div class="tip-simple">{{ t('roadmapCreate.tip4') }}</div>
-                  <div class="tip-simple">{{ t('roadmapCreate.tip5') }}</div>
-                </div>
-              </div>
             </v-card-text>
           </v-card>
         </div>
+
       </div>
     </div>
 
@@ -929,19 +897,331 @@ const onActionsLeave = () => {
 let tmpIdSeq = 0
 const genTmpId = () => `__tmp_${Date.now()}_${++tmpIdSeq}`
 
+// 课程/节点绑定浮层状态
+const selectedNodeForBinding = ref<string | null>(null)
+const bindingType = ref<'course' | 'node' | null>(null)
+
 // TODO: 设置为课程节点
-const setNodeAsCourse = (_nodeId: string) => {
-  // 待实现：弹出课程选择器，绑定课程
+const setNodeAsCourse = (nodeId: string) => {
+  selectedNodeForBinding.value = nodeId
+  bindingType.value = 'course'
+  // 重置搜索状态
+  searchText.value = ''
+  availableCourses.value = []
 }
 
 // TODO: 设置为 node 节点
-const setNodeAsNode = (_nodeId: string) => {
-  // 待实现：弹出 node 选择器，绑定节点
+const setNodeAsNode = (nodeId: string) => {
+  selectedNodeForBinding.value = nodeId
+  bindingType.value = 'node'
+  nodeSearchText.value = ''
+  availableNodes.value = []
 }
 
-// TODO: 从该节点创建新路径
-const createBranch = (_nodeId: string) => {
-  // 待实现：在该节点旁分支出新子路径
+// 取消绑定（关闭浮层）
+const cancelBinding = () => {
+  selectedNodeForBinding.value = null
+  bindingType.value = null
+}
+
+// 替换节点 id 与所有相关 edge 的 source/target（一次性原子替换）
+const replaceNodeId = (oldId: string, newId: string, dataPatch: Record<string, any>) => {
+  if (oldId === newId) {
+    nodes.value = nodes.value.map((n) =>
+      n.id === oldId ? { ...n, data: { ...n.data, ...dataPatch } } : n
+    )
+    return
+  }
+  nodes.value = nodes.value.map((n) =>
+    n.id === oldId ? { ...n, id: newId, data: { ...n.data, ...dataPatch } } : n
+  )
+  edges.value = edges.value.map((e) => {
+    const source = e.source === oldId ? newId : e.source
+    const target = e.target === oldId ? newId : e.target
+    return { ...e, source, target, id: `${source}-${target}` }
+  })
+
+  // 同步 branchedNodes：key、nodeIds、edgeIds 中所有 oldId 引用替换为 newId
+  const newMap = new Map<string, BranchInfo>()
+  branchedNodes.value.forEach((info, key) => {
+    const newKey = key === oldId ? newId : key
+    const newNodeIds = info.nodeIds.map((id) => (id === oldId ? newId : id))
+    const newEdgeIds = info.edgeIds.map((eid) => {
+      // edge id 形如 "src-tgt"，分别替换两端
+      const [s, ...rest] = eid.split('-')
+      const t = rest.join('-')
+      const ns = s === oldId ? newId : s
+      const nt = t === oldId ? newId : t
+      return `${ns}-${nt}`
+    })
+    newMap.set(newKey, { nodeIds: newNodeIds, edgeIds: newEdgeIds })
+  })
+  branchedNodes.value = newMap
+
+  relayout()
+}
+
+// 把当前选中节点绑定为指定课程
+const bindCourseToSelected = (course: Course) => {
+  if (!selectedNodeForBinding.value) return
+  if (!course.rootNodeId) {
+    showSnackbar(t('roadmapCreate.messages.courseCannotBeAdded'), 'warning')
+    return
+  }
+  const newId = course.rootNodeId.toString()
+  if (
+    newId !== selectedNodeForBinding.value &&
+    nodes.value.some((n) => n.id === newId)
+  ) {
+    showSnackbar(t('roadmapCreate.messages.courseAlreadyAdded'), 'warning')
+    return
+  }
+  replaceNodeId(selectedNodeForBinding.value, newId, {
+    label: `${t('roadmapDetail.courseLabel')} ${course.name}`,
+    nodeType: 'course',
+    courseId: course.id,
+  })
+  // 选中节点 id 已变，更新 selectedNodeForBinding 以保持高亮和后续可重选
+  selectedNodeForBinding.value = newId
+}
+
+// 把当前选中节点绑定为指定 node
+const bindNodeToSelected = (n: SearchResultItem) => {
+  if (!selectedNodeForBinding.value) return
+  const newId = n.id.toString()
+  if (
+    newId !== selectedNodeForBinding.value &&
+    nodes.value.some((nd) => nd.id === newId)
+  ) {
+    showSnackbar(t('roadmapCreate.messages.nodeAlreadyAdded'), 'warning')
+    return
+  }
+  replaceNodeId(selectedNodeForBinding.value, newId, {
+    label: `${t('roadmapDetail.nodeLabel')} ${n.name}`,
+    nodeType: 'node',
+  })
+  selectedNodeForBinding.value = newId
+}
+
+// 列间距（参考 demo）
+const COL_GAP = 40
+const PATH_GAP = 60
+
+// 记录已经创建过子路径的节点 → 子路径信息（链上的节点 id 和 edge id，按顺序）
+interface BranchInfo {
+  nodeIds: string[]   // 长度 ≥ 2，从入口到出口
+  edgeIds: string[]   // 长度 = nodeIds.length + 1（入边、链中边、回边）
+}
+const branchedNodes = ref(new Map<string, BranchInfo>())
+
+// 节点 id → 它所属分支的 source id（不属于任何分支则 undefined）
+const getNodeBranchSource = (nodeId: string): string | undefined => {
+  for (const [src, info] of branchedNodes.value.entries()) {
+    if (info.nodeIds.includes(nodeId)) return src
+  }
+  return undefined
+}
+
+// 计算主干顺序中的索引（不含 phantom），决定该节点的分支侧
+const getTrunkIndex = (nodeId: string): number => {
+  const order: string[] = []
+  let cur: string | undefined = '__start'
+  const visited = new Set<string>()
+  const branchNodeIds = new Set<string>()
+  branchedNodes.value.forEach((info) => {
+    info.nodeIds.forEach((id) => branchNodeIds.add(id))
+  })
+  while (cur && !visited.has(cur)) {
+    visited.add(cur)
+    order.push(cur)
+    const next: any = edges.value.find(
+      (e) => e.source === cur && !branchNodeIds.has(e.target) && e.target !== '__phantom_bottom',
+    )
+    cur = next?.target
+  }
+  return order.indexOf(nodeId)
+}
+
+// 根据 source 节点在主干中的索引决定分支侧（偶数右，奇数左）
+const getBranchSide = (nodeId: string): 'left' | 'right' => {
+  const idx = getTrunkIndex(nodeId)
+  if (idx < 0) return 'right' // 不在主干上则默认右
+  return idx % 2 === 0 ? 'right' : 'left'
+}
+
+// 从该节点创建新路径（侧由节点主干位置决定，稳定）
+const createBranch = (nodeId: string) => {
+  if (branchedNodes.value.has(nodeId)) {
+    showSnackbar('该节点已有子路径', 'warning')
+    return
+  }
+  if (!nodes.value.find((n) => n.id === nodeId)) return
+
+  const side = getBranchSide(nodeId)
+
+  const id1 = genTmpId()
+  const id2 = genTmpId()
+
+  // 位置由 relayout 计算，先放占位坐标
+  nodes.value.push(
+    { id: id1, type: 'topic', position: { x: 0, y: 0 }, data: { label: '新节点' } },
+    { id: id2, type: 'topic', position: { x: 0, y: 0 }, data: { label: '新节点' } },
+  )
+
+  edges.value.push(
+    {
+      id: `${nodeId}-${id1}`,
+      source: nodeId, target: id1,
+      sourceHandle: side === 'right' ? 'right' : 'left',
+      targetHandle: side === 'right' ? 'left-in' : 'right-in',
+      type: 'default',
+      style: { stroke: '#888', strokeWidth: 1.5, strokeDasharray: '8,4' },
+    },
+    {
+      id: `${id1}-${id2}`,
+      source: id1, target: id2,
+      sourceHandle: 'bottom', targetHandle: 'top',
+      type: 'default',
+      style: { stroke: '#888', strokeWidth: 1.5 },
+    },
+    {
+      id: `${id2}-${nodeId}`,
+      source: id2, target: nodeId,
+      sourceHandle: side === 'right' ? 'left' : 'right',
+      targetHandle: side === 'right' ? 'right-in' : 'left-in',
+      type: 'default',
+      style: { stroke: '#888', strokeWidth: 1.5, strokeDasharray: '8,4' },
+    },
+  )
+
+  branchedNodes.value.set(nodeId, {
+    nodeIds: [id1, id2],
+    edgeIds: [`${nodeId}-${id1}`, `${id1}-${id2}`, `${id2}-${nodeId}`],
+  })
+  relayout()
+}
+
+// 移除子路径
+const removeBranch = (nodeId: string) => {
+  const info = branchedNodes.value.get(nodeId)
+  if (!info) return
+  const nodeIdSet = new Set<string>(info.nodeIds)
+  const edgeIdSet = new Set<string>(info.edgeIds)
+  nodes.value = nodes.value.filter((n) => !nodeIdSet.has(n.id))
+  edges.value = edges.value.filter((e) => !edgeIdSet.has(e.id))
+  branchedNodes.value.delete(nodeId)
+  relayout()
+}
+
+// 全局重新布局：按主干顺序从上到下排列，分支节点放在主干节点旁
+const relayout = () => {
+  // 1. 沿主干找顺序
+  const branchNodeIds = new Set<string>()
+  branchedNodes.value.forEach((info) => {
+    info.nodeIds.forEach((id) => branchNodeIds.add(id))
+  })
+  const trunkOrder: string[] = []
+  let cur: string | undefined = '__phantom_top'
+  const visited = new Set<string>()
+  while (cur && !visited.has(cur)) {
+    visited.add(cur)
+    trunkOrder.push(cur)
+    const next: any = edges.value.find(
+      (e) => e.source === cur && !branchNodeIds.has(e.target),
+    )
+    cur = next?.target
+  }
+
+  // 2. 计算每个主干节点的 y
+  //    基础：主干按 TRUNK_ROW 推进；如果该 source 有分支，分支链中点对齐 source.y
+  //    若分支链与同侧上一个分支链重叠，下移 source.y 直到不重叠
+  const ROW = NODE_H + 8
+  const TRUNK_ROW = NODE_H + TRUNK_GAP
+  const yMap = new Map<string, number>()
+  // 同侧分支已用 y 底部
+  const sideBottom: Record<'left' | 'right', number> = { left: -Infinity, right: -Infinity }
+  let trunkY = 20 - EXTEND // __phantom_top
+  trunkOrder.forEach((id) => {
+    if (id === '__phantom_top') {
+      yMap.set(id, trunkY)
+      trunkY += EXTEND
+      return
+    }
+    if (id === '__phantom_bottom') {
+      yMap.set(id, trunkY + EXTEND)
+      return
+    }
+    const branch = branchedNodes.value.get(id)
+    if (branch) {
+      const len = branch.nodeIds.length
+      const branchH = len * NODE_H + (len - 1) * 8
+      const side = getBranchSide(id)
+      // 分支链顶部 = trunkY + (NODE_H - branchH)/2
+      // 要求分支链顶 >= sideBottom[side] + PATH_GAP
+      const branchTop = trunkY + (NODE_H - branchH) / 2
+      const minBranchTop = sideBottom[side] + PATH_GAP
+      if (branchTop < minBranchTop) {
+        trunkY += minBranchTop - branchTop
+      }
+      const finalBranchTop = trunkY + (NODE_H - branchH) / 2
+      sideBottom[side] = finalBranchTop + branchH
+    }
+    yMap.set(id, trunkY)
+    trunkY += TRUNK_ROW
+  })
+
+  // 3. 应用主干 y
+  nodes.value = nodes.value.map((n) => {
+    if (yMap.has(n.id)) {
+      const isPhantom = n.id === '__phantom_top' || n.id === '__phantom_bottom'
+      return {
+        ...n,
+        position: {
+          x: isPhantom ? CENTER_X + NODE_W / 2 : CENTER_X,
+          y: yMap.get(n.id)!,
+        },
+      }
+    }
+    return n
+  })
+
+  // 4. 应用分支节点位置 + 修正所有分支 edge 的 handle
+  branchedNodes.value.forEach((info, sourceId) => {
+    const sourceY = yMap.get(sourceId)
+    if (sourceY === undefined) return
+    const side = getBranchSide(sourceId)
+    const dx = side === 'right' ? NODE_W + COL_GAP : -(NODE_W + COL_GAP)
+    const branchX = CENTER_X + dx
+    const sourceSide = side === 'right' ? 'right' : 'left'
+    const branchSideHandle = side === 'right' ? 'left-in' : 'right-in'
+
+    // 分支节点位置：链中点对齐 sourceY
+    const len = info.nodeIds.length
+    const branchTotalH = len * NODE_H + (len - 1) * 8
+    const startY = sourceY + (NODE_H - branchTotalH) / 2
+    info.nodeIds.forEach((bid, i) => {
+      const by = startY + i * ROW
+      nodes.value = nodes.value.map((n) =>
+        n.id === bid ? { ...n, position: { x: branchX, y: by } } : n,
+      )
+    })
+
+    // 分支 edge handle 修正
+    const last = info.nodeIds.length - 1
+    edges.value = edges.value.map((e) => {
+      if (!info.edgeIds.includes(e.id)) return e
+      // 入边：source → nodeIds[0]
+      if (e.source === sourceId && e.target === info.nodeIds[0]) {
+        return { ...e, sourceHandle: sourceSide, targetHandle: branchSideHandle }
+      }
+      // 回边：nodeIds[last] → source
+      if (e.target === sourceId && e.source === info.nodeIds[last]) {
+        return { ...e, sourceHandle: branchSideHandle.replace('-in', ''), targetHandle: sourceSide + '-in' }
+      }
+      // 链中：nodeIds[i] → nodeIds[i+1]
+      return { ...e, sourceHandle: 'bottom', targetHandle: 'top' }
+    })
+  })
 }
 
 /**
@@ -950,26 +1230,66 @@ const createBranch = (_nodeId: string) => {
  * - 删除该边，新增 parent → newNode 和 newNode → nodeId
  */
 const insertNodeBefore = (nodeId: string) => {
-  const incoming = edges.value.find((e) => e.target === nodeId)
-  if (!incoming) return
-  const parentId = incoming.source
+  const branchSourceId = getNodeBranchSource(nodeId)
   const newId = genTmpId()
 
-  // 计算插入位置：父子之间，并把目标节点及其下方所有节点下移
-  const targetNode = nodes.value.find((n) => n.id === nodeId)
-  if (!targetNode) return
-  const insertY = targetNode.position.y
-  const ROW = NODE_H + 8
-  nodes.value.forEach((n) => {
-    if (n.position.y >= insertY) {
-      n.position = { ...n.position, y: n.position.y + ROW }
-    }
-  })
+  if (branchSourceId) {
+    // 在分支节点前插入
+    const info = branchedNodes.value.get(branchSourceId)!
+    const i = info.nodeIds.indexOf(nodeId)
+    const prev = i === 0 ? branchSourceId : info.nodeIds[i - 1]
+    // 找到 prev → nodeId 的 edge
+    const oldEdge = edges.value.find((e) => e.source === prev && e.target === nodeId)
+    if (!oldEdge) return
+    nodes.value.push({
+      id: newId,
+      type: 'topic',
+      position: { x: 0, y: 0 },
+      data: { label: '新节点' },
+    })
+    edges.value = edges.value.filter((e) => e.id !== oldEdge.id)
+    const e1 = `${prev}-${newId}`
+    const e2 = `${newId}-${nodeId}`
+    edges.value.push(
+      {
+        id: e1,
+        source: prev, target: newId,
+        type: 'default',
+        style: { stroke: '#888', strokeWidth: 1.5 },
+      },
+      {
+        id: e2,
+        source: newId, target: nodeId,
+        type: 'default',
+        style: { stroke: '#888', strokeWidth: 1.5 },
+      },
+    )
+    // 更新 BranchInfo：在 i 位置插入新节点；edgeIds 对应位置替换
+    const newNodeIds = [...info.nodeIds.slice(0, i), newId, ...info.nodeIds.slice(i)]
+    const oldEdgeIdx = info.edgeIds.indexOf(oldEdge.id)
+    const newEdgeIds = [
+      ...info.edgeIds.slice(0, oldEdgeIdx),
+      e1, e2,
+      ...info.edgeIds.slice(oldEdgeIdx + 1),
+    ]
+    branchedNodes.value.set(branchSourceId, { nodeIds: newNodeIds, edgeIds: newEdgeIds })
+    relayout()
+    return
+  }
+
+  // 主干节点前插入
+  const allBranchNodeIds = new Set<string>()
+  branchedNodes.value.forEach((info) => info.nodeIds.forEach((id) => allBranchNodeIds.add(id)))
+  const incoming = edges.value.find(
+    (e) => e.target === nodeId && !allBranchNodeIds.has(e.source),
+  )
+  if (!incoming) return
+  const parentId = incoming.source
 
   nodes.value.push({
     id: newId,
     type: 'topic',
-    position: { x: CENTER_X, y: insertY },
+    position: { x: CENTER_X, y: 0 },
     data: { label: '新节点' },
   })
 
@@ -990,28 +1310,67 @@ const insertNodeBefore = (nodeId: string) => {
       style: { stroke: '#666', strokeWidth: 3 },
     },
   )
+  relayout()
 }
 
 const insertNodeAfter = (nodeId: string) => {
-  const outgoing = edges.value.find((e) => e.source === nodeId)
-  if (!outgoing) return
-  const childId = outgoing.target
+  const branchSourceId = getNodeBranchSource(nodeId)
   const newId = genTmpId()
 
-  const sourceNode = nodes.value.find((n) => n.id === nodeId)
-  if (!sourceNode) return
-  const insertY = sourceNode.position.y + NODE_H + 8
-  const ROW = NODE_H + 8
-  nodes.value.forEach((n) => {
-    if (n.position.y >= insertY) {
-      n.position = { ...n.position, y: n.position.y + ROW }
-    }
-  })
+  if (branchSourceId) {
+    const info = branchedNodes.value.get(branchSourceId)!
+    const i = info.nodeIds.indexOf(nodeId)
+    const next = i === info.nodeIds.length - 1 ? branchSourceId : info.nodeIds[i + 1]
+    const oldEdge = edges.value.find((e) => e.source === nodeId && e.target === next)
+    if (!oldEdge) return
+    nodes.value.push({
+      id: newId,
+      type: 'topic',
+      position: { x: 0, y: 0 },
+      data: { label: '新节点' },
+    })
+    edges.value = edges.value.filter((e) => e.id !== oldEdge.id)
+    const e1 = `${nodeId}-${newId}`
+    const e2 = `${newId}-${next}`
+    edges.value.push(
+      {
+        id: e1,
+        source: nodeId, target: newId,
+        type: 'default',
+        style: { stroke: '#888', strokeWidth: 1.5 },
+      },
+      {
+        id: e2,
+        source: newId, target: next,
+        type: 'default',
+        style: { stroke: '#888', strokeWidth: 1.5 },
+      },
+    )
+    const newNodeIds = [...info.nodeIds.slice(0, i + 1), newId, ...info.nodeIds.slice(i + 1)]
+    const oldEdgeIdx = info.edgeIds.indexOf(oldEdge.id)
+    const newEdgeIds = [
+      ...info.edgeIds.slice(0, oldEdgeIdx),
+      e1, e2,
+      ...info.edgeIds.slice(oldEdgeIdx + 1),
+    ]
+    branchedNodes.value.set(branchSourceId, { nodeIds: newNodeIds, edgeIds: newEdgeIds })
+    relayout()
+    return
+  }
+
+  // 主干节点后插入
+  const allBranchNodeIds2 = new Set<string>()
+  branchedNodes.value.forEach((info) => info.nodeIds.forEach((id) => allBranchNodeIds2.add(id)))
+  const outgoing = edges.value.find(
+    (e) => e.source === nodeId && !allBranchNodeIds2.has(e.target),
+  )
+  if (!outgoing) return
+  const childId = outgoing.target
 
   nodes.value.push({
     id: newId,
     type: 'topic',
-    position: { x: CENTER_X, y: insertY },
+    position: { x: CENTER_X, y: 0 },
     data: { label: '新节点' },
   })
 
@@ -1032,6 +1391,7 @@ const insertNodeAfter = (nodeId: string) => {
       style: { stroke: '#666', strokeWidth: 3 },
     },
   )
+  relayout()
 }
 
 // 计算新节点位置的公共方法
@@ -1197,6 +1557,17 @@ const deleteSelectedNodes = () => {
           !selectedNodeIds.has(e.source) &&
           !selectedNodeIds.has(e.target)
       )
+
+      // 同步清理 branchedNodes 中已被删除的条目
+      const newMap = new Map<string, BranchInfo>()
+      branchedNodes.value.forEach((info, key) => {
+        if (selectedNodeIds.has(key)) return
+        if (info.nodeIds.some((id) => selectedNodeIds.has(id))) return
+        newMap.set(key, info)
+      })
+      branchedNodes.value = newMap
+
+      relayout()
 
       showSnackbar(
         t('roadmapCreate.messages.deleted', {
@@ -1529,19 +1900,11 @@ const resetAll = () => {
     iconColor: 'warning-lighten-4',
     iconForeground: 'warning',
     onConfirm: () => {
-      nodes.value = [
-        {
-          id: '0',
-          type: 'default',
-          data: { label: roleName.value },
-          position: { x: 400, y: 100 },
-          sourcePosition: undefined,
-          targetPosition: Position.Left,
-          style: ROOT_NODE_STYLE,
-        },
-      ]
-      edges.value = []
+      nodes.value = buildInitialNodes()
+      edges.value = buildInitialEdges()
+      branchedNodes.value = new Map()
       roadmapDescription.value = ''
+      relayout()
       showSnackbar(t('roadmapCreate.messages.resetSuccess'), 'success')
     },
   }
@@ -2016,6 +2379,29 @@ watch(copyRoadmapData, (newData) => {
   color: #1a1a1a;
   border: 1.5px solid #1a1a1a;
   font-weight: 600;
+}
+
+/* 课程节点：偏粉红 */
+:deep(.node-topic--course) {
+  background: #fee2e8;
+  color: #1a1a1a;
+  border: 1.5px solid #1a1a1a;
+  font-weight: 500;
+}
+
+/* node 节点：偏橙粉 */
+:deep(.node-topic--node) {
+  background: #feeadf;
+  color: #1a1a1a;
+  border: 1.5px solid #1a1a1a;
+  font-weight: 400;
+}
+
+/* 节点选中高亮（绑定课程/node 时） */
+:deep(.node-topic--selected) {
+  outline: 3px solid #ff9800;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px rgba(255, 152, 0, 0.15);
 }
 
 :deep(.vue-flow__handle) {
