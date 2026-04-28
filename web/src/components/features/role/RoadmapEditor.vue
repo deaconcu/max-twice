@@ -740,83 +740,29 @@ defineExpose({
   top: 50%;
   transform: translate(-50%, -50%);
   display: grid;
-  grid-template-columns: repeat(4, 24px);
-  gap: 6px;
-  padding: 8px;
-  background: rgba(26, 26, 26, 0.92);
-  border-radius: 10px;
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.18),
-    0 2px 4px rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(6px);
+  grid-template-columns: repeat(4, 22px);
+  gap: 4px;
   z-index: 10;
   justify-content: center;
-  animation: node-actions-fade-in 0.12s ease-out;
-}
-
-@keyframes node-actions-fade-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
 }
 
 :deep(.node-action-btn) {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.85);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  color: #fff;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    transform 0.1s ease;
+  transition: background 0.15s;
 }
 
 :deep(.node-action-btn:hover) {
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
-}
-
-:deep(.node-action-btn:active) {
-  transform: scale(0.92);
-}
-
-:deep(.node-action-btn) {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.85);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    transform 0.1s ease;
-}
-
-:deep(.node-action-btn:hover) {
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
-}
-
-:deep(.node-action-btn:active) {
-  transform: scale(0.92);
+  background: #424242;
 }
 
 :deep(.node-root),
