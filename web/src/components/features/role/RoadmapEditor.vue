@@ -61,8 +61,8 @@
             <span v-else>{{ data.label }}</span>
           </div>
           <div v-if="hoveredNodeId === id && editingNodeId !== id" class="node-actions">
-            <!-- __start 只能在后面插入 -->
-            <v-tooltip v-if="id === '__start'" text="在后面插入" location="top" :open-delay="100">
+            <!-- __start 只能在下面插入 -->
+            <v-tooltip v-if="id === '__start'" text="在下面插入节点" location="top" :open-delay="100">
               <template #activator="{ props: tipProps }">
                 <button
                   v-bind="tipProps"
@@ -73,8 +73,8 @@
                 </button>
               </template>
             </v-tooltip>
-            <!-- __end 只能在前面插入 -->
-            <v-tooltip v-else-if="id === '__end'" text="在前面插入" location="top" :open-delay="100">
+            <!-- __end 只能在上面插入 -->
+            <v-tooltip v-else-if="id === '__end'" text="在上面插入节点" location="top" :open-delay="100">
               <template #activator="{ props: tipProps }">
                 <button
                   v-bind="tipProps"
@@ -103,14 +103,14 @@
                   </button>
                 </template>
               </v-tooltip>
-              <v-tooltip text="在前面插入" location="top" :open-delay="100">
+              <v-tooltip text="在上面插入节点" location="top" :open-delay="100">
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="insertBefore(id)">
                     <v-icon icon="mdi-table-row-plus-before" size="16" />
                   </button>
                 </template>
               </v-tooltip>
-              <v-tooltip text="在后面插入" location="top" :open-delay="100">
+              <v-tooltip text="在下面插入节点" location="top" :open-delay="100">
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="insertAfter(id)">
                     <v-icon icon="mdi-table-row-plus-after" size="16" />
@@ -124,7 +124,7 @@
                   </button>
                 </template>
               </v-tooltip>
-              <v-tooltip v-if="!hasChildren(id)" text="设为节点" location="top" :open-delay="100">
+              <v-tooltip v-if="!hasChildren(id)" text="设为目录节点" location="top" :open-delay="100">
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="bindAsNode(id)">
                     <v-icon icon="mdi-file-document-outline" size="16" />
@@ -859,38 +859,47 @@ defineExpose({
 
 :deep(.node-actions) {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
   display: grid;
   grid-template-columns: repeat(4, 26px);
   gap: 4px;
   z-index: 10;
   justify-content: center;
+  align-content: center;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  border-radius: 6px;
 }
 
 :deep(.node-action-btn) {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  color: rgb(var(--v-theme-primary));
+  border: 1px solid rgba(0, 0, 0, 0.12);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  box-shadow: 0 2px 6px rgba(var(--v-theme-primary), 0.35);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transition:
     background 0.15s ease,
     color 0.15s ease,
     transform 0.1s ease,
-    filter 0.15s ease;
+    border-color 0.15s ease;
 }
 
 :deep(.node-action-btn:hover) {
-  filter: brightness(0.9);
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  border-color: rgb(var(--v-theme-primary));
   transform: scale(1.08);
 }
 
