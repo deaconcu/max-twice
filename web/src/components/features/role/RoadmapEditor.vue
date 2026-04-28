@@ -51,6 +51,7 @@
               v-if="editingNodeId === id"
               :ref="(el) => bindEditingInput(el as HTMLInputElement | null)"
               v-model.trim="editingLabel"
+              :maxlength="editingMaxLength"
               class="node-label-input"
               @keydown.enter.prevent="commitLabelEdit"
               @keydown.esc.prevent="cancelLabelEdit"
@@ -68,7 +69,7 @@
                   class="node-action-btn"
                   @click="insertTrunkAtIndex(0)"
                 >
-                  <v-icon icon="mdi-arrow-down-bold-outline" size="16" />
+                  <v-icon icon="mdi-table-row-plus-after" size="16" />
                 </button>
               </template>
             </v-tooltip>
@@ -80,14 +81,14 @@
                   class="node-action-btn"
                   @click="insertTrunkAtIndex(modelValue.length)"
                 >
-                  <v-icon icon="mdi-arrow-up-bold-outline" size="16" />
+                  <v-icon icon="mdi-table-row-plus-before" size="16" />
                 </button>
               </template>
             </v-tooltip>
             <!-- 普通节点完整菜单 -->
             <template v-else>
               <v-tooltip
-                v-if="data.nodeType !== 'course' && data.nodeType !== 'node'"
+                v-if="data.nodeType === 'group' || data.nodeType === 'note'"
                 text="重命名"
                 location="top"
                 :open-delay="100"
@@ -105,14 +106,14 @@
               <v-tooltip text="在前面插入" location="top" :open-delay="100">
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="insertBefore(id)">
-                    <v-icon icon="mdi-arrow-up-bold-outline" size="16" />
+                    <v-icon icon="mdi-table-row-plus-before" size="16" />
                   </button>
                 </template>
               </v-tooltip>
               <v-tooltip text="在后面插入" location="top" :open-delay="100">
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="insertAfter(id)">
-                    <v-icon icon="mdi-arrow-down-bold-outline" size="16" />
+                    <v-icon icon="mdi-table-row-plus-after" size="16" />
                   </button>
                 </template>
               </v-tooltip>
@@ -127,6 +128,18 @@
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="bindAsNode(id)">
                     <v-icon icon="mdi-file-document-outline" size="16" />
+                  </button>
+                </template>
+              </v-tooltip>
+              <v-tooltip
+                v-if="!hasChildren(id) && data.nodeType !== 'note'"
+                text="设为说明节点"
+                location="top"
+                :open-delay="100"
+              >
+                <template #activator="{ props: tipProps }">
+                  <button v-bind="tipProps" class="node-action-btn" @click="bindAsNote(id)">
+                    <v-icon icon="mdi-note-text-outline" size="16" />
                   </button>
                 </template>
               </v-tooltip>
@@ -157,7 +170,7 @@
               <v-tooltip text="删除节点" location="top" :open-delay="100">
                 <template #activator="{ props: tipProps }">
                   <button v-bind="tipProps" class="node-action-btn" @click="deleteNode(id)">
-                    <v-icon icon="mdi-close" size="16" />
+                    <v-icon icon="mdi-trash-can-outline" size="16" />
                   </button>
                 </template>
               </v-tooltip>
@@ -170,7 +183,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onBeforeUnmount } from 'vue'
 import { VueFlow, Handle, Position } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import type { Edge as VFEdge, Node as VFNode } from '@vue-flow/core'
@@ -222,8 +235,9 @@ const COL_GAP = 40
 const ROW_GAP = 8
 const PATH_GAP = 60
 const TRUNK_GAP = 60
+const TRUNK_INTERNODE_GAP = TRUNK_GAP - NODE_H - ROW_GAP // 等高时保持原视觉间距
 const EXTEND = 40
-const MAX_DEPTH = 3
+const MAX_DEPTH = 4
 
 const COLS = ['left3', 'left2', 'left1', 'center', 'right1', 'right2', 'right3'] as const
 type Col = (typeof COLS)[number]
@@ -354,6 +368,56 @@ function replaceNodeAt(
 }
 
 /* ========== 渲染：trunk → VueFlow nodes/edges ========== */
+// 通过隐藏 div 测量节点真实高度（基于实际 label 文本与 .node-topic 样式）
+let measureEl: HTMLDivElement | null = null
+const heightCache = new Map<string, number>()
+
+const ensureMeasureEl = (): HTMLDivElement | null => {
+  if (typeof document === 'undefined') return null
+  if (measureEl && document.body.contains(measureEl)) return measureEl
+  const el = document.createElement('div')
+  // 与 .node-topic 一致的关键样式
+  el.style.cssText = [
+    'position:absolute',
+    'visibility:hidden',
+    'pointer-events:none',
+    'top:-9999px',
+    'left:-9999px',
+    `width:${NODE_W}px`,
+    'padding:8px 12px',
+    'font-size:13px',
+    'line-height:1.5',
+    'box-sizing:border-box',
+    'white-space:normal',
+    'word-break:break-word',
+    'overflow-wrap:break-word',
+    'border:1.5px solid transparent',
+    'border-radius:6px',
+  ].join(';')
+  document.body.appendChild(el)
+  measureEl = el
+  return el
+}
+
+const measureHeight = (label: string): number => {
+  const cached = heightCache.get(label)
+  if (cached !== undefined) return cached
+  const el = ensureMeasureEl()
+  if (!el) return NODE_H
+  el.textContent = label
+  const h = Math.max(NODE_H, el.offsetHeight)
+  heightCache.set(label, h)
+  return h
+}
+
+onBeforeUnmount(() => {
+  if (measureEl && measureEl.parentNode) {
+    measureEl.parentNode.removeChild(measureEl)
+  }
+  measureEl = null
+  heightCache.clear()
+})
+
 const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
   const trunk = props.modelValue
   const vfNodes: VFNode[] = []
@@ -432,7 +496,7 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
         position: { x: COL_X[myCol], y },
         data: { label: node.label, nodeType: node.nodeType },
       })
-      colBot[myCol] = y + ROW
+      colBot[myCol] = y + measureHeight(node.label) + ROW_GAP
       return y
     }
 
@@ -461,7 +525,7 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
       position: { x: COL_X[myCol], y: myY },
       data: { label: node.label, nodeType: node.nodeType ?? 'group' },
     })
-    colBot[myCol] = myY + ROW
+    colBot[myCol] = myY + measureHeight(node.label) + ROW_GAP
 
     return myY
   }
@@ -485,7 +549,8 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
         childYs.push(placeBranchNode(c, subCols, side))
       })
       const childMid = (childYs[0] + childYs[childYs.length - 1]) / 2
-      let trunkY = Math.max(childMid, colBot.center + TRUNK_GAP)
+      const trunkMinY = colBot.center + (colBot.center > 10 ? TRUNK_INTERNODE_GAP : 0)
+      let trunkY = Math.max(childMid, trunkMinY)
       const shift = trunkY - childMid
       if (shift > 0) {
         for (let i = startIdx; i < vfNodes.length; i++) vfNodes[i].position.y += shift
@@ -500,10 +565,10 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
         position: { x: COL_X.center, y: trunkY },
         data: { label: node.label, nodeType: node.nodeType ?? 'group' },
       })
-      colBot.center = trunkY + ROW
+      colBot.center = trunkY + measureHeight(node.label) + ROW_GAP
       addBranchEdges(node.id, node.children, side)
     } else {
-      const y = colBot.center + (colBot.center > 10 ? TRUNK_GAP - ROW : 0)
+      const y = colBot.center + (colBot.center > 10 ? TRUNK_INTERNODE_GAP : 0)
       const finalY = Math.max(y, colBot.center)
       vfNodes.push({
         id: node.id,
@@ -511,31 +576,33 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
         position: { x: COL_X.center, y: finalY },
         data: { label: node.label, nodeType: node.nodeType },
       })
-      colBot.center = finalY + ROW
+      colBot.center = finalY + measureHeight(node.label) + ROW_GAP
     }
   }
 
   // __start
   const startY = 20
+  const startLabel = t('roadmapCreate.startLearningHere')
   vfNodes.push({
     id: '__start',
     type: 'topic',
     position: { x: COL_X.center, y: startY },
-    data: { label: t('roadmapCreate.startLearningHere'), nodeType: 'note' },
+    data: { label: startLabel, nodeType: 'note' },
   })
-  colBot.center = startY + ROW
+  colBot.center = startY + measureHeight(startLabel) + ROW_GAP
 
   // trunk
   props.modelValue.forEach((n) => placeTrunkNode(n))
 
   // __end
-  const endY = colBot.center + TRUNK_GAP - ROW
+  const endY = colBot.center + TRUNK_INTERNODE_GAP
   vfNodes.push({
     id: '__end',
     type: 'topic',
     position: { x: COL_X.center, y: endY },
     data: { label: props.roleName, nodeType: 'note' },
   })
+  const endH = measureHeight(props.roleName)
 
   // phantoms
   vfNodes.push({
@@ -547,7 +614,7 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
   vfNodes.push({
     id: '__phantom_bottom',
     type: 'phantom',
-    position: { x: COL_X.center + NODE_W / 2, y: endY + NODE_H + EXTEND },
+    position: { x: COL_X.center + NODE_W / 2, y: endY + endH + EXTEND },
     data: {},
   })
 
@@ -671,26 +738,55 @@ const bindAsNode = (id: string) => {
   emit('request-bind', { nodeId: id, type: 'node' })
 }
 
+const bindAsNote = (id: string) => {
+  const f = findNode(props.modelValue, id)
+  if (!f) return
+  // 切换为说明节点：清除 courseId、children，nodeType 设为 note
+  const newNode: RoadmapNode = {
+    id: f.node.id,
+    label: f.node.label,
+    nodeType: 'note',
+  }
+  emit('update:modelValue', replaceNodeAt(props.modelValue, id, newNode))
+  // 自动激活重命名让用户输入说明文本
+  startLabelEdit(id, f.node.label)
+}
+
 /* ========== 重命名 ========== */
+const LABEL_MAX_GROUP = 20
+const LABEL_MAX_NOTE = 50
+
+const editingMaxLength = computed(() => {
+  const id = editingNodeId.value
+  if (!id) return LABEL_MAX_GROUP
+  const f = findNode(props.modelValue, id)
+  return f?.node.nodeType === 'note' ? LABEL_MAX_NOTE : LABEL_MAX_GROUP
+})
+
 const startLabelEdit = (id: string, currentLabel: string) => {
   editingNodeId.value = id
   editingLabel.value = currentLabel
 }
 
+const editingInputEl = ref<HTMLInputElement | null>(null)
 const bindEditingInput = (el: HTMLInputElement | null) => {
-  if (el) {
-    // 等 Vue 渲染完成后聚焦并全选
+  // 只在首次绑定（el 从无到有）时聚焦并全选；后续重渲染保持光标位置不变
+  if (el && editingInputEl.value !== el) {
+    editingInputEl.value = el
     queueMicrotask(() => {
       el.focus()
       el.select()
     })
+  } else if (!el) {
+    editingInputEl.value = null
   }
 }
 
 const commitLabelEdit = () => {
   if (!editingNodeId.value) return
   const id = editingNodeId.value
-  const label = editingLabel.value.trim() || '新节点'
+  const max = editingMaxLength.value
+  const label = (editingLabel.value.trim() || '新节点').slice(0, max)
   emit('update:modelValue', setLabelOf(props.modelValue, id, label))
   editingNodeId.value = null
   editingLabel.value = ''
@@ -777,25 +873,24 @@ defineExpose({
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #ffffff;
-  color: #5b6b7c;
-  border: 1px solid #d8dee5;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  border: 1px solid rgba(0, 0, 0, 0.15);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  box-shadow: 0 2px 6px rgba(60, 80, 100, 0.12);
+  box-shadow: 0 2px 6px rgba(var(--v-theme-primary), 0.35);
   transition:
     background 0.15s ease,
     color 0.15s ease,
-    transform 0.1s ease;
+    transform 0.1s ease,
+    filter 0.15s ease;
 }
 
 :deep(.node-action-btn:hover) {
-  background: #f0f7ff;
-  color: #2563eb;
-  border-color: #bcd4f6;
+  filter: brightness(0.9);
   transform: scale(1.08);
 }
 
