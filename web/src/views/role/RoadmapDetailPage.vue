@@ -110,6 +110,10 @@
               </v-card-title>
               <v-card-text class="pa-0">
                 <div class="vue-flow-container">
+                  <!-- TODO: 样式调试中，暂用 demo 替换真实路线图 -->
+                  <RoadmapDemo />
+
+                  <!-- 原始路线图（样式调试完成后恢复）
                   <VueFlow
                     :nodes="flowNodes"
                     :edges="flowEdges"
@@ -127,6 +131,7 @@
                     <Background pattern-color="#bdbdbd" :gap="30" :size="2" variant="dots" />
                     <Controls :show-interactive="false" />
                   </VueFlow>
+                  -->
                 </div>
               </v-card-text>
             </v-card>
@@ -239,6 +244,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import CommentSection from '@/components/common/CommentSection.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import { useI18n } from '@/composables/useI18n'
+import RoadmapDemo from '@/components/features/role/RoadmapDemo.vue'
 
 const { t } = useI18n()
 
