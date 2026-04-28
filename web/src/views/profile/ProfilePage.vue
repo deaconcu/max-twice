@@ -10,9 +10,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useAuthStore } from '@/stores/modules/auth'
 import { useUserStore } from '@/stores/modules/user'
-import { useFetch } from '@/composables/useFetch'
-import { userApi, statsApi } from '@/api'
-import type { UserStatsDTO } from '@/types/user'
+import { useQueryClient } from '@tanstack/vue-query'
+import { useCurrentUserQuery, useUserDetailQuery } from '@/queries/user'
+import { useAllTimeStatsQuery } from '@/queries/stats'
+import { userKeys } from '@/queries/keys'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
@@ -41,6 +42,7 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const userStore = useUserStore()
+const queryClient = useQueryClient()
 
 // 模式选择：learner 或 creator
 const currentMode = ref((route.query.mode as string) || 'learner')
@@ -56,39 +58,43 @@ const isOwnProfile = computed(() => {
   return props.id === 'me' || (!!userStore.currentUser && props.id === userStore.currentUser.name)
 })
 
-// 根据ID获取用户信息（如果是自己且 store 有值，则不调用接口）
-const {
-  data: profileUser,
-  loading: userLoading,
-  execute: fetchUser,
-} = useFetch({
-  fetchFn: () => {
-    if (props.id === 'me') {
-      return userApi.getCurrentUser()
-    } else {
-      return userApi.getUser(props.id)
-    }
-  },
-  immediate: false,
-  defaultValue: isOwnProfile.value && userStore.currentUser ? userStore.currentUser : null,
+// ========== 用户信息：me 走 currentUser，其他走 detail ==========
+// 已经从 store 拿到的话不重复请求（用 enabled 控制）
+const needCurrent = computed(
+  () => props.id === 'me' && !userStore.currentUser
+)
+const needDetail = computed(() => props.id !== 'me')
+
+const { data: currentUserData, isLoading: currentLoading } = useCurrentUserQuery()
+// 注：useCurrentUserQuery 内部没有 enabled，但 store 已有时 currentUserData 也会再请求一次。
+// 这里通过 computed userInfo 优先取 store，请求结果只用作缓存命中后兜底。
+// 若想严格避免请求，可在 queries/user.ts 增加 enabled 选项（与本次最小化原则不符，暂不动）。
+
+const { data: detailUserData, isLoading: detailLoading } = useUserDetailQuery(
+  computed(() => props.id)
+)
+
+// 实际有效的用户对象
+const profileUser = computed(() => {
+  if (props.id === 'me') {
+    return userStore.currentUser ?? currentUserData.value ?? null
+  }
+  return detailUserData.value ?? null
 })
 
-// 只有在需要时才调用接口
-if (!isOwnProfile.value || !userStore.currentUser) {
-  fetchUser()
-}
+const userLoading = computed(() => {
+  if (props.id === 'me') return needCurrent.value && currentLoading.value
+  return detailLoading.value && !detailUserData.value
+})
 
 // KeepAlive: 从其他页面返回时触发
 onActivated(() => {
   console.log('ProfilePage activated')
-  // 可选：检查数据是否需要刷新
-  // 这里我们不做自动刷新，让各个Tab组件自己决定
-  // 如果需要自动刷新，可以在这里触发
 })
 
-// 计算用户信息 - 优先使用 profileUser
+// 计算用户信息
 const userInfo = computed(() => {
-  const user = profileUser.value || (isOwnProfile.value ? userStore.currentUser : null)
+  const user = profileUser.value
 
   if (!user) {
     return {
@@ -111,16 +117,15 @@ const userInfo = computed(() => {
   }
 })
 
-// 更新头像
+// 更新头像（来自 UserInfoTab 子组件，已经成功上传）
 const handleUpdateAvatar = (avatarUrl: string) => {
-  if (profileUser.value) {
-    profileUser.value = {
-      ...profileUser.value,
-      avatar: avatarUrl,
-    }
-  }
-  // 同时更新 userStore，确保 header 头像同步
+  // 同步 store
   userStore.updateUser({ avatar: avatarUrl })
+  // 让 currentUser query 失效，下次自动刷新
+  void queryClient.invalidateQueries({ queryKey: userKeys.current() })
+  if (props.id !== 'me') {
+    void queryClient.invalidateQueries({ queryKey: userKeys.detail(props.id) })
+  }
 }
 
 // 获取当前页面对应的用户ID（优先从 userStore 取，避免等待接口）
@@ -131,27 +136,11 @@ const currentUserId = computed(() => {
   return profileUser.value?.id ?? null
 })
 
-// 获取用户统计数据
-const { data: userStats, execute: fetchUserStats } = useFetch<UserStatsDTO | null>({
-  fetchFn: async () => {
-    const userId = currentUserId.value
-    if (!userId) return { code: 200, message: 'ok', data: null }
-    return statsApi.getUserAllTimeStats(userId)
-  },
-  immediate: false,
-  defaultValue: null,
-})
-
-// 监听用户ID变化，加载统计数据
-watch(
-  currentUserId,
-  (userId) => {
-    if (userId) {
-      fetchUserStats()
-    }
-  },
-  { immediate: true }
+// ========== 用户统计 ==========
+const { data: userStatsData } = useAllTimeStatsQuery(
+  computed(() => currentUserId.value ?? 0)
 )
+const userStats = computed(() => userStatsData.value ?? null)
 
 // 学习统计数据（从 userStats 计算）
 const stats = computed(() => ({
@@ -277,10 +266,7 @@ const handleNavigate = (tab: string, mode: string) => {
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'overview' }"
-              @click="
-                activeTab = 'overview'
-                currentMode = 'learner'
-              "
+              @click="activeTab = 'overview'; currentMode = 'learner'"
             >
               <v-icon icon="mdi-view-dashboard-outline" size="18" class="mr-2" />
               {{ t('user.profile.nav.overview') }}
@@ -291,20 +277,14 @@ const handleNavigate = (tab: string, mode: string) => {
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'roles' }"
-              @click="
-                activeTab = 'roles'
-                currentMode = 'learner'
-              "
+              @click="activeTab = 'roles'; currentMode = 'learner'"
             >
               {{ t('user.profile.nav.learningRoles') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'courses-learning' }"
-              @click="
-                activeTab = 'courses-learning'
-                currentMode = 'learner'
-              "
+              @click="activeTab = 'courses-learning'; currentMode = 'learner'"
             >
               {{ t('user.profile.nav.learningCourses') }}
             </div>
@@ -312,20 +292,14 @@ const handleNavigate = (tab: string, mode: string) => {
               v-if="isOwnProfile"
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'bookmarks' }"
-              @click="
-                activeTab = 'bookmarks'
-                currentMode = 'learner'
-              "
+              @click="activeTab = 'bookmarks'; currentMode = 'learner'"
             >
               {{ t('user.profile.nav.myBookmarks') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'people' }"
-              @click="
-                activeTab = 'people'
-                currentMode = 'learner'
-              "
+              @click="activeTab = 'people'; currentMode = 'learner'"
             >
               {{ t('user.profile.nav.following') }}
             </div>
@@ -336,50 +310,35 @@ const handleNavigate = (tab: string, mode: string) => {
               v-if="isOwnProfile"
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'stats' }"
-              @click="
-                activeTab = 'stats'
-                currentMode = 'creator'
-              "
+              @click="activeTab = 'stats'; currentMode = 'creator'"
             >
               {{ t('user.profile.nav.creatorStats') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'articles' }"
-              @click="
-                activeTab = 'articles'
-                currentMode = 'creator'
-              "
+              @click="activeTab = 'articles'; currentMode = 'creator'"
             >
               {{ t('user.profile.nav.createdArticles') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'catalogs' }"
-              @click="
-                activeTab = 'catalogs'
-                currentMode = 'creator'
-              "
+              @click="activeTab = 'catalogs'; currentMode = 'creator'"
             >
               {{ t('user.profile.nav.createdCatalogs') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'roadmaps' }"
-              @click="
-                activeTab = 'roadmaps'
-                currentMode = 'creator'
-              "
+              @click="activeTab = 'roadmaps'; currentMode = 'creator'"
             >
               {{ t('user.profile.nav.createdRoadmaps') }}
             </div>
             <div
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'decks' }"
-              @click="
-                activeTab = 'decks'
-                currentMode = 'creator'
-              "
+              @click="activeTab = 'decks'; currentMode = 'creator'"
             >
               {{ t('user.profile.nav.createdDecks') }}
             </div>
@@ -392,10 +351,7 @@ const handleNavigate = (tab: string, mode: string) => {
               v-if="isOwnProfile"
               class="nav-item"
               :class="{ 'nav-item-active': activeTab === 'info' }"
-              @click="
-                activeTab = 'info'
-                currentMode = 'settings'
-              "
+              @click="activeTab = 'info'; currentMode = 'settings'"
             >
               {{ t('user.profile.nav.personalInfo') }}
             </div>
@@ -412,10 +368,7 @@ const handleNavigate = (tab: string, mode: string) => {
               rounded="lg"
               size="small"
               class="primary-mode-btn"
-              @click="
-                activeTab = 'overview'
-                currentMode = 'learner'
-              "
+              @click="activeTab = 'overview'; currentMode = 'learner'"
             >
               {{ t('user.profile.nav.overview') }}
             </v-btn>
@@ -425,10 +378,7 @@ const handleNavigate = (tab: string, mode: string) => {
               rounded="lg"
               size="small"
               class="primary-mode-btn"
-              @click="
-                activeTab = 'roles'
-                currentMode = 'learner'
-              "
+              @click="activeTab = 'roles'; currentMode = 'learner'"
             >
               {{ t('user.profile.nav.learning') }}
             </v-btn>
@@ -438,10 +388,7 @@ const handleNavigate = (tab: string, mode: string) => {
               rounded="lg"
               size="small"
               class="primary-mode-btn"
-              @click="
-                activeTab = isOwnProfile ? 'stats' : 'articles'
-                currentMode = 'creator'
-              "
+              @click="activeTab = isOwnProfile ? 'stats' : 'articles'; currentMode = 'creator'"
             >
               {{ t('user.profile.nav.creation') }}
             </v-btn>
@@ -452,10 +399,7 @@ const handleNavigate = (tab: string, mode: string) => {
               rounded="lg"
               size="small"
               class="primary-mode-btn"
-              @click="
-                activeTab = 'info'
-                currentMode = 'settings'
-              "
+              @click="activeTab = 'info'; currentMode = 'settings'"
             >
               {{ t('user.profile.nav.settings') }}
             </v-btn>

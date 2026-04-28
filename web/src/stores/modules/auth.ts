@@ -4,7 +4,6 @@ import { authApi } from '@/api'
 import { useUserStore } from './user'
 import { logger } from '@/utils/logger'
 import type { PasswordResetSession, PendingSession, User } from '@/types/user'
-import i18n from '@/i18n'
 
 const PENDING_SESSION_STORAGE_KEY = 'pendingSession'
 const RESET_SESSION_STORAGE_KEY = 'passwordResetSession'
@@ -89,16 +88,9 @@ export const useAuthStore = defineStore(
     ): Promise<PendingSession> => {
       try {
         isLoggingIn.value = true
-        const response = await authApi.loginSendCode(email, turnstileToken)
-        if (response.code === 200 && response.data) {
-          setPendingSession(response.data)
-          return response.data
-        }
-        const error: Error & { code?: number } = new Error(
-          response.message ?? i18n.global.t('user.login.sendCodeFailed')
-        )
-        error.code = response.code
-        throw error
+        const session = await authApi.loginSendCode(email, turnstileToken)
+        setPendingSession(session)
+        return session
       } finally {
         isLoggingIn.value = false
       }
@@ -110,17 +102,10 @@ export const useAuthStore = defineStore(
     const verifyLoginCode = async (code: string): Promise<User | null> => {
       const pending = pendingSession.value
       if (!pending) return null
-      const response = await authApi.loginVerifyCode(pending.pendingSessionToken, code)
-      if (response.code === 200 && response.data) {
-        userStore.setUser(response.data)
-        setPendingSession(null)
-        return response.data
-      }
-      const error: Error & { code?: number } = new Error(
-        response.message ?? i18n.global.t('user.verifyEmail.verifyFailed')
-      )
-      error.code = response.code
-      throw error
+      const user = await authApi.loginVerifyCode(pending.pendingSessionToken, code)
+      userStore.setUser(user)
+      setPendingSession(null)
+      return user
     }
 
     /**
@@ -129,12 +114,9 @@ export const useAuthStore = defineStore(
     const resendLoginCode = async (): Promise<PendingSession | null> => {
       const pending = pendingSession.value
       if (!pending) return null
-      const response = await authApi.resendLoginCode(pending.pendingSessionToken)
-      if (response.code === 200 && response.data) {
-        setPendingSession(response.data)
-        return response.data
-      }
-      throw new Error(response.message ?? i18n.global.t('user.verifyEmail.sendFailed'))
+      const session = await authApi.resendLoginCode(pending.pendingSessionToken)
+      setPendingSession(session)
+      return session
     }
 
     // ========== 登录 ==========
@@ -155,23 +137,17 @@ export const useAuthStore = defineStore(
         isLoggingIn.value = true
         const response = await authApi.login(email, password, turnstileToken)
 
-        if (response.code === 200 && response.data) {
-          if (response.data.user) {
-            userStore.setUser(response.data.user)
-            setPendingSession(null)
-            return 'success'
-          }
-          if (response.data.pending) {
-            setPendingSession(response.data.pending)
-            return 'pending'
-          }
+        if (response.user) {
+          userStore.setUser(response.user)
+          setPendingSession(null)
+          return 'success'
+        }
+        if (response.pending) {
+          setPendingSession(response.pending)
+          return 'pending'
         }
 
-        const error: Error & { code?: number } = new Error(
-          response.message ?? i18n.global.t('user.login.loginFailed')
-        )
-        error.code = response.code
-        throw error
+        throw new Error('login failed')
       } finally {
         isLoggingIn.value = false
       }
@@ -188,14 +164,9 @@ export const useAuthStore = defineStore(
     ): Promise<boolean> => {
       try {
         isRegistering.value = true
-        const response = await authApi.register(email, password, turnstileToken)
-
-        if (response.code === 200 && response.data) {
-          setPendingSession(response.data)
-          return true
-        }
-
-        throw new Error(response.message ?? i18n.global.t('user.register.registerFailed'))
+        const session = await authApi.register(email, password, turnstileToken)
+        setPendingSession(session)
+        return true
       } finally {
         isRegistering.value = false
       }
@@ -208,13 +179,10 @@ export const useAuthStore = defineStore(
       try {
         const pending = pendingSession.value
         if (!pending) return null
-        const response = await authApi.validateEmail(pending.pendingSessionToken, code)
-        if (response.code === 200 && response.data) {
-          userStore.setUser(response.data)
-          setPendingSession(null)
-          return response.data
-        }
-        return null
+        const user = await authApi.validateEmail(pending.pendingSessionToken, code)
+        userStore.setUser(user)
+        setPendingSession(null)
+        return user
       } catch (error) {
         logger.error('邮箱验证失败', error)
         throw error
@@ -227,12 +195,9 @@ export const useAuthStore = defineStore(
     const resendVerificationCode = async (): Promise<PendingSession | null> => {
       const pending = pendingSession.value
       if (!pending) return null
-      const response = await authApi.resendVerificationCode(pending.pendingSessionToken)
-      if (response.code === 200 && response.data) {
-        setPendingSession(response.data)
-        return response.data
-      }
-      throw new Error(response.message ?? i18n.global.t('user.verifyEmail.sendFailed'))
+      const session = await authApi.resendVerificationCode(pending.pendingSessionToken)
+      setPendingSession(session)
+      return session
     }
 
     /**
@@ -251,12 +216,9 @@ export const useAuthStore = defineStore(
       email: string,
       turnstileToken: string
     ): Promise<PasswordResetSession> => {
-      const response = await authApi.requestPasswordReset(email, turnstileToken)
-      if (response.code === 200 && response.data) {
-        setResetSession(response.data)
-        return response.data
-      }
-      throw new Error(response.message ?? i18n.global.t('user.forgotPassword.requestFailed'))
+      const session = await authApi.requestPasswordReset(email, turnstileToken)
+      setResetSession(session)
+      return session
     }
 
     /**
@@ -265,12 +227,9 @@ export const useAuthStore = defineStore(
     const resendPasswordResetCode = async (): Promise<PasswordResetSession | null> => {
       const session = resetSession.value
       if (!session) return null
-      const response = await authApi.resendPasswordResetCode(session.resetSessionToken)
-      if (response.code === 200 && response.data) {
-        setResetSession(response.data)
-        return response.data
-      }
-      throw new Error(response.message ?? i18n.global.t('user.verifyEmail.sendFailed'))
+      const newSession = await authApi.resendPasswordResetCode(session.resetSessionToken)
+      setResetSession(newSession)
+      return newSession
     }
 
     /**
@@ -280,8 +239,8 @@ export const useAuthStore = defineStore(
       const session = resetSession.value
       if (!session) return false
       try {
-        const response = await authApi.verifyPasswordResetCode(session.resetSessionToken, code)
-        return response.code === 200
+        await authApi.verifyPasswordResetCode(session.resetSessionToken, code)
+        return true
       } catch (error) {
         logger.error('密码重置验证码校验失败', error)
         throw error
@@ -294,12 +253,9 @@ export const useAuthStore = defineStore(
     const confirmPasswordReset = async (newPassword: string): Promise<boolean> => {
       const session = resetSession.value
       if (!session) return false
-      const response = await authApi.confirmPasswordReset(session.resetSessionToken, newPassword)
-      if (response.code === 200) {
-        setResetSession(null)
-        return true
-      }
-      throw new Error(response.message ?? i18n.global.t('user.forgotPassword.resetFailed'))
+      await authApi.confirmPasswordReset(session.resetSessionToken, newPassword)
+      setResetSession(null)
+      return true
     }
 
     /**

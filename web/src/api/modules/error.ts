@@ -1,5 +1,4 @@
 import apiClient from '../client'
-import type { ApiResponse } from '@/types/api'
 
 /**
  * 错误上报 API
@@ -15,7 +14,7 @@ export const errorApi = {
     url: string
     userAgent: string
     extraData?: string
-  }): Promise<ApiResponse<void>> {
-    return apiClient.post('/v1/errors/frontend', data)
+  }): Promise<void> {
+    return apiClient.post('/errors/frontend', data)
   },
 }

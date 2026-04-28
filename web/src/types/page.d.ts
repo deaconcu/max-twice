@@ -34,9 +34,6 @@ export interface ReadResponse {
 
   // 帖子相关
   chosenPosting?: Post
-  otherPostings?: Post[]
-  lastId?: number
-  lastScore?: number
 
   // TOC（目录）相关
   toc?: TocItem[]

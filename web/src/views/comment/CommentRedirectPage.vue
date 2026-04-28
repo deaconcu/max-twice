@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { commentApi } from '@/api'
 import { ObjectType } from '@/enums'
-import { useFetch } from '@/composables'
+import { useQuery } from '@tanstack/vue-query'
 import { useI18n } from '@/composables/useI18n'
 
 const route = useRoute()
@@ -11,87 +12,90 @@ const { t } = useI18n()
 
 const commentId = Number(route.params.id)
 
-const { loading } = useFetch({
-  fetchFn: () => commentApi.getCommentBasic(commentId),
-  immediate: true,
-  onSuccess: (data) => {
-    const { objectType, objectId, replyToCommentId } = data
+const { isPending: loading, data, error } = useQuery({
+  queryKey: ['comment', 'basic', commentId],
+  queryFn: () => commentApi.getCommentBasic(commentId),
+})
 
-    // 根据对象类型跳转到对应页面
-    switch (objectType) {
-      case ObjectType.POST:
-        // 帖子评论
-        if (replyToCommentId && replyToCommentId > 0) {
-          // 子评论：带上父评论ID和子评论ID
-          router.replace({
-            path: '/read',
-            query: {
-              postId: String(objectId),
-              commentId: String(replyToCommentId),
-              subCommentId: String(commentId),
-            },
-          })
-        } else {
-          // 主评论
-          router.replace({
-            path: '/read',
-            query: {
-              postId: String(objectId),
-              commentId: String(commentId),
-            },
-          })
-        }
-        break
+watch(data, (result) => {
+  if (!result) return
+  const { objectType, objectId, replyToCommentId } = result
 
-      case ObjectType.NODE:
-        // 节点评论
-        if (replyToCommentId && replyToCommentId > 0) {
-          router.replace({
-            path: '/read',
-            query: {
-              nodeId: String(objectId),
-              commentId: String(replyToCommentId),
-              subCommentId: String(commentId),
-            },
-          })
-        } else {
-          router.replace({
-            path: '/read',
-            query: {
-              nodeId: String(objectId),
-              commentId: String(commentId),
-            },
-          })
-        }
-        break
+  // 根据对象类型跳转到对应页面
+  switch (objectType) {
+    case ObjectType.POST:
+      // 帖子评论
+      if (replyToCommentId && replyToCommentId > 0) {
+        // 子评论：带上父评论ID和子评论ID
+        router.replace({
+          path: '/read',
+          query: {
+            postId: String(objectId),
+            commentId: String(replyToCommentId),
+            subCommentId: String(commentId),
+          },
+        })
+      } else {
+        // 主评论
+        router.replace({
+          path: '/read',
+          query: {
+            postId: String(objectId),
+            commentId: String(commentId),
+          },
+        })
+      }
+      break
 
-      case ObjectType.ROADMAP:
-        // 路线图评论
-        if (replyToCommentId && replyToCommentId > 0) {
-          router.replace({
-            path: `/roadmap/${objectId}`,
-            query: {
-              commentId: String(replyToCommentId),
-              subCommentId: String(commentId),
-            },
-          })
-        } else {
-          router.replace({
-            path: `/roadmap/${objectId}`,
-            query: {
-              commentId: String(commentId),
-            },
-          })
-        }
-        break
+    case ObjectType.NODE:
+      // 节点评论
+      if (replyToCommentId && replyToCommentId > 0) {
+        router.replace({
+          path: '/read',
+          query: {
+            nodeId: String(objectId),
+            commentId: String(replyToCommentId),
+            subCommentId: String(commentId),
+          },
+        })
+      } else {
+        router.replace({
+          path: '/read',
+          query: {
+            nodeId: String(objectId),
+            commentId: String(commentId),
+          },
+        })
+      }
+      break
 
-      default:
-        router.replace('/error/404')
-    }
-  },
-  onError: () => {
-    router.replace('/error/404')
-  },
+    case ObjectType.ROADMAP:
+      // 路线图评论
+      if (replyToCommentId && replyToCommentId > 0) {
+        router.replace({
+          path: `/roadmap/${objectId}`,
+          query: {
+            commentId: String(replyToCommentId),
+            subCommentId: String(commentId),
+          },
+        })
+      } else {
+        router.replace({
+          path: `/roadmap/${objectId}`,
+          query: {
+            commentId: String(commentId),
+          },
+        })
+      }
+      break
+
+    default:
+      router.replace('/error/404')
+  }
+})
+
+watch(error, (err) => {
+  if (err) router.replace('/error/404')
 })
 </script>
 

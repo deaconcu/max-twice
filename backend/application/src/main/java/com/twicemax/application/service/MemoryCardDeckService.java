@@ -8,6 +8,8 @@ import com.twicemax.application.converter.MemoryCardDeckConverter;
 import com.twicemax.application.converter.UserConverter;
 import com.twicemax.application.dto.request.CreateDeckRequest;
 import com.twicemax.application.dto.response.KeysetPageResponse;
+import com.twicemax.application.dto.v2.CursorPage;
+import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.application.dto.response.card.CardWithSrsDTO;
 import com.twicemax.application.dto.response.deck.DeckAdminDTO;
 import com.twicemax.application.dto.response.deck.DeckAndCardsDTO;
@@ -87,15 +89,15 @@ public class MemoryCardDeckService {
     /**
      * 需求1: 获取帖子下的公共卡片组列表 - keyset分页，normal状态
      */
-    public KeysetPageResponse<DeckFullDTO> getPostPublicDecks(
-            Long postId, String sortBy, Double lastScore, Long lastId, Integer limit, Long userId) {
-        // 参数验证
+    public CursorPage<DeckFullDTO> getPostPublicDecks(
+            Long postId, String sortBy, String cursor, Integer limit, Long userId) {
         if (limit == null || limit <= 0) limit = 10;
         if (limit > 50) limit = 50;
 
-        // 使用动态方法，Mapper 根据 sortBy 和分页参数自动选择排序方式
+        Cursor scoreIdCursor = Cursor.decode(cursor);
+
         List<MemoryCardDeckDO> deckList = deckDomainService.getListByPostDynamic(
-            postId, Enums.ContentState.PUBLISHED, sortBy, lastScore, lastId, limit + 1);
+            postId, Enums.ContentState.PUBLISHED, sortBy, scoreIdCursor.score(), scoreIdCursor.id(), limit + 1);
 
         return buildDeckResponse(deckList, limit, userId);
     }
@@ -103,31 +105,31 @@ public class MemoryCardDeckService {
     /**
      * 需求2: 获取帖子创建者提交的卡片组 - 固定按ID降序
      */
-    public KeysetPageResponse<DeckFullDTO> getPostCreatorDeck(
-            Long postId, Long lastId, Integer limit, Long userId) {
-        // 参数验证
+    public CursorPage<DeckFullDTO> getPostCreatorDeck(
+            Long postId, String cursor, Integer limit, Long userId) {
         if (limit == null || limit <= 0) limit = 1;
         if (limit > 50) limit = 50;
 
         PostDO post = postDataService.validateAndGet(postId);
         Long postCreatorId = post.getCreatorId();
+        Long cursorId = Cursor.decode(cursor).id();
 
         List<MemoryCardDeckDO> deckList;
         if (!postCreatorId.equals(userId)) {
             // post创建者不是当前用户，只查询normal状态，按ID降序
-            if (lastId != null) {
+            if (cursorId != null) {
                 deckList = deckDomainService.getListByPostAndCreatorWithIdPaging(
-                        postId, postCreatorId, Enums.ContentState.PUBLISHED, lastId, limit + 1);
+                        postId, postCreatorId, Enums.ContentState.PUBLISHED, cursorId, limit + 1);
             } else {
-                // 首次查询，没有 lastId
+                // 首次查询，没有 cursor
                 deckList = deckDomainService.getListByPostAndCreator(
                         postId, postCreatorId, Enums.ContentState.PUBLISHED, limit + 1);
             }
         } else {
             // post创建者就是当前用户，查询所有状态，按ID降序
-            if (lastId != null) {
+            if (cursorId != null) {
                 deckList = deckDomainService.getListByPostAndCreatorWithIdPagingAllStates(
-                        postId, postCreatorId, lastId, limit + 1);
+                        postId, postCreatorId, cursorId, limit + 1);
             } else {
                 deckList = deckDomainService.getListByPostAndCreatorAllStates(
                         postId, postCreatorId, limit + 1);
@@ -140,15 +142,15 @@ public class MemoryCardDeckService {
     /**
      * 需求3: 获取用户自己在指定帖子下提交的卡片组
      */
-    public KeysetPageResponse<DeckFullDTO> getMyPostDeck(
-            Long postId, Long userId, String sortBy, Double lastScore, Long lastId, Integer limit) {
-        // 参数验证
+    public CursorPage<DeckFullDTO> getMyPostDeck(
+            Long postId, Long userId, String sortBy, String cursor, Integer limit) {
         if (limit == null || limit <= 0) limit = 1;
         if (limit > 50) limit = 50;
 
-        // 查询所有状态的卡片组
+        Cursor scoreIdCursor = Cursor.decode(cursor);
+
         List<MemoryCardDeckDO> deckList = deckDomainService.getListByPostAndCreatorDynamicAllStates(
-                postId, userId, sortBy, lastScore, lastId, limit + 1);
+                postId, userId, sortBy, scoreIdCursor.score(), scoreIdCursor.id(), limit + 1);
 
         return buildDeckResponse(deckList, limit, userId);
     }
@@ -163,24 +165,21 @@ public class MemoryCardDeckService {
      * @param lastId 最后一条记录的ID（用于分页）
      * @param limit 每页数量
      */
-    public KeysetPageResponse<DeckFullDTO> getUserDecks(
-            Long userId, Long currentUserId, Long lastId, Integer limit, Byte state) {
-        // 参数验证
+    public CursorPage<DeckFullDTO> getUserDecks(
+            Long userId, Long currentUserId, String cursor, Integer limit, Byte state) {
         if (limit == null || limit <= 0) limit = 10;
         if (limit > 50) limit = 50;
+        Long cursorId = Cursor.decode(cursor).id();
 
         List<MemoryCardDeckDO> deckList;
-        // 根据是否有 state 参数选择不同的查询方法
         if (state != null) {
-            // 有 state 参数，使用带状态过滤的查询
             Enums.ContentState contentState = Enums.ContentState.getByValue(state);
             if (contentState == null) {
                 throw StatusCode.INVALID_PARAMETER.exception("无效的状态参数");
             }
-            deckList = deckDomainService.getListByCreatorWithIdPagingAndState(userId, contentState, lastId, limit + 1);
+            deckList = deckDomainService.getListByCreatorWithIdPagingAndState(userId, contentState, cursorId, limit + 1);
         } else {
-            // 无 state 参数，查询所有状态（排除BANNED）
-            deckList = deckDomainService.getListByCreatorWithIdPaging(userId, lastId, limit + 1);
+            deckList = deckDomainService.getListByCreatorWithIdPaging(userId, cursorId, limit + 1);
         }
 
         return buildDeckResponse(deckList, limit, currentUserId);
@@ -189,76 +188,56 @@ public class MemoryCardDeckService {
     /**
      * 构建卡片组响应的通用方法
      */
-    private KeysetPageResponse<DeckFullDTO> buildDeckResponse(
+    private CursorPage<DeckFullDTO> buildDeckResponse(
             List<MemoryCardDeckDO> deckList, Integer limit, Long userId) {
-        // 判断是否有更多数据
         boolean hasMore = deckList.size() > limit;
         if (hasMore) {
             deckList = deckList.subList(0, limit);
         }
 
-        // 转换为DTO (包含创建者信息和点赞状态)
         List<DeckFullDTO> dtoList = deckAssembler.toFullDTO(deckList, userId);
 
-        // 构建响应
-        KeysetPageResponse<DeckFullDTO> response = new KeysetPageResponse<>();
-        response.setItems(dtoList);
-        response.setHasMore(hasMore);
-
+        String nextCursor = null;
         if (hasMore && !deckList.isEmpty()) {
             MemoryCardDeckDO lastDeck = deckList.get(deckList.size() - 1);
-            KeysetPageResponse.NextCursor nextCursor = new KeysetPageResponse.NextCursor();
-            nextCursor.setLastScore(lastDeck.getScore());
-            nextCursor.setLastId(lastDeck.getId());
-            response.setNextCursor(nextCursor);
+            nextCursor = Cursor.of(lastDeck.getScore(), lastDeck.getId()).encode();
         }
 
-        return response;
+        return CursorPage.of(dtoList, hasMore, nextCursor);
     }
 
     /**
      * 根据节点ID获取卡片组列表 - Keyset分页
      */
-    public KeysetPageResponse<DeckFullDTO> getDecksByNode(
-            Long nodeId, Double lastScore, Long lastId, Integer limit, Long userId) {
-        // 参数验证
+    public CursorPage<DeckFullDTO> getDecksByNode(
+            Long nodeId, String cursor, Integer limit, Long userId) {
         if (limit == null || limit <= 0) limit = 20;
         if (limit > 50) limit = 50;
 
-        List<MemoryCardDeckDO> deckList;
-
-        // 只查询正常状态的卡片组
+        Cursor scoreIdCursor = Cursor.decode(cursor);
         int state = Enums.ContentState.PUBLISHED.value();
 
-        if (lastScore != null && lastId != null) {
-            deckList = deckDomainService.getListByNodeKeyset(nodeId, lastScore, lastId, state, limit + 1);
+        List<MemoryCardDeckDO> deckList;
+        if (scoreIdCursor.score() != null && scoreIdCursor.id() != null) {
+            deckList = deckDomainService.getListByNodeKeyset(nodeId, scoreIdCursor.score(), scoreIdCursor.id(), state, limit + 1);
         } else {
             deckList = deckDomainService.getListByNode(nodeId, state, limit + 1);
         }
 
-        // 判断是否有更多数据
         boolean hasMore = deckList.size() > limit;
         if (hasMore) {
             deckList = deckList.subList(0, limit);
         }
 
-        // 转换为DTO (包含创建者信息和点赞状态)
         List<DeckFullDTO> dtoList = deckAssembler.toFullDTO(deckList, userId);
 
-        // 构建响应
-        KeysetPageResponse<DeckFullDTO> response = new KeysetPageResponse<>();
-        response.setItems(dtoList);
-        response.setHasMore(hasMore);
-
+        String nextCursor = null;
         if (hasMore && !deckList.isEmpty()) {
             MemoryCardDeckDO lastDeck = deckList.get(deckList.size() - 1);
-            KeysetPageResponse.NextCursor nextCursor = new KeysetPageResponse.NextCursor();
-            nextCursor.setLastScore(lastDeck.getScore());
-            nextCursor.setLastId(lastDeck.getId());
-            response.setNextCursor(nextCursor);
+            nextCursor = Cursor.of(lastDeck.getScore(), lastDeck.getId()).encode();
         }
 
-        return response;
+        return CursorPage.of(dtoList, hasMore, nextCursor);
     }
 
     // ========== Admin 管理接口 ==========

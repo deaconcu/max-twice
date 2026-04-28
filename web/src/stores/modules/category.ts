@@ -120,26 +120,26 @@ export const useCategoryStore = defineStore(
         ])
 
         // 更新课程分类
-        if (courseResponse.data) {
+        if (courseResponse) {
           const oldCourseConfig = JSON.stringify(courseCategories.value)
-          const newCourseConfig = JSON.stringify(courseResponse.data)
+          const newCourseConfig = JSON.stringify(courseResponse)
 
           if (oldCourseConfig !== newCourseConfig) {
             console.log('[CategoryStore] ✅ 课程分类已更新')
-            courseCategories.value = courseResponse.data
+            courseCategories.value = courseResponse
           } else {
             console.log('[CategoryStore] 课程分类无变化')
           }
         }
 
         // 更新角色分类
-        if (roleResponse.data) {
+        if (roleResponse) {
           const oldRoleConfig = JSON.stringify(roleCategories.value)
-          const newRoleConfig = JSON.stringify(roleResponse.data)
+          const newRoleConfig = JSON.stringify(roleResponse)
 
           if (oldRoleConfig !== newRoleConfig) {
             console.log('[CategoryStore] ✅ 角色分类已更新')
-            roleCategories.value = roleResponse.data
+            roleCategories.value = roleResponse
           } else {
             console.log('[CategoryStore] 角色分类无变化')
           }

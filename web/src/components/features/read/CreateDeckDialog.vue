@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed } from 'vue'
-import { memoryApi } from '@/api'
 import type { MemoryCardDeck } from '@/types/memory'
-import { useMutation } from '@/composables'
 import { useValidationConfigStore } from '@/stores/validationConfig'
 import { useI18n } from '@/composables/useI18n'
+import { useCreateDeckMutation } from '@/queries/memory'
 
 const props = defineProps<Props>()
 
@@ -91,41 +90,40 @@ const cardFormValid = computed(() => {
   return true
 })
 
-// 使用 useMutation 处理创建卡片组
-const { execute: createDeckMutation, loading } = useMutation(
-  () => {
-    const requestData: {
-      sourcePostId?: number
-      nodeId?: number
-      description?: string
-      cards: { front: string; back: string }[]
-    } = {
-      description: deckForm.value.description || undefined,
-      cards: cards.value.map((card) => ({
-        front: card.front,
-        back: card.back,
-      })),
-    }
+// 使用 useCreateDeckMutation 处理创建卡片组
+const createDeckMutation = useCreateDeckMutation()
+const loading = createDeckMutation.isPending
 
-    if (props.postId) {
-      requestData.sourcePostId = props.postId
-    } else if (props.nodeId) {
-      requestData.sourcePostId = 0
-      requestData.nodeId = props.nodeId
-    }
+const finishCreation = () => {
+  const requestData: {
+    sourcePostId?: number
+    nodeId?: number
+    description?: string
+    cards: { front: string; back: string }[]
+  } = {
+    description: deckForm.value.description || undefined,
+    cards: cards.value.map((card) => ({
+      front: card.front,
+      back: card.back,
+    })),
+  }
 
-    return memoryApi.createDeck(requestData)
-  },
-  {
-    successMessage: t('createDeck.createSuccess'),
+  if (props.postId) {
+    requestData.sourcePostId = props.postId
+  } else if (props.nodeId) {
+    requestData.sourcePostId = 0
+    requestData.nodeId = props.nodeId
+  }
+
+  createDeckMutation.mutate(requestData, {
     onSuccess: (result) => {
       if (result) {
-        emit('created', result)
+        emit('created', result as MemoryCardDeck)
       }
       dialog.value = false
     },
-  }
-)
+  })
+}
 
 watch(dialog, (newVal) => {
   if (newVal) {
@@ -180,10 +178,6 @@ const addCard = () => {
 
 const removeCard = (index: number) => {
   cards.value.splice(index, 1)
-}
-
-const finishCreation = async () => {
-  await createDeckMutation()
 }
 
 const goBack = () => {

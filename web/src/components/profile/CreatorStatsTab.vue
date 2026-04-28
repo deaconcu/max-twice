@@ -64,10 +64,7 @@
               size="small"
               rounded="lg"
               :color="selectedPeriod === '7' ? 'primary' : 'default'"
-              @click="
-                selectedPeriod = '7'
-                onPeriodChange()
-              "
+              @click="selectedPeriod = '7'; onPeriodChange()"
             >
               {{ t('user.profile.creatorStats.days7') }}
             </v-btn>
@@ -76,10 +73,7 @@
               size="small"
               rounded="lg"
               :color="selectedPeriod === '30' ? 'primary' : 'default'"
-              @click="
-                selectedPeriod = '30'
-                onPeriodChange()
-              "
+              @click="selectedPeriod = '30'; onPeriodChange()"
             >
               {{ t('user.profile.creatorStats.days30') }}
             </v-btn>
@@ -88,10 +82,7 @@
               size="small"
               rounded="lg"
               :color="selectedPeriod === '180' ? 'primary' : 'default'"
-              @click="
-                selectedPeriod = '180'
-                onPeriodChange()
-              "
+              @click="selectedPeriod = '180'; onPeriodChange()"
             >
               {{ t('user.profile.creatorStats.days180') }}
             </v-btn>
@@ -100,17 +91,14 @@
               size="small"
               rounded="lg"
               :color="selectedPeriod === '365' ? 'primary' : 'default'"
-              @click="
-                selectedPeriod = '365'
-                onPeriodChange()
-              "
+              @click="selectedPeriod = '365'; onPeriodChange()"
             >
               {{ t('user.profile.creatorStats.days365') }}
             </v-btn>
           </div>
         </div>
 
-        <LoadingSpinner v-if="loading" />
+        <LoadingSpinner v-if="historyStatsLoading" />
 
         <div v-else-if="statsData">
           <div class="stats-grid mb-4">
@@ -154,18 +142,15 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useUserStore } from '@/stores/modules/user'
-import { statsApi } from '@/api'
-import { useFetch } from '@/composables'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import type { UserStatsDTO, UserStatsWithDailyDTO, DailyStatsDTO } from '@/types/user'
+import type { DailyStatsDTO } from '@/types/user'
+import { useAllTimeStatsQuery, useHistoryStatsQuery } from '@/queries/stats'
 
 const { t } = useI18n()
 const userStore = useUserStore()
 
 // 响应式数据
 const selectedPeriod = ref('7') // 默认7天
-const error = ref('')
-const totalStatsError = ref('')
 
 // Canvas 引用
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
@@ -198,44 +183,21 @@ const toggleLine = (key: 'viewCount' | 'twiceCount' | 'likeCount' | 'commentCoun
   })
 }
 
-// 使用 useFetch 加载全部时间统计数据
+// userId / days 用 computed，query 会跟随响应式自动重取
+const userId = computed(() => userStore.currentUser!.id)
+const days = computed(() => parseInt(selectedPeriod.value))
+
 const {
   data: totalStatsData,
-  loading: totalStatsLoading,
-  execute: refreshTotalStats,
-} = useFetch<UserStatsDTO>({
-  fetchFn: () => {
-    if (!userStore.userId) {
-      throw new Error(t('user.profile.creatorStats.pleaseLogin'))
-    }
-    return statsApi.getUserAllTimeStats(userStore.userId)
-  },
-  immediate: true,
-  onError: (err) => {
-    console.error('加载全部时间统计失败:', err)
-    totalStatsError.value = err.message
-  },
-})
+  isLoading: totalStatsLoading,
+  refetch: refetchTotalStats,
+} = useAllTimeStatsQuery(userId)
 
-// 使用 useFetch 加载时间段统计数据
 const {
   data: statsData,
-  loading,
-  execute: loadStatsData,
-} = useFetch<UserStatsWithDailyDTO>({
-  fetchFn: () => {
-    if (!userStore.userId) {
-      throw new Error(t('user.profile.creatorStats.pleaseLogin'))
-    }
-    const days = parseInt(selectedPeriod.value)
-    return statsApi.getUserHistoryStats(userStore.userId, days)
-  },
-  immediate: true,
-  onError: (err) => {
-    console.error('加载时间段统计失败:', err)
-    error.value = err.message
-  },
-})
+  isLoading: historyStatsLoading,
+  refetch: refetchStatsData,
+} = useHistoryStatsQuery(userId, days)
 
 // 计算属性
 const showDailyDetails = computed(() => {
@@ -315,15 +277,12 @@ const getPeriodText = (): string => {
   }
 }
 
-// 数据加载方法
-const onPeriodChange = (): void => {
-  error.value = ''
-  loadStatsData()
-}
+// 切换时间段：days 是 computed，query 会自动重新拉取，这里只保留钩子
+const onPeriodChange = (): void => {}
 
 const refreshAllData = (): void => {
-  refreshTotalStats()
-  loadStatsData()
+  void refetchTotalStats()
+  void refetchStatsData()
 }
 
 // 绘制图表
@@ -465,42 +424,6 @@ const drawChart = () => {
   })
 }
 
-// 处理鼠标悬停
-const handleChartHover = (event: MouseEvent) => {
-  const canvas = chartCanvas.value
-  if (!canvas || !statsData.value?.dailyStats) return
-
-  const rect = canvas.getBoundingClientRect()
-  const x = event.clientX - rect.left
-  const y = event.clientY - rect.top
-
-  const padding = { left: 50, right: 20 }
-  const chartWidth = rect.width - padding.left - padding.right
-  const data = dailyStatsItems.value
-
-  // 找到最近的数据点
-  const index = Math.round(((x - padding.left) / chartWidth) * (data.length - 1))
-
-  if (index >= 0 && index < data.length) {
-    const item = data[index]
-    tooltip.value = {
-      visible: true,
-      x: event.clientX - rect.left + rect.left,
-      y: event.clientY - rect.top + rect.top - 20,
-      date: formatDate(item.date),
-      viewCount: item.viewCount,
-      twiceCount: item.twiceCount,
-      likeCount: item.likeCount,
-      commentCount: item.commentCount,
-    }
-  }
-}
-
-// 处理鼠标离开
-const handleChartLeave = () => {
-  tooltip.value.visible = false
-}
-
 // 监听数据变化重绘图表
 watch(
   () => statsData.value,
@@ -520,16 +443,6 @@ onMounted(() => {
   // 窗口大小变化时重绘
   window.addEventListener('resize', drawChart)
 })
-
-// 监听用户状态变化
-watch(
-  () => userStore.userId,
-  (newUserId) => {
-    if (newUserId) {
-      refreshAllData()
-    }
-  }
-)
 </script>
 
 <style scoped>

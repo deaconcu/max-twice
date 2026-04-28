@@ -1,5 +1,4 @@
 import apiClient from '../client'
-import type { ApiResponse } from '@/types/api'
 
 /**
  * 搜索结果项
@@ -17,29 +16,29 @@ export const searchApi = {
   /**
    * 搜索课程
    */
-  searchCourses(query: string, limit = 20, offset = 0): Promise<ApiResponse<SearchResultItem[]>> {
-    return apiClient.get('/v1/search/courses', { params: { q: query, limit, offset } })
+  searchCourses(query: string, limit = 20, offset = 0): Promise<SearchResultItem[]> {
+    return apiClient.get('/search/courses', { params: { q: query, limit, offset } })
   },
 
   /**
    * 搜索节点
    */
-  searchNodes(query: string, limit = 20, offset = 0): Promise<ApiResponse<SearchResultItem[]>> {
-    return apiClient.get('/v1/search/nodes', { params: { q: query, limit, offset } })
+  searchNodes(query: string, limit = 20, offset = 0): Promise<SearchResultItem[]> {
+    return apiClient.get('/search/nodes', { params: { q: query, limit, offset } })
   },
 
   /**
    * 搜索用户
    */
-  searchUsers(query: string, limit = 20, offset = 0): Promise<ApiResponse<SearchResultItem[]>> {
-    return apiClient.get('/v1/search/users', { params: { q: query, limit, offset } })
+  searchUsers(query: string, limit = 20, offset = 0): Promise<SearchResultItem[]> {
+    return apiClient.get('/search/users', { params: { q: query, limit, offset } })
   },
 
   /**
    * 搜索角色
    */
-  searchRoles(query: string, limit = 20, offset = 0): Promise<ApiResponse<SearchResultItem[]>> {
-    return apiClient.get('/v1/search/roles', { params: { q: query, limit, offset } })
+  searchRoles(query: string, limit = 20, offset = 0): Promise<SearchResultItem[]> {
+    return apiClient.get('/search/roles', { params: { q: query, limit, offset } })
   },
 
   /**
@@ -48,14 +47,12 @@ export const searchApi = {
   searchAll(
     query: string,
     limit = 10
-  ): Promise<
-    ApiResponse<{
-      courses: SearchResultItem[]
-      nodes: SearchResultItem[]
-      users: SearchResultItem[]
-      roles: SearchResultItem[]
-    }>
-  > {
-    return apiClient.get('/v1/search/all', { params: { q: query, limit } })
+  ): Promise<{
+    courses: SearchResultItem[]
+    nodes: SearchResultItem[]
+    users: SearchResultItem[]
+    roles: SearchResultItem[]
+  }> {
+    return apiClient.get('/search/all', { params: { q: query, limit } })
   },
 }

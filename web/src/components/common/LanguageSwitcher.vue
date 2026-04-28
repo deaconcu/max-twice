@@ -19,11 +19,7 @@ const toggleLocale = async () => {
 
   if (userStore.isLoggedIn) {
     try {
-      const resp = await updateLocaleMutation.mutateAsync(next)
-      if (resp.code !== 200) {
-        logger.error('更新语言失败', resp.message)
-        return
-      }
+      await updateLocaleMutation.mutateAsync(next)
     } catch (e) {
       logger.error('更新语言异常', e)
       return

@@ -400,110 +400,34 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
-import { useFetch, useMutation } from '@/composables'
-import { courseApi, bookmarkApi } from '@/api'
 import type { Course } from '@/types/course'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import SubCourseApplicationDialog from '@/components/features/course/SubCourseApplicationDialog.vue'
+import {
+  useCourseDetailQuery,
+  useSubCoursesQuery,
+  useCreateSubcourseMutation,
+} from '@/queries/course'
+import { useBookmarkToggleMutation } from '@/queries/interaction'
 
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 
-// 课程 ID
 const courseId = computed(() => {
   const id = route.params.id
   return typeof id === 'string' ? parseInt(id, 10) : 0
 })
 
-// 使用 useFetch 加载课程详情
-const {
-  data: course,
-  loading,
-  error: fetchError,
-} = useFetch<Course | null>({
-  fetchFn: () => courseApi.getCourse(courseId.value),
-  immediate: true,
-  defaultValue: null,
-})
+const { data: course, isLoading: loading, isError } = useCourseDetailQuery(courseId)
 
-// 使用 useFetch 加载子课程列表
-const {
-  data: subCoursesResponse,
-  loading: _loadingSubCourses,
-  refresh: refreshSubCoursesList,
-} = useFetch<{
-  items: Course[]
-  hasMore: boolean
-}>({
-  fetchFn: () => courseApi.getSubCourses(courseId.value),
-  immediate: true,
-  defaultValue: { items: [], hasMore: false },
-})
+const { data: subCoursesResponse, refetch: refreshSubCoursesList } = useSubCoursesQuery(courseId)
 
-// 计算属性：从响应中提取子课程列表
 const subCourses = computed(() => subCoursesResponse.value?.items ?? [])
 
-// 使用 useMutation 处理主课程收藏/取消收藏
-const { execute: executeBookmark, loading: subscribing } = useMutation(
-  (payload: { id: number }) => bookmarkApi.toggle('course', payload.id),
-  {
-    successMessage: '',
-    showToast: false,
-  }
-)
+const error = computed(() => (isError.value ? t('course.loadError') : null))
 
-// 使用 useMutation 处理子课程收藏/取消收藏
-const { execute: executeSubCourseBookmark, loading: subscribingSubCourse } = useMutation(
-  (payload: { id: number }) => bookmarkApi.toggle('course', payload.id),
-  {
-    successMessage: '',
-    showToast: false,
-  }
-)
-
-// 跟踪正在订阅的子课程ID
-const subscribingSubCourseId = ref<number | null>(null)
-
-// 使用 useMutation 处理创建子课程
-const { execute: executeCreateSubCourse, loading: creatingSubCourse } = useMutation(
-  (payload: { parentId: number; name: string; description: string }) =>
-    courseApi.createSubcourse(payload.parentId, payload.name, payload.description),
-  {
-    successMessage: t('course.applySuccess'),
-    onSuccess: () => {
-      applicationDialog.value = false
-      // 刷新子课程列表
-      void refreshSubCoursesList()
-    },
-  }
-)
-
-// 申请对话框状态
-const applicationDialog = ref(false)
-
-// 确认创建对话框状态
-const confirmDialog = ref(false)
-const pendingSubCourseType = ref<'quickstart' | 'exercises'>('quickstart')
-
-// 默认子课程的名称和描述
-const defaultSubCourses = computed(() => ({
-  quickstart: {
-    name: t('course.quickstart'),
-    description: t('course.quickstartDesc'),
-  },
-  exercises: {
-    name: t('course.exercises'),
-    description: t('course.exercisesDesc'),
-  },
-}))
-
-const error = computed(() => (fetchError.value ? t('course.loadError') : null))
-
-/**
- * 检查是否已存在某个默认子课程
- */
 const hasQuickstartCourse = computed(() =>
   subCourses.value.some(
     (c) => c.name === t('course.quickstart') || c.name === 'Quick Start' || c.name === '快速入门'
@@ -516,114 +440,105 @@ const hasExercisesCourse = computed(() =>
   )
 )
 
-/**
- * 格式化数字（千位分隔）
- */
+const defaultSubCourses = computed(() => ({
+  quickstart: { name: t('course.quickstart'), description: t('course.quickstartDesc') },
+  exercises: { name: t('course.exercises'), description: t('course.exercisesDesc') },
+}))
+
 const formatNumber = (num?: number) => {
   if (!num) return '0'
   return num.toLocaleString()
 }
 
-/**
- * 开始阅读
- */
 const handleStartReading = () => {
-  void router.push({
-    path: '/read',
-    query: {
-      courseId: String(courseId.value),
-    },
-  })
+  void router.push({ path: '/read', query: { courseId: String(courseId.value) } })
 }
 
-/**
- * 跳转到子课程阅读页
- */
 const handleGoToSubCourse = (index: number) => {
   const subCourse = subCourses.value[index]
   if (!subCourse) return
-
-  void router.push({
-    path: '/read',
-    query: {
-      courseId: String(subCourse.id),
-    },
-  })
+  void router.push({ path: '/read', query: { courseId: String(subCourse.id) } })
 }
 
-/**
- * 切换订阅状态
- */
-const handleToggleSubscribe = async () => {
+// 订阅/取消订阅
+const bookmarkToggleMutation = useBookmarkToggleMutation()
+const subscribing = computed(() => bookmarkToggleMutation.isPending.value)
+const subscribingSubCourseId = ref<number | null>(null)
+
+const handleToggleSubscribe = () => {
   if (!course.value) return
-
-  const result = await executeBookmark({ id: course.value.id })
-
-  if (result !== null && course.value) {
-    // 切换收藏状态
-    course.value.bookmarked = result
-  }
+  bookmarkToggleMutation.mutate(
+    { contentType: 'course', contentId: course.value.id },
+    {
+      onSuccess: (result) => {
+        if (result !== null && course.value) {
+          course.value.bookmarked = result
+        }
+      },
+    }
+  )
 }
 
-/**
- * 切换子课程收藏状态
- */
-const handleToggleSubCourseSubscribe = async (subCourseId: number) => {
-  if (!subCourses.value) return
+const handleToggleSubCourseSubscribe = (subCourseId: number) => {
   const subCourse = subCourses.value.find((c) => c.id === subCourseId)
   if (!subCourse) return
-
   subscribingSubCourseId.value = subCourseId
-  const result = await executeSubCourseBookmark({ id: subCourseId })
-
-  if (result !== null && subCourse) {
-    // 切换收藏状态
-    subCourse.bookmarked = result
-  }
-
-  subscribingSubCourseId.value = null
+  bookmarkToggleMutation.mutate(
+    { contentType: 'course', contentId: subCourseId },
+    {
+      onSuccess: (result) => {
+        if (result !== null && subCourse) {
+          subCourse.bookmarked = result
+        }
+        subscribingSubCourseId.value = null
+      },
+      onError: () => {
+        subscribingSubCourseId.value = null
+      },
+    }
+  )
 }
 
-/**
- * 申请子课程
- */
+// 创建子课程
+const applicationDialog = ref(false)
+const confirmDialog = ref(false)
+const pendingSubCourseType = ref<'quickstart' | 'exercises'>('quickstart')
+
+const createSubcourseMutation = useCreateSubcourseMutation()
+const creatingSubCourse = computed(() => createSubcourseMutation.isPending.value)
+
 const handleApplySubCourse = () => {
   applicationDialog.value = true
 }
 
-/**
- * 提交子课程申请
- */
-const handleSubmitSubCourse = async (data: { name: string; description: string }) => {
-  await executeCreateSubCourse({
-    parentId: courseId.value,
-    name: data.name,
-    description: data.description,
-  })
+const handleSubmitSubCourse = (data: { name: string; description: string }) => {
+  createSubcourseMutation.mutate(
+    { parentId: courseId.value, name: data.name, description: data.description },
+    {
+      onSuccess: () => {
+        applicationDialog.value = false
+        void refreshSubCoursesList()
+      },
+    }
+  )
 }
 
-/**
- * 点击默认子课程卡片
- */
 const handleCreateDefaultSubCourse = (type: 'quickstart' | 'exercises') => {
   pendingSubCourseType.value = type
   confirmDialog.value = true
 }
 
-/**
- * 确认创建默认子课程
- */
-const handleConfirmCreateDefaultSubCourse = async () => {
-  const type = pendingSubCourseType.value
-  const subCourseData = defaultSubCourses.value[type]
-
-  await executeCreateSubCourse({
-    parentId: courseId.value,
-    name: subCourseData.name,
-    description: subCourseData.description,
-  })
-
-  confirmDialog.value = false
+const handleConfirmCreateDefaultSubCourse = () => {
+  const subCourseData = defaultSubCourses.value[pendingSubCourseType.value]
+  createSubcourseMutation.mutate(
+    { parentId: courseId.value, name: subCourseData.name, description: subCourseData.description },
+    {
+      onSuccess: () => {
+        confirmDialog.value = false
+        void refreshSubCoursesList()
+      },
+    }
+  )
 }
 </script>
 

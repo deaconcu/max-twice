@@ -62,33 +62,28 @@ const performSearch = async () => {
 
   try {
     // 初始加载每个分类20条
-    const [coursesRes, nodesRes, usersRes, rolesRes] = await Promise.all([
+    const [coursesData, nodesData, usersData, rolesData] = await Promise.all([
       searchApi.searchCourses(searchQuery.value, 20, 0),
       searchApi.searchNodes(searchQuery.value, 20, 0),
       searchApi.searchUsers(searchQuery.value, 20, 0),
       searchApi.searchRoles(searchQuery.value, 20, 0),
     ])
 
-    if (coursesRes.code === 200) {
-      courses.value = coursesRes.data || []
-      coursesOffset.value = courses.value.length
-      hasMoreCourses.value = courses.value.length >= 20
-    }
-    if (nodesRes.code === 200) {
-      nodes.value = nodesRes.data || []
-      nodesOffset.value = nodes.value.length
-      hasMoreNodes.value = nodes.value.length >= 20
-    }
-    if (usersRes.code === 200) {
-      users.value = usersRes.data || []
-      usersOffset.value = users.value.length
-      hasMoreUsers.value = users.value.length >= 20
-    }
-    if (rolesRes.code === 200) {
-      roles.value = rolesRes.data || []
-      rolesOffset.value = roles.value.length
-      hasMoreRoles.value = roles.value.length >= 20
-    }
+    courses.value = coursesData || []
+    coursesOffset.value = courses.value.length
+    hasMoreCourses.value = courses.value.length >= 20
+
+    nodes.value = nodesData || []
+    nodesOffset.value = nodes.value.length
+    hasMoreNodes.value = nodes.value.length >= 20
+
+    users.value = usersData || []
+    usersOffset.value = users.value.length
+    hasMoreUsers.value = users.value.length >= 20
+
+    roles.value = rolesData || []
+    rolesOffset.value = roles.value.length
+    hasMoreRoles.value = roles.value.length >= 20
   } catch (error) {
     console.error('搜索失败:', error)
   } finally {
@@ -142,41 +137,43 @@ const loadMoreResults = async () => {
 
   loadingMore.value = true
   try {
-    let response
-
     switch (activeTab.value) {
-      case 'roles':
-        response = await searchApi.searchRoles(searchQuery.value, 20, rolesOffset.value)
-        if (response.code === 200 && response.data) {
-          roles.value = [...roles.value, ...response.data]
-          rolesOffset.value += response.data.length
-          hasMoreRoles.value = response.data.length >= 20
+      case 'roles': {
+        const data = await searchApi.searchRoles(searchQuery.value, 20, rolesOffset.value)
+        if (data) {
+          roles.value = [...roles.value, ...data]
+          rolesOffset.value += data.length
+          hasMoreRoles.value = data.length >= 20
         }
         break
-      case 'courses':
-        response = await searchApi.searchCourses(searchQuery.value, 20, coursesOffset.value)
-        if (response.code === 200 && response.data) {
-          courses.value = [...courses.value, ...response.data]
-          coursesOffset.value += response.data.length
-          hasMoreCourses.value = response.data.length >= 20
+      }
+      case 'courses': {
+        const data = await searchApi.searchCourses(searchQuery.value, 20, coursesOffset.value)
+        if (data) {
+          courses.value = [...courses.value, ...data]
+          coursesOffset.value += data.length
+          hasMoreCourses.value = data.length >= 20
         }
         break
-      case 'nodes':
-        response = await searchApi.searchNodes(searchQuery.value, 20, nodesOffset.value)
-        if (response.code === 200 && response.data) {
-          nodes.value = [...nodes.value, ...response.data]
-          nodesOffset.value += response.data.length
-          hasMoreNodes.value = response.data.length >= 20
+      }
+      case 'nodes': {
+        const data = await searchApi.searchNodes(searchQuery.value, 20, nodesOffset.value)
+        if (data) {
+          nodes.value = [...nodes.value, ...data]
+          nodesOffset.value += data.length
+          hasMoreNodes.value = data.length >= 20
         }
         break
-      case 'users':
-        response = await searchApi.searchUsers(searchQuery.value, 20, usersOffset.value)
-        if (response.code === 200 && response.data) {
-          users.value = [...users.value, ...response.data]
-          usersOffset.value += response.data.length
-          hasMoreUsers.value = response.data.length >= 20
+      }
+      case 'users': {
+        const data = await searchApi.searchUsers(searchQuery.value, 20, usersOffset.value)
+        if (data) {
+          users.value = [...users.value, ...data]
+          usersOffset.value += data.length
+          hasMoreUsers.value = data.length >= 20
         }
         break
+      }
     }
   } catch (error) {
     console.error('加载更多失败:', error)

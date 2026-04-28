@@ -1,5 +1,5 @@
 import apiClient from '../client'
-import type { ApiResponse } from '@/types/api'
+import type { CursorPage } from '@/types/api'
 
 /**
  * 收藏记录 DTO（带关联对象）
@@ -30,23 +30,19 @@ export const bookmarkApi = {
    * @param contentId 内容ID
    * @returns true=已收藏, false=已取消收藏
    */
-  toggle(contentType: ContentType, contentId: number): Promise<ApiResponse<boolean>> {
-    return apiClient.post(`/v1/bookmarks/${contentType}/${contentId}`)
+  toggle(contentType: ContentType, contentId: number): Promise<boolean> {
+    return apiClient.post(`/bookmarks/${contentType}/${contentId}`)
   },
 
   /**
    * 获取用户收藏列表（分页）
    * @param contentType 内容类型
-   * @param lastId 上一页最后一条记录的ID（首页不传）
+   * @param cursor 分页游标
    * @param limit 每页数量
    */
-  getBookmarks(
-    contentType: ContentType,
-    lastId?: number,
-    limit = 20
-  ): Promise<ApiResponse<Bookmark[]>> {
-    return apiClient.get(`/v1/bookmarks/${contentType}/list`, {
-      params: { lastId, limit },
+  getBookmarks(contentType: ContentType, cursor?: string, limit = 20): Promise<CursorPage<Bookmark>> {
+    return apiClient.get(`/bookmarks/${contentType}/list`, {
+      params: { cursor, limit },
     })
   },
 }

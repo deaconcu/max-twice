@@ -234,6 +234,7 @@
                 <PostingList
                   v-else-if="data"
                   :data="data"
+                  :posts="posts"
                   :nodes="nodes"
                   :curr-node-id="currNodeId"
                   :curr-node="lastPathNode"
@@ -304,14 +305,17 @@ import PostingList from '@/components/features/read/PostingList.vue'
 import PostDetail from '@/components/features/read/PostDetail.vue'
 import ConfigContentsDialog from '@/components/features/read/ConfigContentsDialog.vue'
 import DeckDetailDialog from '@/components/features/read/DeckDetailDialog.vue'
-import { pageApi, memoryApi, postApi, progressApi, statsApi } from '@/api'
 import type { ReadResponse } from '@/api/modules/page'
 import type { MemoryCardDeck } from '@/types/memory'
-import type { KeysetPageResponse } from '@/types/api'
-import { useFetch } from '@/composables/useFetch'
-import { useMutation } from '@/composables/useMutation'
+import { useReadPageQuery } from '@/queries/page'
+import { useNodePostsQuery } from '@/queries/post'
+import {
+  useStartCourseMutation,
+  useCancelCourseMutation,
+  useMarkNodeCompleteMutation,
+  useUnmarkNodeCompleteMutation,
+} from '@/queries/progress'
 import { useI18n } from '@/composables/useI18n'
-import { VoteType } from '@/enums'
 import { convertVoteType } from '@/utils/postUtils'
 
 const router = useRouter()
@@ -328,15 +332,9 @@ const isAssistantExpanded = ref(true)
 const postDetailRef = ref<InstanceType<typeof PostDetail> | null>(null)
 const selectedDeck = ref<MemoryCardDeck | null>(null)
 const showDeckDetailDialog = ref(false)
-const loading = ref(false)
 const error = ref<string | null>(null)
 const isTocHovering = ref(false)
 const drawerOpen = ref(false)
-const loadingMore = ref(false)
-const hasMore = ref(true)
-
-// 获取课程ID
-const courseId = computed(() => data.value?.course?.id)
 
 // 目标评论ID（从 URL 获取）
 const targetCommentId = computed(() => {
@@ -354,164 +352,143 @@ const targetSubCommentId = computed(() => {
   return null
 })
 
-// 开始学习课程
-const { execute: startLearning, loading: startingLearning } = useMutation(
-  () => {
-    if (!courseId.value) throw new Error('courseId is required')
-    return progressApi.startCourse(courseId.value)
+// ========== 页面数据 query ==========
+const queryParams = computed(() => ({
+  nodeId: route.query.nodeId ? Number(route.query.nodeId) : undefined,
+  courseId: route.query.courseId ? Number(route.query.courseId) : undefined,
+  path: route.query.path ? String(route.query.path) : undefined,
+}))
+
+const { data: queryData, isFetching: dataLoading, refetch: refetchPage } = useReadPageQuery(queryParams)
+
+// 本地工作副本（节点完成等 mutation 需要直接修改）
+const data = ref<ReadResponse | null>(null)
+const isInitialLoad = ref(true)
+
+// query 数据到达后同步到本地副本，并做后处理
+watch(
+  queryData,
+  (val) => {
+    if (!val) return
+    // 处理 toc 为 null 的情况
+    if (!val.toc) val.toc = []
+    // 设置学习状态
+    isLearning.value = val.learning || false
+
+    // 处理可完成节点标识
+    if (val.completableNodeIds && val.tocNodeInfos) {
+      const tocNodeInfos = val.tocNodeInfos
+      Object.values(tocNodeInfos).forEach((info: any) => {
+        info.canComplete = false
+      })
+      val.completableNodeIds.forEach((nodeId: number) => {
+        const nodeInfo = tocNodeInfos[nodeId]
+        if (nodeInfo) nodeInfo.canComplete = true
+      })
+      if (val.node) {
+        const currentNodeInfo = tocNodeInfos[val.node.id]
+        if (currentNodeInfo) {
+          val.node.canComplete = currentNodeInfo.canComplete
+        }
+      }
+    }
+
+    data.value = val
+    processData()
+    isInitialLoad.value = false
   },
-  {
-    onSuccess: () => {
-      isLearning.value = true
-    },
-  }
+  { immediate: true }
 )
 
-// 取消学习课程
-const { execute: cancelLearning, loading: cancelingLearning } = useMutation(
-  () => {
-    if (!courseId.value) throw new Error('courseId is required')
-    return progressApi.cancelCourse(courseId.value)
-  },
-  {
-    onSuccess: () => {
-      isLearning.value = false
-    },
-  }
-)
+// 主动重载（保持 loadData 名字，给子组件用）
+const loadData = () => {
+  void refetchPage()
+}
 
-// 处理开始/取消学习
+// 获取课程ID和节点ID
+const courseId = computed(() => data.value?.course?.id)
+const currNodeIdForPosts = computed(() => data.value?.node?.id)
+
+// ========== posts 独立 infinite query ==========
+const {
+  data: postsData,
+  isFetchingNextPage: loadingMore,
+  hasNextPage: hasMore,
+  fetchNextPage,
+} = useNodePostsQuery(currNodeIdForPosts)
+
+const posts = computed(() => {
+  const pages = postsData.value?.pages ?? []
+  const items = pages.flatMap((p) => p.items)
+  items.forEach((posting: any) => {
+    posting.voteType = convertVoteType(posting.voteType)
+  })
+  return items
+})
+
+// ========== 学习状态 mutations ==========
+const { mutateAsync: startCourse } = useStartCourseMutation()
+const { mutateAsync: cancelCourse } = useCancelCourseMutation()
+
 const handleToggleLearning = async (shouldStart: boolean) => {
   if (!courseId.value) return
-
   if (shouldStart) {
-    await startLearning()
+    await startCourse(courseId.value)
+    isLearning.value = true
   } else {
-    await cancelLearning()
+    await cancelCourse(courseId.value)
+    isLearning.value = false
   }
 }
 
-// 标记节点完成
-const { execute: markNodeCompleted, loading: markingNode } = useMutation(
-  () => {
-    const nodeId = data.value?.node?.id
-    const rootNodeId = data.value?.rootNodeId
-    if (!nodeId || !rootNodeId) {
-      throw new Error('节点ID或根节点ID不存在')
-    }
-    return progressApi.markNodeComplete(nodeId, rootNodeId)
-  },
-  {
-    successMessage: t('course.nodeMarkedComplete'),
-    onSuccess: (response) => {
-      // 更新当前节点的完成状态
-      if (data.value?.node) {
-        data.value.node.isCompleted = response.completed
-      }
+// ========== 节点完成 mutations ==========
+const { mutateAsync: markNode } = useMarkNodeCompleteMutation()
+const { mutateAsync: unmarkNode } = useUnmarkNodeCompleteMutation()
 
-      // 更新课程进度
-      if (data.value?.course && response.courseProgressPercent !== undefined) {
-        data.value.course.progress = response.courseProgressPercent
-      }
-
-      // 更新目录树中该节点的完成状态
-      if (data.value?.tocNodeInfos && response.nodeId) {
-        const nodeInfo = data.value.tocNodeInfos[response.nodeId]
-        if (nodeInfo) {
-          nodeInfo.isCompleted = response.completed
-        }
-      }
-
-      // 更新可完成节点标识
-      if (data.value?.tocNodeInfos && response.completableNodeIds) {
-        const tocNodeInfos = data.value.tocNodeInfos
-        // 先清除所有节点的 canComplete 标识
-        Object.values(tocNodeInfos).forEach((info: any) => {
-          info.canComplete = false
-        })
-        // 设置新的可完成节点
-        response.completableNodeIds.forEach((nodeId: number) => {
-          const nodeInfo = tocNodeInfos[nodeId]
-          if (nodeInfo) {
-            nodeInfo.canComplete = true
-          }
-        })
-
-        // 同时更新当前节点的 canComplete 状态
-        if (data.value.node) {
-          const currentNodeInfo = tocNodeInfos[data.value.node.id]
-          if (currentNodeInfo) {
-            data.value.node.canComplete = currentNodeInfo.canComplete
-          }
-        }
-      }
-    },
+const applyNodeCompleteResult = (response: any) => {
+  // 更新当前节点的完成状态
+  if (data.value?.node) {
+    data.value.node.isCompleted = response.completed
   }
-)
-
-// 取消节点完成
-const { execute: unmarkNodeCompleted, loading: unmarkingNode } = useMutation(
-  () => {
-    const nodeId = data.value?.node?.id
-    const rootNodeId = data.value?.rootNodeId
-    if (!nodeId || !rootNodeId) {
-      throw new Error('节点ID或根节点ID不存在')
-    }
-    return progressApi.unmarkNodeComplete(nodeId, rootNodeId)
-  },
-  {
-    successMessage: t('course.nodeUnmarkedComplete'),
-    onSuccess: (response) => {
-      // 更新当前节点的完成状态
-      if (data.value?.node) {
-        data.value.node.isCompleted = response.completed
-      }
-
-      // 更新课程进度
-      if (data.value?.course && response.courseProgressPercent !== undefined) {
-        data.value.course.progress = response.courseProgressPercent
-      }
-
-      // 更新目录树中该节点的完成状态
-      if (data.value?.tocNodeInfos && response.nodeId) {
-        const nodeInfo = data.value.tocNodeInfos[response.nodeId]
-        if (nodeInfo) {
-          nodeInfo.isCompleted = response.completed
-        }
-      }
-
-      // 更新可完成节点标识
-      if (data.value?.tocNodeInfos && response.completableNodeIds) {
-        const tocNodeInfos = data.value.tocNodeInfos
-        // 先清除所有节点的 canComplete 标识
-        Object.values(tocNodeInfos).forEach((info: any) => {
-          info.canComplete = false
-        })
-        // 设置新的可完成节点
-        response.completableNodeIds.forEach((nodeId: number) => {
-          const nodeInfo = tocNodeInfos[nodeId]
-          if (nodeInfo) {
-            nodeInfo.canComplete = true
-          }
-        })
-      }
-    },
+  // 更新课程进度
+  if (data.value?.course && response.courseProgressPercent !== undefined) {
+    data.value.course.progress = response.courseProgressPercent
   }
-)
+  // 更新目录树中该节点的完成状态
+  if (data.value?.tocNodeInfos && response.nodeId) {
+    const nodeInfo = data.value.tocNodeInfos[response.nodeId]
+    if (nodeInfo) nodeInfo.isCompleted = response.completed
+  }
+  // 更新可完成节点标识
+  if (data.value?.tocNodeInfos && response.completableNodeIds) {
+    const tocNodeInfos = data.value.tocNodeInfos
+    Object.values(tocNodeInfos).forEach((info: any) => {
+      info.canComplete = false
+    })
+    response.completableNodeIds.forEach((nodeId: number) => {
+      const nodeInfo = tocNodeInfos[nodeId]
+      if (nodeInfo) nodeInfo.canComplete = true
+    })
+    if (data.value.node) {
+      const currentNodeInfo = tocNodeInfos[data.value.node.id]
+      if (currentNodeInfo) {
+        data.value.node.canComplete = currentNodeInfo.canComplete
+      }
+    }
+  }
+}
 
-// 处理节点完成
 const handleNodeCompleted = async () => {
-  console.log('ContentReadPage: handleNodeCompleted 被调用', {
-    nodeId: data.value?.node?.id,
-    courseId: courseId.value,
-    currentCompleted: data.value?.node?.isCompleted,
-  })
+  const nodeId = data.value?.node?.id
+  const rootNodeId = data.value?.rootNodeId
+  if (!nodeId || !rootNodeId) return
 
-  // 如果已完成，则取消完成；如果未完成，则标记完成
   if (data.value?.node?.isCompleted) {
-    await unmarkNodeCompleted()
+    const result = await unmarkNode({ nodeId, rootNodeId })
+    applyNodeCompleteResult(result)
   } else {
-    await markNodeCompleted()
+    const result = await markNode({ nodeId, rootNodeId })
+    applyNodeCompleteResult(result)
   }
 }
 
@@ -526,140 +503,10 @@ const currNodeId = ref(0)
 const lastPathNode = ref<any>(null)
 const pathText = ref('')
 
-// 标记是否为首次加载
-const isInitialLoad = ref(true)
-
-// 记录上次加载的参数
-const lastLoadedParams = ref({
-  nodeId: route.query.nodeId,
-  path: route.query.path,
-  courseId: route.query.courseId,
-})
-
-// 使用 useFetch 加载页面数据
-const {
-  data,
-  loading: dataLoading,
-  execute: loadData,
-} = useFetch<ReadResponse>({
-  fetchFn: () => {
-    if (route.query.nodeId && route.query.path) {
-      return pageApi.readByNode(Number(route.query.nodeId), route.query.path as string)
-    } else if (route.query.nodeId) {
-      return pageApi.readByNode(Number(route.query.nodeId), '')
-    } else if (route.query.courseId && route.query.path) {
-      return pageApi.readByCoursePath(Number(route.query.courseId), route.query.path as string)
-    } else if (route.query.courseId) {
-      return pageApi.readByCoursePath(Number(route.query.courseId), '')
-    }
-    return Promise.reject(new Error('缺少必要参数'))
-  },
-  immediate: true,
-  onDataReady: () => {
-    // 首次加载完成后，标记为非首次
-    isInitialLoad.value = false
-
-    // 更新上次加载的参数
-    lastLoadedParams.value = {
-      nodeId: route.query.nodeId,
-      path: route.query.path,
-      courseId: route.query.courseId,
-    }
-
-    // data.value 在 onDataReady 中一定存在
-    const dataValue = data.value!
-
-    // 处理 toc 为 null 的情况，转换为空数组
-    if (!dataValue.toc) {
-      dataValue.toc = []
-    }
-    // 处理投票类型
-    dataValue.otherPostings?.forEach((posting: any) => {
-      posting.voteType = convertVoteType(posting.voteType)
-    })
-    // 设置学习状态
-    isLearning.value = dataValue.learning || false
-
-    // 处理可完成节点标识
-    if (dataValue.completableNodeIds && dataValue.tocNodeInfos) {
-      const tocNodeInfos = dataValue.tocNodeInfos
-      // 先清除所有节点的 canComplete 标识
-      Object.values(tocNodeInfos).forEach((info: any) => {
-        info.canComplete = false
-      })
-      // 设置新的可完成节点
-      dataValue.completableNodeIds.forEach((nodeId: number) => {
-        const nodeInfo = tocNodeInfos[nodeId]
-        if (nodeInfo) {
-          nodeInfo.canComplete = true
-        }
-      })
-
-      // 同时更新当前节点的 canComplete 状态
-      if (dataValue.node) {
-        const currentNodeInfo = tocNodeInfos[dataValue.node.id]
-        if (currentNodeInfo) {
-          dataValue.node.canComplete = currentNodeInfo.canComplete
-        }
-      }
-    }
-
-    // 数据赋值完成后处理数据
-    processData()
-    // 检查是否有更多数据
-    hasMore.value = !!(dataValue.otherPostings && dataValue.otherPostings.length > 0)
-  },
-})
-
-// 使用第二个 useFetch 加载更多帖子
-const {
-  data: morePosts,
-  loading: loadingMorePosts,
-  execute: loadMorePosts,
-} = useFetch<KeysetPageResponse<any>>({
-  fetchFn: () => {
-    if (!data.value?.otherPostings || !data.value.node) {
-      return Promise.reject(new Error('No data'))
-    }
-    const lastPosting = data.value.otherPostings[data.value.otherPostings.length - 1]
-    const nodeId = data.value.node.id
-    return postApi.getNodePosts(nodeId, lastPosting.score, lastPosting.id)
-  },
-  immediate: false,
-  onDataReady: () => {
-    if (morePosts.value && morePosts.value.items && morePosts.value.items.length > 0) {
-      // 处理投票类型
-      morePosts.value.items.forEach((posting: any) => {
-        posting.voteType = convertVoteType(posting.voteType)
-      })
-      // 追加到现有列表
-      if (data.value) {
-        data.value.otherPostings = [...(data.value.otherPostings || []), ...morePosts.value.items]
-      }
-      hasMore.value = morePosts.value.hasMore
-    } else {
-      hasMore.value = false
-    }
-  },
-})
-
-// 加载更多数据
-const loadMore = async () => {
-  if (loadingMore.value || !hasMore.value || !data.value?.otherPostings) return
-
-  const lastPosting = data.value.otherPostings[data.value.otherPostings.length - 1]
-  if (!lastPosting) return
-
-  loadingMore.value = true
-  try {
-    await loadMorePosts()
-    // hasMore 已在 onDataReady 中更新
-  } catch (error) {
-    console.error('Failed to load more posts:', error)
-    hasMore.value = false
-  } finally {
-    loadingMore.value = false
-  }
+// 加载更多（由滚动监听触发）
+const loadMore = () => {
+  if (loadingMore.value || !hasMore.value) return
+  void fetchNextPage()
 }
 
 // 是否为主课程
@@ -672,7 +519,6 @@ const isMainCourse = computed(() => {
 
 // 处理数据
 const processData = () => {
-  console.log('data:', data.value)
   if (!data.value?.path) return
 
   // 如果目录为空，跳过目录相关处理
@@ -692,8 +538,6 @@ const processData = () => {
   // 设置当前目录组索引
   currContentsIndex.value = Number(nodes.value[0])
   nodes.value.shift()
-
-  console.log('currContentsIndex:', currContentsIndex.value)
 
   // 生成路径文本
   pathText.value = `${data.value.course?.name ?? ''}/`
@@ -715,13 +559,12 @@ const processData = () => {
 const handleScroll = () => {
   showFixedBar.value = window.scrollY > 100
 
-  // 检查是否接近页面底部
   const scrollPosition = window.scrollY + window.innerHeight
   const pageHeight = document.documentElement.scrollHeight
-  const threshold = 200 // 距离底部200px时触发加载
+  const threshold = 200
 
   if (scrollPosition >= pageHeight - threshold) {
-    loadMore()
+    void loadMore()
   }
 }
 
@@ -743,15 +586,12 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
 
 // 跳转到目录组的根目录
 const goToRootDirectory = (index: number) => {
-  // 获取该目录组的根节点ID
   const tocGroup = data.value?.toc?.[index]
   if (!tocGroup) return
 
-  // 找到第一个有效的根节点ID（排除 + 和 ^ 键）
   const rootNodeId = Object.keys(tocGroup).find((key) => key !== '+' && key !== '^')
   if (!rootNodeId) return
 
-  // 构建根目录路径：{目录组编号}-{根节点ID}
   const rootPath = `${index + 1}-${rootNodeId}`
 
   router.push({
@@ -764,29 +604,6 @@ const goToRootDirectory = (index: number) => {
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
 })
-
-// 监听路由变化，重新加载数据
-watch(
-  () => [route.params.id, route.query.path, route.query.nodeId, route.query.courseId],
-  () => {
-    // 检查参数是否与上次加载的相同
-    const nodeIdSame = lastLoadedParams.value.nodeId === route.query.nodeId
-    const pathSame = lastLoadedParams.value.path === route.query.path
-    const courseIdSame = lastLoadedParams.value.courseId === route.query.courseId
-
-    const isSame = nodeIdSame && pathSame && courseIdSame
-
-    // 参数相同，不重新加载（使用缓存）
-    if (isSame) {
-      return
-    }
-
-    // 参数变化了，重新加载数据
-    loadData()
-    // 注意：参数会在 onDataReady 回调中更新
-  },
-  { deep: true }
-)
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)

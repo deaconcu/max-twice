@@ -89,6 +89,12 @@
           </v-card>
         </div>
       </div>
+      <!-- 加载更多 -->
+      <div v-if="hasNextPage" class="text-center py-4">
+        <v-btn variant="text" color="primary" :loading="loading" @click="fetchNextPage()">
+          {{ t('common.loadMore') }}
+        </v-btn>
+      </div>
       <div v-else class="text-center py-8 py-md-12">
         <v-icon
           icon="mdi-briefcase"
@@ -118,12 +124,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useFetch } from '@/composables/useFetch'
-import { useMutation } from '@/composables/useMutation'
+import { useAllRoadmapsProgressQuery, useCancelRoadmapMutation } from '@/queries/progress'
 import { useI18n } from '@/composables/useI18n'
-import { progressApi } from '@/api'
+import { getGlobalSnackbar } from '@/composables/config'
 import { getColorByString } from '@/utils/color'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -139,32 +144,27 @@ const statusTab = ref<'learning' | 'completed'>('learning')
 const showDeleteDialog = ref(false)
 const roadmapToDelete = ref<number | null>(null)
 
-// 获取用户路线图数据
+// 获取用户路线图数据（queryKey 随 statusTab 变化自动重新请求）
 const {
-  data: roadmaps,
-  loading,
-  execute: fetchRoadmaps,
-} = useFetch({
-  fetchFn: () => progressApi.getUserRoadmaps(statusTab.value),
-  immediate: true,
-  defaultValue: [],
-})
+  data: roadmapsData,
+  isLoading: loading,
+  fetchNextPage,
+  hasNextPage,
+} = useAllRoadmapsProgressQuery(statusTab)
 
-// 监听 Tab 切换，重新加载数据
-watch(statusTab, () => {
-  fetchRoadmaps()
-})
+// 展开分页数据
+const roadmaps = computed(() => roadmapsData.value?.pages.flat() ?? [])
 
 // 取消学习路线图
-const { execute: deleteProgress } = useMutation(
-  (roadmapId: number) => progressApi.cancelRoadmap(roadmapId),
-  {
-    successMessage: t('user.profile.roleUnlearned'),
+const { mutate: cancelRoadmapMutate } = useCancelRoadmapMutation()
+
+const deleteProgress = (roadmapId: number) => {
+  cancelRoadmapMutate(roadmapId, {
     onSuccess: () => {
-      fetchRoadmaps()
+      getGlobalSnackbar()?.(t('user.profile.roleUnlearned'), 'success')
     },
-  }
-)
+  })
+}
 
 // 转换路线图数据为组件所需格式
 const roles = computed(() => {
@@ -202,9 +202,9 @@ const cancelLearning = (roadmapId: number) => {
 }
 
 // 确认删除
-const confirmDelete = async () => {
+const confirmDelete = () => {
   if (roadmapToDelete.value !== null) {
-    await deleteProgress(roadmapToDelete.value)
+    deleteProgress(roadmapToDelete.value)
   }
   roadmapToDelete.value = null
 }

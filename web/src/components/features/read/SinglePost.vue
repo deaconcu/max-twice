@@ -11,8 +11,6 @@ import renderMathInElement from 'katex/contrib/auto-render'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
 import mermaid from 'mermaid'
-import { upvoteApi, postApi, bookmarkApi } from '@/api'
-import { useMutation } from '@/composables'
 import { ObjectType, VoteType } from '@/enums'
 import type { UpvoteStatusResponse } from '@/types/upvote'
 import UserAvatar from '@/components/common/UserAvatar.vue'
@@ -20,6 +18,8 @@ import ImageViewer from '@/components/common/ImageViewer.vue'
 import ChartViewer from '@/components/common/ChartViewer.vue'
 import { useI18n } from '@/composables/useI18n'
 import type { Node } from '@/types/node'
+import { useUpvoteMutation, useBookmarkToggleMutation } from '@/queries/interaction'
+import { useOperateContentMutation } from '@/queries/post'
 
 const props = withDefaults(defineProps<Props>(), {
   detail: false,
@@ -392,72 +392,64 @@ const handleViewFullContent = () => {
   emit('switch-tab', 'two', props.posting)
 }
 
-// 使用 useMutation 处理投票
-const { execute: executeUpvote } = useMutation(
-  (voteType: VoteType) => upvoteApi.upvote(props.posting.id, ObjectType.POST, voteType),
-  {
-    showToast: false,
-    onSuccess: (response: UpvoteStatusResponse) => {
-      // 更新帖子的点赞统计数据
-      props.posting.twiceCount = response.twiceCount
-      props.posting.likeCount = response.likeCount
-
-      // 根据点赞状态设置 voteType
-      if (response.twiced) {
-        props.posting.voteType = 'twice'
-      } else if (response.liked) {
-        props.posting.voteType = 'helpful'
-      } else {
-        props.posting.voteType = null
-      }
-    },
-  }
-)
+// 投票 mutation
+const upvoteMutation = useUpvoteMutation()
+const bookmarkToggleMutation = useBookmarkToggleMutation()
+const operateContentMutation = useOperateContentMutation()
+const bookmarking = bookmarkToggleMutation.isPending
 
 // 点赞
-const handleUpvote = async (type: string) => {
+const handleUpvote = (type: string) => {
   const voteType = type === 'twice' ? VoteType.TWICE : VoteType.LIKE
-  await executeUpvote(voteType)
+  upvoteMutation.mutate(
+    { objectId: props.posting.id, objectType: ObjectType.POST, type: voteType },
+    {
+      onSuccess: (response: UpvoteStatusResponse) => {
+        props.posting.twiceCount = response.twiceCount
+        props.posting.likeCount = response.likeCount
+        if (response.twiced) {
+          props.posting.voteType = 'twice'
+        } else if (response.liked) {
+          props.posting.voteType = 'helpful'
+        } else {
+          props.posting.voteType = null
+        }
+      },
+    }
+  )
 }
 
 // 切换收藏状态
-const { execute: executeToggleBookmark, loading: bookmarking } = useMutation(
-  () => bookmarkApi.toggle('post', props.posting.id),
-  {
-    successMessage: '',
-    showToast: false,
-  }
-)
-
-const handleToggleBookmark = async () => {
-  const result = await executeToggleBookmark()
-  if (result !== null) {
-    props.posting.bookmarked = result
-  }
+const handleToggleBookmark = () => {
+  bookmarkToggleMutation.mutate(
+    { contentType: 'post', contentId: props.posting.id },
+    {
+      onSuccess: (result) => {
+        if (result !== null) {
+          props.posting.bookmarked = result
+        }
+      },
+    }
+  )
 }
 
-// 使用 useMutation 修改内容操作
-const { execute: executeModifyContents } = useMutation(
-  (data: { postingId: number; action: number }) =>
-    postApi.operateContent({
+// 修改内容操作（设置/取消目录、置顶/取消置顶）
+const handleModifyContents = (postingId: number, action: number) => {
+  operateContentMutation.mutate(
+    {
       path: props.data?.path || '',
       nodeId: props.data?.rootNodeId || 0,
-      postingId: data.postingId,
-      action: data.action,
-    }),
-  {
-    successMessage: '',
-    onSuccess: (_, data) => {
-      if (data.action === 1 || data.action === 2) {
-        emit('load-data', ['contents', 'chosenPosting'])
-      }
+      postingId,
+      action,
     },
-  }
-)
-
-// 修改内容操作（设置/取消目录、置顶/取消置顶）
-const handleModifyContents = async (postingId: number, action: number) => {
-  await executeModifyContents({ postingId, action })
+    {
+      onSuccess: () => {
+        if (action === 1 || action === 2) {
+          emit('load-data', ['contents', 'chosenPosting'])
+        }
+      },
+    }
+  )
 }
 
 // 查看评论

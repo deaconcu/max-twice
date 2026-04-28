@@ -5,12 +5,10 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import { statsApi } from '@/api'
-import { useFetch } from '@/composables'
 import { useUserStore } from '@/stores/modules/user'
-import type { HeatmapData } from '@/types/stats'
+import { useHeatmapQuery } from '@/queries/stats'
 
 const props = withDefaults(defineProps<Props>(), {
   months: 12,
@@ -26,21 +24,10 @@ interface Props {
 const userStore = useUserStore()
 
 // 实际使用的用户ID
-const targetUserId = computed(() => props.userId ?? userStore.currentUser?.id)
+const targetUserId = computed(() => props.userId ?? userStore.currentUser!.id)
 
 // 加载热力图数据
-const { data: heatmapData, refresh } = useFetch<HeatmapData | null>({
-  fetchFn: () => statsApi.getHeatmap(targetUserId.value!, props.months),
-  immediate: !!targetUserId.value,
-  defaultValue: null,
-})
-
-// 监听用户ID变化，重新加载数据
-watch(targetUserId, (newVal) => {
-  if (newVal) {
-    refresh()
-  }
-})
+const { data: heatmapData } = useHeatmapQuery(targetUserId, computed(() => props.months))
 
 // 日数据类型
 interface DayData {

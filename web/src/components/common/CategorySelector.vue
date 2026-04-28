@@ -55,10 +55,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { systemApi } from '@/api'
-import type { RoleCategory, CategoryMapping } from '@/types/role.d'
-import { useFetch } from '@/composables/useFetch'
+import { computed, watch, onMounted } from 'vue'
+import { useCategoryStore } from '@/stores'
 import { useI18n } from '@/composables/useI18n'
 
 // Props
@@ -71,6 +69,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const { t } = useI18n()
+const categoryStore = useCategoryStore()
 
 interface Props {
   modelMainCategory?: number | string | null
@@ -97,48 +96,29 @@ const selectedSubCategory = computed({
   },
 })
 
-// 动态数据
-const mainCategories = ref<RoleCategory[]>([])
-const categoryMapping = ref<CategoryMapping[]>([])
-
-// 使用 useFetch 加载角色类别数据
-const { loading } = useFetch({
-  fetchFn: systemApi.getRoleCategories,
-  immediate: true,
-  onSuccess: (data) => {
-    console.log('Loaded role categories:', data)
-    mainCategories.value = data.mainCategories || []
-    categoryMapping.value = data.categoryMapping || []
-  },
+// 加载分类数据
+onMounted(async () => {
+  await categoryStore.checkAndLoad()
 })
 
 // 转换为表单选项格式
-const formMainCategories = computed(() => {
-  return mainCategories.value
-    .filter((cat) => cat.id !== 0) // 使用数字0而不是字符串'all'
-    .map((cat) => ({
-      title: cat.title,
-      value: cat.id,
-    }))
-})
+const formMainCategories = computed(() =>
+  categoryStore.getRoleMainCategories().map((cat) => ({
+    title: cat.title,
+    value: cat.id,
+  }))
+)
 
 // 计算当前可用的子分类
 const availableSubCategories = computed(() => {
-  if (!selectedMainCategory.value) return []
-
-  const mapping = categoryMapping.value.find(
-    (item) => item.mainCategoryId === selectedMainCategory.value
-  )
-
-  return mapping?.subcategories || []
+  if (!selectedMainCategory.value || typeof selectedMainCategory.value !== 'number') return []
+  return categoryStore.getRoleSubCategories(selectedMainCategory.value)
 })
 
 // 监听主分类变化
 const onMainCategoryChange = (value: number | string | null): void => {
   selectedMainCategory.value = value
-  // 重置子分类
   selectedSubCategory.value = null
-
   emit('update:modelMainCategory', value)
   emit('update:modelSubCategory', null)
 }

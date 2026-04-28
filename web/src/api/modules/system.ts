@@ -1,30 +1,28 @@
 import apiClient from '../client'
-import type { ApiResponse } from '@/types/api'
 import type { CourseCategoriesData, RoleCategoriesData } from '@/stores/modules/category'
 
 /**
  * 系统配置相关 API（公开接口）
- * 参考：web-ts/src/services/api/v1/apiServiceV1.ts (systemServiceV1)
  */
 export const systemApi = {
   /**
    * 获取课程分类数据
    */
-  getCourseCategories(): Promise<ApiResponse<CourseCategoriesData>> {
-    return apiClient.get('/v1/public/course-categories')
+  getCourseCategories(): Promise<CourseCategoriesData> {
+    return apiClient.get('/system/course-categories')
   },
 
   /**
    * 获取角色分类数据
    */
-  getRoleCategories(): Promise<ApiResponse<RoleCategoriesData>> {
-    return apiClient.get('/v1/public/role-categories')
+  getRoleCategories(): Promise<RoleCategoriesData> {
+    return apiClient.get('/system/role-categories')
   },
 
   /**
    * 获取只读模式状态（公开接口，无需登录）
    */
-  getReadonlyMode(): Promise<ApiResponse<{ enabled: boolean }>> {
-    return apiClient.get('/v1/public/readonly-mode')
+  getReadonlyMode(): Promise<{ enabled: boolean }> {
+    return apiClient.get('/public/readonly-mode')
   },
 }

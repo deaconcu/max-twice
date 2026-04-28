@@ -6,6 +6,7 @@ import com.twicemax.analytics.stats.dataservice.ContentStatsDataService;
 import com.twicemax.application.converter.RoleConverter;
 import com.twicemax.application.dto.request.CreateRoleRequest;
 import com.twicemax.application.dto.request.UpdateRoleRequest;
+import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.application.dto.response.KeysetPageResponse;
 import com.twicemax.application.dto.response.role.RoleAdminDTO;
 import com.twicemax.application.dto.response.role.RoleDTO;
@@ -168,18 +169,18 @@ public class RoleService {
     /**
      * 获取已发布的角色列表（公开接口，只返回已发布状态）
      */
-    public List<RoleDTO> getApprovedByLastId(Long lastId, int limit) {
-        List<RoleDO> roleDOList = roleDomainService.listByState(ContentState.PUBLISHED.value(), lastId, limit);
+    public List<RoleDTO> getApprovedByLastId(String cursor, int limit) {
+        List<RoleDO> roleDOList = roleDomainService.listByState(ContentState.PUBLISHED.value(), Cursor.decode(cursor).id(), limit);
         return toDTO(roleDOList);
     }
 
-    public List<RoleDTO> getListByMainCategoryAndLastId(int mainCategory, Long lastId, int limit) {
-        List<RoleDO> roleDOList = roleDomainService.listByMainCategoryAndLastId(mainCategory, lastId, limit);
+    public List<RoleDTO> getListByMainCategoryAndLastId(int mainCategory, String cursor, int limit) {
+        List<RoleDO> roleDOList = roleDomainService.listByMainCategoryAndLastId(mainCategory, Cursor.decode(cursor).id(), limit);
         return toDTO(roleDOList);
     }
 
-    public List<RoleDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, Long lastId, int limit) {
-        List<RoleDO> roleDOList = roleDomainService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId, limit);
+    public List<RoleDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, String cursor, int limit) {
+        List<RoleDO> roleDOList = roleDomainService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, Cursor.decode(cursor).id(), limit);
         return toDTO(roleDOList);
     }
 

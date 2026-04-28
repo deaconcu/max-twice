@@ -221,7 +221,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -229,8 +229,9 @@ import { Controls } from '@vue-flow/controls'
 import { Position } from '@vue-flow/core'
 import type { Node, Edge } from '@vue-flow/core'
 import dagre from 'dagre'
-import { useFetch, useMutation } from '@/composables'
-import { roadmapApi, progressApi, upvoteApi, bookmarkApi } from '@/api'
+import { useRoadmapDetailQuery } from '@/queries/roadmap'
+import { useUpvoteMutation, useBookmarkToggleMutation } from '@/queries/interaction'
+import { useStartRoadmapMutation, useCancelRoadmapMutation } from '@/queries/progress'
 import { ObjectType, VoteType } from '@/enums'
 import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
@@ -276,20 +277,19 @@ const targetSubCommentId = computed(() => {
   return null
 })
 
-// 使用 useFetch 加载路径详情
+// 加载路径详情
 const {
   data: roadmapData,
-  loading,
+  isLoading: loading,
   error: fetchError,
-} = useFetch<Roadmap | null>({
-  fetchFn: () => roadmapApi.getRoadmap(roadmapId.value),
-  immediate: true,
-  defaultValue: null,
-  onError: () => {
-    // 获取失败时跳转到 404 页面
+} = useRoadmapDetailQuery(roadmapId)
+
+// 加载失败时跳转到 404
+watch(fetchError, (err) => {
+  if (err) {
     router.replace({ path: '/error/404', state: { message: t('roadmapDetail.notFound') } })
-  },
-})
+  }
+}, { immediate: true })
 
 const roadmap = computed(() => roadmapData.value)
 
@@ -519,56 +519,42 @@ const onNodesInitialized = () => {
 }
 
 // 投票
-const { execute: toggleUpvote } = useMutation(
-  () => upvoteApi.upvote(roadmapId.value, ObjectType.ROADMAP, VoteType.LIKE),
-  { showToast: false }
-)
+const { mutate: upvoteMutate } = useUpvoteMutation()
 
-const handleVote = async (): Promise<void> => {
+const handleVote = (): void => {
   if (!roadmap.value) return
-
-  const result = await toggleUpvote()
-
-  // 调用成功，更新状态（使用后端返回的点赞数，而不是手动计算）
-  if (result) {
-    roadmap.value.liked = result.liked || false
-    roadmap.value.likeCount = result.likeCount || 0
-  }
-  // 调用失败，不做任何更新
+  upvoteMutate(
+    { objectId: roadmapId.value, objectType: ObjectType.ROADMAP, type: VoteType.LIKE },
+    {
+      onSuccess: (result) => {
+        if (result && roadmap.value) {
+          roadmap.value.liked = result.liked || false
+          roadmap.value.likeCount = result.likeCount || 0
+        }
+      },
+    }
+  )
 }
 
-// 开始学习路线图的 mutation
-const { execute: startRoadmapMutation } = useMutation(progressApi.startRoadmap, {
-  successMessage: '',
-  showToast: false,
-})
+// 开始/取消学习
+const { mutate: startRoadmap } = useStartRoadmapMutation()
+const { mutate: cancelRoadmap } = useCancelRoadmapMutation()
 
-// 取消学习路线图的 mutation
-const { execute: cancelRoadmapMutation } = useMutation(progressApi.cancelRoadmap, {
-  successMessage: '',
-  showToast: false,
-})
-
-// 开始学习
-const handleStartLearning = async (): Promise<void> => {
+const handleStartLearning = (): void => {
   if (!roadmap.value) return
 
-  try {
-    if (roadmap.value.learning) {
-      // 取消学习
-      const result = await cancelRoadmapMutation(roadmapId.value)
-      if (result) {
-        roadmap.value.learning = result.learning
-      }
-    } else {
-      // 开始学习
-      const result = await startRoadmapMutation(roadmapId.value)
-      if (result) {
-        roadmap.value.learning = result.learning
-      }
-    }
-  } catch (error) {
-    console.error('操作失败:', error)
+  if (roadmap.value.learning) {
+    cancelRoadmap(roadmapId.value, {
+      onSuccess: (result) => {
+        if (result && roadmap.value) roadmap.value.learning = result.learning
+      },
+    })
+  } else {
+    startRoadmap(roadmapId.value, {
+      onSuccess: (result) => {
+        if (result && roadmap.value) roadmap.value.learning = result.learning
+      },
+    })
   }
 }
 
@@ -578,21 +564,20 @@ const handleCopy = (): void => {
 }
 
 // 切换收藏状态
-const { execute: executeToggleBookmark, loading: bookmarking } = useMutation(
-  () => bookmarkApi.toggle('roadmap', roadmapId.value),
-  {
-    successMessage: '',
-    showToast: false,
-  }
-)
+const { mutate: bookmarkMutate, isPending: bookmarking } = useBookmarkToggleMutation()
 
-const handleToggleBookmark = async () => {
+const handleToggleBookmark = () => {
   if (!roadmap.value) return
-
-  const result = await executeToggleBookmark()
-  if (result !== null && roadmap.value) {
-    roadmap.value.bookmarked = result
-  }
+  bookmarkMutate(
+    { contentType: 'roadmap', contentId: roadmapId.value },
+    {
+      onSuccess: (result) => {
+        if (result !== null && roadmap.value) {
+          roadmap.value.bookmarked = result
+        }
+      },
+    }
+  )
 }
 
 // 获取时间显示

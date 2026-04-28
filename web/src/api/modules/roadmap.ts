@@ -1,5 +1,4 @@
 import apiClient from '../client'
-import type { ApiResponse } from '@/types/api'
 import type { Roadmap } from '@/types/roadmap'
 
 /**
@@ -9,19 +8,11 @@ export const roadmapApi = {
   /**
    * 获取角色的路线图列表
    */
-  getRoleRoadmaps(
-    roleId: number,
-    lastId?: number,
-    sortBy?: string
-  ): Promise<ApiResponse<Roadmap[]>> {
-    const params: Record<string, string | number> = {}
-    if (lastId != null) {
-      params.lastId = lastId
-    }
-    if (sortBy) {
-      params.sortBy = sortBy
-    }
-    return apiClient.get(`/v1/roles/${String(roleId)}/roadmaps`, { params })
+  getRoleRoadmaps(roleId: number, cursor?: string, sortBy?: string): Promise<Roadmap[]> {
+    const params: Record<string, string> = {}
+    if (cursor != null) params.cursor = cursor
+    if (sortBy) params.sortBy = sortBy
+    return apiClient.get(`/roles/${String(roleId)}/roadmaps`, { params })
   },
 
   /**
@@ -32,8 +23,8 @@ export const roadmapApi = {
     content: string,
     description: string,
     state: number
-  ): Promise<ApiResponse<Roadmap>> {
-    return apiClient.put(`/v1/roadmaps/${String(id)}`, { content, description, state })
+  ): Promise<Roadmap> {
+    return apiClient.put(`/roadmaps/${String(id)}`, { content, description, state })
   },
 
   /**
@@ -44,8 +35,8 @@ export const roadmapApi = {
     content: string,
     description: string,
     state: number
-  ): Promise<ApiResponse<Roadmap>> {
-    return apiClient.post('/v1/roadmaps', {
+  ): Promise<Roadmap> {
+    return apiClient.post('/roadmaps', {
       roleId,
       content,
       description,
@@ -56,15 +47,15 @@ export const roadmapApi = {
   /**
    * 获取路线图详情
    */
-  getRoadmap(id: number): Promise<ApiResponse<Roadmap>> {
-    return apiClient.get(`/v1/roadmaps/${String(id)}`)
+  getRoadmap(id: number): Promise<Roadmap> {
+    return apiClient.get(`/roadmaps/${String(id)}`)
   },
 
   /**
    * 置顶路线图
    */
-  pinRoadmap(roleId: number, roadmapId: number): Promise<ApiResponse<boolean>> {
-    return apiClient.post('/v1/roadmaps/pin', {
+  pinRoadmap(roleId: number, roadmapId: number): Promise<boolean> {
+    return apiClient.post('/roadmaps/pin', {
       roleId,
       roadmapId,
     })
@@ -73,7 +64,7 @@ export const roadmapApi = {
   /**
    * 更新路线图描述
    */
-  updateRoadmapDescription(id: number, description: string): Promise<ApiResponse<Roadmap>> {
-    return apiClient.put(`/v1/roadmaps/${String(id)}/description`, { description })
+  updateRoadmapDescription(id: number, description: string): Promise<Roadmap> {
+    return apiClient.put(`/roadmaps/${String(id)}/description`, { description })
   },
 }

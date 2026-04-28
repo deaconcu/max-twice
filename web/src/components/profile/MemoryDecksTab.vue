@@ -206,13 +206,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
-import { useMutation } from '@/composables/useMutation'
+import { useMyDecksQuery, useUserDecksQuery, useDeleteDeckMutation } from '@/queries/memory'
 import { useI18n } from '@/composables/useI18n'
+import { getGlobalSnackbar } from '@/composables/config'
 import { useUserStore } from '@/stores/modules/user'
-import { memoryApi } from '@/api'
 import { ContentState } from '@/enums'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -236,85 +235,56 @@ const userStore = useUserStore()
 // 状态筛选
 const statusFilter = ref<'all' | 'draft' | 'pending' | 'published' | 'rejected'>('all')
 
-// 将 statusFilter 转换为后端 state 值
-const getStateValue = (): number | undefined => {
+const stateValue = computed((): number | undefined => {
   switch (statusFilter.value) {
-    case 'draft':
-      return ContentState.DRAFT
-    case 'pending':
-      return ContentState.SUBMITTED
-    case 'published':
-      return ContentState.PUBLISHED
-    case 'rejected':
-      return ContentState.REJECTED
-    default:
-      return undefined // all - 后端返回除 BANNED 外的所有状态
+    case 'draft': return ContentState.DRAFT
+    case 'pending': return ContentState.SUBMITTED
+    case 'published': return ContentState.PUBLISHED
+    case 'rejected': return ContentState.REJECTED
+    default: return undefined
   }
-}
+})
 
-// 使用 useInfiniteScroll 加载卡片组列表
+const isOwn = computed(() => props.isOwnProfile)
+
+// 自己的卡片组
 const {
-  items: deckItems,
-  loading,
-  hasMore,
-  loadMore: loadMoreDecks,
-  reset: resetDecks,
-} = useInfiniteScroll({
-  fetchFn: async (params) => {
-    if (props.isOwnProfile) {
-      // 获取当前用户自己的卡片组
-      const response = await memoryApi.getCurrentUserDecks({
-        limit: 20,
-        lastId: params.lastId,
-        state: getStateValue(),
-      })
-      return {
-        code: response.code,
-        data: response.data?.items || [],
-        message: response.message || '',
-        hasMore: response.data?.hasMore || false,
-      }
-    } else if (props.userId) {
-      // 获取指定用户的卡片组
-      const response = await memoryApi.getUserDecks(props.userId, {
-        limit: 20,
-        lastId: params.lastId,
-      })
-      return {
-        code: response.code,
-        data: response.data?.items || [],
-        message: response.message || '',
-        hasMore: response.data?.hasMore || false,
-      }
-    } else {
-      return {
-        code: 200,
-        data: [],
-        message: '',
-        hasMore: false,
-      }
-    }
-  },
-  getNextParams: (lastItem) => ({
-    lastId: lastItem.id,
-  }),
-  initialParams: { lastId: undefined },
+  data: myDecksData,
+  isLoading: myLoading,
+  hasNextPage: myHasMore,
+  fetchNextPage: myFetchNext,
+} = useMyDecksQuery(stateValue, isOwn)
+
+// 他人的卡片组
+const {
+  data: userDecksData,
+  isLoading: userLoading,
+  hasNextPage: userHasMore,
+  fetchNextPage: userFetchNext,
+} = useUserDecksQuery(
+  computed(() => props.userId ?? 0),
+  computed(() => !isOwn.value && !!props.userId)
+)
+
+const deckItems = computed(() => {
+  if (isOwn.value) return myDecksData.value?.pages.flatMap((p) => p.items) ?? []
+  return userDecksData.value?.pages.flatMap((p) => p.items) ?? []
 })
 
-// 监听 statusFilter 变化，重新加载列表
-watch(statusFilter, () => {
-  resetDecks()
-  loadMoreDecks()
-})
+const loading = computed(() => isOwn.value ? myLoading.value : userLoading.value)
+const hasMore = computed(() => isOwn.value ? !!myHasMore.value : !!userHasMore.value)
 
 // 删除卡片组
-const { execute: removeDeck } = useMutation((deckId: number) => memoryApi.deleteDeck(deckId), {
-  successMessage: t('user.profile.deckDeleted'),
-  onSuccess: () => {
-    // 从列表中移除已删除的项
-    deckItems.value = deckItems.value.filter((d) => d.id !== deckToDelete.value)
-  },
-})
+const { mutate: removeDeckMutate } = useDeleteDeckMutation()
+
+const removeDeck = (deckId: number) => {
+  removeDeckMutate(deckId, {
+    onSuccess: () => {
+      getGlobalSnackbar()?.(t('user.profile.deckDeleted'), 'success')
+      // useDeleteDeckMutation 内部已 invalidateQueries(memoryKeys.all)
+    },
+  })
+}
 
 // 转换为卡片组格式
 const decks = computed(() => {
@@ -403,9 +373,9 @@ const deleteDeck = (deckId: number) => {
 }
 
 // 确认删除
-const confirmDelete = async () => {
+const confirmDelete = () => {
   if (deckToDelete.value !== null) {
-    await removeDeck(deckToDelete.value)
+    removeDeck(deckToDelete.value)
   }
   deckToDelete.value = null
 }
@@ -418,15 +388,10 @@ const onLoadMore = async ({ done }: { done: LoadMoreCallback }): Promise<void> =
     done('empty')
     return
   }
-
-  await loadMoreDecks({ done: () => {} })
+  if (isOwn.value) await myFetchNext()
+  else await userFetchNext()
   done(hasMore.value ? 'ok' : 'empty')
 }
-
-onMounted(() => {
-  // 加载第一页数据
-  loadMoreDecks({ done: () => {} })
-})
 </script>
 
 <style scoped>

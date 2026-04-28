@@ -240,7 +240,7 @@ export interface GetReviewQueueParams {
 export interface GetCardListParams {
   courseId?: number
   limit?: number
-  lastId?: number
+  cursor?: string
 }
 
 /**

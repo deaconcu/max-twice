@@ -820,13 +820,23 @@ import { ref, watch, computed, nextTick } from 'vue'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
 import { memoryApi } from '@/api'
-import { useFetch, useMutation } from '@/composables'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { useUserStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/format'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck, DeckDetail, MemoryCardView } from '@/types/memory'
 import { useI18n } from '@/composables/useI18n'
+import {
+  useDeckDetailQuery,
+  useUpvoteDeckMutation,
+  useAddCardToStudyMutation,
+  useDeleteCardMutation,
+  useUpdateCardMutation,
+  useCreateCardMutation,
+  useAcceptDeckChangesMutation,
+  useRemoveCardsFromStudyMutation,
+  useMoveNodeToCourseMutation,
+} from '@/queries/memory'
 
 const props = defineProps<Props>()
 
@@ -946,33 +956,28 @@ const renderMathText = (text: string): string => {
   return result
 }
 
-// 使用 useFetch 加载卡片组详情
+// 使用 TanStack Query 加载卡片组详情
+const deckId = computed(() => props.deck?.id ?? 0)
+
 const {
   data: deckDetailData,
-  loading,
-  execute: refreshDeckDetail,
-} = useFetch({
-  fetchFn: () => (props.deck ? memoryApi.getDeckDetail(props.deck.id) : Promise.reject('No deck')),
-  immediate: false,
-  onSuccess: async (data) => {
-    deckDetail.value = data
+  isLoading: loading,
+  refetch: refreshDeckDetail,
+} = useDeckDetailQuery(deckId)
 
-    // 获取用户在这个node下学习的所有卡片
-    const nodeId = deckDetail.value?.nodeId
-    console.log('Loading study cards for nodeId:', nodeId)
-    console.log('Loading study cards for userId:', userStore.currentUser?.id)
-    if (nodeId && currentUserId.value) {
-      try {
-        const response = await memoryApi.getUserCardsByNode(nodeId)
-        if (response?.data) {
-          studyCards.value = response.data
-        }
-      } catch (error) {
-        console.error('Failed to load study cards:', error)
-        studyCards.value = []
-      }
+// 加载 study cards（在 deckDetail 变化时触发）
+watch(deckDetailData, async (data) => {
+  if (!data) return
+  deckDetail.value = data as DeckDetail
+  const nodeId = deckDetail.value?.nodeId
+  if (nodeId && currentUserId.value) {
+    try {
+      const cards = await memoryApi.getUserCardsByNode(nodeId)
+      studyCards.value = cards ?? []
+    } catch {
+      studyCards.value = []
     }
-  },
+  }
 })
 
 // 用户正在学习的卡片ID集合
@@ -1136,7 +1141,7 @@ watch(
   () => props.deck,
   (newDeck) => {
     if (newDeck && dialog.value) {
-      refreshDeckDetail()
+      void refreshDeckDetail()
     }
   }
 )
@@ -1145,108 +1150,36 @@ watch(dialog, (newVal) => {
   if (newVal && props.deck) {
     currentTab.value = 'all'
     errorMessage.value = ''
-    refreshDeckDetail()
+    void refreshDeckDetail()
   }
 })
 
-// 使用 useMutation 处理点赞
-const { execute: upvoteDeck } = useMutation((deckId: number) => memoryApi.upvoteDeck(deckId), {
-  showToast: false,
-  onSuccess: (result) => {
-    if (props.deck && result) {
-      props.deck.hasLiked = result.liked
-      props.deck.likeCount = result.likeCount
-    }
-  },
-})
+// Mutations
+const upvoteDeckMutation = useUpvoteDeckMutation()
+const addCardToStudyMutation = useAddCardToStudyMutation()
+const deleteCardMutation = useDeleteCardMutation()
+const updateCardMutation = useUpdateCardMutation()
+const createCardMutation = useCreateCardMutation()
+const acceptDeckChangesMutation = useAcceptDeckChangesMutation()
+const removeCardsFromStudyMutation = useRemoveCardsFromStudyMutation()
+const moveNodeToCourseMutation = useMoveNodeToCourseMutation()
 
-// 使用 useMutation 处理添加卡片到学习
-const { execute: addCardToStudyMutation } = useMutation(
-  (cardId: number) => memoryApi.addCardToStudy(cardId),
-  {
-    showToast: false,
-    onSuccess: () => {
-      refreshDeckDetail()
-    },
-    onError: (err) => {
-      showError(err.message)
-    },
-  }
-)
+const updatingCard = updateCardMutation.isPending
+const creatingCard = createCardMutation.isPending
+const removingFromStudy = removeCardsFromStudyMutation.isPending
+const movingToCourse = moveNodeToCourseMutation.isPending
 
-// 使用 useMutation 处理删除卡片
-const { execute: deleteCardMutation } = useMutation(
-  (cardId: number) => memoryApi.deleteCard(cardId),
-  {
-    showToast: false,
-    onSuccess: () => {
-      refreshDeckDetail()
-    },
-    onError: (err) => {
-      showError(err.message)
-    },
-  }
-)
-
-// 使用 useMutation 处理更新卡片
-const { execute: updateCardMutation, loading: updatingCard } = useMutation(
-  ({ cardId, data }: { cardId: number; data: { front: string; back: string } }) =>
-    memoryApi.updateCard(cardId, data),
-  {
-    showToast: false,
-    onSuccess: () => {
-      showEditDialog.value = false
-      refreshDeckDetail()
-    },
-    onError: (err) => {
-      showError(err.message)
-    },
-  }
-)
-
-// 使用 useMutation 处理创建卡片
-const { execute: createCardMutation, loading: creatingCard } = useMutation(
-  (data: { deckId: number; front: string; back: string }) => memoryApi.createCard(data),
-  {
-    showToast: false,
-    onSuccess: () => {
-      showEditDialog.value = false
-      refreshDeckDetail()
-    },
-    onError: (err) => {
-      showError(err.message)
-    },
-  }
-)
-
-// 使用 useMutation 处理接受更新
-const { execute: acceptUpdateMutation } = useMutation(
-  ({
-    deckId,
-    cardIds,
-    courseId,
-    removeOtherDeckCards,
-  }: {
-    deckId: number
-    cardIds: number[]
-    courseId?: number
-    removeOtherDeckCards?: boolean
-  }) => memoryApi.acceptDeckChanges(deckId, cardIds, courseId, removeOtherDeckCards),
-  {
-    showToast: false,
-    onSuccess: () => {
-      refreshDeckDetail()
-    },
-    onError: (err) => {
-      showError(err.message)
-    },
-  }
-)
-
-const handleUpvote = async () => {
+const handleUpvote = () => {
   if (!props.deck) return
   errorMessage.value = ''
-  await upvoteDeck(props.deck.id)
+  upvoteDeckMutation.mutate(props.deck.id, {
+    onSuccess: (result) => {
+      if (props.deck && result) {
+        props.deck.hasLiked = result.liked
+        props.deck.likeCount = result.likeCount
+      }
+    },
+  })
 }
 
 const viewCard = (card: any) => {
@@ -1266,19 +1199,24 @@ const editCard = (card: any) => {
   showEditDialog.value = true
 }
 
-const deleteCard = async (card: any) => {
+const deleteCard = (card: any) => {
   errorMessage.value = ''
-  await deleteCardMutation(card.id)
+  deleteCardMutation.mutate(card.id, {
+    onSuccess: () => void refreshDeckDetail(),
+    onError: (err) => showError(err.message),
+  })
 }
 
-const addCardToStudy = async (card: any) => {
+const addCardToStudy = (card: any) => {
   if (!props.deck) return
   errorMessage.value = ''
-  await acceptUpdateMutation({
-    deckId: props.deck.id,
-    cardIds: [card.id],
-    courseId: props.courseId,
-  })
+  acceptDeckChangesMutation.mutate(
+    { deckId: props.deck.id, cardIds: [card.id], courseId: props.courseId },
+    {
+      onSuccess: () => void refreshDeckDetail(),
+      onError: (err) => showError(err.message),
+    }
+  )
 }
 
 const createNewCard = () => {
@@ -1289,23 +1227,31 @@ const createNewCard = () => {
   showEditDialog.value = true
 }
 
-const saveCard = async () => {
+const saveCard = () => {
   if (!props.deck || !editCardFront.value.trim() || !editCardBack.value.trim()) return
   errorMessage.value = ''
   if (editingCard.value) {
-    await updateCardMutation({
-      cardId: editingCard.value.id,
-      data: {
-        front: editCardFront.value,
-        back: editCardBack.value,
-      },
-    })
+    updateCardMutation.mutate(
+      { cardId: editingCard.value.id, data: { front: editCardFront.value, back: editCardBack.value } },
+      {
+        onSuccess: () => {
+          showEditDialog.value = false
+          void refreshDeckDetail()
+        },
+        onError: (err) => showError(err.message),
+      }
+    )
   } else {
-    await createCardMutation({
-      deckId: props.deck.id,
-      front: editCardFront.value,
-      back: editCardBack.value,
-    })
+    createCardMutation.mutate(
+      { deckId: props.deck.id, front: editCardFront.value, back: editCardBack.value },
+      {
+        onSuccess: () => {
+          showEditDialog.value = false
+          void refreshDeckDetail()
+        },
+        onError: (err) => showError(err.message),
+      }
+    )
   }
 }
 
@@ -1313,75 +1259,84 @@ const closeDialog = () => {
   dialog.value = false
 }
 
-// 添加卡片组到学习 - 已移除，统一使用 addAllNewCards
-
 // 接受单个卡片更新
-const acceptUpdate = async (cardId: number) => {
+const acceptUpdate = (cardId: number) => {
   if (!props.deck) return
   errorMessage.value = ''
-  await acceptUpdateMutation({ deckId: props.deck.id, cardIds: [cardId], courseId: props.courseId })
+  acceptDeckChangesMutation.mutate(
+    { deckId: props.deck.id, cardIds: [cardId], courseId: props.courseId },
+    {
+      onSuccess: () => void refreshDeckDetail(),
+      onError: (err) => showError(err.message),
+    }
+  )
 }
 
 // 添加单个卡片到学习（diff界面用）
-const addCardToStudyFromDiff = async (cardId: number) => {
+const addCardToStudyFromDiff = (cardId: number) => {
   if (!props.deck) return
   errorMessage.value = ''
-  await acceptUpdateMutation({ deckId: props.deck.id, cardIds: [cardId], courseId: props.courseId })
+  acceptDeckChangesMutation.mutate(
+    { deckId: props.deck.id, cardIds: [cardId], courseId: props.courseId },
+    {
+      onSuccess: () => void refreshDeckDetail(),
+      onError: (err) => showError(err.message),
+    }
+  )
 }
 
-// 接受所有更新（原有方法，保留用于单个卡片更新）
-const acceptAllChanges = async () => {
+// 接受所有更新
+const acceptAllChanges = () => {
   if (!props.deck) return
   errorMessage.value = ''
-  await acceptUpdateMutation({ deckId: props.deck.id, cardIds: [], courseId: props.courseId })
+  acceptDeckChangesMutation.mutate(
+    { deckId: props.deck.id, cardIds: [], courseId: props.courseId },
+    {
+      onSuccess: () => void refreshDeckDetail(),
+      onError: (err) => showError(err.message),
+    }
+  )
 }
 
-// 完全同步为当前卡片组（添加未学习 + 更新已修改 + 删除已删除 + 删除来自其他卡片组）
-const fullSyncToDeck = async () => {
+// 完全同步为当前卡片组
+const fullSyncToDeck = () => {
   if (!props.deck) return
   errorMessage.value = ''
-  await acceptUpdateMutation({
-    deckId: props.deck.id,
-    cardIds: [],
-    courseId: props.courseId,
-    removeOtherDeckCards: true,
-  })
+  acceptDeckChangesMutation.mutate(
+    { deckId: props.deck.id, cardIds: [], courseId: props.courseId, removeOtherDeckCards: true },
+    {
+      onSuccess: () => void refreshDeckDetail(),
+      onError: (err) => showError(err.message),
+    }
+  )
 }
 
-// 同步卡片组更新（添加未学习 + 更新已修改 + 删除已删除，保留其他卡片组的卡片）
-const syncUpdatesOnly = async () => {
+// 同步卡片组更新
+const syncUpdatesOnly = () => {
   if (!props.deck) return
   errorMessage.value = ''
-  await acceptUpdateMutation({ deckId: props.deck.id, cardIds: [], courseId: props.courseId })
+  acceptDeckChangesMutation.mutate(
+    { deckId: props.deck.id, cardIds: [], courseId: props.courseId },
+    {
+      onSuccess: () => void refreshDeckDetail(),
+      onError: (err) => showError(err.message),
+    }
+  )
 }
 
-// 只添加未学习的卡片（不影响其他卡片）
-const addAllNewCards = async () => {
+// 只添加未学习的卡片
+const addAllNewCards = () => {
   if (!props.deck) return
   errorMessage.value = ''
   const addedCardIds = addedDiffs.value.map((diff) => diff.cardId)
-  await acceptUpdateMutation({
-    deckId: props.deck.id,
-    cardIds: addedCardIds,
-    courseId: props.courseId,
-  })
+  acceptDeckChangesMutation.mutate(
+    { deckId: props.deck.id, cardIds: addedCardIds, courseId: props.courseId },
+    {
+      onSuccess: () => void refreshDeckDetail(),
+      onError: (err) => showError(err.message),
+    }
+  )
 }
-
-// 使用 useMutation 处理移除学习
-const { execute: removeCardsFromStudyMutation, loading: removingFromStudy } = useMutation(
-  (cardIds: number[]) => memoryApi.removeCardsFromStudy(cardIds),
-  {
-    showToast: false,
-    onSuccess: () => {
-      showRemoveConfirmDialog.value = false
-      cardToRemove.value = null
-      refreshDeckDetail()
-    },
-    onError: (err) => {
-      showError(err.message)
-    },
-  }
-)
 
 // 确认移除学习
 const confirmRemoveFromStudy = (card: any) => {
@@ -1390,35 +1345,30 @@ const confirmRemoveFromStudy = (card: any) => {
 }
 
 // 执行移除学习
-const removeFromStudy = async () => {
+const removeFromStudy = () => {
   if (!cardToRemove.value) return
   errorMessage.value = ''
-  await removeCardsFromStudyMutation([cardToRemove.value.id])
+  removeCardsFromStudyMutation.mutate([cardToRemove.value.id], {
+    onSuccess: () => {
+      showRemoveConfirmDialog.value = false
+      cardToRemove.value = null
+      void refreshDeckDetail()
+    },
+    onError: (err) => showError(err.message),
+  })
 }
 
-// 使用 useMutation 处理移动节点到当前课程
-const { execute: moveNodeToCourseMutation, loading: movingToCourse } = useMutation(
-  ({ nodeId, courseId }: { nodeId: number; courseId: number }) =>
-    memoryApi.moveNodeToCourse(nodeId, courseId),
-  {
-    showToast: false,
-    onSuccess: () => {
-      refreshDeckDetail()
-    },
-    onError: (err) => {
-      showError(err.message)
-    },
-  }
-)
-
 // 移动节点到当前课程
-const moveToCurrentCourse = async () => {
+const moveToCurrentCourse = () => {
   if (!props.courseId || !deckDetail.value?.nodeId) return
   errorMessage.value = ''
-  await moveNodeToCourseMutation({
-    nodeId: deckDetail.value.nodeId,
-    courseId: props.courseId,
-  })
+  moveNodeToCourseMutation.mutate(
+    { nodeId: deckDetail.value.nodeId, courseId: props.courseId },
+    {
+      onSuccess: () => void refreshDeckDetail(),
+      onError: (err) => showError(err.message),
+    }
+  )
 }
 </script>
 

@@ -3,6 +3,7 @@ package com.twicemax.application.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twicemax.analytics.dto.ContentStatsDTO;
+import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.analytics.stats.dataservice.ContentStatsDataService;
 import com.twicemax.analytics.stats.mapper.ContentStatsDO;
 import com.twicemax.analytics.stats.service.ContentStatsDomainService;
@@ -409,7 +410,7 @@ public class RoadmapService {
     /**
      * 获取角色路线图列表（带置顶和状态信息）
      */
-    public List<RoadmapWithStatusDTO> getRoadmapsByRole(Long roleId, Long lastId, String sortBy, Integer pageSize, UserDO currentUser) {
+    public List<RoadmapWithStatusDTO> getRoadmapsByRole(Long roleId, String cursor, String sortBy, Integer pageSize, UserDO currentUser) {
         validateRoleId(roleId);
 
         // 默认按 score 排序
@@ -421,7 +422,7 @@ public class RoadmapService {
 
         // 委托给 DomainService 查询路线图列表
         List<RoadmapDO> roadmapList = domainService.getRoadmapsByRole(
-            roleId, lastId, limit, sortBy);
+            roleId, Cursor.decode(cursor).id(), limit, sortBy);
 
         // 转换为完整DTO（包含跨域信息）
         return toRoadmapWithFullInfo(roadmapList, currentUser.getId(), roleId);
@@ -434,14 +435,14 @@ public class RoadmapService {
      * @param pageSize 每页数量
      * @return 路线图列表（包含专业信息）
      */
-    public List<RoadmapDetailDTO> getUserRoadmaps(Long userId, Long lastId, ContentState state, Integer pageSize) {
+    public List<RoadmapDetailDTO> getUserRoadmaps(Long userId, String cursor, ContentState state, Integer pageSize) {
         validateUserId(userId);
 
         int limit = normalizePageSize(pageSize);
 
         // 委托给 DomainService 查询
         List<RoadmapDO> roadmapList = domainService.getUserRoadmaps(
-            userId, lastId, limit, state == null ? null : state.value());
+            userId, Cursor.decode(cursor).id(), limit, state == null ? null : state.value());
 
         return toDetailDTO(roadmapList);
     }

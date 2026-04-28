@@ -32,7 +32,7 @@
 <script setup lang="ts">
 import { provide, ref, onMounted, computed, watch } from 'vue'
 import type { Ref } from 'vue'
-import { setGlobalSnackbar } from '@/composables/utils'
+import { setGlobalSnackbar } from '@/composables/config'
 import { useRouter } from 'vue-router'
 
 interface Snackbar {

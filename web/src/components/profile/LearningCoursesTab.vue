@@ -87,6 +87,13 @@
           </v-card-text>
         </v-card>
       </div>
+
+      <!-- 加载更多 -->
+      <div v-if="hasNextPage" class="text-center py-4">
+        <v-btn variant="text" color="primary" :loading="loading" @click="fetchNextPage()">
+          {{ t('common.loadMore') }}
+        </v-btn>
+      </div>
     </div>
 
     <!-- 空状态 -->
@@ -119,12 +126,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useFetch } from '@/composables/useFetch'
-import { useMutation } from '@/composables/useMutation'
+import { useAllCoursesProgressQuery, useDeleteCourseProgressMutation } from '@/queries/progress'
 import { useI18n } from '@/composables/useI18n'
-import { progressApi } from '@/api'
+import { getGlobalSnackbar } from '@/composables/config'
 import { getColorByString } from '@/utils/color'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -140,32 +146,27 @@ const statusTab = ref<'learning' | 'completed'>('learning')
 const showDeleteDialog = ref(false)
 const courseToDelete = ref<number | null>(null)
 
-// 获取用户课程数据
+// 获取用户课程数据（queryKey 随 statusTab 变化自动重新请求）
 const {
-  data: userCourses,
-  loading,
-  execute: fetchCourses,
-} = useFetch({
-  fetchFn: () => progressApi.getAllCourseProgress(statusTab.value),
-  immediate: true,
-  defaultValue: [],
-})
+  data: userCoursesData,
+  isLoading: loading,
+  fetchNextPage,
+  hasNextPage,
+} = useAllCoursesProgressQuery(statusTab)
 
-// 监听 Tab 切换，重新加载数据
-watch(statusTab, () => {
-  fetchCourses()
-})
+// 展开分页数据
+const userCourses = computed(() => userCoursesData.value?.pages.flat() ?? [])
 
 // 删除课程进度
-const { execute: deleteProgress } = useMutation(
-  (courseId: number) => progressApi.deleteCourseProgress(courseId),
-  {
-    successMessage: t('user.profile.courseUnlearned'),
+const { mutate: deleteProgressMutate } = useDeleteCourseProgressMutation()
+
+const deleteProgress = (courseId: number) => {
+  deleteProgressMutate(courseId, {
     onSuccess: () => {
-      fetchCourses()
+      getGlobalSnackbar()?.(t('user.profile.courseUnlearned'), 'success')
     },
-  }
-)
+  })
+}
 
 // 转换课程数据为组件所需格式
 const courses = computed(() => {
@@ -206,9 +207,9 @@ const cancelLearning = (courseId: number) => {
 }
 
 // 确认删除
-const confirmDelete = async () => {
+const confirmDelete = () => {
   if (courseToDelete.value !== null) {
-    await deleteProgress(courseToDelete.value)
+    deleteProgress(courseToDelete.value)
   }
   courseToDelete.value = null
 }

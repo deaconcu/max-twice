@@ -80,9 +80,9 @@
 import { ref, watch, nextTick, computed, inject } from 'vue'
 import TipTapEditor from '@/components/common/TipTapEditor.vue'
 import { ContentState, PostType } from '@/enums'
-import { postApi } from '@/api'
-import { useMutation } from '@/composables/useMutation'
+import { useCreatePostMutation, useUpdatePostMutation } from '@/queries/post'
 import { useI18n } from '@/composables/useI18n'
+import { getGlobalSnackbar } from '@/composables/config'
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
@@ -152,62 +152,44 @@ const isEditMode = computed(() => props.article != null || currentArticle.value 
 const getCurrentArticle = computed(() => props.article || currentArticle.value)
 
 // 创建帖子
-const { execute: executeCreate, loading: creating } = useMutation(
-  (data: { nodeId: number; content: string; type: number; state: number }) =>
-    postApi.createPost(data as any),
-  {
-    successMessage: t('posting.operationSuccess'),
-    onSuccess: (result, payload) => {
-      const isDraft = payload.state === ContentState.DRAFT
-      if (isDraft) {
-        // 保存草稿：保存返回的文章数据，转为编辑模式，通知父组件添加到列表
-        currentArticle.value = result as Article
-        emit('success', result as Article)
-        // 不关闭窗口
-      } else {
-        // 发布文章：关闭窗口，不更新列表（文章待审核，列表不变）
-        emit('update:modelValue', false)
-        emit('success', null)
-        currentArticle.value = null
-      }
+const { mutate: createPostMutate, isPending: creating } = useCreatePostMutation()
+
+const executeCreate = (
+  data: { nodeId: number; content: string; type: number; state: number },
+  callbacks: { onSuccess?: (result: unknown) => void }
+) => {
+  createPostMutate(data as Parameters<typeof createPostMutate>[0], {
+    onSuccess: (result) => {
+      getGlobalSnackbar()?.(t('posting.operationSuccess'), 'success')
+      callbacks.onSuccess?.(result)
     },
-  }
-)
+  })
+}
 
 // 更新帖子
-const { execute: executeUpdate, loading: updating } = useMutation(
-  (data: { id: number; content: string; state?: number }) =>
-    postApi.updatePost(data.id, { content: data.content, state: data.state as any }),
-  {
-    successMessage: t('posting.operationSuccess'),
-    onSuccess: (result, payload) => {
-      console.log('executeUpdate onSuccess', { result, payload })
-      const isPublishing = payload.state === ContentState.SUBMITTED
-      if (isPublishing) {
-        // 发布文章：关闭窗口，通知父组件更新该文章状态
-        console.log('Publishing, emitting success with:', result)
-        emit('update:modelValue', false)
-        emit('success', result as Article)
-        currentArticle.value = null
-      } else {
-        // 保存草稿：更新当前文章数据，通知父组件更新列表中的数据
-        console.log('Saving draft, emitting success with:', result)
-        if (result) {
-          currentArticle.value = result as Article
-        }
-        emit('success', result as Article)
-        // 不关闭窗口
-      }
-    },
-  }
-)
+const { mutate: updatePostMutate, isPending: updating } = useUpdatePostMutation()
+
+const executeUpdate = (
+  data: { id: number; content: string; state?: number },
+  callbacks: { onSuccess?: (result: unknown) => void }
+) => {
+  updatePostMutate(
+    { id: data.id, data: { content: data.content, state: data.state as ContentState | undefined } },
+    {
+      onSuccess: (result) => {
+        getGlobalSnackbar()?.(t('posting.operationSuccess'), 'success')
+        callbacks.onSuccess?.(result)
+      },
+    }
+  )
+}
 
 const submitting = computed(() => creating.value || updating.value)
-const savingDraft = ref(false) // 保存草稿的 loading 状态
-const publishing = ref(false) // 发布文章的 loading 状态
+const savingDraft = computed(() => creating.value || updating.value)
+const publishing = computed(() => creating.value || updating.value)
 
 // 保存文章
-const handleSave = async () => {
+const handleSave = () => {
   if (!editorRef.value?.editor) {
     return
   }
@@ -215,42 +197,43 @@ const handleSave = async () => {
   const content = editorRef.value.editor.getHTML()
   const article = getCurrentArticle.value
 
-  savingDraft.value = true
-  try {
-    // 编辑模式（包括创建后转换的编辑模式）
-    if (article) {
-      await executeUpdate({
-        id: article.id,
-        content,
-        state: ContentState.DRAFT,
-      })
-      return
-    }
-
-    // 创建模式
-    if (!props.nodeId) {
-      showSnackbar?.(t('addArticle.missingNodeId'), 'error')
-      return
-    }
-    if (!isDraftValid.value) {
-      showSnackbar?.(t('addArticle.contentEmpty'), 'warning')
-      return
-    }
-
-    // 创建新草稿
-    await executeCreate({
-      nodeId: props.nodeId,
-      content,
-      type: PostType.ARTICLE,
-      state: ContentState.DRAFT,
-    })
-  } finally {
-    savingDraft.value = false
+  // 编辑模式（包括创建后转换的编辑模式）
+  if (article) {
+    executeUpdate(
+      { id: article.id, content, state: ContentState.DRAFT },
+      {
+        onSuccess: (result) => {
+          if (result) currentArticle.value = result as Article
+          emit('success', result as Article)
+        },
+      }
+    )
+    return
   }
+
+  // 创建模式
+  if (!props.nodeId) {
+    showSnackbar?.(t('addArticle.missingNodeId'), 'error')
+    return
+  }
+  if (!isDraftValid.value) {
+    showSnackbar?.(t('addArticle.contentEmpty'), 'warning')
+    return
+  }
+
+  executeCreate(
+    { nodeId: props.nodeId, content, type: PostType.ARTICLE, state: ContentState.DRAFT },
+    {
+      onSuccess: (result) => {
+        currentArticle.value = result as Article
+        emit('success', result as Article)
+      },
+    }
+  )
 }
 
 // 发布文章
-const handlePublish = async () => {
+const handlePublish = () => {
   if (!editorRef.value?.editor) {
     return
   }
@@ -266,34 +249,37 @@ const handlePublish = async () => {
     return
   }
 
-  publishing.value = true
-  try {
-    // 编辑模式（包括创建后转换的编辑模式）
-    if (article) {
-      await executeUpdate({
-        id: article.id,
-        content,
-        state: ContentState.SUBMITTED,
-      })
-      return
-    }
-
-    // 创建模式
-    if (!props.nodeId) {
-      showSnackbar?.(t('addArticle.missingNodeId'), 'error')
-      return
-    }
-
-    // 直接发布
-    await executeCreate({
-      nodeId: props.nodeId,
-      content,
-      type: PostType.ARTICLE,
-      state: ContentState.SUBMITTED,
-    })
-  } finally {
-    publishing.value = false
+  // 编辑模式
+  if (article) {
+    executeUpdate(
+      { id: article.id, content, state: ContentState.SUBMITTED },
+      {
+        onSuccess: (result) => {
+          emit('update:modelValue', false)
+          emit('success', result as Article)
+          currentArticle.value = null
+        },
+      }
+    )
+    return
   }
+
+  // 创建模式
+  if (!props.nodeId) {
+    showSnackbar?.(t('addArticle.missingNodeId'), 'error')
+    return
+  }
+
+  executeCreate(
+    { nodeId: props.nodeId, content, type: PostType.ARTICLE, state: ContentState.SUBMITTED },
+    {
+      onSuccess: () => {
+        emit('update:modelValue', false)
+        emit('success', null)
+        currentArticle.value = null
+      },
+    }
+  )
 }
 
 // 取消编辑

@@ -2,10 +2,9 @@
 import { ref, watch, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import draggable from 'vuedraggable'
-import { postApi } from '@/api'
-import { useMutation } from '@/composables/useMutation'
 import { useI18n } from '@/composables/useI18n'
 import { PostType } from '@/enums'
+import { useCreatePostMutation } from '@/queries/post'
 
 const props = withDefaults(defineProps<Props>(), {
   nodeId: 0,
@@ -79,52 +78,11 @@ const generateWithAI = () => {
   }, 1000)
 }
 
-// 使用 useMutation 提交目录
-const { execute: executeSubmit, loading: submitting } = useMutation(
-  async () => {
-    // 构建 JSON 格式
-    // 如果有 id，格式：{"id": 123, "name": "节点名", "description": "描述"}
-    // 如果没有 id，格式：{"name": "节点名", "description": "描述"}
-    const jsonContent = catalogItems.value.map((item) => {
-      const obj: any = {
-        name: item.name,
-        description: item.description,
-      }
-      if (item.id) {
-        obj.id = item.id
-      }
-      return obj
-    })
-
-    // 调用创建 contents 类型帖子的接口
-    const response = await postApi.createPost({
-      nodeId: props.nodeId,
-      type: PostType.INDEX,
-      content: JSON.stringify(jsonContent),
-    })
-
-    return response
-  },
-  {
-    onSuccess: () => {
-      showSnackbar?.(t('addContents.title') + ' ' + t('common.success'), 'success')
-      dialog.value = false
-      emit('load-data', [])
-
-      // 清空数据
-      catalogItems.value = []
-      catalogName.value = ''
-      catalogDescription.value = ''
-    },
-    onError: (error) => {
-      console.error('Add catalog failed:', error)
-      showSnackbar?.(t('error.operationFailed'), 'error')
-    },
-  }
-)
+const createPostMutation = useCreatePostMutation()
+const submitting = createPostMutation.isPending
 
 // 提交目录
-const submitCatalog = async () => {
+const submitCatalog = () => {
   if (catalogItems.value.length < 2) {
     showSnackbar?.(t('validation.roadmap.emptyRoadmap'), 'warning')
     return
@@ -135,7 +93,34 @@ const submitCatalog = async () => {
     return
   }
 
-  await executeSubmit()
+  const jsonContent = catalogItems.value.map((item) => {
+    const obj: Record<string, unknown> = {
+      name: item.name,
+      description: item.description,
+    }
+    if (item.id) {
+      obj.id = item.id
+    }
+    return obj
+  })
+
+  createPostMutation.mutate(
+    {
+      nodeId: props.nodeId,
+      type: PostType.INDEX,
+      content: JSON.stringify(jsonContent),
+    },
+    {
+      onSuccess: () => {
+        showSnackbar?.(t('addContents.title') + ' ' + t('common.success'), 'success')
+        dialog.value = false
+        emit('load-data', [])
+        catalogItems.value = []
+        catalogName.value = ''
+        catalogDescription.value = ''
+      },
+    }
+  )
 }
 </script>
 

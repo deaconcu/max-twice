@@ -7,6 +7,7 @@ import com.twicemax.application.converter.MessageConverter;
 import com.twicemax.application.converter.NodeConverter;
 import com.twicemax.application.converter.UserConverter;
 import com.twicemax.application.dto.response.message.*;
+import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.content.node.NodeDO;
 import com.twicemax.content.node.NodeDataService;
 import com.twicemax.content.post.PostDO;
@@ -189,9 +190,10 @@ public class MessageService {
      * @param currentUser 当前用户
      * @return 包含消息列表和 lastViewedMessageId 的响应
      */
-    public MessageListResponse getListByCategoryWithLastViewed(int category, long receiverId, Long lastId,
+    public MessageListResponse getListByCategoryWithLastViewed(int category, long receiverId, String cursor,
                                                                Integer type, UserDO currentUser) {
         // 获取消息列表
+        Long lastId = Cursor.decode(cursor).id();
         List<MessageDTO> messageDTOs = getListByCategory(category, receiverId, lastId, type);
 
         // 只在第一页（lastId == null）时处理 lastViewedMessageId

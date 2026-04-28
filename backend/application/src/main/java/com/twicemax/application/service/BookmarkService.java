@@ -2,6 +2,8 @@ package com.twicemax.application.service;
 
 import com.twicemax.application.assembler.BookmarkAssembler;
 import com.twicemax.application.dto.response.bookmark.BookmarkDTO;
+import com.twicemax.application.dto.v2.CursorPage;
+import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.content.course.CourseDataService;
 import com.twicemax.content.post.PostDataService;
 import com.twicemax.content.post.PostDO;
@@ -52,11 +54,17 @@ public class BookmarkService {
     }
 
     /**
-     * 获取用户某类型的收藏列表（分页，带关联对象）
+     * 获取用户某类型的收藏列表（游标分页，带关联对象）
      */
-    public List<BookmarkDTO<Object>> getUserBookmarks(long userId, Enums.ContentType contentType, Long lastId, int limit) {
-        List<BookmarkDO> bookmarks = bookmarkDataService.listByUserAndLastId(userId, contentType.value(), lastId, limit);
-        return bookmarkAssembler.toDTO(bookmarks, contentType, userId);
+    public CursorPage<BookmarkDTO<Object>> getUserBookmarks(long userId, Enums.ContentType contentType, String cursor, int limit) {
+        List<BookmarkDO> bookmarks = bookmarkDataService.listByUserAndLastId(userId, contentType.value(), Cursor.decode(cursor).id(), limit + 1);
+        boolean hasMore = bookmarks.size() > limit;
+        if (hasMore) {
+            bookmarks = bookmarks.subList(0, limit);
+        }
+        List<BookmarkDTO<Object>> dtos = bookmarkAssembler.toDTO(bookmarks, contentType, userId);
+        String nextCursor = (hasMore && !dtos.isEmpty()) ? Cursor.of(dtos.get(dtos.size() - 1).getId()).encode() : null;
+        return CursorPage.of(dtos, hasMore, nextCursor);
     }
 
     /**

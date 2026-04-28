@@ -69,7 +69,7 @@ spring:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD}
+      password: ${REDIS_PASSWORD:}
   # Flyway：自动配置只认 spring.datasource 单库，项目是多库自定义 DataSource，
   # 这里禁用自动配置，由 FlywayConfig 手动创建 3 个 Flyway bean 分别绑库。
   flyway:

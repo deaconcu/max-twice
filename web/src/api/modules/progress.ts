@@ -1,9 +1,8 @@
 import apiClient from '../client'
-import type { ApiResponse } from '@/types/api'
-import type { Node, NodeProgressResponse } from '@/types/node'
+import type { NodeProgressResponse } from '@/types/node'
 import type { Roadmap } from '@/types/roadmap'
 import type { UserCourse } from '@/types/userCourse'
-import type { UserRoadmap, UserRoadmapBrief } from '@/types/userRoadmap'
+import type { UserRoadmap } from '@/types/userRoadmap'
 import type { UserLearning } from '@/types/home'
 import type {
   CourseCompletionResponse,
@@ -13,24 +12,20 @@ import type {
 
 /**
  * 学习进度相关 API
- * 参考：web-ts/src/services/api/v1/apiServiceV1.ts (progressServiceV1)
  */
 export const progressApi = {
   /**
    * 标记节点为完成
    */
-  markNodeComplete(nodeId: number, rootNodeId: number): Promise<ApiResponse<NodeProgressResponse>> {
-    return apiClient.post(`/v1/progress/nodes/${String(nodeId)}/complete`, { rootNodeId })
+  markNodeComplete(nodeId: number, rootNodeId: number): Promise<NodeProgressResponse> {
+    return apiClient.post(`/progress/nodes/${String(nodeId)}/complete`, { rootNodeId })
   },
 
   /**
    * 取消节点完成标记
    */
-  unmarkNodeComplete(
-    nodeId: number,
-    rootNodeId: number
-  ): Promise<ApiResponse<NodeProgressResponse>> {
-    return apiClient.delete(`/v1/progress/nodes/${String(nodeId)}/complete`, {
+  unmarkNodeComplete(nodeId: number, rootNodeId: number): Promise<NodeProgressResponse> {
+    return apiClient.delete(`/progress/nodes/${String(nodeId)}/complete`, {
       data: { rootNodeId },
     })
   },
@@ -38,118 +33,106 @@ export const progressApi = {
   /**
    * 获取节点状态
    */
-  getNodeStatus(nodeId: number): Promise<ApiResponse<NodeProgressResponse>> {
-    return apiClient.get(`/v1/progress/nodes/${String(nodeId)}/status`)
+  getNodeStatus(nodeId: number): Promise<NodeProgressResponse> {
+    return apiClient.get(`/progress/nodes/${String(nodeId)}/status`)
   },
 
   /**
    * 注册学习课程
    */
-  startCourse(courseId: number): Promise<ApiResponse<CourseProgressResponse>> {
-    return apiClient.post(`/v1/progress/courses/${String(courseId)}/enrollment`)
+  startCourse(courseId: number): Promise<CourseProgressResponse> {
+    return apiClient.post(`/progress/courses/${String(courseId)}/enrollment`)
   },
 
   /**
    * 取消注册学习课程
    */
-  cancelCourse(courseId: number): Promise<ApiResponse<CourseProgressResponse>> {
-    return apiClient.delete(`/v1/progress/courses/${String(courseId)}/enrollment`)
+  cancelCourse(courseId: number): Promise<CourseProgressResponse> {
+    return apiClient.delete(`/progress/courses/${String(courseId)}/enrollment`)
   },
 
   /**
    * 获取课程进度
    */
-  getCourseProgress(courseId: number): Promise<ApiResponse<UserCourse>> {
-    return apiClient.get(`/v1/progress/courses/${String(courseId)}`)
+  getCourseProgress(courseId: number): Promise<UserCourse> {
+    return apiClient.get(`/progress/courses/${String(courseId)}`)
   },
 
   /**
    * 获取所有课程进度
    * @param state 状态过滤（'learning'=进行中, 'completed'=已完成，不传=全部）
-   * @param lastId 分页游标
+   * @param cursor 分页游标
    */
-  getAllCourseProgress(
-    state?: 'learning' | 'completed',
-    lastId?: number
-  ): Promise<ApiResponse<UserLearning[]>> {
-    return apiClient.get('/v1/progress/courses', {
-      params: { state, lastId },
+  getAllCourseProgress(state?: 'learning' | 'completed', cursor?: string): Promise<UserLearning[]> {
+    return apiClient.get('/progress/courses', {
+      params: { state, cursor },
     })
   },
 
   /**
    * 更新课程进度
    */
-  updateCourseProgress(
-    courseId: number,
-    data: Partial<UserCourse>
-  ): Promise<ApiResponse<UserCourse>> {
-    return apiClient.put(`/v1/progress/courses/${String(courseId)}`, data)
+  updateCourseProgress(courseId: number, data: Partial<UserCourse>): Promise<UserCourse> {
+    return apiClient.put(`/progress/courses/${String(courseId)}`, data)
   },
 
   /**
    * 删除课程进度
    */
-  deleteCourseProgress(courseId: number): Promise<ApiResponse<CourseProgressResponse>> {
-    return apiClient.delete(`/v1/progress/courses/${String(courseId)}`)
+  deleteCourseProgress(courseId: number): Promise<CourseProgressResponse> {
+    return apiClient.delete(`/progress/courses/${String(courseId)}`)
   },
 
   /**
    * 完成课程
    */
-  completeCourse(courseId: number): Promise<ApiResponse<CourseCompletionResponse>> {
-    return apiClient.post(`/v1/progress/courses/${String(courseId)}/complete`)
+  completeCourse(courseId: number): Promise<CourseCompletionResponse> {
+    return apiClient.post(`/progress/courses/${String(courseId)}/complete`)
   },
 
   /**
    * 注册学习路线图
    */
-  startRoadmap(roadmapId: number): Promise<ApiResponse<RoadmapProgressResponse>> {
-    return apiClient.post(`/v1/progress/roadmaps/${String(roadmapId)}/enrollment`)
+  startRoadmap(roadmapId: number): Promise<RoadmapProgressResponse> {
+    return apiClient.post(`/progress/roadmaps/${String(roadmapId)}/enrollment`)
   },
 
   /**
    * 取消注册学习路线图
    */
-  cancelRoadmap(roadmapId: number): Promise<ApiResponse<RoadmapProgressResponse>> {
-    return apiClient.delete(`/v1/progress/roadmaps/${String(roadmapId)}/enrollment`)
+  cancelRoadmap(roadmapId: number): Promise<RoadmapProgressResponse> {
+    return apiClient.delete(`/progress/roadmaps/${String(roadmapId)}/enrollment`)
   },
 
   /**
    * 获取路线图进度
    */
-  getRoadmapProgress(roadmapId: number): Promise<ApiResponse<UserRoadmap>> {
-    return apiClient.get(`/v1/progress/roadmaps/${String(roadmapId)}`)
+  getRoadmapProgress(roadmapId: number): Promise<UserRoadmap> {
+    return apiClient.get(`/progress/roadmaps/${String(roadmapId)}`)
   },
 
   /**
    * 获取用户的路线图列表
    * @param state 状态过滤（'learning'=进行中, 'completed'=已完成，不传=全部）
-   * @param lastId 分页游标
+   * @param cursor 分页游标
    */
-  getUserRoadmaps(
-    state?: 'learning' | 'completed',
-    lastId?: number
-  ): Promise<ApiResponse<UserLearning[]>> {
-    return apiClient.get('/v1/progress/roadmaps', {
-      params: { state, lastId },
+  getUserRoadmaps(state?: 'learning' | 'completed', cursor?: string): Promise<UserLearning[]> {
+    return apiClient.get('/progress/roadmaps', {
+      params: { state, cursor },
     })
   },
 
   /**
    * 更新路线图进度
    */
-  updateRoadmapProgress(
-    roadmapId: number,
-    progressPercent: number
-  ): Promise<ApiResponse<UserRoadmap>> {
-    return apiClient.put(`/v1/progress/roadmaps/${String(roadmapId)}`, { progressPercent })
+  updateRoadmapProgress(roadmapId: number, progressPercent: number): Promise<UserRoadmap> {
+    return apiClient.put(`/progress/roadmaps/${String(roadmapId)}`, { progressPercent })
   },
 
   /**
    * 获取用户正在学习的角色路线图（最多20条）
    */
-  getLearningRoadmapsByRole(roleId: number): Promise<ApiResponse<Roadmap[]>> {
-    return apiClient.get(`/v1/progress/roles/${String(roleId)}/roadmaps/learning`)
+  getLearningRoadmapsByRole(roleId: number): Promise<Roadmap[]> {
+    return apiClient.get(`/progress/roles/${String(roleId)}/roadmaps/learning`)
   },
 }

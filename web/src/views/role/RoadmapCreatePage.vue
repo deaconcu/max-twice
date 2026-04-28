@@ -523,7 +523,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, inject, watch } from 'vue'
+import { ref, computed, inject, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -536,11 +536,11 @@ import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
-import { useFetch } from '@/composables'
 import { useCategoryStore } from '@/stores'
 import { courseApi } from '@/api/modules/course'
-import { roadmapApi } from '@/api/modules/roadmap'
 import { searchApi } from '@/api/modules/search'
+import { useRoadmapDetailQuery, useCreateRoadmapMutation, useUpdateRoadmapMutation } from '@/queries/roadmap'
+import { getGlobalSnackbar } from '@/composables/config'
 import type { Course } from '@/types/course'
 import type { SearchResultItem } from '@/api/modules/search'
 import { useI18n } from '@/composables/useI18n'
@@ -553,6 +553,7 @@ const categoryStore = useCategoryStore()
 
 // 注入全局 snackbar
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')!
+const globalSnackbar = getGlobalSnackbar()
 
 // 获取 VueFlow 实例
 const { fitView, setCenter } = useVueFlow()
@@ -574,7 +575,6 @@ const isEditMode = computed(() => roadmapId.value !== null)
 const copyId = ref(route.query.copy ? Number(route.query.copy) : null)
 
 // 状态管理
-const loading = ref(false)
 const saving = ref(false)
 const saveType = ref<'draft' | 'publish' | ''>('') // 保存类型
 const showSaveDialog = ref(false)
@@ -650,12 +650,8 @@ const searchCourses = async () => {
 
   coursesLoading.value = true
   try {
-    const response = await courseApi.searchCourses(searchText.value.trim())
-    if (response.code === 200) {
-      availableCourses.value = response.data ?? []
-    } else {
-      showSnackbar(t('roadmapCreate.messages.searchCoursesFailed'), 'error')
-    }
+    const data = await courseApi.searchCourses(searchText.value.trim())
+    availableCourses.value = data ?? []
   } catch (error) {
     console.error('搜索课程失败:', error)
     showSnackbar(t('roadmapCreate.messages.searchCoursesFailed'), 'error')
@@ -683,27 +679,25 @@ watch(searchText, () => {
 const filteredCourses = computed(() => availableCourses.value)
 
 // 节点搜索
-const {
-  data: availableNodes,
-  loading: nodesLoading,
-  execute: loadAvailableNodes,
-} = useFetch<SearchResultItem[]>({
-  fetchFn: () => searchApi.searchNodes(nodeSearchText.value.trim()),
-  immediate: false,
-  defaultValue: [],
-  onError: (error) => {
-    console.error('搜索节点失败:', error)
-    showSnackbar(t('roadmapCreate.messages.searchNodesFailed'), 'error')
-  },
-})
+const availableNodes = ref<SearchResultItem[]>([])
+const nodesLoading = ref(false)
 
 // 手动搜索节点
-const handleNodeSearch = () => {
+const handleNodeSearch = async () => {
   if (!nodeSearchText.value.trim()) {
     availableNodes.value = []
     return
   }
-  loadAvailableNodes()
+  nodesLoading.value = true
+  try {
+    const data = await searchApi.searchNodes(nodeSearchText.value.trim())
+    availableNodes.value = data ?? []
+  } catch (error) {
+    console.error('搜索节点失败:', error)
+    showSnackbar(t('roadmapCreate.messages.searchNodesFailed'), 'error')
+  } finally {
+    nodesLoading.value = false
+  }
 }
 
 // 清除节点搜索
@@ -1013,8 +1007,12 @@ const showSave = () => {
   showSaveDialog.value = true
 }
 
+// 创建/更新路线图
+const { mutate: createRoadmapMutate } = useCreateRoadmapMutation()
+const { mutate: updateRoadmapMutate } = useUpdateRoadmapMutation()
+
 // 保存路径
-const saveRoadmap = async (type: 'draft' | 'publish') => {
+const saveRoadmap = (type: 'draft' | 'publish') => {
   if (!roadmapDescription.value.trim()) {
     showSnackbar(t('roadmapCreate.messages.enterDescription'), 'warning')
     return
@@ -1092,64 +1090,49 @@ const saveRoadmap = async (type: 'draft' | 'publish') => {
     // 后端期望的格式：[边数组, 节点ID数组]
     const content = JSON.stringify([edgeArray, nodeArray])
 
-    console.log('保存路径数据:', {
-      saveType: type,
-      totalNodes: nodes.value.length,
-      savedNodes: nodeArray.length,
-      edges: edgeArray.length,
-      removedNodes: nodes.value.length - nodeArray.length,
-      edgeArray,
-      nodeArray,
-      content,
-    })
-
     // 调用 API
     const state = type === 'draft' ? 0 : 1 // 0-草稿，1-提交审核
-    let response
 
-    if (draftRoadmapId.value) {
-      // 已有草稿ID，调用更新接口
-      response = await roadmapApi.updateRoadmap(
-        draftRoadmapId.value,
-        content,
-        roadmapDescription.value.trim(),
-        state
-      )
-    } else {
-      // 首次创建
-      response = await roadmapApi.createRoadmap(
-        roleId.value,
-        content,
-        roadmapDescription.value.trim(),
-        state
-      )
-    }
-
-    if (response.code === 200) {
+    const onSaveSuccess = (result: { id?: number } | null | undefined) => {
       const message =
         type === 'draft'
           ? t('roadmapCreate.messages.draftSaved')
           : t('roadmapCreate.messages.published')
-      showSnackbar(message, 'success')
+      globalSnackbar?.(message, 'success')
       showSaveDialog.value = false
 
-      // 草稿模式：保存描述和ID，留在当前页面
       if (type === 'draft') {
         savedDraftDescription.value = roadmapDescription.value.trim()
-        if (response.data?.id) {
-          draftRoadmapId.value = response.data.id
+        if (result?.id) {
+          draftRoadmapId.value = result.id
         }
       } else {
-        // 发布模式：返回列表页
         router.back()
       }
+      saving.value = false
+      saveType.value = ''
+    }
+
+    const onSaveError = () => {
+      showSnackbar(t('roadmapCreate.messages.saveFailedRetry'), 'error')
+      saving.value = false
+      saveType.value = ''
+    }
+
+    if (draftRoadmapId.value) {
+      updateRoadmapMutate(
+        { id: draftRoadmapId.value, content, description: roadmapDescription.value.trim(), state },
+        { onSuccess: onSaveSuccess, onError: onSaveError }
+      )
     } else {
-      showSnackbar(response.message || t('roadmapCreate.messages.saveFailed'), 'error')
+      createRoadmapMutate(
+        { roleId: roleId.value, content, description: roadmapDescription.value.trim(), state },
+        { onSuccess: onSaveSuccess, onError: onSaveError }
+      )
     }
   } catch (error) {
     console.error('保存路径失败:', error)
     showSnackbar(t('roadmapCreate.messages.saveFailedRetry'), 'error')
-  } finally {
     saving.value = false
     saveType.value = ''
   }
@@ -1297,27 +1280,19 @@ const resetAll = () => {
 }
 
 // 编辑模式：加载已有路线图数据
-const { data: roadmapData, loading: roadmapLoading } = useFetch({
-  fetchFn: () => roadmapApi.getRoadmap(roadmapId.value!),
-  immediate: isEditMode.value,
-  defaultValue: null,
-})
+const { data: roadmapData, isLoading: roadmapLoading } = useRoadmapDetailQuery(
+  computed(() => roadmapId.value ?? 0),
+  { enabled: isEditMode }
+)
 
 // 复制模式：加载要复制的路线图数据
-const { data: copyRoadmapData, loading: copyRoadmapLoading } = useFetch({
-  fetchFn: () => roadmapApi.getRoadmap(copyId.value!),
-  immediate: !!copyId.value,
-  defaultValue: null,
-})
+const { data: copyRoadmapData, isLoading: copyRoadmapLoading } = useRoadmapDetailQuery(
+  computed(() => copyId.value ?? 0),
+  { enabled: computed(() => !!copyId.value) }
+)
 
-// 监听加载状态
-watch(roadmapLoading, (isLoading) => {
-  loading.value = isLoading
-})
-
-watch(copyRoadmapLoading, (isLoading) => {
-  loading.value = isLoading
-})
+// 综合加载状态
+const loading = computed(() => roadmapLoading.value || copyRoadmapLoading.value)
 
 // 监听路线图数据加载完成
 watch(roadmapData, (newData) => {
@@ -1463,12 +1438,7 @@ watch(copyRoadmapData, (newData) => {
   }
 })
 
-// 如果是复制模式,加载数据
-onMounted(() => {
-  if (copyId.value) {
-    // 数据加载已由 useFetch 处理，这里不需要额外操作
-  }
-})
+// 如果是复制模式，数据加载由 useRoadmapDetailQuery 处理
 </script>
 
 <style scoped>

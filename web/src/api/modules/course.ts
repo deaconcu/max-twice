@@ -1,26 +1,24 @@
 import apiClient from '../client'
-import type { ApiResponse, KeysetPageResponse } from '@/types/api'
 import type { Course, ApprovalResponse, CreateCourseRequest } from '@/types/course'
 import type { UserCourse } from '@/types/userCourse'
-import type { SubscriptionInfo } from '@/types/user'
+import type { CursorPage } from '@/types/api'
 
 /**
  * 课程管理相关 API
- * 参考：web-ts/src/services/api/v1/apiServiceV1.ts (courseServiceV1)
  */
 export const courseApi = {
   /**
    * 获取课程详情
    */
-  getCourse(id: number): Promise<ApiResponse<Course>> {
-    return apiClient.get(`/v1/courses/${String(id)}`)
+  getCourse(id: number): Promise<Course> {
+    return apiClient.get(`/courses/${String(id)}`)
   },
 
   /**
    * 搜索课程
    */
-  searchCourses(name: string): Promise<ApiResponse<Course[]>> {
-    return apiClient.get('/v1/courses/search', {
+  searchCourses(name: string): Promise<Course[]> {
+    return apiClient.get('/courses/search', {
       params: { name },
     })
   },
@@ -29,12 +27,9 @@ export const courseApi = {
    * 根据状态获取课程列表（已废弃 - 普通用户不应查询任意状态）
    * @deprecated 请使用 getCoursesByCategory() 获取已发布课程
    */
-  getCoursesByState(
-    state: number,
-    lastId?: number
-  ): Promise<ApiResponse<KeysetPageResponse<Course>>> {
-    return apiClient.get('/v1/courses', {
-      params: { state, lastId },
+  getCoursesByState(state: number, cursor?: string): Promise<CursorPage<Course>> {
+    return apiClient.get('/courses', {
+      params: { state, cursor },
     })
   },
 
@@ -42,32 +37,31 @@ export const courseApi = {
    * 根据分类获取课程列表
    * @param mainCategory 主分类ID（可选）
    * @param subCategory 子分类ID（可选）
-   * @param lastId 分页参数（可选）
+   * @param cursor 分页参数（可选）
    * 不传任何参数时，返回所有已发布课程
    */
   getCoursesByCategory(
     mainCategory?: number,
     subCategory?: number,
-    lastId?: number
-  ): Promise<ApiResponse<KeysetPageResponse<Course>>> {
-    return apiClient.get('/v1/courses', {
-      params: { mainCategory, subCategory, lastId },
+    cursor?: string
+  ): Promise<CursorPage<Course>> {
+    return apiClient.get('/courses', {
+      params: { mainCategory, subCategory, cursor },
     })
   },
 
   /**
    * 获取热门课程
    */
-  getHotCourses(): Promise<ApiResponse<Course[]>> {
-    return apiClient.get('/v1/courses/hot')
+  getHotCourses(): Promise<Course[]> {
+    return apiClient.get('/courses/hot')
   },
 
   /**
    * 获取子课程列表
-   * 修正：使用 parentId 查询参数而不是路径参数
    */
-  getSubCourses(parentId: number): Promise<ApiResponse<KeysetPageResponse<Course>>> {
-    return apiClient.get('/v1/courses', {
+  getSubCourses(parentId: number): Promise<CursorPage<Course>> {
+    return apiClient.get('/courses', {
       params: { parentId },
     })
   },
@@ -75,26 +69,22 @@ export const courseApi = {
   /**
    * 创建课程
    */
-  createCourse(courseData: CreateCourseRequest): Promise<ApiResponse<Course>> {
-    return apiClient.post('/v1/courses', courseData)
+  createCourse(courseData: CreateCourseRequest): Promise<Course> {
+    return apiClient.post('/courses', courseData)
   },
 
   /**
    * 更新课程
    */
-  updateCourse(id: number, courseData: Partial<Course>): Promise<ApiResponse<Course>> {
-    return apiClient.put(`/v1/courses/${String(id)}`, courseData)
+  updateCourse(id: number, courseData: Partial<Course>): Promise<Course> {
+    return apiClient.put(`/courses/${String(id)}`, courseData)
   },
 
   /**
    * 创建子课程
    */
-  createSubcourse(
-    parentId: number,
-    name: string,
-    description: string
-  ): Promise<ApiResponse<Course>> {
-    return apiClient.post(`/v1/courses/${String(parentId)}/subcourses`, {
+  createSubcourse(parentId: number, name: string, description: string): Promise<Course> {
+    return apiClient.post(`/courses/${String(parentId)}/subcourses`, {
       name,
       description,
     })
@@ -102,10 +92,9 @@ export const courseApi = {
 
   /**
    * 审核课程（管理员操作）
-   * 使用统一的内容管理接口
    */
-  approveCourse(id: number, action: string, reason?: string): Promise<ApiResponse<void>> {
-    return apiClient.post(`/v1/admin/contents/course/${String(id)}/operate`, {
+  approveCourse(id: number, action: string, reason?: string): Promise<void> {
+    return apiClient.post(`/admin/contents/course/${String(id)}/operate`, {
       action,
       reason,
     })
@@ -114,8 +103,8 @@ export const courseApi = {
   /**
    * 更新用户课程目录
    */
-  updateUserCourseToc(courseId: number, indexArray: string): Promise<ApiResponse<string>> {
-    return apiClient.put(`/v1/users/current/courses/${String(courseId)}/toc`, {
+  updateUserCourseToc(courseId: number, indexArray: string): Promise<string> {
+    return apiClient.put(`/users/current/courses/${String(courseId)}/toc`, {
       indexArray,
     })
   },
@@ -123,22 +112,21 @@ export const courseApi = {
 
 /**
  * 订阅相关 API
- * 参考：web-ts/src/services/api/v1/apiServiceV1.ts (subscriptionServiceV1)
  */
 export const subscriptionApi = {
   /**
    * 获取用户订阅列表
    */
-  getUserSubscriptions(userId: number): Promise<ApiResponse<UserCourse[]>> {
-    return apiClient.get(`/v1/users/${String(userId)}/subscriptions`)
+  getUserSubscriptions(userId: number): Promise<UserCourse[]> {
+    return apiClient.get(`/users/${String(userId)}/subscriptions`)
   },
 
   /**
    * 订阅课程
    * @returns 订阅后的状态 (true=已订阅)
    */
-  subscribe(courseId: number): Promise<ApiResponse<boolean>> {
-    return apiClient.post('/v1/users/current/subscriptions', {
+  subscribe(courseId: number): Promise<boolean> {
+    return apiClient.post('/users/current/subscriptions', {
       courseId,
     })
   },
@@ -147,7 +135,9 @@ export const subscriptionApi = {
    * 取消订阅课程
    * @returns 取消订阅后的状态 (false=未订阅)
    */
-  unsubscribe(courseId: number): Promise<ApiResponse<boolean>> {
-    return apiClient.delete(`/v1/users/current/subscriptions/${String(courseId)}`)
+  unsubscribe(courseId: number): Promise<boolean> {
+    return apiClient.delete(`/users/current/subscriptions/${String(courseId)}`)
   },
 }
+
+export type { ApprovalResponse }

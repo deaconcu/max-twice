@@ -4,6 +4,8 @@ import com.twicemax.analytics.ranking.service.CourseRankingDomainService;
 import com.twicemax.application.assembler.CourseAssembler;
 import com.twicemax.application.dto.request.CreateCourseRequest;
 import com.twicemax.application.dto.response.KeysetPageResponse;
+import com.twicemax.application.dto.v2.CursorPage;
+import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.application.dto.response.course.CourseAdminDTO;
 import com.twicemax.application.dto.response.course.CourseBriefDTO;
 import com.twicemax.application.dto.response.course.CourseFullDTO;
@@ -147,9 +149,9 @@ public class CourseService {
     }
 
     // 根据状态和lastId获取课程列表（分页版本）
-    public KeysetPageResponse<CourseFullDTO> getListByStatePage(ContentState state, Long lastId, Long userId) {
+    public CursorPage<CourseFullDTO> getListByStatePage(ContentState state, String cursor, Long userId) {
         Byte stateValue = state != null ? state.value() : null;
-        List<CourseDO> courseDOList = courseDataService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE);
+        List<CourseDO> courseDOList = courseDataService.listByState(stateValue, Cursor.decode(cursor).id(), DEFAULT_PAGE_SIZE);
         return buildPageResponse(courseDOList, userId);
     }
 
@@ -170,7 +172,8 @@ public class CourseService {
     }
 
     // 根据分类获取已批准的课程列表（分页版本）
-    public KeysetPageResponse<CourseFullDTO> getListByCategoryPage(Integer mainCategory, Integer subCategory, Long lastId, Long userId) {
+    public CursorPage<CourseFullDTO> getListByCategoryPage(Integer mainCategory, Integer subCategory, String cursor, Long userId) {
+        Long lastId = Cursor.decode(cursor).id();
         List<CourseDO> courseDOList;
 
         // 如果传了子分类，按主分类+子分类查询
@@ -197,7 +200,7 @@ public class CourseService {
     }
 
     // 根据父课程ID获取子课程列表（分页版本）
-    public KeysetPageResponse<CourseFullDTO> getListByParentPage(long parentId, ContentState state, Long lastId, Long userId) {
+    public CursorPage<CourseFullDTO> getListByParentPage(long parentId, ContentState state, String cursor, Long userId) {
         List<CourseDO> courseDOList;
         if (state == null) { // null表示获取所有状态
             courseDOList = courseDataService.listByParent(parentId);
@@ -211,7 +214,7 @@ public class CourseService {
      * 构建分页响应
      * 课程使用简单的 ID 游标分页，不需要 score
      */
-    private KeysetPageResponse<CourseFullDTO> buildPageResponse(List<CourseDO> courseDOList, Long userId) {
+    private CursorPage<CourseFullDTO> buildPageResponse(List<CourseDO> courseDOList, Long userId) {
         int pageSize = 20;
         boolean hasMore = courseDOList.size() > pageSize;
 
@@ -222,12 +225,12 @@ public class CourseService {
         List<CourseFullDTO> items = courseAssembler.toFullDTOList(actualCourses, userId);
 
         // 构建 nextCursor
-        Long nextLastId = null;
+        String nextCursor = null;
         if (hasMore && !items.isEmpty()) {
-            nextLastId = items.get(items.size() - 1).getId();
+            nextCursor = Cursor.of(items.get(items.size() - 1).getId()).encode();
         }
 
-        return KeysetPageResponse.of(items, hasMore, null, nextLastId);
+        return CursorPage.of(items, hasMore, nextCursor);
     }
 
     // 管理后台：根据状态获取课程列表（返回分页响应）
