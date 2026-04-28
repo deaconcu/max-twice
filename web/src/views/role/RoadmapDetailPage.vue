@@ -91,7 +91,7 @@
             </div>
 
             <!-- 流程图 -->
-            <v-card border rounded="xl" class="flow-card">
+            <v-card rounded="xl" class="flow-card no-border" flat>
               <v-card-title class="pa-3 pa-sm-4 d-flex align-center justify-space-between">
                 <span class="text-body-1 font-weight-bold ps-2">{{
                   t('roadmapDetail.learningPath')
@@ -650,7 +650,6 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
     position: sticky;
     top: 76px;
     align-self: flex-start;
-    height: calc(100vh - 96px);
     display: flex;
     flex-direction: column;
   }
@@ -659,20 +658,6 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
     flex-shrink: 0;
     background: rgb(var(--v-theme-background));
     padding-bottom: 16px;
-  }
-
-  .flow-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .flow-card .v-card-text {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
   }
 }
 
@@ -688,29 +673,18 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   }
 }
 
-.roadmap-info-card,
+.roadmap-info-card {
+  background-color: rgb(var(--v-theme-surface));
+}
+
 .flow-card {
   background-color: rgb(var(--v-theme-surface));
-  border: 1px solid rgb(var(--v-theme-outline));
 }
 
 .vue-flow-container {
-  height: 600px;
   background: rgb(var(--v-theme-surface));
   position: relative;
-}
-
-@media (min-width: 960px) {
-  .vue-flow-container {
-    height: 800px;
-  }
-}
-
-@media (min-width: 1280px) {
-  .vue-flow-container {
-    height: 100%;
-    min-height: 0;
-  }
+  overflow-x: auto;
 }
 
 .gap-3 {
