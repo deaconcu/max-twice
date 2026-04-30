@@ -1232,7 +1232,10 @@ const saveCard = () => {
   errorMessage.value = ''
   if (editingCard.value) {
     updateCardMutation.mutate(
-      { cardId: editingCard.value.id, data: { front: editCardFront.value, back: editCardBack.value } },
+      {
+        cardId: editingCard.value.id,
+        data: { front: editCardFront.value, back: editCardBack.value },
+      },
       {
         onSuccess: () => {
           showEditDialog.value = false

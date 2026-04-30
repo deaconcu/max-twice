@@ -24,7 +24,7 @@ export interface User {
   phone?: string // 手机号（可选）
   emailValidated?: boolean // 邮箱是否验证
   biography?: string // 个人简介
-  state?: number // 用户状态（1: 正常, 2: 已屏蔽）
+  state?: string // 用户状态（'active' | 'banned'）
   role?: UserRole // 用户角色
   avatar?: string // 头像
   subscriptions?: SubscriptionInfo[] // 订阅的课程列表

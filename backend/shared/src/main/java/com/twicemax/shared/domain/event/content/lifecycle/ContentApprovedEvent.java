@@ -114,21 +114,12 @@ public class ContentApprovedEvent {
         event.contentId = postId;
         event.contentType = ContentType.post;
         event.nodeId = nodeId;
-        event.postType = PostType.index;
+        event.postType = PostType.INDEX;
         event.referencedNodeIds = referencedNodeIds;
         return event;
     }
 
-    /** Roadmap 类型构造函数 */
-    public static ContentApprovedEvent forRoadmap(Long creatorId, Long roadmapId, Long roleId, String roleName) {
-        ContentApprovedEvent event = new ContentApprovedEvent();
-        event.creatorId = creatorId;
-        event.contentId = roadmapId;
-        event.contentType = ContentType.roadmap;
-        event.roleId = roleId;
-        event.roleName = roleName;
-        return event;
-    }
+    /** Roadmap 类型构造函数 - 已废弃，使用 RoadmapApprovedEvent */
 
     /** MemoryCardDeck 类型构造函数 */
     public static ContentApprovedEvent forMemoryCardDeck(Long creatorId, Long deckId, Long postId,

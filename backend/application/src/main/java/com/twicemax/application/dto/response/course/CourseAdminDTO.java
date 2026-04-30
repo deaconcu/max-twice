@@ -38,12 +38,11 @@ public class CourseAdminDTO {
 
     private CourseBriefDTO parentCourse;
 
-    private Byte state;
-
     /**
-     * 拒绝/封禁原因
+     * 主体状态：NEVER_PUBLISHED / PUBLISHED / BANNED
+     * （{@link com.twicemax.shared.domain.Enums.NewContentState}）
      */
-    private String reason;
+    private String state;
 
     /**
      * 课程图标

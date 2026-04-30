@@ -76,7 +76,7 @@ public class TocDomainService {
      */
     private PostDO validatePostForContents(long postId) {
         PostDO postDO = postDataService.validateAndGet(postId);
-        if (postDO.getType() == Enums.PostType.article.value()) {
+        if (Enums.PostType.ARTICLE.value().equals(postDO.getType())) {
             throw StatusCode.INVALID_POST_TYPE.exception();
         }
         return postDO;
@@ -287,7 +287,7 @@ public class TocDomainService {
             if (!topPosts.isEmpty()) {
                 PostDO topPost = topPosts.get(0);
                 // 只有 contents 类型才能作为目录
-                if (topPost.getType() == Enums.PostType.index.value()) {
+                if (Enums.PostType.INDEX.value().equals(topPost.getType())) {
                     // 创建子节点结构（使用 Post 的 content 字段）
                     Arrays.stream(topPost.getContent().split(","))
                             .forEach(id -> rootNodeContent.putObject(id));

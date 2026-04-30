@@ -191,10 +191,7 @@ public class UserStatsEventListener {
                     userStatsService.incrementCreatedArticles(event.getCreatorId(), 1);
                     log.debug("增加创建文章统计，创建者ID: {}", event.getCreatorId());
                     break;
-                case roadmap:
-                    userStatsService.incrementCreatedRoadmaps(event.getCreatorId(), 1);
-                    log.debug("增加创建路线图统计，创建者ID: {}", event.getCreatorId());
-                    break;
+                // roadmap 走独立 RoadmapApprovedEvent
                 case memory_card_deck:
                     userStatsService.incrementCreatedCardDecks(event.getCreatorId(), 1);
                     log.debug("增加创建卡片组统计，创建者ID: {}", event.getCreatorId());
@@ -224,10 +221,7 @@ public class UserStatsEventListener {
                     userStatsService.incrementCreatedArticles(event.getCreatorId(), -1);
                     log.debug("减少创建文章统计，创建者ID: {}", event.getCreatorId());
                     break;
-                case roadmap:
-                    userStatsService.incrementCreatedRoadmaps(event.getCreatorId(), -1);
-                    log.debug("减少创建路线图统计，创建者ID: {}", event.getCreatorId());
-                    break;
+                // roadmap 走独立 Roadmap*Event（删除/封禁路径不同）
                 case memory_card_deck:
                     userStatsService.incrementCreatedCardDecks(event.getCreatorId(), -1);
                     log.debug("减少创建卡片组统计，创建者ID: {}", event.getCreatorId());

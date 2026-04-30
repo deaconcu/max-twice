@@ -3,6 +3,18 @@ import type { Role } from '@/types/role'
 import type { CursorPage } from '@/types/api'
 
 /**
+ * 角色重新提交 / 更新请求体（与 admin update 共用）
+ */
+export interface RoleUpdateRequest {
+  name: string
+  description?: string
+  icon?: string
+  skills?: string
+  mainCategory: number
+  subCategory: number
+}
+
+/**
  * 角色管理相关 API
  */
 export const roleApi = {
@@ -70,5 +82,30 @@ export const roleApi = {
     return apiClient.get('/roles/search', {
       params: { keyword },
     })
+  },
+
+  /**
+   * 当前用户的角色申请列表
+   * @param state 角色主体状态：NEVER_PUBLISHED | PUBLISHED（BANNED 由后端拦截）
+   */
+  getCurrentUserRoles(cursor?: string, state?: string): Promise<CursorPage<Role>> {
+    const params: { cursor?: string; state?: string } = {}
+    if (cursor !== undefined) params.cursor = cursor
+    if (state !== undefined) params.state = state
+    return apiClient.get('/users/me/roles', { params })
+  },
+
+  /**
+   * 重新提交（被驳回 / 撤回后再申请）
+   */
+  resubmitRole(id: number, data: RoleUpdateRequest): Promise<void> {
+    return apiClient.post(`/roles/${String(id)}/resubmit`, data)
+  },
+
+  /**
+   * 作者撤回 pending revision
+   */
+  withdrawRole(id: number): Promise<void> {
+    return apiClient.post(`/roles/${String(id)}/withdraw`)
   },
 }

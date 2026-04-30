@@ -549,7 +549,7 @@ public class CommentService {
         // 批量查询点赞记录
         List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, commentIds, comment.value());
         Set<Long> upvotedSet = upvoteList.stream()
-                .filter(upvote -> upvote.getType() == VoteType.like.value())
+                .filter(upvote -> VoteType.LIKE.value().equals(upvote.getType()))
                 .map(UpvoteDO::getObjectId)
                 .collect(Collectors.toSet());
 
@@ -582,7 +582,7 @@ public class CommentService {
         // 填充点赞状态
         commentDTO.setLiked(false);
         UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, commentDO.getId(), comment.value());
-        if (upvoteDO != null && upvoteDO.getType() == VoteType.like.value()) {
+        if (upvoteDO != null && VoteType.LIKE.value().equals(upvoteDO.getType())) {
             commentDTO.setLiked(true);
         }
 

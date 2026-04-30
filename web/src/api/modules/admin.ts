@@ -264,7 +264,7 @@ export const adminApi = {
   /**
    * 更新用户角色
    */
-  updateUserRole(userId: number, role: number): Promise<unknown> {
+  updateUserRole(userId: number, role: string): Promise<unknown> {
     return apiClient.post(`/admin/users/${userId}/role`, { role })
   },
 

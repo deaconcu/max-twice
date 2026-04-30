@@ -37,7 +37,7 @@ export interface Post {
 export interface CreatePostRequest {
   content: string
   nodeId: number
-  type: PostType // 1=内容, 2=文章
+  type: PostType // 'index'=内容, 'article'=文章
 }
 
 /**

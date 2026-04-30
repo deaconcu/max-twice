@@ -87,7 +87,7 @@ public interface CourseConverter {
     List<CourseFullDTO> toFullDTO(List<CourseDO> courseDOList);
 
     /**
-     * 转换为管理后台DTO（包含 reason）
+     * 转换为管理后台DTO
      * 注意：creator 和 parentCourse 需要在 Service 层额外填充
      */
     @Named("toAdminDTO")
@@ -101,7 +101,6 @@ public interface CourseConverter {
     @Mapping(target = "rootNodeId")
     @Mapping(target = "parentCourseId")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "icon")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")

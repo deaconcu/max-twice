@@ -5,6 +5,7 @@ import com.twicemax.shared.domain.event.content.interaction.ContentViewedEvent;
 import com.twicemax.shared.domain.event.content.lifecycle.CommentCreatedEvent;
 import com.twicemax.shared.domain.event.content.lifecycle.CommentDeletedEvent;
 import com.twicemax.shared.domain.event.content.voting.*;
+import com.twicemax.shared.domain.Enums.VoteType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -118,7 +119,7 @@ public class RedisStatsEventListener {
     //@Async
     public void onUpvoteTypeSwitched(UpvoteTypeSwitchedEvent<?> event) {
         // 减少旧类型
-        if (event.getFromType() == 1) { // twice
+        if (VoteType.TWICE.value().equals(event.getFromType())) { // twice
             redisStatsDomainService.incrementTwice(
                 event.getContentType(),
                 event.getContentId(),
@@ -137,7 +138,7 @@ public class RedisStatsEventListener {
         }
 
         // 增加新类型
-        if (event.getToType() == 1) { // twice
+        if (VoteType.TWICE.value().equals(event.getToType())) { // twice
             redisStatsDomainService.incrementTwice(
                 event.getContentType(),
                 event.getContentId(),

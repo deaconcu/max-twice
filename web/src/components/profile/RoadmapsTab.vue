@@ -15,19 +15,10 @@
         variant="text"
         size="small"
         rounded="lg"
-        :color="statusFilter === 'draft' ? 'primary' : 'default'"
-        @click="statusFilter = 'draft'"
+        :color="statusFilter === 'unpublished' ? 'primary' : 'default'"
+        @click="statusFilter = 'unpublished'"
       >
         {{ t('user.profile.draft') }}
-      </v-btn>
-      <v-btn
-        variant="text"
-        size="small"
-        rounded="lg"
-        :color="statusFilter === 'pending' ? 'primary' : 'default'"
-        @click="statusFilter = 'pending'"
-      >
-        {{ t('user.profile.pending') }}
       </v-btn>
       <v-btn
         variant="text"
@@ -37,15 +28,6 @@
         @click="statusFilter = 'published'"
       >
         {{ t('user.profile.published') }}
-      </v-btn>
-      <v-btn
-        variant="text"
-        size="small"
-        rounded="lg"
-        :color="statusFilter === 'rejected' ? 'primary' : 'default'"
-        @click="statusFilter = 'rejected'"
-      >
-        {{ t('user.profile.rejected') }}
       </v-btn>
     </div>
 
@@ -189,12 +171,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMyRoadmapsQuery, useUserRoadmapsQuery, useDeleteRoadmapMutation } from '@/queries/user'
 import { useI18n } from '@/composables/useI18n'
 import { getGlobalSnackbar } from '@/composables/config'
-import { ContentState } from '@/enums'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
@@ -212,17 +193,18 @@ interface Props {
 
 const router = useRouter()
 
-// 搜索和筛选
-const statusFilter = ref<'all' | 'draft' | 'pending' | 'published' | 'rejected'>('all')
+// 搜索和筛选（revision 模型主体只有 NEVER_PUBLISHED / PUBLISHED / BANNED；BANNED 由后端过滤掉）
+const statusFilter = ref<'all' | 'unpublished' | 'published'>('all')
 
-// 将 statusFilter 转换为后端 state 值
-const stateValue = computed((): number | undefined => {
+// 将 statusFilter 转换为后端 RoadmapState 字符串
+const stateValue = computed((): string | undefined => {
   switch (statusFilter.value) {
-    case 'draft': return ContentState.DRAFT
-    case 'pending': return ContentState.SUBMITTED
-    case 'published': return ContentState.PUBLISHED
-    case 'rejected': return ContentState.REJECTED
-    default: return undefined
+    case 'unpublished':
+      return 'NEVER_PUBLISHED'
+    case 'published':
+      return 'PUBLISHED'
+    default:
+      return undefined
   }
 })
 
@@ -252,8 +234,8 @@ const roadmapsData = computed(() => {
   return userRoadmapsData.value?.pages.flatMap((p) => p as unknown[]) ?? []
 })
 
-const loading = computed(() => isOwn.value ? myLoading.value : userLoading.value)
-const hasMore = computed(() => isOwn.value ? !!myHasMore.value : !!userHasMore.value)
+const loading = computed(() => (isOwn.value ? myLoading.value : userLoading.value))
+const hasMore = computed(() => (isOwn.value ? !!myHasMore.value : !!userHasMore.value))
 
 // 加载更多
 const loadMoreRoadmaps = async ({ done }: { done: () => void } = { done: () => {} }) => {
@@ -294,17 +276,11 @@ const roadmaps = computed(() => {
       starCount: roadmap.likeCount || 0,
       nodeCount: roadmap.nodeCount || 0,
       status:
-        roadmap.state === 0
-          ? 'draft'
-          : roadmap.state === 1
-            ? 'submitted'
-            : roadmap.state === 2
-              ? 'published'
-              : roadmap.state === 3
-                ? 'rejected'
-                : roadmap.state === 4
-                  ? 'banned'
-                  : 'unknown',
+        roadmap.state === 'PUBLISHED'
+          ? 'published'
+          : roadmap.state === 'BANNED'
+            ? 'banned'
+            : 'unpublished',
       createdAt: roadmap.createdAt || '',
     }
   })
@@ -313,10 +289,8 @@ const roadmaps = computed(() => {
 // 获取状态颜色
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
-    draft: 'grey',
-    submitted: 'warning',
+    unpublished: 'grey',
     published: 'success',
-    rejected: 'error',
     banned: 'error',
   }
   return colors[status] || 'grey'
@@ -325,10 +299,8 @@ const getStatusColor = (status: string) => {
 // 获取状态文本
 const getStatusText = (status: string) => {
   const texts: Record<string, string> = {
-    draft: t('user.profile.draft'),
-    submitted: t('admin.pending'),
+    unpublished: t('user.profile.draft'),
     published: t('user.profile.published'),
-    rejected: t('admin.rejected'),
     banned: t('admin.banned'),
   }
   return texts[status] || t('user.profile.unknown')

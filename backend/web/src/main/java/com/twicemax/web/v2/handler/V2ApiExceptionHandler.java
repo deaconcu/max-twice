@@ -67,7 +67,9 @@ public class V2ApiExceptionHandler {
         String localizedMessage = messageUtils.getMessage("error." + e.getCode(), e.getMessage());
         HttpStatus http = StatusCodeHttpMapper.toHttp(e.getStatusCode());
 
-        return ResponseEntity.status(http).body(ErrorResponse.of(e.getCode(), localizedMessage));
+        return ResponseEntity.status(http).body(
+            ErrorResponse.of(e.getCode(), localizedMessage, e.getDetails())
+        );
     }
 
     // ========== Sa-Token 认证/授权 ==========

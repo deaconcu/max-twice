@@ -97,7 +97,7 @@ public class PostDataService {
     /**
      * 根据用户、类型和状态获取帖子列表
      */
-    public List<PostDO> getPostsByUser(long userId, int type, Long lastId, Byte state, int limit) {
+    public List<PostDO> getPostsByUser(long userId, String type, Long lastId, Byte state, int limit) {
         return postMapper.getPostsByUser(userId, type, lastId, state, limit);
     }
 
@@ -132,7 +132,7 @@ public class PostDataService {
     /**
      * 根据类型和状态查询帖子列表（分页）
      */
-    public List<PostDO> getPostsByTypeAndState(Integer type, Byte state, Long lastId, int limit) {
+    public List<PostDO> getPostsByTypeAndState(String type, Byte state, Long lastId, int limit) {
         return postMapper.getPostsByTypeAndState(type, state, lastId, limit);
     }
 

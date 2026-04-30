@@ -267,11 +267,16 @@ const statusFilter = ref<'all' | 'draft' | 'pending' | 'published' | 'rejected'>
 // 将 statusFilter 转换为后端 state 值
 const stateValue = computed((): number | undefined => {
   switch (statusFilter.value) {
-    case 'draft': return ContentState.DRAFT
-    case 'pending': return ContentState.SUBMITTED
-    case 'published': return ContentState.PUBLISHED
-    case 'rejected': return ContentState.REJECTED
-    default: return undefined
+    case 'draft':
+      return ContentState.DRAFT
+    case 'pending':
+      return ContentState.SUBMITTED
+    case 'published':
+      return ContentState.PUBLISHED
+    case 'rejected':
+      return ContentState.REJECTED
+    default:
+      return undefined
   }
 })
 
@@ -310,13 +315,16 @@ const posts = computed(() => {
   return userPostsData.value?.pages.flatMap((p) => p.items) ?? []
 })
 
-const loading = computed(() => isOwn.value ? myPostsLoading.value : userPostsLoading.value)
-const hasMore = computed(() => isOwn.value ? !!myHasMore.value : !!userHasMore.value)
+const loading = computed(() => (isOwn.value ? myPostsLoading.value : userPostsLoading.value))
+const hasMore = computed(() => (isOwn.value ? !!myHasMore.value : !!userHasMore.value))
 
 // 加载更多（适配 v-infinite-scroll）
 type LoadMoreCallback = (status: 'ok' | 'empty') => void
 const onLoadMore = async ({ done }: { done: LoadMoreCallback }): Promise<void> => {
-  if (!hasMore.value) { done('empty'); return }
+  if (!hasMore.value) {
+    done('empty')
+    return
+  }
   if (isOwn.value) await myFetchNext()
   else await userFetchNext()
   done(hasMore.value ? 'ok' : 'empty')

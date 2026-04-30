@@ -37,8 +37,11 @@ export const userKeys = {
   myPosts: (cursor?: string, type?: number, state?: number) =>
     ['users', 'me', 'posts', cursor, type, state] as const,
   roadmaps: (userId: number, cursor?: string) => ['users', 'roadmaps', userId, cursor] as const,
-  myRoadmaps: (cursor?: string, state?: number) =>
+  myRoadmaps: (cursor?: string, state?: string) =>
     ['users', 'me', 'roadmaps', cursor, state] as const,
+  myRoles: (cursor?: string, state?: string) => ['users', 'me', 'roles', cursor, state] as const,
+  myCourses: (cursor?: string, state?: string) =>
+    ['users', 'me', 'courses', cursor, state] as const,
   followees: (userId: number) => ['users', 'followees', userId] as const,
   subscriptions: (userId: number) => ['users', 'subscriptions', userId] as const,
 }
@@ -97,9 +100,12 @@ export const memoryKeys = {
   deckDetail: (deckId: number) => ['memory', 'decks', 'detail', deckId] as const,
   deckDiff: (deckId: number) => ['memory', 'decks', 'diff', deckId] as const,
   cardDiff: (cardId: number) => ['memory', 'cards', 'diff', cardId] as const,
-  postDecks: (postId: number, sortBy?: string) => ['memory', 'posts', postId, 'decks', sortBy] as const,
-  postCreatorDeck: (postId: number, sortBy?: string) => ['memory', 'posts', postId, 'creator-deck', sortBy] as const,
-  myPostDeck: (postId: number, sortBy?: string) => ['memory', 'posts', postId, 'my-deck', sortBy] as const,
+  postDecks: (postId: number, sortBy?: string) =>
+    ['memory', 'posts', postId, 'decks', sortBy] as const,
+  postCreatorDeck: (postId: number, sortBy?: string) =>
+    ['memory', 'posts', postId, 'creator-deck', sortBy] as const,
+  myPostDeck: (postId: number, sortBy?: string) =>
+    ['memory', 'posts', postId, 'my-deck', sortBy] as const,
   userDecks: (userId: number) => ['memory', 'users', userId, 'decks'] as const,
   myDecks: (state?: number) => ['memory', 'users', 'me', 'decks', state] as const,
   cardsByNode: (nodeId: number) => ['memory', 'cards', 'node', nodeId] as const,
@@ -130,8 +136,7 @@ export const systemKeys = {
 
 export const bookmarkKeys = {
   all: ['bookmarks'] as const,
-  list: (contentType: string, cursor?: string) =>
-    ['bookmarks', contentType, cursor] as const,
+  list: (contentType: string, cursor?: string) => ['bookmarks', contentType, cursor] as const,
 }
 
 export const upvoteKeys = {

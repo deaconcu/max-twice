@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, nextTick, watch } from 'vue'
+import { ref, computed, onBeforeUnmount, watch } from 'vue'
 import { VueFlow, Handle, Position, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import type { Edge as VFEdge, Node as VFNode } from '@vue-flow/core'
@@ -264,11 +264,7 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
 
   const isClickable = (n: RoadmapNode) => n.nodeType === 'course' || n.nodeType === 'node'
 
-  const placeBranchNode = (
-    node: RoadmapNode,
-    cols: Col[],
-    side: 'left' | 'right'
-  ): number => {
+  const placeBranchNode = (node: RoadmapNode, cols: Col[], side: 'left' | 'right'): number => {
     const myCol = cols[0]
     const childCols = cols.slice(1)
     const hasKids = !!node.children?.length && childCols.length > 0
@@ -280,7 +276,12 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
         id: node.id,
         type: 'topic',
         position: { x: COL_X[myCol], y },
-        data: { label: node.label, nodeType: node.nodeType, clickable: isClickable(node), courseId: node.courseId },
+        data: {
+          label: node.label,
+          nodeType: node.nodeType,
+          clickable: isClickable(node),
+          courseId: node.courseId,
+        },
       })
       colBot[myCol] = y + h + ROW_GAP
       return y + h / 2
@@ -311,7 +312,12 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
       id: node.id,
       type: 'topic',
       position: { x: COL_X[myCol], y: myY },
-      data: { label: node.label, nodeType: node.nodeType ?? 'group', clickable: isClickable(node), courseId: node.courseId },
+      data: {
+        label: node.label,
+        nodeType: node.nodeType ?? 'group',
+        clickable: isClickable(node),
+        courseId: node.courseId,
+      },
     })
     colBot[myCol] = myY + myH + ROW_GAP
 
@@ -351,7 +357,12 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
         id: node.id,
         type: 'topic',
         position: { x: COL_X.center, y: trunkY },
-        data: { label: node.label, nodeType: node.nodeType ?? 'group', clickable: isClickable(node), courseId: node.courseId },
+        data: {
+          label: node.label,
+          nodeType: node.nodeType ?? 'group',
+          clickable: isClickable(node),
+          courseId: node.courseId,
+        },
       })
       colBot.center = trunkY + myH + ROW_GAP
       addBranchEdges(node.id, node.children, side)
@@ -362,7 +373,12 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
         id: node.id,
         type: 'topic',
         position: { x: COL_X.center, y: finalY },
-        data: { label: node.label, nodeType: node.nodeType, clickable: isClickable(node), courseId: node.courseId },
+        data: {
+          label: node.label,
+          nodeType: node.nodeType,
+          clickable: isClickable(node),
+          courseId: node.courseId,
+        },
       })
       colBot.center = finalY + measureHeight(node.label) + ROW_GAP
     }

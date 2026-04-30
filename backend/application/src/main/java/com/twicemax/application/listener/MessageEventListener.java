@@ -6,6 +6,10 @@ import com.twicemax.shared.domain.Enums;
 import com.twicemax.shared.domain.event.content.lifecycle.CommentCreatedEvent;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentRejectedEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.RoadmapApprovedEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.RoadmapBannedEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.RoadmapRejectedEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.RoadmapRestoredEvent;
 import com.twicemax.shared.domain.event.content.voting.LikeUpvotedEvent;
 import com.twicemax.shared.domain.event.content.voting.TwiceUpvotedEvent;
 import com.twicemax.shared.domain.event.content.voting.UpvoteTypeSwitchedEvent;
@@ -74,7 +78,7 @@ public class MessageEventListener {
                 event.getVoterId(),            // 发送者（点赞者）
                 post.getNodeId(),              // 节点ID
                 event.getContentId(),          // 帖子ID
-                VoteType.twice                 // 点赞类型
+                VoteType.TWICE                 // 点赞类型
             );
             log.debug("发送两次能懂点赞通知: contentId={}, voterId={}, creatorId={}",
                 event.getContentId(), event.getVoterId(), event.getCreatorId());
@@ -108,7 +112,7 @@ public class MessageEventListener {
                     event.getVoterId(),            // 发送者
                     event.getContextId(),          // 节点ID
                     event.getContentId(),          // 帖子ID
-                    VoteType.like                  // 点赞类型
+                    VoteType.LIKE                  // 点赞类型
                 );
                 log.debug("发送帖子点赞通知: contentId={}, voterId={}, creatorId={}",
                     event.getContentId(), event.getVoterId(), event.getCreatorId());
@@ -351,16 +355,8 @@ public class MessageEventListener {
                         event.getContentId(), event.getCreatorId(), event.getReason());
                 }
                 case roadmap -> {
-                    messageService.sendRoadmapModeration(
-                        event.getCreatorId(),
-                        event.getContentId(),
-                        event.getRoleId(),
-                        event.getRoleName(),
-                        ModerationAction.REJECTED,
-                        event.getReason()
-                    );
-                    log.debug("发送路线图审核拒绝通知: roadmapId={}, creatorId={}, reason={}",
-                        event.getContentId(), event.getCreatorId(), event.getReason());
+                    // roadmap 走独立 RoadmapRejectedEvent
+                    log.debug("路线图审核拒绝消息由 RoadmapRejectedEvent 处理: roadmapId={}", event.getContentId());
                 }
                 case memory_card_deck -> {
                     messageService.sendMemoryDeckModeration(
@@ -379,5 +375,70 @@ public class MessageEventListener {
         } catch (Exception e) {
             log.error("发送审核拒绝通知失败", e);
         }
+    }
+
+    // ==================== Roadmap revision 模型独立事件 ====================
+
+    /**
+     * 路线图审核通过 — 不发消息（用户在自己页面可看到状态变化）
+     */
+    @EventListener
+    public void onRoadmapApproved(RoadmapApprovedEvent event) {
+        if (isRobotUser(event.getAuthorId())) return;
+        log.debug("路线图审核通过，不发送消息: roadmapId={}, authorId={}",
+            event.getRoadmapId(), event.getAuthorId());
+    }
+
+    /**
+     * 路线图审核驳回 — 通知作者
+     */
+    @EventListener
+    public void onRoadmapRejected(RoadmapRejectedEvent event) {
+        try {
+            if (isRobotUser(event.getAuthorId())) return;
+            messageService.sendRoadmapModeration(
+                event.getAuthorId(),
+                event.getRoadmapId(),
+                event.getRoleId() != null ? event.getRoleId() : 0L,
+                event.getRoleName(),
+                ModerationAction.REJECTED,
+                event.getReason()
+            );
+            log.debug("发送路线图审核拒绝通知: roadmapId={}, authorId={}, reason={}",
+                event.getRoadmapId(), event.getAuthorId(), event.getReason());
+        } catch (Exception e) {
+            log.error("发送路线图审核拒绝通知失败: roadmapId={}", event.getRoadmapId(), e);
+        }
+    }
+
+    /**
+     * 路线图被封禁 — 通知作者
+     */
+    @EventListener
+    public void onRoadmapBanned(RoadmapBannedEvent event) {
+        try {
+            if (isRobotUser(event.getAuthorId())) return;
+            messageService.sendRoadmapModeration(
+                event.getAuthorId(),
+                event.getRoadmapId(),
+                event.getRoleId() != null ? event.getRoleId() : 0L,
+                event.getRoleName(),
+                ModerationAction.BANNED,
+                event.getReason()
+            );
+            log.debug("发送路线图封禁通知: roadmapId={}, authorId={}, reason={}",
+                event.getRoadmapId(), event.getAuthorId(), event.getReason());
+        } catch (Exception e) {
+            log.error("发送路线图封禁通知失败: roadmapId={}", event.getRoadmapId(), e);
+        }
+    }
+
+    /**
+     * 路线图解封 — 不发消息（用户在自己页面可看到状态变化）
+     */
+    @EventListener
+    public void onRoadmapRestored(RoadmapRestoredEvent event) {
+        log.debug("路线图被恢复，不发送消息: roadmapId={}, newState={}",
+            event.getRoadmapId(), event.getNewState());
     }
 }

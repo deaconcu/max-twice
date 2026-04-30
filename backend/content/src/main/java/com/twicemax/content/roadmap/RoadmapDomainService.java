@@ -1,7 +1,12 @@
 package com.twicemax.content.roadmap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.twicemax.shared.common.utils.Utils;
+import com.twicemax.content.shared.revision.ContentRevisionDO;
+import com.twicemax.content.shared.revision.ContentRevisionDataService;
+import com.twicemax.shared.common.utils.CanonicalJson;
+import com.twicemax.shared.domain.Enums.NewContentType;
+import com.twicemax.shared.domain.Enums.RevisionStatus;
+import com.twicemax.shared.domain.Enums.NewContentState;
 import com.twicemax.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,33 +14,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
-
-import static com.twicemax.shared.domain.Enums.ContentState;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
- * 路线图领域服务
- *
- * 只依赖 content 域，处理路线图的核心业务逻辑
- *
+ * 路线图领域服务（revision 模型）。
+ * <p>
+ * 主体状态（roadmap.state）只有 NEVER_PUBLISHED / PUBLISHED / BANNED 三种，描述对外可见性；
+ * 一次"提交→审核"的生命周期落在 {@link ContentRevisionDO}（status: SUBMITTED / PUBLISHED /
+ * REJECTED / WITHDRAWN）。两者通过 current_revision_id（已发布版本）和 pending_revision_id
+ * （审核中版本）连接。
+ * <p>
  * 内容格式 v=2：
  * <pre>
- * {
- *   "v": 2,
- *   "trunk": [
- *     { "t": "c"|"n"|"g"|"o", "id": 123, "label": "...", "children": [...] }
- *   ]
- * }
+ * { "v": 2, "trunk": [ { "t": "c"|"n"|"g"|"o", "id": 123, "label": "...", "children": [...] } ] }
  * </pre>
- * 类型：c=course, n=node, g=group, o=note
- *
- * 落库规范：
- *  - c/n：必须有 id，不允许 children；label 入库前剥离（读取时根据 id 从课程/节点表查询填充）
- *  - g：label 为用户输入，最大 {@value #MAX_GROUP_LABEL_LEN} 字符；可有 children
- *  - o：label 为用户输入，最大 {@value #MAX_NOTE_LABEL_LEN} 字符；不允许 children
- *  - 最大深度 {@value #MAX_DEPTH}（与前端一致）
- *  - 单层子节点数量上限 {@value #MAX_CHILDREN_PER_NODE}
- *  - 主干节点数量上限 {@value #MAX_TRUNK_SIZE}
  */
 @Slf4j
 @Service
@@ -56,11 +54,14 @@ public class RoadmapDomainService {
     private static final String TYPE_GROUP = "g";
     private static final String TYPE_NOTE = "o";
 
+    private static final String CONTENT_TYPE = NewContentType.ROADMAP_VALUE;
+
     private final RoadmapDataService roadmapDataService;
+    private final ContentRevisionDataService revisionDataService;
 
     // ========== Query 方法 ==========
 
-    public List<RoadmapDO> listByState(ContentState state, Long lastId, int limit) {
+    public List<RoadmapDO> listByState(NewContentState state, Long lastId, int limit) {
         return roadmapDataService.listByState(state != null ? state.value() : null, lastId, limit);
     }
 
@@ -71,15 +72,13 @@ public class RoadmapDomainService {
     public List<RoadmapDO> getRoadmapsByRolePublic(Long roleId, Long lastId, int limit) {
         if (lastId == null || lastId == 0) {
             return roadmapDataService.getListByRoleOrderBy(roleId, limit, "score");
-        } else {
-            RoadmapDO lastRoadmap = roadmapDataService.getById(lastId);
-            if (lastRoadmap != null) {
-                return roadmapDataService.getListByRoleAfterCursorOrderBy(
-                    roleId, lastRoadmap.getScore(), lastRoadmap.getCreatedAt(), lastId, limit, "score");
-            } else {
-                return new ArrayList<>();
-            }
         }
+        RoadmapDO lastRoadmap = roadmapDataService.getById(lastId);
+        if (lastRoadmap == null) {
+            return new ArrayList<>();
+        }
+        return roadmapDataService.getListByRoleAfterCursorOrderBy(
+            roleId, lastRoadmap.getScore(), lastRoadmap.getCreatedAt(), lastId, limit, "score");
     }
 
     public List<RoadmapDO> getRoadmapsByRole(Long roleId, Long lastId, int limit, String sortBy) {
@@ -93,8 +92,12 @@ public class RoadmapDomainService {
         return roadmapDataService.getListByRoleOrderBy(roleId, limit, sortBy);
     }
 
-    public List<RoadmapDO> getUserRoadmaps(Long userId, Long lastId, int limit, Byte state) {
-        return roadmapDataService.getListByCreatorWithPaging(userId, lastId, limit, state);
+    /**
+     * @param state 仅传入 PUBLISHED / NEVER_PUBLISHED / BANNED；null 时 mapper 默认排除 BANNED。
+     */
+    public List<RoadmapDO> getUserRoadmaps(Long userId, Long lastId, int limit, NewContentState state) {
+        return roadmapDataService.getListByCreatorWithPaging(
+            userId, lastId, limit, state != null ? state.value() : null);
     }
 
     public List<RoadmapDO> getRoadmapsByIds(List<Long> roadmapIds) {
@@ -105,10 +108,7 @@ public class RoadmapDomainService {
 
     /**
      * 校验路线图内容格式合法性，并去掉 c/n 节点的 label（由数据库回填）。
-     *
-     * @param content 前端提交的 v=2 JSON
-     * @return 清洗后的标准化 JSON 字符串（用于落库与计算 hash）
-     * @throws com.twicemax.shared.domain.exception.BusinessException 内容不合法时抛出
+     * 返回的 JSON 已做 Jackson 序列化，但未做 canonical 化；调用方需要 hash/落库时请额外走 {@link CanonicalJson}.
      */
     public String validateAndStrip(String content) {
         RoadmapContentDTO dto = parseContent(content);
@@ -159,7 +159,7 @@ public class RoadmapDomainService {
                 if (hasChildren) {
                     throw StatusCode.ROADMAP_CONTENT_INVALID.exception(t + " 节点不允许有子节点");
                 }
-                node.setLabel(null); // c/n 的 label 不入库
+                node.setLabel(null);
                 break;
             }
             case TYPE_GROUP: {
@@ -172,7 +172,7 @@ public class RoadmapDomainService {
                         "分组节点标签过长（最多 " + MAX_GROUP_LABEL_LEN + " 字）");
                 }
                 node.setLabel(label);
-                node.setId(null); // g 不应有 id
+                node.setId(null);
                 break;
             }
             case TYPE_NOTE: {
@@ -205,9 +205,6 @@ public class RoadmapDomainService {
         }
     }
 
-    /**
-     * 从内容中收集所有 c 节点的 courseId 与 n 节点的 nodeId（用于跨域批量校验存在性）。
-     */
     public BoundIds collectBoundIds(String content) {
         RoadmapContentDTO dto = parseContent(content);
         Set<Long> courseIds = new HashSet<>();
@@ -234,9 +231,6 @@ public class RoadmapDomainService {
         }
     }
 
-    /**
-     * 统计 c+n 叶子节点数量（用于 nodeCount 字段）。
-     */
     public int countLeafBindings(String content) {
         RoadmapContentDTO dto = parseContent(content);
         int[] counter = {0};
@@ -260,13 +254,6 @@ public class RoadmapDomainService {
         }
     }
 
-    /**
-     * 用查询到的课程/节点名称回填 c/n 的 label，输出可供前端渲染的完整 JSON。
-     *
-     * @param content 数据库中的 v=2 JSON
-     * @param courseNames courseId → 课程名称（缺失项 label 留空）
-     * @param nodeNames nodeId → 节点名称
-     */
     public String enrichLabels(String content,
                                Map<Long, String> courseNames,
                                Map<Long, String> nodeNames) {
@@ -302,19 +289,6 @@ public class RoadmapDomainService {
         }
     }
 
-    /**
-     * 计算内容 hash。基于已剥离 label 的标准化 JSON 计算 md5。
-     * 调用方应当先经过 {@link #validateAndStrip(String)}，传入清洗后的 JSON。
-     */
-    public String calculateContentHash(String cleanedContent) {
-        try {
-            return Utils.md5(cleanedContent);
-        } catch (Exception e) {
-            log.error("内容哈希计算失败: {}", cleanedContent, e);
-            throw StatusCode.CONTENT_HASH_ERROR.exception(e);
-        }
-    }
-
     private RoadmapContentDTO parseContent(String content) {
         try {
             RoadmapContentDTO dto = objectMapper.readValue(content, RoadmapContentDTO.class);
@@ -334,9 +308,6 @@ public class RoadmapDomainService {
         return s == null ? "" : s.trim();
     }
 
-    /**
-     * c/n 节点引用的 courseId 与 nodeId 集合（用于批量校验存在性）。
-     */
     public static final class BoundIds {
         private final Set<Long> courseIds;
         private final Set<Long> nodeIds;
@@ -355,50 +326,203 @@ public class RoadmapDomainService {
         }
     }
 
-    // ========== Command 方法 ==========
+    // ========== Command 方法（revision 模型）==========
 
     /**
-     * 创建路线图。content 应是经过 {@link #validateAndStrip(String)} 处理后的标准化 JSON。
+     * 创建一个空的 roadmap 主体（NEVER_PUBLISHED，仅承载 draft）。
+     * 不写 revision，不写 content/content_hash；node_count = 0。
      */
     @Transactional
-    public Long createRoadmap(long roleId, String cleanedContent, String description,
-                              long userId, int nodeCount, Byte state) {
-        if (!ContentState.DRAFT.value().equals(state) && !ContentState.SUBMITTED.value().equals(state)) {
-            throw new IllegalArgumentException("状态非法");
-        }
-
+    public Long createDraft(long roleId, String draftContent, String description, long userId) {
         RoadmapDO roadmapDO = new RoadmapDO();
-        roadmapDO.setContent(cleanedContent);
-        roadmapDO.setContentHash(calculateContentHash(cleanedContent));
-        roadmapDO.setDescription(description);
         roadmapDO.setRoleId(roleId);
         roadmapDO.setCreatorId(userId);
-        roadmapDO.setNodeCount(nodeCount);
-        roadmapDO.setState(state);
+        roadmapDO.setDescription(description);
+        roadmapDO.setState(NewContentState.NEVER_PUBLISHED_VALUE);
+        roadmapDO.setDraftContent(draftContent);
+        roadmapDO.setDraftUpdatedAt(LocalDateTime.now());
+        roadmapDO.setNodeCount(0);
         roadmapDO.setScore(0.0);
-
         roadmapDataService.insert(roadmapDO);
-        log.info("路线图 创建成功: roadmapId={}, roleId={}, userId={}, state={}",
-            roadmapDO.getId(), roleId, userId, state);
-
+        log.info("Roadmap 创建草稿: roadmapId={}, roleId={}, userId={}", roadmapDO.getId(), roleId, userId);
         return roadmapDO.getId();
     }
 
     /**
-     * 更新路线图。content 应是经过 {@link #validateAndStrip(String)} 处理后的标准化 JSON。
+     * 仅更新草稿（save-draft）。不动 state / current / pending。
      */
     @Transactional
-    public void updateRoadmap(long id, String cleanedContent, int nodeCount) {
-        roadmapDataService.validateExists(id);
+    public void saveDraft(long roadmapId, String draftContent, String description) {
+        roadmapDataService.validateExists(roadmapId);
+        roadmapDataService.updateDraft(roadmapId, draftContent, LocalDateTime.now(), description);
+        log.info("Roadmap 保存草稿: roadmapId={}", roadmapId);
+    }
 
-        RoadmapDO roadmapDO = roadmapDataService.getById(id);
-        roadmapDO.setContent(cleanedContent);
-        roadmapDO.setContentHash(calculateContentHash(cleanedContent));
-        roadmapDO.setNodeCount(nodeCount);
-        roadmapDO.setUpdatedAt(LocalDateTime.now());
+    /**
+     * 提交审核：基于 cleanedContent 生成 canonical payload + SHA-256 hash，
+     * 与最近一次 revision 比对去重，写入新的 SUBMITTED revision，并把
+     * roadmap.pending_revision_id 切到新 revision、清空 draft。
+     *
+     * @param cleanedContent 已经过 {@link #validateAndStrip} 的内容
+     * @return 新 revision 的 id
+     * @throws com.twicemax.shared.domain.exception.BusinessException 已存在 pending 或 hash 与最近一次相同
+     */
+    @Transactional
+    public Long submit(long roadmapId, String cleanedContent, long authorId) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(roadmapId);
 
-        roadmapDataService.update(roadmapDO);
-        log.info("路线图 更新成功: roadmapId={}", id);
+        if (NewContentState.BANNED_VALUE.equals(roadmap.getState())) {
+            throw StatusCode.INVALID_PARAMETER.exception("已封禁的路线图不能提交");
+        }
+        if (roadmap.getPendingRevisionId() != null) {
+            throw StatusCode.INVALID_PARAMETER.exception("已有审核中的版本，请先撤回再提交");
+        }
+
+        String payload = CanonicalJson.canonicalize(cleanedContent);
+        String hash = CanonicalJson.hash(cleanedContent);
+
+        // 与最近一次 revision（任意状态）比对，禁止重复提交相同内容
+        ContentRevisionDO latest = revisionDataService.getLatest(CONTENT_TYPE, roadmapId);
+        if (latest != null && Objects.equals(hash, latest.getHash())) {
+            throw StatusCode.INVALID_PARAMETER.exception("内容与最近一次版本相同，无需重复提交");
+        }
+
+        ContentRevisionDO revision = new ContentRevisionDO();
+        revision.setContentType(CONTENT_TYPE);
+        revision.setContentId(roadmapId);
+        revision.setRevisionNo(revisionDataService.nextRevisionNo(CONTENT_TYPE, roadmapId));
+        revision.setStatus(RevisionStatus.SUBMITTED_VALUE);
+        revision.setPayload(payload);
+        revision.setHash(hash);
+        revision.setAuthorId(authorId);
+        revisionDataService.insert(revision);
+
+        // 切 pending、清 draft
+        roadmapDataService.updatePending(roadmapId, revision.getId(), null, null);
+        log.info("Roadmap 提交审核: roadmapId={}, revisionId={}, revisionNo={}",
+            roadmapId, revision.getId(), revision.getRevisionNo());
+        return revision.getId();
+    }
+
+    /**
+     * 作者撤回审核中的版本。revision → WITHDRAWN，pending 清空，回填 draft（payload）。
+     */
+    @Transactional
+    public void withdraw(long roadmapId, long authorId) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(roadmapId);
+        Long pendingId = roadmap.getPendingRevisionId();
+        if (pendingId == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("当前没有审核中的版本");
+        }
+        ContentRevisionDO revision = revisionDataService.validateAndGet(pendingId);
+        if (!RevisionStatus.SUBMITTED_VALUE.equals(revision.getStatus())) {
+            throw StatusCode.INVALID_PARAMETER.exception("版本状态非 SUBMITTED，无法撤回");
+        }
+
+        revision.setStatus(RevisionStatus.WITHDRAWN_VALUE);
+        revision.setReviewedAt(LocalDateTime.now());
+        revisionDataService.updateStatus(revision);
+
+        roadmapDataService.updatePending(roadmapId, null, revision.getPayload(), LocalDateTime.now());
+        log.info("Roadmap 撤回审核: roadmapId={}, revisionId={}, authorId={}", roadmapId, pendingId, authorId);
+    }
+
+    /**
+     * 审核通过：revision → PUBLISHED，roadmap.state = PUBLISHED，
+     * content/contentHash/nodeCount/current_revision_id 一并更新，pending 清空。
+     */
+    @Transactional
+    public void approve(long roadmapId, long reviewerId) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(roadmapId);
+        Long pendingId = roadmap.getPendingRevisionId();
+        if (pendingId == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("当前没有审核中的版本");
+        }
+        ContentRevisionDO revision = revisionDataService.validateAndGet(pendingId);
+        if (!RevisionStatus.SUBMITTED_VALUE.equals(revision.getStatus())) {
+            throw StatusCode.INVALID_PARAMETER.exception("版本状态非 SUBMITTED，无法通过");
+        }
+
+        revision.setStatus(RevisionStatus.PUBLISHED_VALUE);
+        revision.setReviewerId(reviewerId);
+        revision.setReviewedAt(LocalDateTime.now());
+        revisionDataService.updateStatus(revision);
+
+        Integer nodeCount = countLeafBindings(revision.getPayload());
+        roadmapDataService.approve(roadmapId, revision.getPayload(), revision.getHash(), nodeCount, revision.getId());
+        log.info("Roadmap 审核通过: roadmapId={}, revisionId={}, reviewerId={}", roadmapId, pendingId, reviewerId);
+    }
+
+    /**
+     * 审核驳回：revision → REJECTED（带 reason），pending 清空，回填 draft（payload 供作者继续编辑）。
+     */
+    @Transactional
+    public void reject(long roadmapId, String reason, long reviewerId) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(roadmapId);
+        Long pendingId = roadmap.getPendingRevisionId();
+        if (pendingId == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("当前没有审核中的版本");
+        }
+        ContentRevisionDO revision = revisionDataService.validateAndGet(pendingId);
+        if (!RevisionStatus.SUBMITTED_VALUE.equals(revision.getStatus())) {
+            throw StatusCode.INVALID_PARAMETER.exception("版本状态非 SUBMITTED，无法驳回");
+        }
+
+        revision.setStatus(RevisionStatus.REJECTED_VALUE);
+        revision.setRejectReason(reason);
+        revision.setReviewerId(reviewerId);
+        revision.setReviewedAt(LocalDateTime.now());
+        revisionDataService.updateStatus(revision);
+
+        roadmapDataService.updatePending(roadmapId, null, revision.getPayload(), LocalDateTime.now());
+        log.info("Roadmap 审核驳回: roadmapId={}, revisionId={}, reason={}", roadmapId, pendingId, reason);
+    }
+
+    /**
+     * 封禁：roadmap.state = BANNED；若存在 pending revision，连带标 REJECTED。draft 回填 pending payload。
+     */
+    @Transactional
+    public void ban(long roadmapId, String reason, long operatorId) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(roadmapId);
+        if (NewContentState.BANNED_VALUE.equals(roadmap.getState())) {
+            throw StatusCode.INVALID_PARAMETER.exception("已是封禁状态");
+        }
+
+        String draftContent = null;
+        LocalDateTime draftUpdatedAt = null;
+
+        Long pendingId = roadmap.getPendingRevisionId();
+        if (pendingId != null) {
+            ContentRevisionDO revision = revisionDataService.validateAndGet(pendingId);
+            if (RevisionStatus.SUBMITTED_VALUE.equals(revision.getStatus())) {
+                revision.setStatus(RevisionStatus.REJECTED_VALUE);
+                revision.setRejectReason(reason);
+                revision.setReviewerId(operatorId);
+                revision.setReviewedAt(LocalDateTime.now());
+                revisionDataService.updateStatus(revision);
+            }
+            draftContent = revision.getPayload();
+            draftUpdatedAt = LocalDateTime.now();
+        }
+
+        roadmapDataService.ban(roadmapId, draftContent, draftUpdatedAt);
+        log.info("Roadmap 封禁: roadmapId={}, operatorId={}, reason={}", roadmapId, operatorId, reason);
+    }
+
+    /**
+     * 解封：根据是否存在已发布版本恢复到 PUBLISHED 或 NEVER_PUBLISHED。
+     */
+    @Transactional
+    public void restore(long roadmapId) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(roadmapId);
+        if (!NewContentState.BANNED_VALUE.equals(roadmap.getState())) {
+            throw StatusCode.INVALID_PARAMETER.exception("仅 BANNED 状态可解封");
+        }
+        String newState = roadmap.getCurrentRevisionId() != null
+            ? NewContentState.PUBLISHED_VALUE
+            : NewContentState.NEVER_PUBLISHED_VALUE;
+        roadmapDataService.updateState(roadmapId, newState);
+        log.info("Roadmap 解封: roadmapId={}, newState={}", roadmapId, newState);
     }
 
     @Transactional
@@ -408,42 +532,17 @@ public class RoadmapDomainService {
         if (result == 0) {
             throw StatusCode.ROADMAP_NOT_FOUND.exception();
         }
-        log.info("路线图 删除成功: roadmapId={}", id);
+        log.info("Roadmap 删除: roadmapId={}", id);
     }
 
-    @Transactional
-    public void approve(long id) {
-        roadmapDataService.validateExists(id);
-        RoadmapDO roadmap = roadmapDataService.getById(id);
-        Utils.validateStateTransition(roadmap.getState(), ContentState.PUBLISHED);
-        roadmapDataService.approve(id);
-        log.info("路线图 审核通过: roadmapId={}", id);
-    }
-
-    @Transactional
-    public void reject(long id, String reason) {
-        roadmapDataService.validateExists(id);
-        RoadmapDO roadmap = roadmapDataService.getById(id);
-        Utils.validateStateTransition(roadmap.getState(), ContentState.REJECTED);
-        roadmapDataService.reject(id, reason);
-        log.info("路线图 审核拒绝: roadmapId={}, reason={}", id, reason);
-    }
-
-    @Transactional
-    public void ban(long id, String reason) {
-        roadmapDataService.validateExists(id);
-        RoadmapDO roadmap = roadmapDataService.getById(id);
-        Utils.validateStateTransition(roadmap.getState(), ContentState.BANNED);
-        roadmapDataService.ban(id, reason);
-        log.info("路线图 封禁: roadmapId={}, reason={}", id, reason);
-    }
-
+    /**
+     * 仅更新主表 description（管理员/作者用）。
+     */
     @Transactional
     public void updateDescription(long id, String description) {
-        roadmapDataService.validateExists(id);
-        RoadmapDO roadmap = roadmapDataService.getById(id);
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(id);
         roadmap.setDescription(description != null ? description : "");
         roadmapDataService.update(roadmap);
-        log.info("路线图 描述更新成功: roadmapId={}", id);
+        log.info("Roadmap 描述更新: roadmapId={}", id);
     }
 }

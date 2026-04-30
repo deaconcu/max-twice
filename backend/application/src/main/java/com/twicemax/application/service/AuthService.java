@@ -153,7 +153,7 @@ public class AuthService {
             user.setEmailValidated(true);
         }
 
-        if (user.getState() != null && user.getState() == UserState.BANNED.value()) {
+        if (UserState.BANNED.value().equals(user.getState())) {
             throw StatusCode.USER_BANNED.exception();
         }
 

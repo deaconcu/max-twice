@@ -14,9 +14,11 @@ export function usePostDetailQuery(id: MaybeRef<number>) {
 export function useNodePostsQuery(nodeId: MaybeRef<number | undefined>) {
   return useInfiniteQuery({
     queryKey: computed(() => postKeys.nodeList(toValue(nodeId) ?? 0)),
-    queryFn: ({ pageParam }) => postApi.getNodePosts(toValue(nodeId)!, pageParam as string | undefined),
+    queryFn: ({ pageParam }) =>
+      postApi.getNodePosts(toValue(nodeId)!, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextCursor ?? undefined : undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
     enabled: () => !!toValue(nodeId),
   })
 }

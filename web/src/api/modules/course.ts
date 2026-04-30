@@ -1,7 +1,17 @@
 import apiClient from '../client'
-import type { Course, ApprovalResponse, CreateCourseRequest } from '@/types/course'
+import type {
+  Course,
+  ApprovalResponse,
+  CreateCourseRequest,
+  UpdateCourseRequest,
+} from '@/types/course'
 import type { UserCourse } from '@/types/userCourse'
-import type { CursorPage } from '@/types/api'
+import type { CursorPage, CreateAcceptedResponse } from '@/types/api'
+
+/**
+ * 课程重新提交 / 更新请求体（与 admin update 共用）
+ */
+export type CourseUpdateRequest = UpdateCourseRequest
 
 /**
  * 课程管理相关 API
@@ -67,27 +77,58 @@ export const courseApi = {
   },
 
   /**
-   * 创建课程
+   * 创建课程（申请，需审核）
+   * - 主课程：parentCourseId 留空 / 0，必须传 mainCategory + subCategory
+   * - 子课程：parentCourseId &gt; 0，分类继承自父课程
    */
-  createCourse(courseData: CreateCourseRequest): Promise<Course> {
+  createCourse(courseData: CreateCourseRequest): Promise<CreateAcceptedResponse> {
     return apiClient.post('/courses', courseData)
   },
 
   /**
-   * 更新课程
+   * 更新课程（管理接口）
    */
   updateCourse(id: number, courseData: Partial<Course>): Promise<Course> {
-    return apiClient.put(`/courses/${String(id)}`, courseData)
+    return apiClient.put(`/admin/contents/course/${String(id)}`, courseData)
   },
 
   /**
-   * 创建子课程
+   * 创建子课程（兼容旧路径，内部委托到 POST /courses）
    */
-  createSubcourse(parentId: number, name: string, description: string): Promise<Course> {
+  createSubcourse(
+    parentId: number,
+    name: string,
+    description: string
+  ): Promise<CreateAcceptedResponse> {
     return apiClient.post(`/courses/${String(parentId)}/subcourses`, {
       name,
       description,
     })
+  },
+
+  /**
+   * 重新提交（被驳回 / 撤回后再申请）
+   */
+  resubmitCourse(id: number, data: CourseUpdateRequest): Promise<void> {
+    return apiClient.post(`/courses/${String(id)}/resubmit`, data)
+  },
+
+  /**
+   * 作者撤回审核中的版本
+   */
+  withdrawCourse(id: number): Promise<void> {
+    return apiClient.post(`/courses/${String(id)}/withdraw`)
+  },
+
+  /**
+   * 当前用户的课程申请列表（"我的课程"）
+   * @param state 课程主体状态：NEVER_PUBLISHED | PUBLISHED（BANNED 由后端拦截）
+   */
+  getCurrentUserCourses(cursor?: string, state?: string): Promise<CursorPage<Course>> {
+    const params: { cursor?: string; state?: string } = {}
+    if (cursor !== undefined) params.cursor = cursor
+    if (state !== undefined) params.state = state
+    return apiClient.get('/users/me/courses', { params })
   },
 
   /**

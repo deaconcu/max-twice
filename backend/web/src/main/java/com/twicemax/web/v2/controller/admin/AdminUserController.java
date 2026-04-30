@@ -92,9 +92,9 @@ public class AdminUserController {
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
             Long id,
-            @RequestParam @NotNull(message = "角色代码不能为空") Integer roleCode,
+            @RequestParam @NotNull(message = "角色不能为空") String role,
             @CurrentUser UserDO currentUser) {
-        return userService.setUserRole(id, roleCode, currentUser);
+        return userService.setUserRole(id, role, currentUser);
     }
 
     /**

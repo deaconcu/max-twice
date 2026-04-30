@@ -2,7 +2,6 @@ package com.twicemax.application.dto.request;
 
 import com.twicemax.shared.common.validator.ConfigurableSize;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
@@ -29,16 +28,22 @@ public class CreateCourseRequest {
     private String description;
 
     /**
-     * 主分类ID
+     * 主分类ID。创建主课程时必填；创建子课程时（parentCourseId>0）可省略，
+     * 由服务端从父课程继承。
      */
-    @NotNull(message = "主分类不能为空")
     @Positive
     private Integer mainCategory;
 
     /**
-     * 子分类ID
+     * 子分类ID。创建主课程时必填；创建子课程时（parentCourseId>0）可省略，
+     * 由服务端从父课程继承。
      */
-    @NotNull(message = "子分类不能为空")
     @Positive
     private Integer subCategory;
+
+    /**
+     * 父课程ID。null 或 0 表示创建主课程；> 0 表示创建子课程，
+     * 此时 mainCategory / subCategory 会从父课程继承，传入值被忽略。
+     */
+    private Long parentCourseId;
 }

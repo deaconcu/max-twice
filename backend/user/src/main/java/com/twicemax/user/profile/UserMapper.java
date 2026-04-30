@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.twicemax.shared.domain.Enums.UserState.ACTIVE_VALUE;
+import static com.twicemax.shared.domain.Enums.UserState;
 
 @Mapper
 public interface UserMapper {
@@ -14,8 +14,8 @@ public interface UserMapper {
     @Select("SELECT * FROM user WHERE id = #{id}")
     UserDO getById(long id);
 
-    @Select("SELECT * FROM user WHERE INSTR(name, #{name}) > 0 AND state = " + ACTIVE_VALUE + " LIMIT 20")
-    List<UserDO> searchByName(String name);
+    @Select("SELECT * FROM user WHERE INSTR(name, #{name}) > 0 AND state = #{state} LIMIT 20")
+    List<UserDO> searchByName(@Param("name") String name, @Param("state") String state);
 
     @Select({"<script>SELECT * FROM user where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
@@ -52,10 +52,10 @@ public interface UserMapper {
 
     // 敏感字段的专用更新方法
     @Update("UPDATE user SET state = #{state}, updated_at = #{updatedAt} WHERE id = #{userId}")
-    void updateState(@Param("userId") long userId, @Param("state") byte state, @Param("updatedAt") LocalDateTime updatedAt);
+    void updateState(@Param("userId") long userId, @Param("state") String state, @Param("updatedAt") LocalDateTime updatedAt);
 
     @Update("UPDATE user SET role = #{role}, updated_at = #{updatedAt} WHERE id = #{userId}")
-    void updateRole(@Param("userId") long userId, @Param("role") int role, @Param("updatedAt") LocalDateTime updatedAt);
+    void updateRole(@Param("userId") long userId, @Param("role") String role, @Param("updatedAt") LocalDateTime updatedAt);
 
     @Update("UPDATE user SET email_validated = #{emailValidated}, updated_at = #{updatedAt} WHERE id = #{userId}")
     void updateEmailValidated(@Param("userId") long userId, @Param("emailValidated") boolean emailValidated, @Param("updatedAt") LocalDateTime updatedAt);
@@ -75,5 +75,5 @@ public interface UserMapper {
             "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
             "ORDER BY id DESC LIMIT #{limit}",
             "</script>"})
-    List<UserDO> listByState(@Param("state") Byte state, @Param("lastId") Long lastId, @Param("limit") int limit);
+    List<UserDO> listByState(@Param("state") String state, @Param("lastId") Long lastId, @Param("limit") int limit);
 }

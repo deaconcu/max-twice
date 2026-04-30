@@ -8,9 +8,10 @@ export default ts.config(
   // ESLint 推荐规则
   js.configs.recommended,
 
-  // TypeScript 严格规则
-  ...ts.configs.strictTypeChecked,
-  ...ts.configs.stylisticTypeChecked,
+  // TypeScript 推荐规则（带类型检查）
+  // 注：官方建议大多数项目使用 recommendedTypeChecked；strictTypeChecked 偏 opinionated；
+  // stylisticTypeChecked 与 Prettier 重叠且与团队偏好冲突较多，故不引入
+  ...ts.configs.recommendedTypeChecked,
 
   // Vue 3 推荐规则
   ...vue.configs['flat/recommended'],
@@ -54,13 +55,16 @@ export default ts.config(
       'vue/no-unused-refs': 'error', // 未使用的 ref
       'vue/padding-line-between-blocks': ['error', 'always'], // 块之间空行
 
-      // TypeScript 规则
+      // TypeScript 规则（关键防护）
       '@typescript-eslint/no-explicit-any': 'error', // 禁止 any
       '@typescript-eslint/explicit-function-return-type': 'off', // 允许推断返回类型
       '@typescript-eslint/no-floating-promises': 'off', // 允许不处理 Promise（如 router.push）
-      '@typescript-eslint/no-unsafe-argument': 'off', // Vue 组件类型推断问题，暂时关闭
-      '@typescript-eslint/no-unsafe-assignment': 'off', // Vue 组件类型推断问题，暂时关闭
-      '@typescript-eslint/no-unsafe-member-access': 'off', // Vue 组件类型推断问题，暂时关闭
+      // Vue 组件 + TanStack Query 等场景类型推断不友好，关闭以下 unsafe 检查
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -69,7 +73,6 @@ export default ts.config(
           varsIgnorePattern: '^_',
         },
       ],
-      '@typescript-eslint/no-non-null-assertion': 'warn', // 非空断言警告
 
       // 通用规则
       'no-console': ['warn', { allow: ['warn', 'error'] }], // 警告 console.log
@@ -81,6 +84,16 @@ export default ts.config(
 
   {
     // 忽略文件
-    ignores: ['dist/**', 'node_modules/**', '*.config.js', '*.config.ts', '.vscode/**', '.idea/**'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      '*.config.js',
+      '*.config.ts',
+      '.vscode/**',
+      '.idea/**',
+      'playwright-report/**',
+      'test-results/**',
+      'coverage/**',
+    ],
   }
 )

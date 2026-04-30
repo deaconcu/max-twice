@@ -134,7 +134,12 @@ const loadMoreTrigger = ref<HTMLElement | null>(null)
 const currentUserId = computed(() => userStore.currentUser?.id)
 
 const nodeId = computed(() => props.nodeId)
-const { data, isLoading: loading, hasNextPage: hasMore, fetchNextPage } = useDecksByNodeQuery(nodeId)
+const {
+  data,
+  isLoading: loading,
+  hasNextPage: hasMore,
+  fetchNextPage,
+} = useDecksByNodeQuery(nodeId)
 
 const decks = computed(() => data.value?.pages.flatMap((p) => p.items) ?? [])
 

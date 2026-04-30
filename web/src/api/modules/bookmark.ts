@@ -40,7 +40,11 @@ export const bookmarkApi = {
    * @param cursor 分页游标
    * @param limit 每页数量
    */
-  getBookmarks(contentType: ContentType, cursor?: string, limit = 20): Promise<CursorPage<Bookmark>> {
+  getBookmarks(
+    contentType: ContentType,
+    cursor?: string,
+    limit = 20
+  ): Promise<CursorPage<Bookmark>> {
     return apiClient.get(`/bookmarks/${contentType}/list`, {
       params: { cursor, limit },
     })

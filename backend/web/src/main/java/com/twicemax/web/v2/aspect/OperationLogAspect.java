@@ -3,6 +3,7 @@ package com.twicemax.web.v2.aspect;
 import com.twicemax.application.dto.response.OperationLogDTO;
 import com.twicemax.application.service.OperationLogService;
 import com.twicemax.infrastructure.context.RequestContext;
+import com.twicemax.shared.domain.Enums.UserRole;
 import com.twicemax.user.profile.UserDO;
 import com.twicemax.web.util.IpUtils;
 import com.twicemax.web.v2.annotation.OperationLog;
@@ -70,7 +71,7 @@ public class OperationLogAspect {
         OperationLogDTO logDTO = OperationLogDTO.builder()
                 .operatorId(currentUser.getId())
                 .operatorName(currentUser.getName())
-                .operatorRole(currentUser.getRole())
+                .operatorRole(UserRole.fromName(currentUser.getRole()).getLevel())
                 .module(module)
                 .operationType(operationType)
                 .operationLevel(operationLog.level().getCode())

@@ -14,7 +14,8 @@ export function useCourseProgressQuery(courseId: MaybeRef<number>) {
 export function useAllCoursesProgressQuery(state?: MaybeRef<'learning' | 'completed' | undefined>) {
   return useInfiniteQuery({
     queryKey: progressKeys.allCourses(toValue(state)),
-    queryFn: ({ pageParam }) => progressApi.getAllCourseProgress(toValue(state), pageParam as string | undefined),
+    queryFn: ({ pageParam }) =>
+      progressApi.getAllCourseProgress(toValue(state), pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => {
       if (!Array.isArray(lastPage) || lastPage.length < 20) return undefined
@@ -30,10 +31,13 @@ export function useRoadmapProgressQuery(roadmapId: MaybeRef<number>) {
   })
 }
 
-export function useAllRoadmapsProgressQuery(state?: MaybeRef<'learning' | 'completed' | undefined>) {
+export function useAllRoadmapsProgressQuery(
+  state?: MaybeRef<'learning' | 'completed' | undefined>
+) {
   return useInfiniteQuery({
     queryKey: progressKeys.allRoadmaps(toValue(state)),
-    queryFn: ({ pageParam }) => progressApi.getUserRoadmaps(toValue(state), pageParam as string | undefined),
+    queryFn: ({ pageParam }) =>
+      progressApi.getUserRoadmaps(toValue(state), pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => {
       if (!Array.isArray(lastPage) || lastPage.length < 20) return undefined
@@ -49,7 +53,10 @@ export function useNodeStatusQuery(nodeId: MaybeRef<number>) {
   })
 }
 
-export function useLearningRoadmapsByRoleQuery(roleId: MaybeRef<number>, enabled?: MaybeRef<boolean>) {
+export function useLearningRoadmapsByRoleQuery(
+  roleId: MaybeRef<number>,
+  enabled?: MaybeRef<boolean>
+) {
   return useQuery({
     queryKey: computed(() => progressKeys.learningRoadmapsByRole(toValue(roleId))),
     queryFn: () => progressApi.getLearningRoadmapsByRole(toValue(roleId)),

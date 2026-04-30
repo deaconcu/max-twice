@@ -286,11 +286,16 @@ const statusFilter = ref<'all' | 'draft' | 'pending' | 'published' | 'rejected'>
 // 将 statusFilter 转换为后端 state 值
 const stateValue = computed((): number | undefined => {
   switch (statusFilter.value) {
-    case 'draft': return ContentState.DRAFT
-    case 'pending': return ContentState.SUBMITTED
-    case 'published': return ContentState.PUBLISHED
-    case 'rejected': return ContentState.REJECTED
-    default: return undefined
+    case 'draft':
+      return ContentState.DRAFT
+    case 'pending':
+      return ContentState.SUBMITTED
+    case 'published':
+      return ContentState.PUBLISHED
+    case 'rejected':
+      return ContentState.REJECTED
+    default:
+      return undefined
   }
 })
 

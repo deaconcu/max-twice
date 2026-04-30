@@ -186,6 +186,7 @@
         :categories="categories"
         :sub-categories="subCategories"
         :reset-form="resetCreateForm"
+        :initial="dialogInitial"
         @submit="handleCreateCourse"
       />
     </div>
@@ -199,25 +200,30 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
+import { getGlobalSnackbar } from '@/composables/config'
 import type { Course, CreateCourseRequest } from '@/types/course'
 import { useCategoryStore } from '@/stores'
+import { courseApi } from '@/api/modules/course'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import CourseCard from '@/components/features/course/CourseCard.vue'
 import CourseFilter from '@/components/features/course/CourseFilter.vue'
 import CourseCreateDialog from '@/components/features/course/CourseCreateDialog.vue'
+import type { CourseCreateInitial } from '@/components/features/course/CourseCreateDialog.vue'
 import {
   useHotCoursesQuery,
   useCourseListQuery,
   useCreateCourseMutation,
+  useResubmitCourseMutation,
   useSubscribeMutation,
   useUnsubscribeMutation,
 } from '@/queries/course'
 
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
 const categoryStore = useCategoryStore()
 
@@ -227,6 +233,37 @@ const selectedSubCategory = ref<number | undefined>()
 const createDialog = ref(false)
 const resetCreateForm = ref(false)
 const loadMoreTrigger = ref<HTMLElement | null>(null)
+
+// resubmit 模式
+const resubmitId = ref<number | null>(null)
+const dialogInitial = ref<CourseCreateInitial>({})
+
+// 监听 query：?resubmitId=xxx → 拉课程信息回填表单并打开对话框
+watch(
+  () => route.query.resubmitId,
+  async (val) => {
+    const idStr = Array.isArray(val) ? val[0] : val
+    if (idStr == null) return
+    const id = Number(idStr)
+    if (!Number.isFinite(id) || id <= 0) return
+    try {
+      const course = await courseApi.getCourse(id)
+      dialogInitial.value = {
+        name: course.name ?? '',
+        description: course.description ?? '',
+        mainCategory: course.mainCategory ?? null,
+        subCategory: course.subCategory ?? null,
+        parentCourseId: course.parentCourse?.id ?? null,
+        resubmit: true,
+      }
+      resubmitId.value = id
+      createDialog.value = true
+    } catch {
+      getGlobalSnackbar()?.(t('common.fetchFailed'), 'error')
+    }
+  },
+  { immediate: true }
+)
 
 // 热门课程
 const { data: hotCoursesData } = useHotCoursesQuery()
@@ -325,19 +362,71 @@ const handleUnsubscribe = (courseId: number) => {
 }
 
 const openCreateDialog = () => {
+  // 走全新创建：清空 resubmit 上下文
+  resubmitId.value = null
+  dialogInitial.value = {}
   createDialog.value = true
 }
 
+const onDialogClose = (open: boolean) => {
+  if (!open && resubmitId.value !== null) {
+    resubmitId.value = null
+    dialogInitial.value = {}
+    if (route.query.resubmitId !== undefined) {
+      const { resubmitId: _omit, ...rest } = route.query
+      void router.replace({ query: rest })
+    }
+  }
+}
+
+watch(createDialog, (val) => onDialogClose(val))
+
 const createCourseMutation = useCreateCourseMutation()
+const resubmitCourseMutation = useResubmitCourseMutation()
 
 const handleCreateCourse = (courseData: CreateCourseRequest) => {
-  createCourseMutation.mutate(courseData, {
-    onSuccess: () => {
-      createDialog.value = false
-      resetCreateForm.value = true
-      setTimeout(() => { resetCreateForm.value = false }, 100)
-    },
-  })
+  if (resubmitId.value !== null) {
+    if (
+      courseData.mainCategory == null ||
+      courseData.subCategory == null ||
+      !courseData.name ||
+      !courseData.description
+    ) {
+      // 子课程在表单上没分类输入；resubmit 表单一律保留原 mainCategory/subCategory
+      return
+    }
+    resubmitCourseMutation.mutate(
+      {
+        id: resubmitId.value,
+        data: {
+          name: courseData.name,
+          description: courseData.description,
+          mainCategory: courseData.mainCategory,
+          subCategory: courseData.subCategory,
+        },
+      },
+      {
+        onSuccess: () => {
+          createDialog.value = false
+          resetCreateForm.value = true
+          setTimeout(() => {
+            resetCreateForm.value = false
+          }, 100)
+          getGlobalSnackbar()?.(t('common.success'), 'success')
+        },
+      }
+    )
+  } else {
+    createCourseMutation.mutate(courseData, {
+      onSuccess: () => {
+        createDialog.value = false
+        resetCreateForm.value = true
+        setTimeout(() => {
+          resetCreateForm.value = false
+        }, 100)
+      },
+    })
+  }
 }
 </script>
 

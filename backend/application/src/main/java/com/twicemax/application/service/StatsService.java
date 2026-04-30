@@ -70,7 +70,7 @@ public class StatsService {
             // 查询所有已发布的 index 类型 post
             while (true) {
                 List<PostDO> indexPosts = postDataService.getPostsByTypeAndState(
-                    PostType.index.value(),
+                    PostType.INDEX.value(),
                     ContentState.PUBLISHED.value(),
                     lastId,
                     batchSize

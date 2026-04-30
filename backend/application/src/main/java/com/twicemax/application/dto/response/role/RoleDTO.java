@@ -12,8 +12,6 @@ public class RoleDTO {
 
     private String description;
 
-    private String price;
-
     private String skills;
 
     private Integer mainCategory;

@@ -802,7 +802,7 @@ public class MemoryCardDeckService {
         contentVisibilityService.validateCanCreateOn(Enums.ContentType.post, postId);
 
         // 只为文章类型的帖子生成记忆卡片
-        if (!post.getType().equals(Enums.PostType.article.value())) {
+        if (!post.getType().equals(Enums.PostType.ARTICLE.value())) {
             throw StatusCode.INVALID_PARAMETER.exception("只能为文章类型的帖子生成记忆卡片");
         }
 

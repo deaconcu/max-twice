@@ -1,6 +1,7 @@
 package com.twicemax.user.profile;
 
 import com.twicemax.shared.domain.exception.StatusCode;
+import com.twicemax.shared.domain.Enums.UserState;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -119,7 +120,7 @@ public class UserDataService {
      * 根据名称搜索用户（模糊匹配，不缓存）
      */
     public List<UserDO> searchByName(String name) {
-        return userMapper.searchByName(name);
+        return userMapper.searchByName(name, UserState.ACTIVE.value());
     }
 
     /**
@@ -139,7 +140,7 @@ public class UserDataService {
     /**
      * 根据状态获取用户列表
      */
-    public List<UserDO> listByState(Byte state, Long lastId, int limit) {
+    public List<UserDO> listByState(String state, Long lastId, int limit) {
         return userMapper.listByState(state, lastId, limit);
     }
 
@@ -223,7 +224,7 @@ public class UserDataService {
      * 更新用户状态
      */
     @CacheEvict(value = "users", key = "#userId")
-    public void updateState(long userId, byte state) {
+    public void updateState(long userId, String state) {
         userMapper.updateState(userId, state, LocalDateTime.now());
     }
 
@@ -231,7 +232,7 @@ public class UserDataService {
      * 更新用户角色
      */
     @CacheEvict(value = "users", key = "#userId")
-    public void updateRole(long userId, int role) {
+    public void updateRole(long userId, String role) {
         userMapper.updateRole(userId, role, LocalDateTime.now());
     }
 

@@ -75,11 +75,11 @@ public class AdminContentsController {
 
         return switch (contentType.toLowerCase()) {
             case "post" -> postService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE);
-            case "roadmap" -> roadmapService.listByState(stateValue, lastId);
+            case "roadmap" -> throw StatusCode.INVALID_PARAMETER.exception("admin 端 roadmap 列表正在迁移，暂不可用");
             case "memory_card_deck" -> memoryCardDeckService.listByState(stateValue, lastId);
             case "comment" -> commentService.listByState(stateValue, lastId);
-            case "course" -> courseService.listByState(stateValue, lastId);
-            case "role" -> roleService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE);
+            case "course" -> courseService.listByState(toNewContentState(stateValue), lastId);
+            case "role" -> roleService.listByState(toNewContentState(stateValue), lastId, DEFAULT_PAGE_SIZE);
             case "node" -> nodeService.listByState(stateValue, lastId);
             default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的内容类型: " + contentType);
         };
@@ -194,7 +194,7 @@ public class AdminContentsController {
             @PathVariable @Positive(message = "父课程ID必须大于0") Long parentId,
             @RequestParam(required = false) @Positive(message = "状态必须大于0") Integer state) {
         ContentState courseState = state != null ? ContentState.getByValue(state.byteValue()) : null;
-        return courseService.getListByParent(parentId, courseState);
+        return courseService.getListByParent(parentId, toNewContentState(courseState));
     }
 
     // ==================== 更新接口 ====================
@@ -292,7 +292,7 @@ public class AdminContentsController {
             @Positive(message = "角色ID必须大于0") Long id,
             @Valid @RequestBody UpdateRoleRequest request,
             @CurrentUser UserDO currentUser) {
-        roleService.update(id, request, currentUser);
+        roleService.edit(id, request, currentUser);
         return ResponseEntity.noContent().build();
     }
 
@@ -397,7 +397,7 @@ public class AdminContentsController {
         switch (action) {
             case "approve" -> roadmapService.approve(id, currentUser);
             case "reject" -> roadmapService.reject(id, reason, currentUser);
-            case "remove" -> roadmapService.remove(id, reason, currentUser);
+            case "remove" -> throw StatusCode.INVALID_PARAMETER.exception("remove 操作已废弃，请用 ban");
             case "ban" -> roadmapService.ban(id, reason, currentUser);
             case "restore" -> roadmapService.restore(id, reason, currentUser);
             default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
@@ -431,7 +431,7 @@ public class AdminContentsController {
             case "reject" -> courseService.reject(id, reason, currentUser);
             case "ban" -> courseService.ban(id, reason, currentUser);
             case "delete" -> courseService.delete(id, currentUser);
-            case "restore" -> courseService.approve(id, currentUser);
+            case "restore" -> courseService.restore(id, currentUser);
             default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
         }
     }
@@ -441,6 +441,7 @@ public class AdminContentsController {
             case "approve" -> roleService.approve(id, currentUser);
             case "reject" -> roleService.reject(id, reason, currentUser);
             case "ban" -> roleService.ban(id, reason, currentUser);
+            case "restore" -> roleService.restore(id, currentUser);
             case "delete" -> roleService.delete(id, currentUser);
             default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
         }
@@ -545,5 +546,19 @@ public class AdminContentsController {
             @RequestBody @Valid CreateNodeRequest request,
             @CurrentUser UserDO currentUser) {
         return nodeService.createAndApprove(request, currentUser);
+    }
+
+    /**
+     * 旧 ContentState（byte 枚举）→ NewContentState（字符串枚举）适配。
+     * role/roadmap 已迁到 NewContentState；admin 端入参暂保留 byte，过渡期通过此适配。
+     * 后续旧 ContentState 移除时一并删除。
+     */
+    private static NewContentState toNewContentState(ContentState old) {
+        if (old == null) return null;
+        return switch (old) {
+            case PUBLISHED -> NewContentState.PUBLISHED;
+            case BANNED -> NewContentState.BANNED;
+            default -> NewContentState.NEVER_PUBLISHED;
+        };
     }
 }

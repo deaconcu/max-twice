@@ -359,7 +359,11 @@ const queryParams = computed(() => ({
   path: route.query.path ? String(route.query.path) : undefined,
 }))
 
-const { data: queryData, isFetching: dataLoading, refetch: refetchPage } = useReadPageQuery(queryParams)
+const {
+  data: queryData,
+  isFetching: dataLoading,
+  refetch: refetchPage,
+} = useReadPageQuery(queryParams)
 
 // 本地工作副本（节点完成等 mutation 需要直接修改）
 const data = ref<ReadResponse | null>(null)

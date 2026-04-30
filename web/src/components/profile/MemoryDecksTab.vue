@@ -237,11 +237,16 @@ const statusFilter = ref<'all' | 'draft' | 'pending' | 'published' | 'rejected'>
 
 const stateValue = computed((): number | undefined => {
   switch (statusFilter.value) {
-    case 'draft': return ContentState.DRAFT
-    case 'pending': return ContentState.SUBMITTED
-    case 'published': return ContentState.PUBLISHED
-    case 'rejected': return ContentState.REJECTED
-    default: return undefined
+    case 'draft':
+      return ContentState.DRAFT
+    case 'pending':
+      return ContentState.SUBMITTED
+    case 'published':
+      return ContentState.PUBLISHED
+    case 'rejected':
+      return ContentState.REJECTED
+    default:
+      return undefined
   }
 })
 
@@ -271,8 +276,8 @@ const deckItems = computed(() => {
   return userDecksData.value?.pages.flatMap((p) => p.items) ?? []
 })
 
-const loading = computed(() => isOwn.value ? myLoading.value : userLoading.value)
-const hasMore = computed(() => isOwn.value ? !!myHasMore.value : !!userHasMore.value)
+const loading = computed(() => (isOwn.value ? myLoading.value : userLoading.value))
+const hasMore = computed(() => (isOwn.value ? !!myHasMore.value : !!userHasMore.value))
 
 // 删除卡片组
 const { mutate: removeDeckMutate } = useDeleteDeckMutation()

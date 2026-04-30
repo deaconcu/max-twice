@@ -16,8 +16,15 @@ export function useUpvoteStatusQuery(objectId: MaybeRef<number>, objectType: May
 export function useUpvoteMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ objectId, objectType, type }: { objectId: number; objectType: ObjectType; type: VoteType }) =>
-      upvoteApi.upvote(objectId, objectType, type),
+    mutationFn: ({
+      objectId,
+      objectType,
+      type,
+    }: {
+      objectId: number
+      objectType: ObjectType
+      type: VoteType
+    }) => upvoteApi.upvote(objectId, objectType, type),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: upvoteKeys.all })
     },
@@ -27,15 +34,22 @@ export function useUpvoteMutation() {
 export function useBookmarkToggleMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ contentType, contentId }: { contentType: Parameters<typeof bookmarkApi.toggle>[0]; contentId: number }) =>
-      bookmarkApi.toggle(contentType, contentId),
+    mutationFn: ({
+      contentType,
+      contentId,
+    }: {
+      contentType: Parameters<typeof bookmarkApi.toggle>[0]
+      contentId: number
+    }) => bookmarkApi.toggle(contentType, contentId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: bookmarkKeys.all })
     },
   })
 }
 
-export function useBookmarksQuery(contentType: MaybeRef<Parameters<typeof bookmarkApi.getBookmarks>[0]>) {
+export function useBookmarksQuery(
+  contentType: MaybeRef<Parameters<typeof bookmarkApi.getBookmarks>[0]>
+) {
   return useQuery({
     queryKey: bookmarkKeys.list(toValue(contentType)),
     queryFn: () => bookmarkApi.getBookmarks(toValue(contentType)),

@@ -12,7 +12,11 @@ const { t } = useI18n()
 
 const commentId = Number(route.params.id)
 
-const { isPending: loading, data, error } = useQuery({
+const {
+  isPending: loading,
+  data,
+  error,
+} = useQuery({
   queryKey: ['comment', 'basic', commentId],
   queryFn: () => commentApi.getCommentBasic(commentId),
 })

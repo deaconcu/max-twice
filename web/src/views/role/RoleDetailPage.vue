@@ -471,7 +471,11 @@ import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useRoleDetailQuery } from '@/queries/role'
 import { useUpvoteMutation, useBookmarkToggleMutation } from '@/queries/interaction'
-import { useStartRoadmapMutation, useCancelRoadmapMutation, useLearningRoadmapsByRoleQuery } from '@/queries/progress'
+import {
+  useStartRoadmapMutation,
+  useCancelRoadmapMutation,
+  useLearningRoadmapsByRoleQuery,
+} from '@/queries/progress'
 import { useRoleRoadmapsQuery } from '@/queries/roadmap'
 import { useUserStore } from '@/stores'
 import { ObjectType, VoteType } from '@/enums'
@@ -497,11 +501,7 @@ const roleId = computed(() => {
 })
 
 // 加载职业详情
-const {
-  data: role,
-  isLoading: loading,
-  error: fetchError,
-} = useRoleDetailQuery(roleId)
+const { data: role, isLoading: loading, error: fetchError } = useRoleDetailQuery(roleId)
 
 // 状态管理
 const searchText = ref('')
@@ -534,10 +534,8 @@ const allRoadmaps = computed<Roadmap[]>(
 
 // 学习中的路线图
 const learningEnabled = computed(() => filterStatus.value === 'learning')
-const { data: learningRoadmapsData, isLoading: learningRoadmapsLoading } = useLearningRoadmapsByRoleQuery(
-  roleId,
-  learningEnabled
-)
+const { data: learningRoadmapsData, isLoading: learningRoadmapsLoading } =
+  useLearningRoadmapsByRoleQuery(roleId, learningEnabled)
 const learningRoadmaps = computed(() => learningRoadmapsData.value ?? [])
 
 // 综合加载状态

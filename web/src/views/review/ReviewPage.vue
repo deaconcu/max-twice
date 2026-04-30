@@ -1055,10 +1055,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import * as memoryApi from '@/api/modules/memory'
-import type {
-  MemoryCardView,
-  CourseStudyStatus,
-} from '@/types/memory'
+import type { MemoryCardView, CourseStudyStatus } from '@/types/memory'
 import {
   ReviewResult,
   FrequencySetting,
@@ -1111,9 +1108,7 @@ const {
   fetchNextPage,
 } = useCardListQuery(selectedCourseId)
 
-const listCards = computed(() =>
-  cardListData.value?.pages.flatMap((p) => p.items) ?? []
-)
+const listCards = computed(() => cardListData.value?.pages.flatMap((p) => p.items) ?? [])
 
 const loadMoreListCards = () => {
   void fetchNextPage()
@@ -1126,8 +1121,14 @@ const { data: studyingSummary, refetch: refreshStudying } = useReviewSummaryQuer
 const frozenEnabled = ref(false)
 const hiddenEnabled = ref(false)
 
-const { data: frozenSummary, isLoading: frozenLoading } = useReviewSummaryQuery(Status.FROZEN, frozenEnabled)
-const { data: hiddenSummary, isLoading: hiddenLoading } = useReviewSummaryQuery(Status.HIDDEN, hiddenEnabled)
+const { data: frozenSummary, isLoading: frozenLoading } = useReviewSummaryQuery(
+  Status.FROZEN,
+  frozenEnabled
+)
+const { data: hiddenSummary, isLoading: hiddenLoading } = useReviewSummaryQuery(
+  Status.HIDDEN,
+  hiddenEnabled
+)
 
 // 当前状态 tab 对应的课程列表
 const currentCourseList = computed(() => {
@@ -1342,7 +1343,6 @@ const completeReview = async () => {
   currentCard.value = null
   await refreshStudying()
 }
-
 
 // 卡片选择
 const toggleCardSelection = (cardId: number) => {

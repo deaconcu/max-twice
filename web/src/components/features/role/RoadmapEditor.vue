@@ -12,8 +12,7 @@
       :prevent-scrolling="false"
       :min-zoom="1.1"
       :max-zoom="1.1"
-      @node-mouse-enter="onNodeMouseEnter"
-      @node-mouse-leave="onNodeMouseLeave"
+      @node-click="onNodeClick"
       @pane-click="onPaneClick"
       @pane-ready="onPaneReady"
     >
@@ -45,7 +44,8 @@
                     : data.nodeType === 'group'
                       ? 'node-topic--group'
                       : 'node-topic--placeholder',
-              { 'node-topic--selected': selectedNodeForBinding === id },
+              { 'node-topic--selected': selectedNodeForBinding === id || selectedNodeId === id },
+              { 'node-topic--invalid': invalidNodeIds.has(id) },
             ]"
           >
             <input
@@ -60,126 +60,47 @@
               @click.stop
             />
             <span v-else>{{ data.label }}</span>
-          </div>
-          <div v-if="hoveredNodeId === id && editingNodeId !== id" class="node-actions">
-            <!-- __start 只能在下面插入 -->
-            <v-tooltip v-if="id === '__start'" :text="t('roadmapCreate.editor.tooltipInsertBelow')" location="top" :open-delay="100">
+            <v-tooltip
+              v-if="invalidNodeIds.has(id)"
+              :text="t('roadmapCreate.editor.invalidRefTooltip')"
+              location="top"
+              :open-delay="100"
+            >
               <template #activator="{ props: tipProps }">
-                <button
+                <v-icon
                   v-bind="tipProps"
-                  class="node-action-btn"
-                  @click="insertTrunkAtIndex(0)"
-                >
-                  <v-icon icon="mdi-table-row-plus-after" size="14" />
-                </button>
+                  icon="mdi-alert-circle"
+                  size="16"
+                  class="node-invalid-badge"
+                />
               </template>
             </v-tooltip>
-            <!-- __end 只能在上面插入 -->
-            <v-tooltip v-else-if="id === '__end'" :text="t('roadmapCreate.editor.tooltipInsertAbove')" location="top" :open-delay="100">
-              <template #activator="{ props: tipProps }">
-                <button
-                  v-bind="tipProps"
-                  class="node-action-btn"
-                  @click="insertTrunkAtIndex(modelValue.length)"
-                >
-                  <v-icon icon="mdi-table-row-plus-before" size="14" />
-                </button>
-              </template>
-            </v-tooltip>
-            <!-- 普通节点完整菜单 -->
-            <template v-else>
-              <v-tooltip
-                v-if="data.nodeType === 'group' || data.nodeType === 'note'"
-                :text="t('roadmapCreate.editor.tooltipRename')"
-                location="top"
-                :open-delay="100"
-              >
-                <template #activator="{ props: tipProps }">
-                  <button
-                    v-bind="tipProps"
-                    class="node-action-btn"
-                    @click="startLabelEdit(id, data.label)"
-                  >
-                    <v-icon icon="mdi-pencil-outline" size="14" />
-                  </button>
-                </template>
-              </v-tooltip>
-              <v-tooltip :text="t('roadmapCreate.editor.tooltipInsertAbove')" location="top" :open-delay="100">
-                <template #activator="{ props: tipProps }">
-                  <button v-bind="tipProps" class="node-action-btn" @click="insertBefore(id)">
-                    <v-icon icon="mdi-table-row-plus-before" size="14" />
-                  </button>
-                </template>
-              </v-tooltip>
-              <v-tooltip :text="t('roadmapCreate.editor.tooltipInsertBelow')" location="top" :open-delay="100">
-                <template #activator="{ props: tipProps }">
-                  <button v-bind="tipProps" class="node-action-btn" @click="insertAfter(id)">
-                    <v-icon icon="mdi-table-row-plus-after" size="14" />
-                  </button>
-                </template>
-              </v-tooltip>
-              <v-tooltip v-if="!hasChildren(id)" :text="t('roadmapCreate.editor.tooltipBindCourse')" location="top" :open-delay="100">
-                <template #activator="{ props: tipProps }">
-                  <button v-bind="tipProps" class="node-action-btn" @click="bindAsCourse(id)">
-                    <v-icon icon="mdi-book-outline" size="14" />
-                  </button>
-                </template>
-              </v-tooltip>
-              <v-tooltip v-if="!hasChildren(id)" :text="t('roadmapCreate.editor.tooltipBindNode')" location="top" :open-delay="100">
-                <template #activator="{ props: tipProps }">
-                  <button v-bind="tipProps" class="node-action-btn" @click="bindAsNode(id)">
-                    <v-icon icon="mdi-file-document-outline" size="14" />
-                  </button>
-                </template>
-              </v-tooltip>
-              <v-tooltip
-                v-if="!hasChildren(id) && data.nodeType !== 'note'"
-                :text="t('roadmapCreate.editor.tooltipSetNote')"
-                location="top"
-                :open-delay="100"
-              >
-                <template #activator="{ props: tipProps }">
-                  <button v-bind="tipProps" class="node-action-btn" @click="bindAsNote(id)">
-                    <v-icon icon="mdi-note-text-outline" size="14" />
-                  </button>
-                </template>
-              </v-tooltip>
-              <v-tooltip
-                v-if="!hasChildren(id) && canBranch(id)"
-                :text="t('roadmapCreate.editor.tooltipCreateBranch')"
-                location="top"
-                :open-delay="100"
-              >
-                <template #activator="{ props: tipProps }">
-                  <button v-bind="tipProps" class="node-action-btn" @click="createBranch(id)">
-                    <v-icon icon="mdi-source-branch" size="14" />
-                  </button>
-                </template>
-              </v-tooltip>
-              <v-tooltip
-                v-else-if="hasChildren(id)"
-                :text="t('roadmapCreate.editor.tooltipRemoveBranch')"
-                location="top"
-                :open-delay="100"
-              >
-                <template #activator="{ props: tipProps }">
-                  <button v-bind="tipProps" class="node-action-btn" @click="removeBranch(id)">
-                    <v-icon icon="mdi-source-branch-remove" size="14" />
-                  </button>
-                </template>
-              </v-tooltip>
-              <v-tooltip :text="t('roadmapCreate.editor.tooltipDeleteNode')" location="top" :open-delay="100">
-                <template #activator="{ props: tipProps }">
-                  <button v-bind="tipProps" class="node-action-btn" @click="deleteNode(id)">
-                    <v-icon icon="mdi-trash-can-outline" size="14" />
-                  </button>
-                </template>
-              </v-tooltip>
-            </template>
           </div>
         </div>
       </template>
     </VueFlow>
+
+    <!-- 左侧竖向工具条：常驻显示，根据选中节点切换按钮可用状态 -->
+    <div class="node-toolbar" @click.stop>
+      <template v-for="(item, idx) in selectedActions" :key="idx">
+        <div v-if="item.type === 'divider'" class="toolbar-divider" />
+        <v-tooltip v-else :text="item.tooltip" location="right" :open-delay="100">
+          <template #activator="{ props: tipProps }">
+            <button
+              v-bind="tipProps"
+              class="toolbar-btn"
+              :class="{
+                'toolbar-btn--danger': item.danger,
+                'toolbar-btn--disabled': item.disabled,
+              }"
+              @click="onToolbarClick(item)"
+            >
+              <v-icon :icon="item.icon" size="22" />
+            </button>
+          </template>
+        </v-tooltip>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -222,9 +143,23 @@ const { t } = useI18n()
 
 /* ========== 内部状态 ========== */
 const selectedNodeForBinding = ref<string | null>(null)
-const hoveredNodeId = ref<string | null>(null)
+const selectedNodeId = ref<string | null>(null)
 const editingNodeId = ref<string | null>(null)
 const editingLabel = ref('')
+
+// 失效引用标记（保存接口返回的 missingCourseIds / missingNodeIds 映射成节点 id 集合）
+const invalidNodeIds = ref<Set<string>>(new Set())
+
+const markInvalidRefs = (missingCourseIds: number[], missingNodeIds: number[]) => {
+  const next = new Set<string>()
+  for (const cid of missingCourseIds) next.add(`c${cid}`)
+  for (const nid of missingNodeIds) next.add(`n${nid}`)
+  invalidNodeIds.value = next
+}
+
+const clearInvalidRefs = () => {
+  invalidNodeIds.value = new Set()
+}
 
 let tmpSeq = 0
 const genGroupId = () => `g_${Date.now()}_${++tmpSeq}`
@@ -324,18 +259,16 @@ function deleteNodeFromTree(trunk: RoadmapNode[], id: string): RoadmapNode[] {
     if (!n.children) return n
     const newChildren = deleteNodeFromTree(n.children, id)
     if (newChildren === n.children) return n
-    return newChildren.length ? { ...n, children: newChildren } : (() => {
-      const { children: _c, ...rest } = n
-      return rest
-    })()
+    return newChildren.length
+      ? { ...n, children: newChildren }
+      : (() => {
+          const { children: _c, ...rest } = n
+          return rest
+        })()
   })
 }
 
-function setLabelOf(
-  trunk: RoadmapNode[],
-  targetId: string,
-  label: string
-): RoadmapNode[] {
+function setLabelOf(trunk: RoadmapNode[], targetId: string, label: string): RoadmapNode[] {
   const idx = trunk.findIndex((n) => n.id === targetId)
   if (idx >= 0) {
     const result = [...trunk]
@@ -480,11 +413,7 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
   }
 
   // 递归放置一个分支节点（含子孙）
-  const placeBranchNode = (
-    node: RoadmapNode,
-    cols: Col[],
-    side: 'left' | 'right'
-  ): number => {
+  const placeBranchNode = (node: RoadmapNode, cols: Col[], side: 'left' | 'right'): number => {
     const myCol = cols[0]
     const childCols = cols.slice(1)
     const hasKids = !!node.children?.length && childCols.length > 0
@@ -598,7 +527,9 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
   colBot.center = startY + measureHeight(startLabel) + ROW_GAP
 
   // trunk
-  props.modelValue.forEach((n) => placeTrunkNode(n))
+  props.modelValue.forEach((n) => {
+    placeTrunkNode(n)
+  })
 
   // __end
   const endY = colBot.center + TRUNK_INTERNODE_GAP
@@ -657,15 +588,15 @@ const renderResult = computed<{ vfNodes: VFNode[]; vfEdges: VFEdge[] }>(() => {
 const vfNodes = computed(() => renderResult.value.vfNodes)
 const vfEdges = computed(() => renderResult.value.vfEdges)
 
-/* ========== 取消选中 ========== */
-const onNodeMouseEnter = (event: { node: VFNode }) => {
-  hoveredNodeId.value = event.node.id
-}
-const onNodeMouseLeave = () => {
-  hoveredNodeId.value = null
+/* ========== 选中态 ========== */
+const onNodeClick = (event: { node: VFNode }) => {
+  // 正在编辑某节点时，点其他节点不切换（让 input 的 blur 提交完）
+  if (editingNodeId.value && editingNodeId.value !== event.node.id) return
+  selectedNodeId.value = event.node.id
 }
 
 const onPaneClick = () => {
+  selectedNodeId.value = null
   if (selectedNodeForBinding.value) {
     selectedNodeForBinding.value = null
     emit('cancel-bind')
@@ -711,17 +642,6 @@ const onPaneReady = () => {
 }
 
 /* ========== 操作 ========== */
-const hasChildren = (id: string): boolean => {
-  const f = findNode(props.modelValue, id)
-  return !!f?.node.children?.length
-}
-
-const canBranch = (id: string): boolean => {
-  const f = findNode(props.modelValue, id)
-  if (!f) return false
-  return f.depth < MAX_DEPTH
-}
-
 const insertBefore = (id: string) => {
   const newId = genGroupId()
   const newNode: RoadmapNode = { id: newId, label: t('roadmapCreate.editor.newNode') }
@@ -747,6 +667,9 @@ const deleteNode = (id: string) => {
   if (selectedNodeForBinding.value === id) {
     selectedNodeForBinding.value = null
     emit('cancel-bind')
+  }
+  if (selectedNodeId.value === id) {
+    selectedNodeId.value = null
   }
 }
 
@@ -852,12 +775,160 @@ const cancelLabelEdit = () => {
   editingLabel.value = ''
 }
 
+/* ========== 工具条按钮派生 ========== */
+type ToolbarItem =
+  | { type: 'divider' }
+  | {
+      type: 'btn'
+      icon: string
+      tooltip: string
+      handler: () => void
+      danger?: boolean
+      disabled?: boolean
+    }
+
+const selectedActions = computed<ToolbarItem[]>(() => {
+  const id = selectedNodeId.value
+  const isStart = id === '__start'
+  const isEnd = id === '__end'
+  const isPhantom = isStart || isEnd
+
+  const found = id && !isPhantom ? findNode(props.modelValue, id) : null
+  const node = found?.node ?? null
+  const nodeType = node?.nodeType
+  const hasKids = !!node?.children?.length
+  const atMaxDepth = (found?.depth ?? 0) >= MAX_DEPTH
+
+  // 普通节点（可重命名/绑定/分支/删除的对象）
+  const isNormalNode = !!node
+
+  // 重命名：普通节点 + 非 course/node 类型（其标签来自外部数据）
+  const canRename = isNormalNode && nodeType !== 'course' && nodeType !== 'node'
+  // 上方/下方插入：__start 不能在自己上方插入；__end 不能在自己下方插入；空选中禁用
+  const canInsertAbove = !!id && !isStart
+  const canInsertBelow = !!id && !isEnd
+  // 类型绑定：普通节点 + 无子路径 + 不是当前类型
+  const canBindTo = (target: 'course' | 'node' | 'note') =>
+    isNormalNode && !hasKids && nodeType !== target
+  // 创建分支：普通节点 + 无子 + 未达深度
+  const canCreateBranch = isNormalNode && !hasKids && !atMaxDepth
+  // 移除分支：普通节点 + 已有子
+  const canRemoveBranch = isNormalNode && hasKids
+  // 删除：普通节点
+  const canDelete = isNormalNode
+
+  return [
+    // 1. 重命名
+    {
+      type: 'btn',
+      icon: 'mdi-pencil-outline',
+      tooltip: t('roadmapCreate.editor.tooltipRename'),
+      handler: () => {
+        if (id && node) startLabelEdit(id, node.label)
+      },
+      disabled: !canRename,
+    },
+    { type: 'divider' },
+    // 2. 插入：上 / 下
+    {
+      type: 'btn',
+      icon: 'mdi-table-row-plus-before',
+      tooltip: t('roadmapCreate.editor.tooltipInsertAbove'),
+      handler: () => {
+        if (isEnd) {
+          insertTrunkAtIndex(props.modelValue.length)
+        } else if (id) {
+          insertBefore(id)
+        }
+      },
+      disabled: !canInsertAbove,
+    },
+    {
+      type: 'btn',
+      icon: 'mdi-table-row-plus-after',
+      tooltip: t('roadmapCreate.editor.tooltipInsertBelow'),
+      handler: () => {
+        if (isStart) {
+          insertTrunkAtIndex(0)
+        } else if (id) {
+          insertAfter(id)
+        }
+      },
+      disabled: !canInsertBelow,
+    },
+    { type: 'divider' },
+    // 3. 类型绑定：course / node / note
+    {
+      type: 'btn',
+      icon: 'mdi-book-outline',
+      tooltip: t('roadmapCreate.editor.tooltipBindCourse'),
+      handler: () => {
+        if (id) bindAsCourse(id)
+      },
+      disabled: !canBindTo('course'),
+    },
+    {
+      type: 'btn',
+      icon: 'mdi-file-document-outline',
+      tooltip: t('roadmapCreate.editor.tooltipBindNode'),
+      handler: () => {
+        if (id) bindAsNode(id)
+      },
+      disabled: !canBindTo('node'),
+    },
+    {
+      type: 'btn',
+      icon: 'mdi-note-text-outline',
+      tooltip: t('roadmapCreate.editor.tooltipSetNote'),
+      handler: () => {
+        if (id) bindAsNote(id)
+      },
+      disabled: !canBindTo('note'),
+    },
+    { type: 'divider' },
+    // 4. 子路径：创建 / 移除
+    {
+      type: 'btn',
+      icon: 'mdi-source-branch',
+      tooltip: t('roadmapCreate.editor.tooltipCreateBranch'),
+      handler: () => {
+        if (id) createBranch(id)
+      },
+      disabled: !canCreateBranch,
+    },
+    {
+      type: 'btn',
+      icon: 'mdi-source-branch-remove',
+      tooltip: t('roadmapCreate.editor.tooltipRemoveBranch'),
+      handler: () => {
+        if (id) removeBranch(id)
+      },
+      disabled: !canRemoveBranch,
+    },
+    { type: 'divider' },
+    // 5. 删除
+    {
+      type: 'btn',
+      icon: 'mdi-trash-can-outline',
+      tooltip: t('roadmapCreate.editor.tooltipDeleteNode'),
+      handler: () => {
+        if (id) deleteNode(id)
+      },
+      danger: true,
+      disabled: !canDelete,
+    },
+  ]
+})
+
+const onToolbarClick = (item: ToolbarItem) => {
+  if (item.type !== 'btn' || item.disabled) return
+  item.handler()
+}
+
 /* ========== 父组件接口 ========== */
 const applyBinding = (oldId: string, payload: BindPayload) => {
   const newId =
-    payload.type === 'course'
-      ? `c${payload.rootNodeId ?? payload.id}`
-      : `n${payload.id}`
+    payload.type === 'course' ? `c${payload.rootNodeId ?? payload.id}` : `n${payload.id}`
 
   if (newId !== oldId && nodeExists(props.modelValue, newId)) {
     emit(
@@ -877,6 +948,8 @@ const applyBinding = (oldId: string, payload: BindPayload) => {
   }
   emit('update:modelValue', replaceNodeAt(props.modelValue, oldId, newNode))
   selectedNodeForBinding.value = newId
+  // 同步更新通用选中态：原 oldId 已被替换为 newId
+  if (selectedNodeId.value === oldId) selectedNodeId.value = newId
 }
 
 const isNodeAddedById = (id: string | number, type: 'course' | 'node'): boolean => {
@@ -893,6 +966,8 @@ defineExpose({
   isNodeAddedById,
   cancelSelection,
   getSelectedNodeId: () => selectedNodeForBinding.value,
+  markInvalidRefs,
+  clearInvalidRefs,
 })
 </script>
 
@@ -912,51 +987,65 @@ defineExpose({
   display: inline-block;
 }
 
-:deep(.node-actions) {
+/* ===== 左侧竖向工具条（flat 风格） ===== */
+.node-toolbar {
   position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  left: 16px;
+  top: 35%;
+  transform: translateY(-50%);
+  z-index: 20;
   display: flex;
-  flex-wrap: nowrap;
-  gap: 4px;
-  z-index: 10;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  padding: 4px;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  border-radius: 6px;
+  gap: 4px;
+  padding: 8px 6px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
 }
 
-:deep(.node-action-btn) {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #ffffff;
-  color: rgb(var(--v-theme-primary));
-  border: 1px solid rgba(0, 0, 0, 0.12);
+.toolbar-divider {
+  width: 32px;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 2px 0;
+}
+
+.toolbar-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: transparent;
+  color: #424242;
+  border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transition:
     background 0.15s ease,
-    color 0.15s ease,
-    transform 0.1s ease,
-    border-color 0.15s ease;
+    color 0.15s ease;
 }
 
-:deep(.node-action-btn:hover) {
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
-  border-color: rgb(var(--v-theme-primary));
-  transform: scale(1.08);
+.toolbar-btn:hover {
+  background: rgba(var(--v-theme-primary), 0.1);
+  color: rgb(var(--v-theme-primary));
+}
+
+.toolbar-btn--danger:hover {
+  background: rgba(211, 47, 47, 0.1);
+  color: #d32f2f;
+}
+
+.toolbar-btn--disabled {
+  color: rgba(0, 0, 0, 0.26);
+  cursor: not-allowed;
+}
+
+.toolbar-btn--disabled:hover {
+  background: transparent;
+  color: rgba(0, 0, 0, 0.26);
 }
 
 :deep(.node-topic) {
@@ -1012,6 +1101,24 @@ defineExpose({
   border-color: #ff9800 !important;
   border-width: 3px !important;
   border-style: solid !important;
+}
+
+:deep(.node-topic--invalid) {
+  border-color: #d32f2f !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+  box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.18);
+}
+
+:deep(.node-invalid-badge) {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #fff;
+  color: #d32f2f;
+  border-radius: 50%;
+  padding: 1px;
+  pointer-events: auto;
 }
 
 :deep(.node-label-input) {

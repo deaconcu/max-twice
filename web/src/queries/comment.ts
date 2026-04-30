@@ -13,9 +13,14 @@ export function useCommentListQuery(
   return useInfiniteQuery({
     queryKey: commentKeys.list(toValue(objectId), toValue(objectType)),
     queryFn: ({ pageParam }) =>
-      commentApi.getComments(toValue(objectId), toValue(objectType), pageParam as string | undefined),
+      commentApi.getComments(
+        toValue(objectId),
+        toValue(objectType),
+        pageParam as string | undefined
+      ),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
     enabled: () => (enabled === undefined ? true : !!toValue(enabled)),
   })
 }
@@ -26,7 +31,8 @@ export function useCommentRepliesQuery(commentId: MaybeRef<number>) {
     queryFn: ({ pageParam }) =>
       commentApi.getCommentReplies(toValue(commentId), pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
   })
 }
 

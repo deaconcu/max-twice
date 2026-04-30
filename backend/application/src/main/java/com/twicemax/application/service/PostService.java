@@ -404,7 +404,7 @@ public class PostService {
 
         // 根据类型调用不同的 DomainService 方法
         Long postId;
-        if (postType == PostType.index) {
+        if (postType == PostType.INDEX) {
             postId = domainService.createIndexPost(userId, request.getNodeId(), request.getContent(), postState);
         } else {
             postId = domainService.createArticlePost(userId, request.getNodeId(), postType.value(), request.getContent(), postState);
@@ -506,7 +506,7 @@ public class PostService {
         PostDO postDO = domainService.validateAndGet(id);
 
         // 如果是index类型，需要先处理节点创建
-        if (postDO.getType() == PostType.index.value()) {
+        if (PostType.INDEX.value().equals(postDO.getType())) {
             // 处理节点创建并获取节点ID列表
             List<Long> referencedNodeIds = processIndexPostNodes(postDO);
 
@@ -604,7 +604,7 @@ public class PostService {
         postDataService.reject(id, reason);
 
         // 根据 postType 发布不同的事件
-        if (postDO.getType() == PostType.index.value()) {
+        if (PostType.INDEX.value().equals(postDO.getType())) {
             // index 类型：解析引用的节点ID列表
             List<Long> referencedNodeIds = parseReferencedNodeIds(postDO.getContent());
             eventPublisher.publishEvent(ContentRemovedEvent.forIndexPost(
@@ -710,7 +710,7 @@ public class PostService {
         postDataService.ban(id, reason);
 
         // 根据 postType 发布不同的事件
-        if (postDO.getType() == PostType.index.value()) {
+        if (PostType.INDEX.value().equals(postDO.getType())) {
             // index 类型：解析引用的节点ID列表
             List<Long> referencedNodeIds = parseReferencedNodeIds(postDO.getContent());
             eventPublisher.publishEvent(ContentBannedEvent.forIndexPost(

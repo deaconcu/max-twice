@@ -1,5 +1,7 @@
 package com.twicemax.shared.domain.exception;
 
+import java.util.Map;
+
 /**
  * 错误码枚举
  *
@@ -226,5 +228,12 @@ public enum StatusCode {
      */
     public BusinessException exception(Throwable cause) {
         return new BusinessException(this, this.message, cause);
+    }
+
+    /**
+     * 创建携带 details 的业务异常（v2 透传到 error.details）。
+     */
+    public BusinessException exception(String localizedMessage, Map<String, Object> details) {
+        return new BusinessException(this, localizedMessage, details);
     }
 }

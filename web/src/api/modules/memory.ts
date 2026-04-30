@@ -333,10 +333,7 @@ export function deleteDeck(deckId: number): Promise<void> {
 /**
  * 添加卡片组到记忆库
  */
-export function addDeckToMemoryBank(request: {
-  deckId: number
-  courseId: number
-}): Promise<void> {
+export function addDeckToMemoryBank(request: { deckId: number; courseId: number }): Promise<void> {
   return client.post('/memory/memory-bank/decks', request)
 }
 

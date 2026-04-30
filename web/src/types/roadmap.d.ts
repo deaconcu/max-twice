@@ -4,8 +4,16 @@ import type { Node, Edge } from '@vue-flow/core'
 
 /**
  * 路线图相关的类型定义
- * 参考：web-ts/src/types/roadmap.ts
  */
+
+/**
+ * 路线图主体状态（revision 模型）
+ *
+ * - NEVER_PUBLISHED：从未发布过（仅草稿，或刚创建未审核）
+ * - PUBLISHED：当前对外可见（current_revision_id 指向有效 revision）
+ * - BANNED：被管理员封禁（仅 admin 与作者本人可见）
+ */
+export type RoadmapState = 'NEVER_PUBLISHED' | 'PUBLISHED' | 'BANNED'
 
 /**
  * 路线图信息接口
@@ -16,7 +24,8 @@ export interface Roadmap {
   roleId?: number // 角色ID
   role?: Role // 角色信息
   description?: string // 描述
-  state?: number // 状态：0-待审核，1-已批准，2-已拒绝
+  /** 主体状态（revision 模型）：NEVER_PUBLISHED / PUBLISHED / BANNED */
+  state?: RoadmapState
   likeCount?: number // 点赞数
   commentCount?: number // 评论数量
   liked?: boolean // 是否已点赞

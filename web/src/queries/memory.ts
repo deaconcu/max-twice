@@ -4,7 +4,10 @@ import { memoryKeys } from './keys'
 import type { MaybeRef } from 'vue'
 import { toValue, computed } from 'vue'
 
-export function useReviewSummaryQuery(state?: MaybeRef<number | undefined>, enabled?: MaybeRef<boolean>) {
+export function useReviewSummaryQuery(
+  state?: MaybeRef<number | undefined>,
+  enabled?: MaybeRef<boolean>
+) {
   return useQuery({
     queryKey: memoryKeys.reviewSummary(toValue(state)),
     queryFn: () => memoryApi.getReviewSummary(toValue(state)),
@@ -15,7 +18,8 @@ export function useReviewSummaryQuery(state?: MaybeRef<number | undefined>, enab
 export function useNextCardQuery(courseId?: MaybeRef<number | undefined>) {
   return useQuery({
     queryKey: memoryKeys.nextCard(toValue(courseId)),
-    queryFn: () => memoryApi.getNextCard(toValue(courseId) ? { courseId: toValue(courseId) } : undefined),
+    queryFn: () =>
+      memoryApi.getNextCard(toValue(courseId) ? { courseId: toValue(courseId) } : undefined),
   })
 }
 
@@ -39,7 +43,8 @@ export function useDecksByNodeQuery(nodeId: MaybeRef<number>) {
     queryFn: ({ pageParam }) =>
       memoryApi.getDecksByNode(toValue(nodeId), { cursor: pageParam as string | undefined }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
   })
 }
 
@@ -53,11 +58,15 @@ export function usePostDecksQuery(postId: MaybeRef<number>, sortBy?: MaybeRef<st
         sortOrder: 'desc',
       }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
   })
 }
 
-export function usePostCreatorDeckQuery(postId: MaybeRef<number>, sortBy?: MaybeRef<string | undefined>) {
+export function usePostCreatorDeckQuery(
+  postId: MaybeRef<number>,
+  sortBy?: MaybeRef<string | undefined>
+) {
   return useInfiniteQuery({
     queryKey: computed(() => memoryKeys.postCreatorDeck(toValue(postId), toValue(sortBy))),
     queryFn: ({ pageParam }) =>
@@ -67,11 +76,15 @@ export function usePostCreatorDeckQuery(postId: MaybeRef<number>, sortBy?: Maybe
         sortOrder: 'desc',
       }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
   })
 }
 
-export function useMyPostDeckQuery(postId: MaybeRef<number>, sortBy?: MaybeRef<string | undefined>) {
+export function useMyPostDeckQuery(
+  postId: MaybeRef<number>,
+  sortBy?: MaybeRef<string | undefined>
+) {
   return useInfiniteQuery({
     queryKey: computed(() => memoryKeys.myPostDeck(toValue(postId), toValue(sortBy))),
     queryFn: ({ pageParam }) =>
@@ -81,7 +94,8 @@ export function useMyPostDeckQuery(postId: MaybeRef<number>, sortBy?: MaybeRef<s
         sortOrder: 'desc',
       }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
   })
 }
 
@@ -89,9 +103,13 @@ export function useMyDecksQuery(state?: MaybeRef<number | undefined>, enabled?: 
   return useInfiniteQuery({
     queryKey: computed(() => memoryKeys.myDecks(toValue(state))),
     queryFn: ({ pageParam }) =>
-      memoryApi.getCurrentUserDecks({ cursor: pageParam as string | undefined, state: toValue(state) }),
+      memoryApi.getCurrentUserDecks({
+        cursor: pageParam as string | undefined,
+        state: toValue(state),
+      }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
     enabled,
   })
 }
@@ -102,7 +120,8 @@ export function useUserDecksQuery(userId: MaybeRef<number>, enabled?: MaybeRef<b
     queryFn: ({ pageParam }) =>
       memoryApi.getUserDecks(toValue(userId), { cursor: pageParam as string | undefined }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
     enabled,
   })
 }
@@ -111,9 +130,13 @@ export function useCardListQuery(courseId: MaybeRef<number | undefined>) {
   return useInfiniteQuery({
     queryKey: memoryKeys.cardList(toValue(courseId)),
     queryFn: ({ pageParam }) =>
-      memoryApi.getCardList({ courseId: toValue(courseId), cursor: pageParam as string | undefined }),
+      memoryApi.getCardList({
+        courseId: toValue(courseId),
+        cursor: pageParam as string | undefined,
+      }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
   })
 }
 

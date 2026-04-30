@@ -240,7 +240,11 @@
     "reachedEnd": "You've reached the end",
     "previewImage": "Preview image",
     "user": "User",
-    "redirecting": "Redirecting..."
+    "redirecting": "Redirecting...",
+    "pending": "Pending",
+    "withdraw": "Withdraw",
+    "withdrawSuccess": "Withdrawn",
+    "fetchFailed": "Failed to fetch"
   },
   "notification": {
     "title": "Notifications",
@@ -606,6 +610,8 @@
       "pending": "Pending",
       "published": "Published",
       "rejected": "Rejected",
+      "noRoles": "No created roles yet",
+      "noCourses": "No created courses yet",
       "searchPlaceholder": "Search...",
       "unfavoriteError": "Failed to unfavorite",
       "learningTab": "Learning",
@@ -686,6 +692,8 @@
         "createdArticles": "Created Articles",
         "createdCatalogs": "Created Catalogs",
         "createdRoadmaps": "Created Roadmaps",
+        "createdRoles": "Created Roles",
+        "createdCourses": "Created Courses",
         "createdDecks": "Created Decks",
         "personalInfo": "Personal Info",
         "roles": "Roles",
@@ -1168,7 +1176,7 @@
     "redo": "Redo",
     "autoLayout": "Auto Layout",
     "saveWithDescription": "Write Description and Save",
-    "editorTitle": "Roadmap Editor",
+    "editorTitle": "Editor",
     "editorDescription": "Search and click courses from the left to add nodes",
     "editorInstructions": "Drag node connections to establish learning paths",
     "nodeCount": "nodes",
@@ -1213,7 +1221,8 @@
       "tooltipRemoveBranch": "Remove branch",
       "tooltipDeleteNode": "Delete node",
       "maxDepthReached": "Maximum branch depth reached",
-      "alreadyHasBranch": "This node already has a branch"
+      "alreadyHasBranch": "This node already has a branch",
+      "invalidRefTooltip": "The referenced course or node is no longer available. Please remove or replace it."
     },
     "messages": {
       "addNodesFirst": "Please add nodes first",
@@ -1247,6 +1256,9 @@
       "published": "Submitted for review",
       "saveFailed": "Save failed",
       "saveFailedRetry": "Save failed, please try again",
+      "invalidReferencesWarning": "Draft saved, but some referenced courses/nodes are no longer available (highlighted in red)",
+      "invalidReferencesError": "Publish failed: some referenced courses/nodes are no longer available (highlighted in red). Please fix them and resubmit.",
+      "lastRejectReason": "Your previous submission was rejected: {reason}",
       "needNodesForLayout": "Please add nodes before using auto layout",
       "autoLayoutDone": "Auto layout applied",
       "loadFailed": "Failed to load roadmap data"

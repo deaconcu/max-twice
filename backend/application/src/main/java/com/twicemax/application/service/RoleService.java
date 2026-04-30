@@ -15,9 +15,12 @@ import com.twicemax.content.role.RoleDO;
 import com.twicemax.content.role.RoleDomainService;
 import com.twicemax.infrastructure.datasource.DataSourceContextHolder;
 import com.twicemax.shared.common.utils.ValidationUtils;
-import com.twicemax.shared.domain.Enums;
+import com.twicemax.shared.domain.Enums.ContentType;
+import com.twicemax.shared.domain.Enums.NewContentState;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentApprovedEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentRejectedEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.ContentRestoredEvent;
 import com.twicemax.shared.domain.exception.StatusCode;
 import com.twicemax.shared.infrastructure.config.SystemProperties;
 import com.twicemax.user.profile.UserDO;
@@ -34,28 +37,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.twicemax.shared.domain.Enums.*;
-
 /**
- * 角色应用服务
- *
- * 负责协调跨领域逻辑、事件发布、DTO转换
- *
- * 核心功能：
- * - DTO 转换（RoleDTO ↔ RoleDO）
- * - 事件发布（ContentApprovedEvent、ContentRejectedEvent）
- * - 跨域数据聚合（getHotRole- 聚合 Ranking 数据）
- * - 配置管理（SystemProperties）
+ * 角色应用服务（revision 模型）。
+ * <p>
+ * 主体状态 {@link NewContentState}：NEVER_PUBLISHED / PUBLISHED / BANNED；
+ * 一次"申请→审核"的生命周期（SUBMITTED / PUBLISHED / REJECTED / WITHDRAWN）落在 content_revision。
+ * <p>
+ * 职责：
+ * - 协调 RoleDomainService 完成业务流转
+ * - 跨域聚合（Ranking、Stats、Bookmark）
+ * - 发布生命周期事件（Approved / Rejected / Banned / Restored）
+ * - DTO 转换
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RoleService {
 
-    // 领域服务
     private final RoleDomainService roleDomainService;
 
-    // 跨域服务依赖
     private final RoleRankingDomainService roleRankingService;
     private final ContentStatsDataService contentStatsDataService;
     private final BookmarkService bookmarkService;
@@ -63,40 +63,34 @@ public class RoleService {
     private final ContentVisibilityService contentVisibilityService;
     private final MeilisearchService meilisearchService;
 
-    // 事件发布
     private final ApplicationEventPublisher eventPublisher;
 
-    // 配置
     private final SystemProperties systemProperties;
 
-    // DTO转换器
     private final RoleConverter roleConverter;
-    
-    // ========== 常量定义 ==========
-    
+
     private static final String DEFAULT_EMPTY_STRING = "";
 
     // ========== Query 方法 ==========
 
     /**
-     * 返回正常状态的角色信息
-     * 角色被拒绝或屏蔽时抛出异常
+     * 返回正常状态的角色信息。
+     * 角色被屏蔽时由 contentVisibilityService 抛出异常。
      */
     public RoleDTO getById(long id, boolean published, Long userId) {
         RoleDO roleDO = roleDomainService.validateAndGet(id);
         if (roleDO == null) return null;
 
-        // 检查角色的可见性
         contentVisibilityService.validateVisibility(ContentType.role, id, userId);
 
         return toDTO(roleDO, userId);
     }
 
     /**
-     * 获取角色列表（管理后台专用，包含状态和原因）
+     * 管理后台按主体状态分页（NEVER_PUBLISHED / PUBLISHED / BANNED）。
      */
-    public KeysetPageResponse<RoleAdminDTO> listByState(ContentState state, Long lastId, int limit) {
-        Byte stateValue = state != null ? state.value() : null;
+    public KeysetPageResponse<RoleAdminDTO> listByState(NewContentState state, Long lastId, int limit) {
+        String stateValue = state != null ? state.value() : null;
         List<RoleDO> roleDOList = roleDomainService.listByState(stateValue, lastId, limit + 1);
 
         boolean hasMore = roleDOList.size() > limit;
@@ -106,7 +100,6 @@ public class RoleService {
 
         List<RoleAdminDTO> dtoList = roleConverter.toAdminDTO(roleDOList);
 
-        // 填充 creator
         Set<Long> creatorIds = roleDOList.stream()
                 .map(RoleDO::getCreatorId)
                 .filter(id -> id != null)
@@ -121,7 +114,6 @@ public class RoleService {
             }
         }
 
-        // 填充统计数据
         if (!dtoList.isEmpty()) {
             List<Long> roleIds = dtoList.stream()
                     .map(RoleAdminDTO::getId)
@@ -146,9 +138,6 @@ public class RoleService {
         return KeysetPageResponse.of(dtoList, hasMore, null, nextLastId);
     }
 
-    /**
-     * 获取角色详情（管理后台专用，任意状态）
-     */
     public RoleAdminDTO getAdminById(Long id) {
         RoleDO roleDO = roleDomainService.getById(id);
         if (roleDO == null) {
@@ -157,7 +146,6 @@ public class RoleService {
         RoleAdminDTO dto = roleConverter.toAdminDTO(roleDO);
         dto.setCreator(userService.getUserBriefById(roleDO.getCreatorId()));
 
-        // 填充统计数据
         contentStatsDataService.getByContent(ContentType.role, id).ifPresent(stats -> {
             dto.setRoadmapCount(stats.getRoadmapCount() != null ? stats.getRoadmapCount() : 0);
             dto.setBookmarkCount(stats.getBookmarkCount() != null ? stats.getBookmarkCount() : 0);
@@ -167,10 +155,11 @@ public class RoleService {
     }
 
     /**
-     * 获取已发布的角色列表（公开接口，只返回已发布状态）
+     * 已发布角色列表（公开接口）。
      */
     public List<RoleDTO> getApprovedByLastId(String cursor, int limit) {
-        List<RoleDO> roleDOList = roleDomainService.listByState(ContentState.PUBLISHED.value(), Cursor.decode(cursor).id(), limit);
+        List<RoleDO> roleDOList = roleDomainService.listByState(
+                NewContentState.PUBLISHED_VALUE, Cursor.decode(cursor).id(), limit);
         return toDTO(roleDOList);
     }
 
@@ -189,9 +178,6 @@ public class RoleService {
         return toDTO(roleDOList);
     }
 
-    /**
-     * 管理后台按名称搜索角色（搜索所有状态，支持滚动分页）
-     */
     public KeysetPageResponse<RoleAdminDTO> searchByName(String name, Long lastId) {
         int pageSize = 20;
         List<RoleDO> roleDOList = roleDomainService.searchByName(name, lastId, pageSize + 1);
@@ -203,7 +189,6 @@ public class RoleService {
 
         List<RoleAdminDTO> dtoList = roleConverter.toAdminDTO(roleDOList);
 
-        // 填充 creator
         Set<Long> creatorIds = roleDOList.stream()
                 .map(RoleDO::getCreatorId)
                 .filter(id -> id != null)
@@ -226,134 +211,174 @@ public class RoleService {
 
     @Transactional
     public Long create(CreateRoleRequest request, UserDO creator) {
-        // 调用 DomainService 创建角色
         return roleDomainService.create(
-            creator.getId(),
-            request.getName(),
-            request.getDescription(),
-            request.getSkills(),
-            request.getMainCategory(),
-            request.getSubCategory()
+                creator.getId(),
+                request.getName(),
+                request.getDescription(),
+                request.getSkills(),
+                request.getMainCategory(),
+                request.getSubCategory()
         );
     }
 
+    /**
+     * 用户被驳回 / 撤回后重新提交。
+     */
     @Transactional
-    public void update(Long id, UpdateRoleRequest request, UserDO operator) {
-        // 参数验证
+    public Long resubmit(Long roleId, UpdateRoleRequest request, UserDO author) {
         if (request == null) {
             throw StatusCode.INVALID_PARAMETER.exception("更新请求不能为空");
         }
-
-        // 调用 DomainService 更新角色
-        roleDomainService.update(
-            id,
-            request.getName(),
-            request.getDescription(),
-            request.getPrice() != null ? String.valueOf(request.getPrice()) : null,
-            request.getSkills(),
-            request.getMainCategory(),
-            request.getSubCategory(),
-            request.getIcon(),
-            request.getReason()
+        return roleDomainService.resubmit(
+                roleId,
+                author.getId(),
+                request.getName(),
+                request.getDescription(),
+                request.getSkills(),
+                request.getIcon(),
+                request.getMainCategory(),
+                request.getSubCategory()
         );
+    }
+
+    /**
+     * 作者撤回审核中的版本。
+     */
+    @Transactional
+    public void withdraw(long roleId, UserDO author) {
+        roleDomainService.withdraw(roleId, author.getId());
+    }
+
+    /**
+     * 管理员直接编辑（走 revision 留审计）。
+     */
+    @Transactional
+    public void edit(Long roleId, UpdateRoleRequest request, UserDO operator) {
+        if (request == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("更新请求不能为空");
+        }
+        roleDomainService.edit(
+                roleId,
+                operator.getId(),
+                request.getName(),
+                request.getDescription(),
+                request.getSkills(),
+                request.getIcon(),
+                request.getMainCategory(),
+                request.getSubCategory()
+        );
+
+        RoleDO role = roleDomainService.getById(roleId);
+        meilisearchService.indexRole(role, DataSourceContextHolder.getLanguage());
     }
 
     @Transactional
     public void approve(long id, UserDO operator) {
-        // 调用 DomainService 执行审核通过
-        roleDomainService.approve(id);
+        roleDomainService.approve(id, operator.getId());
 
-        // 获取角色信息
         RoleDO roleDO = roleDomainService.getById(id);
 
-        // 发布审核通过事件，触发消息通知
         eventPublisher.publishEvent(ContentApprovedEvent.forRole(
-            roleDO.getCreatorId(),
-            roleDO.getId(),
-            roleDO.getName()
+                roleDO.getCreatorId(),
+                roleDO.getId(),
+                roleDO.getName()
         ));
 
-        // 异步更新搜索索引
         meilisearchService.indexRole(roleDO, DataSourceContextHolder.getLanguage());
     }
 
     @Transactional
     public void reject(long id, String reason, UserDO operator) {
-        // 调用 DomainService 执行拒绝
-        roleDomainService.reject(id, reason);
+        roleDomainService.reject(id, reason, operator.getId());
 
-        // 获取角色信息
         RoleDO role = roleDomainService.getById(id);
         String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
 
-        // 发布审核拒绝事件，触发消息通知
         eventPublisher.publishEvent(ContentRejectedEvent.forRole(
-            role.getCreatorId(),
-            role.getId(),
-            role.getName(),
-            reasonValue
+                role.getCreatorId(),
+                role.getId(),
+                role.getName(),
+                reasonValue
         ));
 
-        // 异步更新搜索索引（从索引中移除）
         meilisearchService.indexRole(role, DataSourceContextHolder.getLanguage());
     }
 
     @Transactional
     public void ban(long id, String reason, UserDO operator) {
-        // 调用 DomainService 执行封禁
-        roleDomainService.ban(id, reason);
+        roleDomainService.ban(id, reason, operator.getId());
 
+        RoleDO role = roleDomainService.getById(id);
         String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
 
-        // ban 不发送任何消息或事件
+        eventPublisher.publishEvent(ContentBannedEvent.forRole(
+                role.getCreatorId(),
+                role.getId(),
+                role.getName(),
+                reasonValue
+        ));
+
         log.info("角色 {} 被封禁，操作者: {}, 原因: {}", id, operator.getId(), reasonValue);
 
-        // 异步更新搜索索引（从索引中移除）
-        RoleDO role = roleDomainService.getById(id);
         meilisearchService.indexRole(role, DataSourceContextHolder.getLanguage());
     }
 
     /**
-     * 删除角色
+     * 解封：恢复到 PUBLISHED（已有发布版本）或 NEVER_PUBLISHED。
      */
     @Transactional
+    public void restore(long id, UserDO operator) {
+        roleDomainService.restore(id);
+
+        RoleDO role = roleDomainService.getById(id);
+
+        eventPublisher.publishEvent(ContentRestoredEvent.forRole(
+                operator.getId(),
+                role.getCreatorId(),
+                role.getId(),
+                role.getName(),
+                DEFAULT_EMPTY_STRING
+        ));
+
+        meilisearchService.indexRole(role, DataSourceContextHolder.getLanguage());
+    }
+
+    @Transactional
     public void delete(long id, UserDO operator) {
-        // 调用 DomainService 执行删除
         roleDomainService.delete(id);
 
-        // 异步从搜索索引中移除
         meilisearchService.deleteRole(id, DataSourceContextHolder.getLanguage());
     }
 
     /**
-     * 获取热门角色列表
-     * 跨域查询：聚合 role 数据和 ranking 数据
+     * 用户视角：分页查看自己创建的角色（包含 NEVER_PUBLISHED / PUBLISHED；默认排除 BANNED）。
      */
+    public List<RoleDTO> getUserRoles(Long userId, String cursor, NewContentState state, int limit) {
+        List<RoleDO> roleDOList = roleDomainService.listByCreator(
+                userId, Cursor.decode(cursor).id(), limit, state);
+        return toDTO(roleDOList, userId);
+    }
+
     public List<RoleDTO> getHotRoles(int limit) {
         validateHotRolesLimit(limit);
 
         try {
-            // 从 Ranking 域获取热门角色ID列表
             List<Long> hotRoleIds = roleRankingService.getHotRoleIds(limit);
 
             if (hotRoleIds.isEmpty()) {
                 return new ArrayList<>();
             }
 
-            // 从 Role 域获取角色信息
             List<RoleDO> roleDOList = roleDomainService.getByIds(hotRoleIds);
 
             List<RoleDTO> result = new ArrayList<>();
             for (RoleDO roleDO : roleDOList) {
-                // 只返回已发布状态的角色
-                if (roleDO.getState() != ContentState.PUBLISHED.value()) {
+                if (!NewContentState.PUBLISHED_VALUE.equals(roleDO.getState())) {
                     continue;
                 }
 
-                // 转换为 DTO
                 RoleDTO roleDTO = toDTO(roleDO);
 
-                // 从 Ranking 域获取学习人数
                 long learningCount = roleRankingService.getRoleLearningCount(roleDO.getId());
                 roleDTO.setLearnerCount((int) learningCount);
 
@@ -370,20 +395,13 @@ public class RoleService {
 
     // ========== DTO转换方法 ==========
 
-    /**
-     * 转换单个对象为DTO
-     */
     public RoleDTO toDTO(RoleDO roleDO) {
         return roleConverter.toDTO(roleDO);
     }
 
-    /**
-     * 转换单个对象为DTO（含收藏状态）
-     */
     public RoleDTO toDTO(RoleDO roleDO, Long userId) {
         RoleDTO dto = roleConverter.toDTO(roleDO);
 
-        // 填充收藏状态
         if (userId != null) {
             dto.setBookmarked(bookmarkService.isBookmarked(userId, roleDO.getId(), ContentType.role));
         } else {
@@ -393,20 +411,13 @@ public class RoleService {
         return dto;
     }
 
-    /**
-     * 转换列表为DTO列表
-     */
     public List<RoleDTO> toDTO(List<RoleDO> roleDOList) {
         return roleConverter.toDTO(roleDOList);
     }
 
-    /**
-     * 转换列表为DTO列表（含收藏状态）
-     */
     public List<RoleDTO> toDTO(List<RoleDO> roleDOList, Long userId) {
         List<RoleDTO> dtos = roleConverter.toDTO(roleDOList);
 
-        // 批量填充收藏状态
         if (userId != null && !dtos.isEmpty()) {
             List<Long> ids = dtos.stream().map(RoleDTO::getId).collect(Collectors.toList());
             List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, ids, ContentType.role);

@@ -27,7 +27,10 @@ const userStore = useUserStore()
 const targetUserId = computed(() => props.userId ?? userStore.currentUser!.id)
 
 // 加载热力图数据
-const { data: heatmapData } = useHeatmapQuery(targetUserId, computed(() => props.months))
+const { data: heatmapData } = useHeatmapQuery(
+  targetUserId,
+  computed(() => props.months)
+)
 
 // 日数据类型
 interface DayData {

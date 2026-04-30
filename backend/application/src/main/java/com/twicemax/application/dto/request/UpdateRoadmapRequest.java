@@ -2,9 +2,14 @@ package com.twicemax.application.dto.request;
 
 import com.twicemax.shared.common.validator.ConfigurableSize;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+/**
+ * 更新路线图请求体（仅 saveDraft 用）。
+ * <p>
+ * 该端点只更新草稿，不改变 roadmap.state，也不产生 revision。
+ * 提交审核请走 POST /roadmaps/{id}/submit。
+ */
 @Data
 public class UpdateRoadmapRequest {
 
@@ -14,11 +19,5 @@ public class UpdateRoadmapRequest {
 
     @ConfigurableSize(configKey = "roadmap-description")
     private String description;
-
-    /**
-     * 状态：0-草稿，1-提交审核
-     * 必须传递，只能是这两个值
-     */
-    @NotNull(message = "状态不能为空")
-    private Byte state;
 }
+

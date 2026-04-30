@@ -17,12 +17,22 @@ export interface Course {
   creator?: User // 创建者
   rootNodeId?: number // 根节点ID
   parentCourse?: Course // 父课程信息
-  state?: ContentState // 课程状态
+  /**
+   * 课程状态
+   * - 已迁到 NewContentState 字符串枚举：'NEVER_PUBLISHED' | 'PUBLISHED' | 'BANNED'
+   * - 旧 Byte 枚举字段保留兼容（仅旧 admin 列表残留依赖，下个迭代删除）
+   */
+  state?: ContentState | 'NEVER_PUBLISHED' | 'PUBLISHED' | 'BANNED'
   mainCategory?: number // 主分类ID
   subCategory?: number // 子分类ID
-  reason?: string // 拒绝原因
+  reason?: string // 拒绝原因（admin/审核流程使用）
   createdAt?: string // 创建时间
   updatedAt?: string // 更新时间
+
+  /** 审核中版本 ID（有值表示存在 pending revision） */
+  pendingRevisionId?: number | null
+  /** 已发布版本 ID（NEVER_PUBLISHED 时为 null） */
+  currentRevisionId?: number | null
 
   // 统计字段
   learnerCount?: number // 学习人数
@@ -34,22 +44,26 @@ export interface Course {
 
 /**
  * 创建课程请求
+ * - parentCourseId 不传 / 0：创建主课程，需 mainCategory + subCategory
+ * - parentCourseId &gt; 0：创建子课程，分类继承自父课程，传入 mainCategory/subCategory 会被忽略
  */
 export interface CreateCourseRequest {
   name: string
   description: string
   mainCategory: number | null
   subCategory: number | null
+  parentCourseId?: number | null
 }
 
 /**
- * 更新课程请求
+ * 更新课程请求（重新提交时使用，与 admin update 共用）
  */
 export interface UpdateCourseRequest {
-  name?: string
-  description?: string
-  mainCategory?: number
-  subCategory?: number
+  name: string
+  description: string
+  icon?: string
+  mainCategory: number
+  subCategory: number
 }
 
 /**

@@ -35,7 +35,7 @@ public class UpvoteDomainService {
      * @return UpvoteAction 操作结果（ADDED/REMOVED/SWITCHED）
      */
     @Transactional
-    public UpvoteAction upvote(Long userId, Long objectId, Integer objectType, Integer type) {
+    public UpvoteAction upvote(Long userId, Long objectId, Integer objectType, String type) {
         // 查询现有点赞记录
         UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, objectId, objectType);
 
@@ -61,7 +61,7 @@ public class UpvoteDomainService {
         }
 
         // 场景3：切换点赞类型
-        Integer oldType = upvoteDO.getType();
+        String oldType = upvoteDO.getType();
         upvoteDO.setType(type);
         upvoteDataService.update(upvoteDO);
         log.debug("点赞 切换类型: userId={}，objectId={}，objectType={}，oldType={}，newType={}",
@@ -89,7 +89,7 @@ public class UpvoteDomainService {
             upvoteDO.setUserId(userId);
             upvoteDO.setObjectId(objectId);
             upvoteDO.setObjectType(objectType);
-            upvoteDO.setType(Enums.VoteType.like.value()); // 评论、路线图、卡片组都使用 like 类型
+            upvoteDO.setType(Enums.VoteType.LIKE.value()); // 评论、路线图、卡片组都使用 like 类型
             upvoteDataService.insert(upvoteDO);
             return true;
         }
@@ -141,10 +141,10 @@ public class UpvoteDomainService {
      */
     public static class UpvoteAction {
         private final UpvoteActionType actionType;
-        private final Integer newType;
-        private final Integer oldType;
+        private final String newType;
+        private final String oldType;
 
-        public UpvoteAction(UpvoteActionType actionType, Integer newType, Integer oldType) {
+        public UpvoteAction(UpvoteActionType actionType, String newType, String oldType) {
             this.actionType = actionType;
             this.newType = newType;
             this.oldType = oldType;
@@ -154,11 +154,11 @@ public class UpvoteDomainService {
             return actionType;
         }
 
-        public Integer getNewType() {
+        public String getNewType() {
             return newType;
         }
 
-        public Integer getOldType() {
+        public String getOldType() {
             return oldType;
         }
     }

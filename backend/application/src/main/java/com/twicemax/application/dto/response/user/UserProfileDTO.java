@@ -50,7 +50,7 @@ public class UserProfileDTO extends UserSummaryDTO {
 
     /**
      * 用户角色
-     * 说明：USER(0), MODERATOR(1), ADMIN(2), SUPER_ADMIN(3)
+     * 说明：USER, MODERATOR, ADMIN, SUPER
      */
     private Integer role;
 

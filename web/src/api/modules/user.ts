@@ -89,9 +89,10 @@ export const userApi = {
 
   /**
    * 获取当前用户的路线图列表
+   * @param state 路线图主体状态：NEVER_PUBLISHED | PUBLISHED（BANNED 由后端拦截，不允许查询）
    */
-  getCurrentUserRoadmaps(cursor?: string, state?: number): Promise<Roadmap[]> {
-    const params: { cursor?: string; state?: number } = {}
+  getCurrentUserRoadmaps(cursor?: string, state?: string): Promise<Roadmap[]> {
+    const params: { cursor?: string; state?: string } = {}
     if (cursor !== undefined) params.cursor = cursor
     if (state !== undefined) params.state = state
     return apiClient.get('/users/me/roadmaps', { params })

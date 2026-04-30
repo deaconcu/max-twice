@@ -538,7 +538,7 @@ public class PageService {
 
     private CourseDO validateCourseExists(Long courseId) {
         CourseDO courseDO = courseDataService.validateAndGet(courseId);
-        if (courseDO.getState() != ContentState.PUBLISHED.value()) {
+        if (!NewContentState.PUBLISHED_VALUE.equals(courseDO.getState())) {
             throw StatusCode.COURSE_IS_NOT_PUBLISHED.exception();
         }
         return courseDO;
@@ -677,7 +677,7 @@ public class PageService {
         postDTO.setCreator(userMap.get(postDTO.getCreatorId()));
 
         // 目录类型帖子：将逗号分隔的 node id 转换为包含完整 node 信息的 JSON
-        if (postDO.getType() != null && postDO.getType() == PostType.index.value()) {
+        if (postDO.getType() != null && PostType.INDEX.value().equals(postDO.getType())) {
             String enrichedContent = enrichIndexPostContent(postDO.getContent());
             postDTO.setContent(enrichedContent);
         }

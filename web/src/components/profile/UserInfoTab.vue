@@ -316,7 +316,6 @@ const localUserInfo = ref({
   timezone: props.userInfo.timezone || DEFAULT_TIMEZONE,
 })
 
-
 // 显示修改状态
 const displayModifyName = ref(false)
 const displayModifyBio = ref(false)
@@ -436,7 +435,11 @@ const onModifyBio = () => {
 const onModifyTimezone = () => {
   displayModifyTimezone.value = false
   updateUserMutation.mutate(
-    { name: localUserInfo.value.name, biography: localUserInfo.value.bio, timezone: localUserInfo.value.timezone },
+    {
+      name: localUserInfo.value.name,
+      biography: localUserInfo.value.bio,
+      timezone: localUserInfo.value.timezone,
+    },
     { onSuccess: () => showSnackbar?.(t('user.profile.userInfo.saveSuccess'), 'success') }
   )
 }

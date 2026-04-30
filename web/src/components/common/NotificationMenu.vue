@@ -485,10 +485,17 @@ const handleMessageClick = (message: Message) => {
       type === MessageType.COURSE_REJECTED ||
       type === MessageType.COURSE_BANNED
     ) {
-      // 课程审核 - 跳转到课程
-      const courseId = data.courseId
-      if (courseId) {
-        url = `/course/${courseId}`
+      // 课程审核：
+      // - APPROVED：跳详情页
+      // - REJECTED：跳"我的课程"列表，方便重新提交
+      // - BANNED：跳详情页（页面会显示封禁态/不可见）
+      if (type === MessageType.COURSE_REJECTED) {
+        url = '/users/me?mode=creator&tab=created-courses'
+      } else {
+        const courseId = data.courseId
+        if (courseId) {
+          url = `/courses/${courseId}`
+        }
       }
     } else if (type === MessageType.POST_REJECTED || type === MessageType.POST_BANNED) {
       // 帖子审核 - 跳转到帖子
@@ -507,16 +514,27 @@ const handleMessageClick = (message: Message) => {
       type === MessageType.ROLE_REJECTED ||
       type === MessageType.ROLE_BANNED
     ) {
-      // 角色审核 - 跳转到角色
-      const roleId = data.roleId
-      if (roleId) {
-        url = `/role/${roleId}`
+      // 角色审核：
+      // - APPROVED：跳详情页
+      // - REJECTED：跳"我的角色"列表，方便重新提交
+      // - BANNED：跳详情页（页面会显示封禁态/不可见）
+      if (type === MessageType.ROLE_REJECTED) {
+        url = '/users/me?mode=creator&tab=created-roles'
+      } else {
+        const roleId = data.roleId
+        if (roleId) {
+          url = `/role/${roleId}`
+        }
       }
     } else if (type === MessageType.ROADMAP_REJECTED || type === MessageType.ROADMAP_BANNED) {
-      // 路线图审核 - 跳转到角色/路线图
-      const roleId = data.roleId
-      if (roleId) {
-        url = `/role/${roleId}`
+      // 路线图审核：REJECTED 跳"我的路线图"列表，BANNED 跳所属角色
+      if (type === MessageType.ROADMAP_REJECTED) {
+        url = '/users/me?mode=creator&tab=roadmaps'
+      } else {
+        const roleId = data.roleId
+        if (roleId) {
+          url = `/role/${roleId}`
+        }
       }
     } else if (
       type === MessageType.MEMORY_DECK_REJECTED ||
@@ -543,7 +561,6 @@ const handleMessageClick = (message: Message) => {
     console.error('处理消息点击失败:', error)
   }
 }
-
 </script>
 
 <template>

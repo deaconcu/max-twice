@@ -52,32 +52,51 @@
       <!-- 加载状态 -->
       <LoadingSpinner v-if="loading" />
 
-      <!-- 草稿描述 -->
-      <div v-if="!loading && savedDraftDescription" class="draft-description-top mb-4">
-        <div class="d-flex align-start">
-          <div class="flex-1" style="min-width: 0">
-            <div class="text-caption text-grey-darken-1 mb-1">
-              {{ t('roadmapCreate.draftDescription') }}
-            </div>
-            <div class="text-body-2 font-weight-medium text-grey-darken-3 draft-description-text">
-              {{ savedDraftDescription }}
-            </div>
-          </div>
-          <v-btn icon size="small" variant="text" @click="showSaveDialog = true">
-            <v-icon icon="mdi-file-document-edit-outline" color="grey-darken-1" size="20" />
-          </v-btn>
-        </div>
-      </div>
-
       <div v-if="!loading" class="content-layout">
         <!-- 编辑器主区 -->
         <div class="main-content">
           <v-card border rounded="xl" class="flow-editor-card">
             <v-card-title
-              class="pa-3 pa-sm-4 d-flex flex-row align-center justify-space-between ga-2 ga-sm-3"
+              class="pa-3 pa-sm-4 d-flex flex-row align-center ga-2 ga-sm-3"
             >
-              <span class="text-h6 font-weight-bold">{{ t('roadmapCreate.editorTitle') }}</span>
-              <div class="d-flex flex-wrap align-center gap-2">
+              <span class="text-h6 font-weight-bold flex-shrink-0">{{
+                t('roadmapCreate.editorTitle')
+              }}</span>
+
+              <!-- 草稿描述：标题与按钮组之间，占据剩余空间 -->
+              <div
+                v-if="savedDraftDescription"
+                class="draft-description-inline d-flex align-center flex-grow-1"
+                style="min-width: 0"
+              >
+                <v-tooltip location="bottom" max-width="400">
+                  <template #activator="{ props: tipProps }">
+                    <div
+                      v-bind="tipProps"
+                      class="draft-description-text-inline text-body-2 text-grey-darken-2"
+                    >
+                      <span class="text-caption text-grey-darken-1 mr-2">{{
+                        t('roadmapCreate.draftDescription')
+                      }}</span>
+                      <span>{{ savedDraftDescription }}</span>
+                    </div>
+                  </template>
+                  <div>{{ savedDraftDescription }}</div>
+                </v-tooltip>
+                <v-btn
+                  icon
+                  size="small"
+                  variant="text"
+                  density="comfortable"
+                  class="flex-shrink-0 ml-1"
+                  @click="showSaveDialog = true"
+                >
+                  <v-icon icon="mdi-file-document-edit-outline" color="grey-darken-1" size="18" />
+                </v-btn>
+              </div>
+              <div v-else class="flex-grow-1"></div>
+
+              <div class="d-flex flex-wrap align-center gap-2 flex-shrink-0">
                 <v-tooltip :text="t('roadmapCreate.undo')" location="top" :open-delay="100">
                   <template #activator="{ props: tipProps }">
                     <v-btn
@@ -359,7 +378,9 @@
                         :disabled="isNodeAdded(node)"
                         @click.stop="bindNode(node)"
                       >
-                        <v-icon size="14">{{ isNodeAdded(node) ? 'mdi-check' : 'mdi-plus' }}</v-icon>
+                        <v-icon size="14">{{
+                          isNodeAdded(node) ? 'mdi-check' : 'mdi-plus'
+                        }}</v-icon>
                       </v-btn>
                     </div>
                   </div>
@@ -468,8 +489,10 @@ import { courseApi } from '@/api/modules/course'
 import { searchApi } from '@/api/modules/search'
 import {
   useRoadmapDetailQuery,
+  useRoadmapEditQuery,
   useCreateRoadmapMutation,
   useUpdateRoadmapMutation,
+  useSubmitRoadmapMutation,
 } from '@/queries/roadmap'
 import { useRoleDetailQuery } from '@/queries/role'
 import { getGlobalSnackbar } from '@/composables/config'
@@ -595,14 +618,13 @@ const showSaveDialog = ref(false)
 const roadmapDescription = ref('')
 const savedDraftDescription = ref('')
 const draftRoadmapId = ref<number | null>(null)
-const roadmapState = ref<number | null>(null)
+const roadmapState = ref<'NEVER_PUBLISHED' | 'PUBLISHED' | 'BANNED' | null>(null)
 
 const { data: roleData } = useRoleDetailQuery(roleId)
 const roleName = computed(() => roleData.value?.name ?? '')
 
-const canSaveAsDraft = computed(
-  () => roadmapState.value === null || roadmapState.value === 0
-)
+// BANNED 路线图禁止任何编辑保存；其它状态都允许保存草稿（包括已发布的——草稿留给作者，不影响线上版）
+const canSaveAsDraft = computed(() => roadmapState.value !== 'BANNED')
 
 /* ========== 确认对话框 ========== */
 const confirmDialogVisible = ref(false)
@@ -823,6 +845,7 @@ const validateAllBound = (nodes: RoadmapNode[]): boolean => {
 /* ========== 保存 ========== */
 const { mutate: createRoadmapMutate } = useCreateRoadmapMutation()
 const { mutate: updateRoadmapMutate } = useUpdateRoadmapMutation()
+const { mutate: submitRoadmapMutate } = useSubmitRoadmapMutation()
 
 const saveRoadmap = (type: 'draft' | 'publish') => {
   if (!roadmapDescription.value.trim()) {
@@ -844,9 +867,16 @@ const saveRoadmap = (type: 'draft' | 'publish') => {
 
   try {
     const content = JSON.stringify({ v: 2, trunk: serialize(trunk.value) })
-    const state = type === 'draft' ? 0 : 1
 
-    const onSaveSuccess = (result: { id?: number } | null | undefined) => {
+    const onSaveSuccess = (
+      result:
+        | {
+            id?: number
+            invalidReferences?: { missingCourseIds: number[]; missingNodeIds: number[] }
+          }
+        | null
+        | undefined
+    ) => {
       const message =
         type === 'draft'
           ? t('roadmapCreate.messages.draftSaved')
@@ -861,30 +891,61 @@ const saveRoadmap = (type: 'draft' | 'publish') => {
       }
       saving.value = false
       saveType.value = ''
+
+      // 处理失效引用：草稿允许保存但要标红提示用户
+      const invalid = result?.invalidReferences
+      if (invalid && (invalid.missingCourseIds.length || invalid.missingNodeIds.length)) {
+        editorRef.value?.markInvalidRefs(invalid.missingCourseIds, invalid.missingNodeIds)
+        showSnackbar(t('roadmapCreate.messages.invalidReferencesWarning'), 'warning')
+      } else {
+        editorRef.value?.clearInvalidRefs()
+      }
     }
-    const onSaveError = () => {
-      showSnackbar(t('roadmapCreate.messages.saveFailedRetry'), 'error')
+    const onSaveError = (error: unknown) => {
+      // 提交失败：从异常 details 解析失效引用，标红节点
+      const apiErr = error as
+        | { details?: { missingCourseIds?: number[]; missingNodeIds?: number[] } }
+        | undefined
+      const missingCourseIds = apiErr?.details?.missingCourseIds ?? []
+      const missingNodeIds = apiErr?.details?.missingNodeIds ?? []
+      if (missingCourseIds.length || missingNodeIds.length) {
+        editorRef.value?.markInvalidRefs(missingCourseIds, missingNodeIds)
+        showSnackbar(t('roadmapCreate.messages.invalidReferencesError'), 'error')
+      } else {
+        showSnackbar(t('roadmapCreate.messages.saveFailedRetry'), 'error')
+      }
       saving.value = false
       saveType.value = ''
     }
 
     if (draftRoadmapId.value) {
+      // 已有 roadmap：先 update 草稿；如果是 publish 再 submit
+      const id = draftRoadmapId.value
       updateRoadmapMutate(
+        { id, content, description: roadmapDescription.value.trim() },
         {
-          id: draftRoadmapId.value,
-          content,
-          description: roadmapDescription.value.trim(),
-          state,
-        },
-        { onSuccess: onSaveSuccess, onError: onSaveError }
+          onSuccess: (saveResult) => {
+            if (type === 'draft') {
+              onSaveSuccess(saveResult)
+              return
+            }
+            // 发布：用 submit 端点产生新 revision
+            submitRoadmapMutate(id, {
+              onSuccess: (submitResult) => onSaveSuccess(submitResult),
+              onError: onSaveError,
+            })
+          },
+          onError: onSaveError,
+        }
       )
     } else {
+      // 新建：直接通过 createRoadmap 的 submit 标志一次性完成
       createRoadmapMutate(
         {
           roleId: roleId.value,
           content,
           description: roadmapDescription.value.trim(),
-          state,
+          submit: type === 'publish',
         },
         { onSuccess: onSaveSuccess, onError: onSaveError }
       )
@@ -920,7 +981,7 @@ const resetAll = () => {
 }
 
 /* ========== 加载 ========== */
-const { data: roadmapData, isLoading: roadmapLoading } = useRoadmapDetailQuery(
+const { data: roadmapEditData, isLoading: roadmapLoading } = useRoadmapEditQuery(
   computed(() => roadmapId.value ?? 0),
   { enabled: isEditMode }
 )
@@ -949,18 +1010,26 @@ const loadFromContent = (raw: string | object | undefined): RoadmapNode[] => {
   }
 }
 
-watch(roadmapData, (newData) => {
+watch(roadmapEditData, (newData) => {
   if (newData && isEditMode.value) {
     roadmapDescription.value = newData.description || ''
     savedDraftDescription.value = newData.description || ''
     draftRoadmapId.value = newData.id
     roadmapState.value = newData.state ?? null
     isTimeTraveling = true
-    trunk.value = loadFromContent(newData.content)
+    trunk.value = loadFromContent(newData.content ?? undefined)
     resetHistory(trunk.value)
     nextTick(() => {
       isTimeTraveling = false
     })
+
+    // 上次审核被驳回的提示（lastReject 由后端返回）
+    if (newData.lastReject?.reason) {
+      showSnackbar(
+        t('roadmapCreate.messages.lastRejectReason', { reason: newData.lastReject.reason }),
+        'warning'
+      )
+    }
   }
 })
 
@@ -982,13 +1051,13 @@ watch(copyRoadmapData, (newData) => {
   /* 使用 DefaultLayout 的默认 padding */
 }
 
-.draft-description-text {
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  -webkit-box-orient: vertical;
+.draft-description-text-inline {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
-  word-break: break-word;
-  line-height: 1.5;
+  text-overflow: ellipsis;
+  cursor: help;
 }
 
 .dialog-close-btn {

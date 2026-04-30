@@ -305,9 +305,7 @@ const activeQuery = computed(() => {
   return publicQuery
 })
 
-const decks = computed(() =>
-  activeQuery.value.data.value?.pages.flatMap((p) => p.items) ?? []
-)
+const decks = computed(() => activeQuery.value.data.value?.pages.flatMap((p) => p.items) ?? [])
 const loading = computed(() => activeQuery.value.isLoading.value)
 const hasMore = computed(() => activeQuery.value.hasNextPage.value)
 

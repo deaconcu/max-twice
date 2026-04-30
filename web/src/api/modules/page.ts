@@ -12,11 +12,7 @@ export const pageApi = {
    * 根据课程路径读取内容（完整版）
    * 用于 ContentReadPage，返回所有数据
    */
-  readByCoursePath(
-    courseId: number,
-    path: string,
-    cursor?: string
-  ): Promise<ReadResponse> {
+  readByCoursePath(courseId: number, path: string, cursor?: string): Promise<ReadResponse> {
     return apiClient.get('/pages/read', {
       params: { courseId, path, cursor },
     })

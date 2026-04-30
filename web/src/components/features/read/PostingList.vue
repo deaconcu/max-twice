@@ -488,10 +488,7 @@ const completeButtonTooltip = () => {
             </div>
 
             <!-- 空状态 -->
-            <div
-              v-if="!posts || posts.length === 0"
-              class="text-center pa-12"
-            >
+            <div v-if="!posts || posts.length === 0" class="text-center pa-12">
               <v-icon
                 icon="mdi-text-box-outline"
                 size="64"

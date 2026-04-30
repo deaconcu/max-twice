@@ -19,8 +19,8 @@ export type VoteType = (typeof VoteType)[keyof typeof VoteType]
  * 帖子类型常量
  */
 export const PostType = {
-  INDEX: 1, // 目录/索引
-  ARTICLE: 2, // 文章
+  INDEX: 'index',
+  ARTICLE: 'article',
 } as const
 
 export type PostType = (typeof PostType)[keyof typeof PostType]
@@ -143,10 +143,10 @@ export type ApprovalAction = (typeof ApprovalAction)[keyof typeof ApprovalAction
  * 用户角色枚举
  */
 export const UserRole = {
-  USER: 0,
-  MODERATOR: 1,
-  ADMIN: 2,
-  SUPER_ADMIN: 3,
+  USER: 'user',
+  MODERATOR: 'moderator',
+  ADMIN: 'admin',
+  SUPER: 'super',
 } as const
 
 export type UserRole = (typeof UserRole)[keyof typeof UserRole]

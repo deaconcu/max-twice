@@ -26,9 +26,9 @@ public class UserDO {
 
     private String avatar;
 
-    private Byte state;
+    private String state;
 
-    private Integer role;  // 角色代码字段
+    private String role;
 
     /**
      * 用户时区
@@ -53,14 +53,14 @@ public class UserDO {
      * 获取用户角色枚举
      */
     public UserRole getRoleEnum() {
-        return UserRole.fromCode(this.role);
+        return UserRole.fromName(this.role);
     }
 
     /**
      * 设置用户角色
      */
     public void setRoleEnum(UserRole role) {
-        this.role = role != null ? role.getCode() : UserRole.USER.getCode();
+        this.role = role != null ? role.value() : UserRole.USER.value();
     }
 
     /**

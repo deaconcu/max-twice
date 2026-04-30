@@ -11,7 +11,7 @@ import renderMathInElement from 'katex/contrib/auto-render'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
 import mermaid from 'mermaid'
-import { ObjectType, VoteType } from '@/enums'
+import { ObjectType, VoteType, PostType } from '@/enums'
 import type { UpvoteStatusResponse } from '@/types/upvote'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import ImageViewer from '@/components/common/ImageViewer.vue'
@@ -86,12 +86,6 @@ const handleContentClick = (event: MouseEvent) => {
       chartViewerVisible.value = true
     }
   }
-}
-
-// PostType 枚举
-const PostType = {
-  INDEX: 1,
-  ARTICLE: 2,
 }
 
 // 解析目录内容

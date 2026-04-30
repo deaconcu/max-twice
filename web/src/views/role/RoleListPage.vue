@@ -294,10 +294,16 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
-import { useHotRolesQuery, useRoleListQuery, useCreateRoleMutation } from '@/queries/role'
+import {
+  useHotRolesQuery,
+  useRoleListQuery,
+  useCreateRoleMutation,
+  useResubmitRoleMutation,
+} from '@/queries/role'
+import { roleApi } from '@/api/modules/role'
 import { getGlobalSnackbar } from '@/composables/config'
 import type { Role } from '@/types/role'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
@@ -308,6 +314,7 @@ import RoleCard from '@/components/features/role/RoleCard.vue'
 import RoleFilter from '@/components/features/role/RoleFilter.vue'
 
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
 const categoryStore = useCategoryStore()
 
@@ -332,6 +339,35 @@ const applicationForm = ref({
   subCategory: undefined as number | undefined,
   skills: '',
 })
+
+// 重新提交模式（resubmit）：通过 query ?resubmitId=xxx 触发；为 null 表示新建模式
+const resubmitId = ref<number | null>(null)
+
+// 监听 query：进入 resubmit 模式时拉取角色信息回填表单并打开对话框
+watch(
+  () => route.query.resubmitId,
+  async (val) => {
+    const idStr = Array.isArray(val) ? val[0] : val
+    if (idStr == null) return
+    const id = Number(idStr)
+    if (!Number.isFinite(id) || id <= 0) return
+    try {
+      const role = await roleApi.getRole(id)
+      applicationForm.value = {
+        name: role.name ?? '',
+        description: role.description ?? '',
+        mainCategory: role.mainCategory,
+        subCategory: role.subCategory,
+        skills: role.skills ?? '',
+      }
+      resubmitId.value = id
+      applicationDialog.value = true
+    } catch (e) {
+      getGlobalSnackbar()?.(t('common.fetchFailed'), 'error')
+    }
+  },
+  { immediate: true }
+)
 
 // 页面加载时获取分类数据
 onMounted(async () => {
@@ -489,6 +525,14 @@ const closeApplicationDialog = () => {
     subCategory: undefined,
     skills: '',
   }
+  if (resubmitId.value !== null) {
+    resubmitId.value = null
+    // 清掉 query，避免再次触发 watch
+    if (route.query.resubmitId !== undefined) {
+      const { resubmitId: _omit, ...rest } = route.query
+      void router.replace({ query: rest })
+    }
+  }
 }
 
 /**
@@ -501,28 +545,41 @@ const categoryRules = [(v: number) => !!v || t('validation.required.mainCategory
 const descriptionRules = roleDescriptionRules
 
 /**
- * 提交职业申请
+ * 提交职业申请（创建或重新提交）
  */
-const { mutate: createRoleMutate, isPending: submitting } = useCreateRoleMutation()
+const { mutate: createRoleMutate, isPending: createPending } = useCreateRoleMutation()
+const { mutate: resubmitRoleMutate, isPending: resubmitPending } = useResubmitRoleMutation()
+const submitting = computed(() => createPending.value || resubmitPending.value)
 
 const submitApplication = () => {
   if (!applicationForm.value.mainCategory || !applicationForm.value.subCategory) return
 
-  createRoleMutate(
-    {
-      name: applicationForm.value.name,
-      description: applicationForm.value.description,
-      mainCategory: applicationForm.value.mainCategory,
-      subCategory: applicationForm.value.subCategory,
-      skills: applicationForm.value.skills || '',
-    },
-    {
+  const payload = {
+    name: applicationForm.value.name,
+    description: applicationForm.value.description,
+    mainCategory: applicationForm.value.mainCategory,
+    subCategory: applicationForm.value.subCategory,
+    skills: applicationForm.value.skills || '',
+  }
+
+  if (resubmitId.value !== null) {
+    resubmitRoleMutate(
+      { id: resubmitId.value, data: payload },
+      {
+        onSuccess: () => {
+          getGlobalSnackbar()?.(t('roleCenter.application.submittedSuccess'), 'success')
+          closeApplicationDialog()
+        },
+      }
+    )
+  } else {
+    createRoleMutate(payload, {
       onSuccess: () => {
         getGlobalSnackbar()?.(t('roleCenter.application.submittedSuccess'), 'success')
         closeApplicationDialog()
       },
-    }
-  )
+    })
+  }
 }
 </script>
 

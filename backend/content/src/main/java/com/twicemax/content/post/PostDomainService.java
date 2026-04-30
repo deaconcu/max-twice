@@ -62,7 +62,7 @@ public class PostDomainService {
     /**
      * 获取用户的帖子列表
      */
-    public List<PostDO> getUserPosts(Long userId, Integer type, Long lastId, Byte state, int count) {
+    public List<PostDO> getUserPosts(Long userId, String type, Long lastId, Byte state, int count) {
         List<PostDO> posts = postDataService.getPostsByUser(userId, type, lastId, state, count);
         posts.forEach(this::processIdToName);
         return posts;
@@ -138,7 +138,7 @@ public class PostDomainService {
      * 创建普通帖子
      */
     @Transactional
-    public Long createArticlePost(long userId, long nodeId, int type, String content, ContentState state) {
+    public Long createArticlePost(long userId, long nodeId, String type, String content, ContentState state) {
         // 验证节点是否存在
         NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
 
@@ -210,7 +210,7 @@ public class PostDomainService {
         PostDO postDO = new PostDO();
         postDO.setNodeId(nodeId);
         postDO.setCreatorId(userId);
-        postDO.setType(PostType.index.value());
+        postDO.setType(PostType.INDEX.value());
         postDO.setContent(jsonContent);  // 保存原始JSON
         postDO.setState(state.value());
         postDataService.insert(postDO);
@@ -226,7 +226,7 @@ public class PostDomainService {
     public void updatePost(long id, String content) {
         PostDO postDO = validateAndGet(id);
 
-        if (postDO.getType() == PostType.index.value()) {
+        if (PostType.INDEX.value().equals(postDO.getType())) {
             updateIndexPost(postDO, content);
         } else {
             updateArticlePost(postDO, content);
@@ -433,7 +433,7 @@ public class PostDomainService {
      * 公开方法，允许外部调用
      */
     public void processIdToName(PostDO post) {
-        if (post == null || post.getType() == PostType.article.value() ||
+        if (post == null || PostType.ARTICLE.value().equals(post.getType()) ||
                 post.getContent() == null || post.getContent().isEmpty()) {
             return;
         }
