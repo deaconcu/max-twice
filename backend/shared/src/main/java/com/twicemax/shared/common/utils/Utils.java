@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -74,7 +75,7 @@ public class Utils {
             MessageDigest md = MessageDigest.getInstance("MD5");
 
             // 计算摘要，返回字节数组
-            byte[] messageDigest = md.digest(input.getBytes());
+            byte[] messageDigest = md.digest(input.getBytes(StandardCharsets.UTF_8));
 
             // 将字节数组转换为十六进制字符串
             StringBuilder hexString = new StringBuilder();
@@ -92,7 +93,7 @@ public class Utils {
     public static String hashSHA(String input) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(input.getBytes());
+            byte[] digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             for (byte b : digest) {
                 sb.append(String.format("%02x", b & 0xff));

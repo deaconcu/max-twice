@@ -27,12 +27,6 @@ public class UpdateRoleRequest {
     private String description;
 
     /**
-     * 价格
-     */
-    @Size(max = 50, message = "价格长度不能超过50字符")
-    private String price;
-
-    /**
      * 技能要求
      */
     @Size(max = 1000, message = "技能要求长度不能超过1000字符")

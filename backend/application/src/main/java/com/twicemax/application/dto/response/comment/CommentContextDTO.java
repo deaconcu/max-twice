@@ -50,14 +50,12 @@ public class CommentContextDTO {
     private Boolean hasMoreAfter;
 
     /**
-     * 向前加载的游标（第一条评论的 score 和 id）
+     * 向前加载的游标（base64 编码，与列表/回复接口的 cursor 参数兼容）
      */
-    private Double firstScore;
-    private Long firstId;
+    private String firstCursor;
 
     /**
-     * 向后加载的游标（最后一条评论的 score 和 id）
+     * 向后加载的游标（base64 编码，与列表/回复接口的 cursor 参数兼容）
      */
-    private Double lastScore;
-    private Long lastId;
+    private String lastCursor;
 }

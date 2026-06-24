@@ -16,11 +16,27 @@ interface SubCategory {
   mainCategoryId: number
 }
 
+/**
+ * 用于 resubmit 模式的初值（也可用于父课程信息回填）
+ */
+export interface CourseCreateInitial {
+  name?: string
+  description?: string
+  mainCategory?: number | null
+  subCategory?: number | null
+  /** 父课程ID：>0 时进入创建子课程模式，分类继承自父课程不再可改 */
+  parentCourseId?: number | null
+  /** 是否处于 resubmit 模式（用于切换标题/按钮文案） */
+  resubmit?: boolean
+}
+
 interface Props {
   modelValue?: boolean
   categories?: Category[]
   subCategories?: SubCategory[]
   resetForm?: boolean
+  /** 初始值；resubmit 时传入待回填数据，普通创建留空 */
+  initial?: CourseCreateInitial
 }
 
 interface Emits {
@@ -33,6 +49,7 @@ const props = withDefaults(defineProps<Props>(), {
   categories: () => [],
   subCategories: () => [],
   resetForm: false,
+  initial: () => ({}),
 })
 
 const emit = defineEmits<Emits>()
@@ -51,6 +68,12 @@ const courseData = ref({
   mainCategoryId: null as number | null,
   subCategoryId: null as number | null,
 })
+
+// 是否子课程模式（分类禁用）
+const isSubcourse = computed(
+  () => !!props.initial?.parentCourseId && props.initial.parentCourseId > 0
+)
+const isResubmit = computed(() => props.initial?.resubmit === true)
 
 // 表单引用
 interface VForm {
@@ -79,13 +102,17 @@ const filteredSubCategories = computed(() => {
   return props.subCategories.filter((sub) => sub.mainCategoryId === courseData.value.mainCategoryId)
 })
 
-const categoryRules = [(v: number | null) => v !== null || t('course.selectCategoryRequired')]
+const categoryRules = [
+  (v: number | null) => isSubcourse.value || v !== null || t('course.selectCategoryRequired'),
+]
 
-// 监听主分类变化，清空子分类选择
+// 监听主分类变化，清空子分类选择（仅非子课程模式下）
 watch(
   () => courseData.value.mainCategoryId,
   () => {
-    courseData.value.subCategoryId = null
+    if (!isSubcourse.value) {
+      courseData.value.subCategoryId = null
+    }
   }
 )
 
@@ -98,6 +125,30 @@ watch(
     }
   }
 )
+
+// 监听 initial 变化（包括 dialog 打开时的回填）
+watch(
+  () => [props.modelValue, props.initial] as const,
+  ([open]) => {
+    if (open) {
+      applyInitial()
+    }
+  },
+  { immediate: true }
+)
+
+const applyInitial = () => {
+  const init = props.initial ?? {}
+  courseData.value = {
+    name: init.name ?? '',
+    description: init.description ?? '',
+    mainCategoryId: init.mainCategory ?? null,
+    subCategoryId: init.subCategory ?? null,
+  }
+  if (formRef.value) {
+    formRef.value.resetValidation()
+  }
+}
 
 // 重置表单
 const handleResetForm = () => {
@@ -124,6 +175,7 @@ const handleSubmit = async () => {
     description: courseData.value.description,
     mainCategory: courseData.value.mainCategoryId,
     subCategory: courseData.value.subCategoryId,
+    parentCourseId: props.initial?.parentCourseId ?? null,
   }
 
   emit('submit', request)
@@ -142,7 +194,7 @@ const closeDialog = () => {
         <div class="d-flex align-center">
           <v-icon icon="mdi-book-plus" color="primary" size="24" class="mr-3" />
           <span class="text-h6 font-weight-bold text-grey-darken-4">{{
-            t('course.createNew')
+            isResubmit ? t('common.edit') : t('course.createNew')
           }}</span>
         </div>
       </v-card-title>
@@ -185,7 +237,7 @@ const closeDialog = () => {
           </div>
 
           <!-- 主分类 -->
-          <div class="mb-4">
+          <div v-if="!isSubcourse" class="mb-4">
             <label class="text-body-2 font-weight-medium text-grey-darken-3 mb-2 d-block">
               {{ t('course.mainCategory') }}
               <span class="text-error">*</span>
@@ -208,7 +260,7 @@ const closeDialog = () => {
           </div>
 
           <!-- 子分类 -->
-          <div class="mb-2">
+          <div v-if="!isSubcourse" class="mb-2">
             <label class="text-body-2 font-weight-medium text-grey-darken-3 mb-2 d-block">
               {{ t('course.subCategory') }}
               <span class="text-error">*</span>

@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import draggable from 'vuedraggable'
-import { tocApi } from '@/api'
-import { useMutation } from '@/composables'
 import { useI18n } from '@/composables/useI18n'
+import { useUpdateNodeTocMutation } from '@/queries/toc'
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
 interface Props {
   nodeId: number
@@ -31,61 +31,46 @@ watch(
   { immediate: true }
 )
 
-// 使用 useMutation 提交目录更新
-const { execute: submitUpdate, loading: submitting } = useMutation(
-  () => tocApi.updateUserNodeToc(props.nodeId, list.value.join(',')),
-  {
-    successMessage: t('posting.operationSuccess'),
-    onSuccess: () => {
-      console.log('[ConfigContentsDialog] onSuccess 开始')
-      console.log('[ConfigContentsDialog] route.query.path:', route.query.path)
+const updateNodeTocMutation = useUpdateNodeTocMutation()
+const submitting = updateNodeTocMutation.isPending
 
-      // 检查是否有 path 参数
-      if (!route.query.path) {
-        console.log('[ConfigContentsDialog] 没有 path 参数，直接 emit 并关闭')
-        emit('load-data')
+const submit = () => {
+  updateNodeTocMutation.mutate(
+    { nodeId: props.nodeId, indexArray: list.value.join(',') },
+    {
+      onSuccess: () => {
+        showSnackbar?.(t('posting.operationSuccess'), 'success')
+
+        if (!route.query.path) {
+          emit('load-data')
+          dialog.value = false
+          return
+        }
+
+        const pathParts = (route.query.path as string).split('-')
+        const currIndex = Number(pathParts[0])
+        const index = list.value.indexOf(currIndex) + 1
+
+        let nextPath: string
+        if (index === 0) {
+          nextPath = `1-${pathParts[1]}`
+        } else {
+          nextPath = `${index}-${pathParts.slice(1).join('-')}`
+        }
+
+        if (nextPath === route.query.path) {
+          emit('load-data')
+        } else {
+          router.replace({
+            path: '/read',
+            query: { nodeId: String(props.nodeId), path: nextPath },
+          })
+        }
+
         dialog.value = false
-        return
-      }
-
-      // 处理路由逻辑
-      const pathParts = (route.query.path as string).split('-')
-      const currIndex = Number(pathParts[0])
-      const index = list.value.indexOf(currIndex) + 1
-
-      let nextPath: string
-      if (index === 0) {
-        nextPath = `1-${pathParts[1]}`
-      } else {
-        nextPath = `${index}-${pathParts.slice(1).join('-')}`
-      }
-
-      console.log('[ConfigContentsDialog] nextPath:', nextPath, 'current:', route.query.path)
-
-      if (nextPath === route.query.path) {
-        // 路径没变，先 emit 再关闭对话框
-        console.log('[ConfigContentsDialog] 路径没变，emit load-data')
-        emit('load-data')
-        console.log('[ConfigContentsDialog] emit 完成')
-      } else {
-        // 路径改变，跳转到新路径（路由 watch 会自动重新加载）
-        console.log('[ConfigContentsDialog] 路径改变，router.replace')
-        router.replace({
-          path: '/read',
-          query: { nodeId: String(props.nodeId), path: nextPath },
-        })
-      }
-
-      // 最后关闭对话框
-      console.log('[ConfigContentsDialog] 准备关闭对话框，当前 dialog.value:', dialog.value)
-      dialog.value = false
-      console.log('[ConfigContentsDialog] 对话框已设置为 false，dialog.value:', dialog.value)
-    },
-  }
-)
-
-const submit = async () => {
-  await submitUpdate()
+      },
+    }
+  )
 }
 
 const addItem = () => {

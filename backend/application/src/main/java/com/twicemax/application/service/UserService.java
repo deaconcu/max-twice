@@ -74,7 +74,7 @@ public class UserService {
         validateUserId(viewerId);
         UserDO userDO = userDataService.validateAndGetByName(username);
 
-        if (userDO.getState() != null && userDO.getState() == UserState.BANNED.value()) {
+        if (UserState.BANNED.value().equals(userDO.getState())) {
             throw StatusCode.USER_BANNED.exception();
         }
 
@@ -169,13 +169,12 @@ public class UserService {
      * 只有超级管理员可以设置超级管理员
      */
     @Transactional
-    public UserAdminDTO setUserRole(Long userId, Integer roleCode, UserDO operator) {
+    public UserAdminDTO setUserRole(Long userId, String roleName, UserDO operator) {
         validateUserId(userId);
 
-        // 委托给 DomainService，传入操作者信息
-        UserRole newRole = UserRole.fromCode(roleCode);
-        UserRole operatorRole = UserRole.fromCode(operator.getRole());
-        userDomainService.setUserRole(userId, operator.getId(), operatorRole, roleCode);
+        UserRole newRole = UserRole.fromName(roleName);
+        UserRole operatorRole = UserRole.fromName(operator.getRole());
+        userDomainService.setUserRole(userId, operator.getId(), operatorRole, roleName);
 
         log.info("管理员 {} 将用户 {} 的角色修改为 {}", operator.getId(), userId, newRole.getDescription());
 
@@ -206,6 +205,18 @@ public class UserService {
     public void updateUserAvatar(Long userId, String avatarUrl) {
         log.info("更新用户 {} 头像: {}", userId, avatarUrl);
         userDomainService.updateUserAvatar(userId, avatarUrl);
+    }
+
+    /**
+     * 更新用户偏好语言。入参必须是白名单内的 locale。
+     */
+    @Transactional
+    public void updateCurrentUserLocale(Long userId, String locale) {
+        validateUserId(userId);
+        if (!"zh".equals(locale) && !"en".equals(locale)) {
+            throw StatusCode.INVALID_PARAMETER.exception("不支持的语言");
+        }
+        userDomainService.updateUserLocale(userId, locale);
     }
 
     //=========== DTO转换方法 ==========

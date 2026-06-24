@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, inject } from 'vue'
 import { userApi } from '@/api/modules/user'
-import { messageApi } from '@/api/modules/message'
-import { useMutation } from '@/composables/useMutation'
 import { useI18n } from '@/composables/useI18n'
+import { useInviteUserMutation } from '@/queries/message'
 
 const props = withDefaults(defineProps<Props>(), {
   nodeId: 0,
@@ -24,7 +23,7 @@ const searchResultInfo = ref('')
 const loading = ref(false)
 const invitedUserIds = ref<Set<number>>(new Set())
 
-// 搜索用户
+// 搜索用户（命令式操作，直接调用 API）
 const handleSearch = async () => {
   if (!searchKeyword.value.trim()) {
     searchResults.value = []
@@ -34,37 +33,32 @@ const handleSearch = async () => {
 
   loading.value = true
   try {
-    const response = await userApi.searchUser(searchKeyword.value)
-    if (response.data && response.data.length > 0) {
-      searchResults.value = response.data
+    const users = await userApi.searchUser(searchKeyword.value)
+    if (users && users.length > 0) {
+      searchResults.value = users
       searchResultInfo.value = ''
     } else {
       searchResults.value = []
       searchResultInfo.value = t('invite.noUser')
     }
-  } catch (error) {
-    console.error('Search user failed:', error)
-    searchResults.value = []
-    searchResultInfo.value = t('error.operationFailed')
   } finally {
     loading.value = false
   }
 }
 
-// 邀请用户回答
-const { execute: executeInvite } = useMutation(
-  (userId: number) => messageApi.inviteUser(userId, props.nodeId),
-  {
-    successMessage: t('invite.operationSuccess'),
-    onSuccess: (_, userId) => {
-      invitedUserIds.value.add(userId)
-    },
-  }
-)
+const inviteUserMutation = useInviteUserMutation()
 
 // 邀请用户
 const handleInvite = (user: any) => {
-  executeInvite(user.id)
+  inviteUserMutation.mutate(
+    { userId: user.id, nodeId: props.nodeId },
+    {
+      onSuccess: () => {
+        showSnackbar?.(t('invite.operationSuccess'), 'success')
+        invitedUserIds.value.add(user.id)
+      },
+    }
+  )
 }
 
 // 检查用户是否已邀请

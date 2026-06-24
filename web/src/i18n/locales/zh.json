@@ -241,7 +241,10 @@
     "previewImage": "预览图片",
     "user": "用户",
     "redirecting": "正在跳转...",
-    "all": "全部"
+    "pending": "审核中",
+    "withdraw": "撤回",
+    "withdrawSuccess": "已撤回",
+    "fetchFailed": "获取失败"
   },
   "notification": {
     "title": "消息通知",
@@ -606,6 +609,8 @@
       "pending": "审核中",
       "published": "已发布",
       "rejected": "已拒绝",
+      "noRoles": "暂无创建的角色",
+      "noCourses": "暂无创建的课程",
       "searchPlaceholder": "搜索...",
       "unfavoriteError": "取消收藏失败",
       "learningTab": "学习中",
@@ -686,6 +691,8 @@
         "createdArticles": "创建的文章",
         "createdCatalogs": "创建的目录",
         "createdRoadmaps": "创建的路线图",
+        "createdRoles": "创建的角色",
+        "createdCourses": "创建的课程",
         "createdDecks": "创建的卡片组",
         "personalInfo": "个人信息",
         "roles": "角色",
@@ -1154,6 +1161,7 @@
   },
   "roadmapCreate": {
     "title": "创建新课程表",
+    "startLearningHere": "从这里开始学习",
     "createTitle": "创建路线图",
     "editTitle": "编辑路线图",
     "copyTitle": "复制路线图",
@@ -1163,9 +1171,11 @@
     "searchCourses": "搜索课程",
     "deleteSelected": "删除选中",
     "reset": "重置",
+    "undo": "撤销",
+    "redo": "重做",
     "autoLayout": "自动布局",
     "saveWithDescription": "编写描述并保存",
-    "editorTitle": "路线图编辑区域",
+    "editorTitle": "编辑区域",
     "editorDescription": "从左侧搜索并点击课程来添加节点",
     "editorInstructions": "拖拽节点连接线来建立学习路径",
     "nodeCount": "个节点",
@@ -1198,6 +1208,21 @@
     "isolatedNodesWarning": "有 {count} 个节点未连接，发布时将被忽略",
     "saveAsDraft": "保存为草稿",
     "saveAndPublish": "提交审核",
+    "editor": {
+      "newNode": "新节点",
+      "tooltipInsertAbove": "在上面插入节点",
+      "tooltipInsertBelow": "在下面插入节点",
+      "tooltipRename": "重命名",
+      "tooltipBindCourse": "设为课程节点",
+      "tooltipBindNode": "设为目录节点",
+      "tooltipSetNote": "设为说明节点",
+      "tooltipCreateBranch": "创建子路径",
+      "tooltipRemoveBranch": "移除子路径",
+      "tooltipDeleteNode": "删除节点",
+      "maxDepthReached": "已达最大分支层级",
+      "alreadyHasBranch": "该节点已有子路径",
+      "invalidRefTooltip": "引用的课程/学习节点已不可用，请删除或更换"
+    },
     "messages": {
       "addNodesFirst": "请先添加节点",
       "rootNodeRequired": "课程表必须包含根节点",
@@ -1230,6 +1255,9 @@
       "published": "已提交审核，等待审核通过",
       "saveFailed": "保存失败",
       "saveFailedRetry": "保存失败，请重试",
+      "invalidReferencesWarning": "草稿已保存，但部分节点引用的课程/学习节点已不可用（已用红色标记）",
+      "invalidReferencesError": "发布失败：部分节点引用的课程/学习节点已不可用（已用红色标记），请处理后再提交",
+      "lastRejectReason": "上次审核被驳回：{reason}",
       "needNodesForLayout": "请先添加节点再使用自动布局",
       "autoLayoutDone": "自动布局完成",
       "loadFailed": "加载路线图数据失败"
@@ -1409,14 +1437,7 @@
     "fieldLabel": "字段",
     "cannotBeEmpty": "{label}不能为空",
     "minLength": "{label}长度必须至少{min}个字符",
-    "maxLength": "{label}长度不能超过{max}个字符",
-    "passwordStrength": {
-      "tooWeak": "密码太弱",
-      "weak": "弱",
-      "fair": "一般",
-      "good": "良好",
-      "strong": "强"
-    }
+    "maxLength": "{label}长度不能超过{max}个字符"
   },
   "message": {
     "center": "消息中心",

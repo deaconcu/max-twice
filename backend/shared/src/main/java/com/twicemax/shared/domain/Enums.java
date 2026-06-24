@@ -12,7 +12,7 @@ public class Enums {
      */
     public interface ValueEnum<T> {
         T value();
-        
+
         static <E extends Enum<E> & ValueEnum<T>, T> E getByValue(Class<E> enumClass, T value) {
             if (value == null) return null;
             return Arrays.stream(enumClass.getEnumConstants())
@@ -20,74 +20,54 @@ public class Enums {
                 .findFirst()
                 .orElse(null);
         }
-        
+
         static <E extends Enum<E> & ValueEnum<T>, T> boolean isValid(Class<E> enumClass, T value) {
             return getByValue(enumClass, value) != null;
         }
     }
 
-    public enum UserState implements ValueEnum<Byte> {
-        ACTIVE((byte)1),
-        BANNED((byte)2);
-
-        // 静态常量用于 MyBatis 注解（注解需要编译时常量）
-        public static final byte ACTIVE_VALUE = 1;
-        public static final byte BANNED_VALUE = 2;
-
-        private final byte value;
-
-        UserState(byte value) {
-            this.value = value;
-        }
+    /**
+     * String 枚举接口：value() 默认返回 name().toLowerCase()
+     * 适用于枚举常量名即为存储值（大写常量名，小写存储）的场景
+     */
+    public interface StringValueEnum extends ValueEnum<String> {
+        String name(); // Enum 天然实现，无需手写
 
         @Override
-        public Byte value() {
-            return value;
+        default String value() {
+            return name().toLowerCase();
         }
+    }
 
-        public static UserState getByValue(Integer value) {
-            return value == null ? null : ValueEnum.getByValue(UserState.class, value.byteValue());
-        }
+    public enum UserState implements StringValueEnum {
+        ACTIVE,
+        BANNED;
 
-        public static boolean isValid(int value) {
-            return ValueEnum.isValid(UserState.class, (byte)value);
+        public static UserState getByValue(String value) {
+            return ValueEnum.getByValue(UserState.class, value);
         }
     }
 
     /**
      * 用户角色枚举
-     * 角色代码按添加顺序分配，用于唯一标识角色
      * 权限级别用于权限比较
      */
-    public enum UserRole implements ValueEnum<Integer> {
-        USER(0, "user", "普通用户", 0),
-        MODERATOR(1, "moderator", "审核员", 30),
-        ADMIN(2, "admin", "管理员", 60),
-        SUPER_ADMIN(3, "super_admin", "超级管理员", 100);
+    public enum UserRole implements StringValueEnum {
+        USER("普通用户", 0),
+        MODERATOR("审核员", 30),
+        ADMIN("管理员", 60),
+        SUPER("超级管理员", 100);
 
-        private final int code;           // 数据库存储值
-        private final String name;        // Sa-Token 使用的角色名
-        private final String description; // 角色描述
-        private final int level;          // 权限级别（用于权限比较）
+        private final String description;
+        private final int level;
 
-        UserRole(int code, String name, String description, int level) {
-            this.code = code;
-            this.name = name;
+        UserRole(String description, int level) {
             this.description = description;
             this.level = level;
         }
 
-        @Override
-        public Integer value() {
-            return code;
-        }
-
-        public int getCode() {
-            return code;
-        }
-
         public String getName() {
-            return name;
+            return value();
         }
 
         public String getDescription() {
@@ -98,37 +78,13 @@ public class Enums {
             return level;
         }
 
-        /**
-         * 根据 code 获取枚举
-         */
-        public static UserRole fromCode(Integer code) {
-            if (code == null) {
-                return USER; // 默认为普通用户
+        public static UserRole fromName(String name) {
+            if (name == null) {
+                return USER;
             }
-            for (UserRole role : values()) {
-                if (role.code == code) {
-                    return role;
-                }
-            }
-            throw new IllegalArgumentException("Unknown role code: " + code);
+            return ValueEnum.getByValue(UserRole.class, name);
         }
 
-        public static UserRole getByValue(Integer value) {
-            return fromCode(value);
-        }
-
-        public static boolean isValid(int code) {
-            try {
-                fromCode(code);
-                return true;
-            } catch (IllegalArgumentException e) {
-                return false;
-            }
-        }
-
-        /**
-         * 判断当前角色是否等于或高于指定角色
-         */
         public boolean equalOrHigher(UserRole role) {
             return this.level >= role.level;
         }
@@ -220,56 +176,73 @@ public class Enums {
         }
     }
 
-    public enum PostType implements ValueEnum<Integer> {
-        index(1),
-        article(2);
+    /**
+     * roadmap 主体状态。配合 content_revision 表使用：
+     * - NEVER_PUBLISHED：从未发布过，对外完全不可见
+     * - PUBLISHED：至少发布过一次（可能同时存在 pending revision 在审核）
+     * - BANNED：被管理员封禁，对外不可见
+     *
+     * SUBMITTED / REJECTED / WITHDRAWN 是 revision 的生命周期，不在这里，见 {@link RevisionStatus}。
+     */
+    public enum NewContentState implements StringValueEnum {
+        NEVER_PUBLISHED,
+        PUBLISHED,
+        BANNED;
 
-        private final int value;
-
-        PostType(int value) {
-            this.value = value;
-        }
-
-        @Override
-        public Integer value() {
-            return value;
-        }
-
-        public static PostType getByValue(Integer value) {
-            return ValueEnum.getByValue(PostType.class, value);
-        }
-
-        /**
-         * 从字符串转换为 PostType
-         * @param type "content" 或 "article"
-         * @return 对应的 PostType，默认返回 article
-         */
-        public static PostType fromString(String type) {
-            return "content".equals(type) ? index : article;
+        public static NewContentState getByValue(String value) {
+            return ValueEnum.getByValue(NewContentState.class, value);
         }
     }
 
-    public enum VoteType implements ValueEnum<Integer> {
-        twice(1),
-        like(2);
+    /**
+     * content_revision 表中每一行（一次提交快照）的生命周期状态。
+     * 与 RoadmapState 解耦：roadmap 主体状态描述对外可见性，revision 状态描述这次提交本身。
+     *
+     * - SUBMITTED：已提交，等待审核
+     * - PUBLISHED：审核通过，是某个时刻被发布过的版本（历史已发布版仍保留 PUBLISHED）
+     * - REJECTED：审核被拒
+     * - WITHDRAWN：作者主动撤回
+     */
+    public enum RevisionStatus implements StringValueEnum {
+        SUBMITTED,
+        PUBLISHED,
+        REJECTED,
+        WITHDRAWN;
 
-        private final int value;
-
-        VoteType(int value) {
-            this.value = value;
+        public static RevisionStatus getByValue(String value) {
+            return ValueEnum.getByValue(RevisionStatus.class, value);
         }
+    }
 
-        @Override
-        public Integer value() {
-            return value;
+    /**
+     * 字符串版的内容类型枚举，用于新链路（如 content_revision 表）。
+     * 老链路仍使用 {@link ContentType}（Integer），未来逐步迁移到此处后废弃旧版。
+     */
+    public enum NewContentType implements StringValueEnum {
+        ROADMAP,
+        ROLE,
+        COURSE;
+
+        public static NewContentType getByValue(String value) {
+            return ValueEnum.getByValue(NewContentType.class, value);
         }
+    }
 
-        public static VoteType getByValue(Integer value) {
+    public enum PostType implements StringValueEnum {
+        INDEX,
+        ARTICLE;
+
+        public static PostType getByValue(String value) {
+            return ValueEnum.getByValue(PostType.class, value);
+        }
+    }
+
+    public enum VoteType implements StringValueEnum {
+        TWICE,
+        LIKE;
+
+        public static VoteType getByValue(String value) {
             return ValueEnum.getByValue(VoteType.class, value);
-        }
-
-        public static boolean isValid(int value) {
-            return ValueEnum.isValid(VoteType.class, value);
         }
     }
 
@@ -295,40 +268,25 @@ public class Enums {
 
     /**
      * 消息分类枚举
-     * INTERACTION=1 互动消息
-     * SYSTEM=2 系统消息
-     * ALL=3 全部（互动+系统，不包括私信）
-     * PRIVATE=4 私信
      */
-    public enum MessageCategory implements ValueEnum<Integer> {
-        INTERACTION(1, "互动消息"),
-        SYSTEM(2, "系统消息"),
-        ALL(3, "全部"),
-        PRIVATE(4, "私信");
+    public enum MessageCategory implements StringValueEnum {
+        INTERACTION("互动消息"),
+        SYSTEM("系统消息"),
+        ALL("全部"),
+        PRIVATE("私信");
 
-        private final int value;
         private final String description;
 
-        MessageCategory(int value, String description) {
-            this.value = value;
+        MessageCategory(String description) {
             this.description = description;
-        }
-
-        @Override
-        public Integer value() {
-            return value;
         }
 
         public String getDescription() {
             return description;
         }
 
-        public static MessageCategory getByValue(Integer value) {
+        public static MessageCategory getByValue(String value) {
             return ValueEnum.getByValue(MessageCategory.class, value);
-        }
-
-        public static boolean isValid(int value) {
-            return ValueEnum.isValid(MessageCategory.class, value);
         }
     }
 

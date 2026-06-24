@@ -30,9 +30,9 @@ public class UpvoteTypeSwitchedEvent<T> {
     /** 内容对象 */
     private T contentObject;
 
-    /** 原来的点赞类型（1-twice, 2-like） */
-    private Integer fromType;
+    /** 原来的点赞类型（twice, like） */
+    private String fromType;
 
-    /** 新的点赞类型（1-twice, 2-like） */
-    private Integer toType;
+    /** 新的点赞类型（twice, like） */
+    private String toType;
 }

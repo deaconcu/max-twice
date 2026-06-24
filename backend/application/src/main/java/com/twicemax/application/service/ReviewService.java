@@ -4,6 +4,7 @@ import com.twicemax.analytics.stats.dataservice.UserStatsDataService;
 import com.twicemax.application.assembler.CardAssembler;
 import com.twicemax.application.dto.request.ReviewCardRequest;
 import com.twicemax.application.dto.response.CourseMemoryBankDTO;
+import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.application.dto.response.ReviewSubmitResultDTO;
 import com.twicemax.application.dto.response.card.CardWithSrsDTO;
 import com.twicemax.memory.card.MemoryCardDataService;
@@ -13,6 +14,7 @@ import com.twicemax.memory.review.UserCardSrsDO;
 import com.twicemax.memory.review.UserCardSrsDataService;
 import com.twicemax.memory.review.UserCourseSrsSettingDO;
 import com.twicemax.memory.review.UserCourseSrsSettingDataService;
+import com.twicemax.application.dto.v2.CursorPage;
 import com.twicemax.shared.common.util.TimeZoneUtil;
 import com.twicemax.shared.domain.Enums.CardOrder;
 import com.twicemax.shared.domain.exception.StatusCode;
@@ -162,13 +164,14 @@ public class ReviewService {
      * @param lastId 分页游标
      * @return 卡片列表
      */
-    public List<CardWithSrsDTO> getCardList(UserDO user, Long courseId, Long lastId) {
+    public CursorPage<CardWithSrsDTO> getCardList(UserDO user, Long courseId, String cursor) {
         if (user == null) {
             throw StatusCode.INVALID_PARAMETER.exception("用户不能为空");
         }
 
         Long userId = user.getId();
         int limit = 20;
+        Long lastId = Cursor.decode(cursor).id();
 
         // 获取卡片 SRS 列表
         List<UserCardSrsDO> srsList;
@@ -179,7 +182,7 @@ public class ReviewService {
         }
 
         if (srsList.isEmpty()) {
-            return new ArrayList<>();
+            return CursorPage.empty();
         }
 
         // 获取卡片 ID 列表
@@ -197,7 +200,9 @@ public class ReviewService {
             result.add(dto);
         }
 
-        return result;
+        boolean hasMore = srsList.size() == limit;
+        String nextCursor = hasMore ? Cursor.of(srsList.get(srsList.size() - 1).getCardId()).encode() : null;
+        return CursorPage.of(result, hasMore, nextCursor);
     }
 
     // ========== 私有方法 ==========

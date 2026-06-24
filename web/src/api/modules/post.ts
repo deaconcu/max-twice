@@ -1,67 +1,56 @@
 import apiClient from '../client'
-import type { ApiResponse, KeysetPageResponse } from '@/types/api'
 import type { Post } from '@/types/post'
 import type { Node } from '@/types/node'
+import type { CursorPage } from '@/types/api'
 
 /**
  * 帖子管理相关 API
- * 参考：web-ts/src/services/api/v1/apiServiceV1.ts (postServiceV1)
  */
 export const postApi = {
   /**
    * 按 IDs 批量获取帖子
    */
-  getPostsByIds(ids: number[]): Promise<ApiResponse<Post[]>> {
-    return apiClient.get('/v1/posts', {
-      params: {
-        ids: ids.join(','),
-      },
+  getPostsByIds(ids: number[]): Promise<Post[]> {
+    return apiClient.get('/posts/batch', {
+      params: { ids },
     })
   },
 
   /**
    * 获取节点帖子列表（分页）
    */
-  getNodePosts(
-    nodeId: number,
-    lastScore?: number,
-    lastId?: number
-  ): Promise<ApiResponse<KeysetPageResponse<Post>>> {
-    return apiClient.get('/v1/posts', {
-      params: {
-        nodeId,
-        lastScore,
-        lastId,
-      },
+  getNodePosts(nodeId: number, cursor?: string): Promise<CursorPage<Post>> {
+    return apiClient.get(`/nodes/${String(nodeId)}/posts`, {
+      params: { cursor },
     })
   },
 
   /**
    * 创建帖子
    */
-  createPost(postData: Partial<Post>): Promise<ApiResponse<Post>> {
-    return apiClient.post('/v1/posts', postData)
+  createPost(postData: Partial<Post>): Promise<Post> {
+    return apiClient.post('/posts', postData)
   },
 
   /**
    * 更新帖子
    */
-  updatePost(id: number, postData: Partial<Post>): Promise<ApiResponse<Post>> {
-    return apiClient.put(`/v1/posts/${String(id)}`, postData)
+  updatePost(id: number, postData: Partial<Post>): Promise<Post> {
+    return apiClient.put(`/posts/${String(id)}`, postData)
   },
 
   /**
    * 删除帖子
    */
-  deletePost(id: number): Promise<ApiResponse<void>> {
-    return apiClient.delete(`/v1/posts/${String(id)}`)
+  deletePost(id: number): Promise<void> {
+    return apiClient.delete(`/posts/${String(id)}`)
   },
 
   /**
    * 获取帖子详情
    */
-  getPost(id: number): Promise<ApiResponse<Post>> {
-    return apiClient.get(`/v1/posts/${String(id)}`)
+  getPost(id: number): Promise<Post> {
+    return apiClient.get(`/posts/${String(id)}`)
   },
 
   /**
@@ -73,32 +62,25 @@ export const postApi = {
     nodeId: number
     postingId: number
     action: number
-  }): Promise<ApiResponse<void>> {
-    return apiClient.post('/v1/contents', data)
+  }): Promise<void> {
+    return apiClient.post('/contents', data)
   },
 
   /**
    * 搜索相似节点
    */
-  searchSimilarNodes(query: string, topK = 10, threshold = 0.0): Promise<ApiResponse<Node[]>> {
-    return apiClient.get('/v1/nodes/search', {
-      params: {
-        query,
-        topK,
-        threshold,
-      },
+  searchSimilarNodes(query: string, topK = 10, threshold = 0.0): Promise<Node[]> {
+    return apiClient.get('/nodes/search', {
+      params: { query, topK, threshold },
     })
   },
 
   /**
    * 检查课程内是否存在同名已发布节点
    */
-  checkDuplicateNode(courseId: number, name: string): Promise<ApiResponse<boolean>> {
-    return apiClient.get('/v1/nodes/check-duplicate', {
-      params: {
-        courseId,
-        name,
-      },
+  checkDuplicateNode(courseId: number, name: string): Promise<boolean> {
+    return apiClient.get('/nodes/check-duplicate', {
+      params: { courseId, name },
     })
   },
 
@@ -107,11 +89,9 @@ export const postApi = {
    */
   initNodeEmbeddings(
     batchSize = 20
-  ): Promise<ApiResponse<{ successCount: number; failCount: number; totalProcessed: number }>> {
-    return apiClient.post('/v1/admin/contents/nodes/init-embeddings', null, {
-      params: {
-        batchSize,
-      },
+  ): Promise<{ successCount: number; failCount: number; totalProcessed: number }> {
+    return apiClient.post('/admin/contents/nodes/init-embeddings', null, {
+      params: { batchSize },
     })
   },
 }

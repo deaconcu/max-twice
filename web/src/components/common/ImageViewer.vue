@@ -14,8 +14,6 @@
 import { ref, watch, computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 
-const { t } = useI18n()
-
 const props = defineProps<{
   modelValue: boolean
   src: string
@@ -24,6 +22,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
 }>()
+
+const { t } = useI18n()
 
 const visible = ref(props.modelValue)
 const imageSrc = ref(props.src)

@@ -10,10 +10,14 @@ import com.twicemax.analytics.stats.mapper.UserStatsDO;
 import com.twicemax.analytics.stats.mapper.UserStatsYearlyDO;
 import com.twicemax.analytics.stats.mapper.UserStatsYearlyMapper;
 import com.twicemax.shared.common.util.TimeZoneUtil;
+import com.twicemax.shared.domain.Enums.NewContentState;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentRemovedEvent;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentRestoredEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.RoadmapApprovedEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.RoadmapBannedEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.RoadmapRestoredEvent;
 import com.twicemax.shared.domain.exception.BusinessException;
 import com.twicemax.shared.domain.exception.StatusCode;
 import com.twicemax.shared.infrastructure.config.SystemProperties;
@@ -320,7 +324,7 @@ public class UserStatsDomainService {
         try {
             switch (event.getContentType()) {
                 case post -> handlePostApproved(event);
-                case roadmap -> userStatsDataService.incrementCreatedRoadmaps(event.getCreatorId(), 1);
+                case roadmap -> { /* 走独立 RoadmapApprovedEvent */ }
                 case memory_card_deck -> userStatsDataService.incrementCreatedCardDecks(event.getCreatorId(), 1);
                 case comment -> userStatsDataService.incrementComments(event.getCreatorId(), 1);
             }
@@ -337,7 +341,6 @@ public class UserStatsDomainService {
         try {
             switch (event.getContentType()) {
                 case post -> handlePostRemoved(event);
-                case roadmap -> userStatsDataService.incrementCreatedRoadmaps(event.getCreatorId(), -1);
                 case memory_card_deck -> userStatsDataService.incrementCreatedCardDecks(event.getCreatorId(), -1);
             }
         } catch (Exception e) {
@@ -357,7 +360,7 @@ public class UserStatsDomainService {
 
             switch (event.getContentType()) {
                 case post -> handlePostBanned(event);
-                case roadmap -> userStatsDataService.incrementCreatedRoadmaps(event.getCreatorId(), -1);
+                case roadmap -> { /* 走独立 RoadmapBannedEvent */ }
                 case memory_card_deck -> userStatsDataService.incrementCreatedCardDecks(event.getCreatorId(), -1);
                 case comment -> userStatsDataService.incrementComments(event.getCreatorId(), -1);
             }
@@ -378,7 +381,7 @@ public class UserStatsDomainService {
 
             switch (event.getContentType()) {
                 case post -> handlePostRestored(event);
-                case roadmap -> userStatsDataService.incrementCreatedRoadmaps(event.getCreatorId(), 1);
+                case roadmap -> { /* 走独立 RoadmapRestoredEvent */ }
                 case memory_card_deck -> userStatsDataService.incrementCreatedCardDecks(event.getCreatorId(), 1);
                 case comment -> userStatsDataService.incrementComments(event.getCreatorId(), 1);
             }
@@ -387,36 +390,72 @@ public class UserStatsDomainService {
         }
     }
 
+    // ==================== Roadmap revision 模型独立事件 ====================
+
+    @EventListener
+    public void onRoadmapApproved(RoadmapApprovedEvent event) {
+        try {
+            userStatsDataService.incrementCreatedRoadmaps(event.getAuthorId(), 1);
+            log.debug("Roadmap 审核通过，用户创建路线图统计++: authorId={}", event.getAuthorId());
+        } catch (Exception e) {
+            log.error("处理 Roadmap 审核通过事件失败(用户统计): {}", e.getMessage());
+        }
+    }
+
+    @EventListener
+    public void onRoadmapBanned(RoadmapBannedEvent event) {
+        try {
+            // 仅 PUBLISHED 被 ban 才需要回滚（NEVER_PUBLISHED 没计入过）
+            if (event.getPreviousState() != NewContentState.PUBLISHED) return;
+            userStatsDataService.incrementCreatedRoadmaps(event.getAuthorId(), -1);
+            log.debug("Roadmap 封禁，用户创建路线图统计--: authorId={}", event.getAuthorId());
+        } catch (Exception e) {
+            log.error("处理 Roadmap 封禁事件失败(用户统计): {}", e.getMessage());
+        }
+    }
+
+    @EventListener
+    public void onRoadmapRestored(RoadmapRestoredEvent event) {
+        try {
+            // 仅恢复成 PUBLISHED 才计入
+            if (event.getNewState() != NewContentState.PUBLISHED) return;
+            userStatsDataService.incrementCreatedRoadmaps(event.getAuthorId(), 1);
+            log.debug("Roadmap 恢复发布，用户创建路线图统计++: authorId={}", event.getAuthorId());
+        } catch (Exception e) {
+            log.error("处理 Roadmap 恢复事件失败(用户统计): {}", e.getMessage());
+        }
+    }
+
     // ==================== Post 处理 ====================
 
     private void handlePostApproved(ContentApprovedEvent event) {
-        if (event.getPostType() == PostType.index) {
+        if (event.getPostType() == PostType.INDEX) {
             userStatsDataService.incrementCreatedIndexs(event.getCreatorId(), 1);
-        } else if (event.getPostType() == PostType.article) {
+        } else if (event.getPostType() == PostType.ARTICLE) {
             userStatsDataService.incrementCreatedArticles(event.getCreatorId(), 1);
         }
     }
 
     private void handlePostRemoved(ContentRemovedEvent event) {
-        if (event.getPostType() == PostType.index) {
+        if (event.getPostType() == PostType.INDEX) {
             userStatsDataService.incrementCreatedIndexs(event.getCreatorId(), -1);
-        } else if (event.getPostType() == PostType.article) {
+        } else if (event.getPostType() == PostType.ARTICLE) {
             userStatsDataService.incrementCreatedArticles(event.getCreatorId(), -1);
         }
     }
 
     private void handlePostBanned(ContentBannedEvent event) {
-        if (event.getPostType() == PostType.index) {
+        if (event.getPostType() == PostType.INDEX) {
             userStatsDataService.incrementCreatedIndexs(event.getCreatorId(), -1);
-        } else if (event.getPostType() == PostType.article) {
+        } else if (event.getPostType() == PostType.ARTICLE) {
             userStatsDataService.incrementCreatedArticles(event.getCreatorId(), -1);
         }
     }
 
     private void handlePostRestored(ContentRestoredEvent event) {
-        if (event.getPostType() == PostType.index) {
+        if (event.getPostType() == PostType.INDEX) {
             userStatsDataService.incrementCreatedIndexs(event.getCreatorId(), 1);
-        } else if (event.getPostType() == PostType.article) {
+        } else if (event.getPostType() == PostType.ARTICLE) {
             userStatsDataService.incrementCreatedArticles(event.getCreatorId(), 1);
         }
     }

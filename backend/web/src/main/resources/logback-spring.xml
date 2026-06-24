@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  日志配置：在 Spring Boot 默认 console 配色基础上加 [traceId] 列。
+
+  TraceId 由 com.twicemax.web.v2.filter.TraceIdFilter 写入 MDC：
+  - 请求中：显示真实 TraceId（与响应头 X-Trace-Id 一致）
+  - 请求外（启动日志、定时任务等）：显示为 "-"
+
+  保持 Spring Boot 默认行为：日志级别由 application.yml 的 logging.level.* 控制，
+  本文件只覆盖 console pattern。
+-->
+<configuration>
+
+    <!-- 引入 Spring Boot 默认变量定义（CONSOLE_LOG_PATTERN、LOG_LEVEL_PATTERN 等） -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!--
+      自定义 console pattern：在 Spring Boot 默认基础上插入 [%X{traceId:-}]
+      %X{traceId:-}：从 MDC 取 traceId，无值时显示 "-"，避免空 [] 括号
+    -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([%X{traceId:--}]){magenta} %clr(${PID:-}){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+
+    <!-- 应用上面 pattern 创建的 console appender -->
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

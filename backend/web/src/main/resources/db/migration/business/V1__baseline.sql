@@ -1,0 +1,653 @@
+-- V1 baseline：中途接入 Flyway 时的现状快照（mysqldump --no-data 生成）。
+-- 已有库通过 baselineOnMigrate=true 在 history 中写入 baseline 记录，跳过执行。
+-- 全新空库会执行本文件直接建出最新结构，之后跑后续增量。
+-- 该文件不应再被修改；schema 变更请新增 V2/V3... 增量迁移。
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `bookmark` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `object_id` bigint NOT NULL COMMENT '收藏对象ID',
+  `object_type` tinyint NOT NULL COMMENT '1=职业, 2=路线图, 3=课程, 4=文章',
+  `parent_id` bigint DEFAULT NULL COMMENT '父对象ID: 文章->节点ID, 路线图->职业ID, 课程->NULL,\n   职业->NULL',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_object` (`user_id`,`object_id`,`object_type`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_user_type` (`user_id`,`object_type`,`created_at` DESC),
+  KEY `idx_parent` (`parent_id`,`object_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户收藏表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `comment` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `content` varchar(500) NOT NULL COMMENT '内容',
+  `object_type` tinyint NOT NULL,
+  `object_id` bigint NOT NULL,
+  `creator_id` bigint NOT NULL DEFAULT '0' COMMENT '发表评论的用户ID\\\\n',
+  `reply_to_comment_id` bigint NOT NULL DEFAULT '0' COMMENT '当前评论所回复的评论的ID，为0的时候，说明不是子评论',
+  `to_user_id` bigint NOT NULL DEFAULT '0' COMMENT '冗余字段，当前评论所回复评论的用户ID，为0的时候，说明当前评论不是子评论',
+  `state` tinyint NOT NULL DEFAULT '0',
+  `score` double NOT NULL DEFAULT '0' COMMENT '评论综合评分，基于点赞数、回复数和时间权重计算',
+  `reason` varchar(45) NOT NULL DEFAULT '',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` datetime DEFAULT NULL COMMENT '软删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_comment_object_score` (`object_id`,`object_type`,`reply_to_comment_id`,`state`,`score` DESC,`id` DESC),
+  KEY `idx_comment_reply_score` (`reply_to_comment_id`,`state`,`score` DESC,`id` DESC),
+  KEY `idx_comment_state` (`state`,`id` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `content_revision` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `content_type` varchar(32) NOT NULL COMMENT '内容类型: roadmap (NewContentType)',
+  `content_id` bigint NOT NULL COMMENT '具体内容主表的 id（如 roadmap.id）',
+  `revision_no` int NOT NULL COMMENT '该 content 下的版本序号，从 1 递增',
+  `status` varchar(32) NOT NULL COMMENT 'SUBMITTED / PUBLISHED / REJECTED / WITHDRAWN',
+  `payload` json NOT NULL COMMENT '内容快照',
+  `hash` varchar(64) NOT NULL COMMENT 'SHA-256 hex of canonical payload',
+  `reject_reason` varchar(500) DEFAULT NULL COMMENT '驳回原因（仅 REJECTED）',
+  `author_id` bigint NOT NULL COMMENT '提交作者',
+  `reviewer_id` bigint DEFAULT NULL COMMENT '审核员（PUBLISHED / REJECTED 时填写）',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `reviewed_at` datetime DEFAULT NULL COMMENT '审核完成时间（PUBLISHED / REJECTED 时填写）',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_content_revision_no` (`content_type`,`content_id`,`revision_no`),
+  KEY `idx_content_status` (`content_type`,`content_id`,`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='内容版本快照（roadmap 当前使用，未来 post/deck/node 共用）';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `content_stats` (
+  `content_type` int NOT NULL COMMENT '内容类型: post, roadmap, comment,\\n  course',
+  `content_id` bigint NOT NULL COMMENT '内容ID',
+  `view_count` int DEFAULT '0' COMMENT '总浏览量',
+  `twice_count` int DEFAULT '0' COMMENT '总两次能懂数',
+  `like_count` int DEFAULT '0' COMMENT '总点赞数',
+  `comment_count` int DEFAULT '0' COMMENT '总评论数',
+  `share_count` int DEFAULT '0' COMMENT '总分享数',
+  `bookmark_count` int DEFAULT '0' COMMENT '总收藏数',
+  `completed_user_count` int DEFAULT '0' COMMENT '总完成人数',
+  `learner_count` int DEFAULT '0' COMMENT '正在学习人数',
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `post_count` int NOT NULL DEFAULT '0' COMMENT '帖子总数（用于Node统计）',
+  `article_count` int NOT NULL DEFAULT '0' COMMENT '文章数量（用于Node统计）',
+  `index_count` int NOT NULL DEFAULT '0' COMMENT '目录数量（用于Node统计）',
+  `roadmap_count` int NOT NULL DEFAULT '0' COMMENT '路线图数量（用于Profession统计）',
+  `card_deck_count` int NOT NULL DEFAULT '0' COMMENT '记忆卡片组数量（用于Post/Node统计）',
+  `reject_count` int NOT NULL DEFAULT '0' COMMENT '被拒绝/下架次数',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `last_sync_date` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '最后同步日期(YYYY-MM-DD)',
+  `node_reference_count` int DEFAULT '0' COMMENT '节点被引用次数（被多少个contents类型的post引用）',
+  PRIMARY KEY (`content_type`,`content_id`),
+  KEY `idx_content_stats_popularity` (`content_type`,(((`bookmark_count` + `learner_count`) + `completed_user_count`)) DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='内容统计表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `content_stats_yearly` (
+  `object_type` tinyint NOT NULL,
+  `object_id` bigint NOT NULL COMMENT '对象ID',
+  `stat_year` int NOT NULL COMMENT '统计年份',
+  `stats` json NOT NULL COMMENT '点赞统计数据，格式：{"1-1":{"once": 5, "twice": 3, "helpful": 2}, ...}',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`object_type`,`object_id`,`stat_year`),
+  KEY `idx_stat_year` (`stat_year`),
+  KEY `idx_type_object` (`object_type`,`object_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='每年点赞统计表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `course` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(40) NOT NULL,
+  `description` varchar(1000) NOT NULL,
+  `icon` varchar(500) DEFAULT NULL COMMENT '图标，MDI图标名或图片URL',
+  `creator_id` bigint NOT NULL,
+  `root_node_id` bigint NOT NULL,
+  `parent_course_id` bigint NOT NULL DEFAULT '0',
+  `sub_course_count` int DEFAULT '0',
+  `state` tinyint NOT NULL DEFAULT '0',
+  `main_category` int NOT NULL,
+  `sub_category` int NOT NULL,
+  `reason` varchar(45) NOT NULL DEFAULT '',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_course_state_parent` (`state`,`parent_course_id`,`id` DESC),
+  KEY `idx_course_category` (`main_category`,`sub_category`,`state`,`parent_course_id`,`id` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `error_log` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `fingerprint` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '错误指纹，用于去重',
+  `source` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '来源：frontend / backend',
+  `error_type` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '异常类名 / Error类型',
+  `message` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '错误消息',
+  `stack_trace` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '完整堆栈',
+  `url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '请求URL / 页面URL',
+  `user_id` bigint DEFAULT NULL COMMENT '用户ID（可空）',
+  `ip` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'IP地址',
+  `user_agent` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '浏览器UA（前端用）',
+  `extra_data` json DEFAULT NULL COMMENT '额外信息（预留）',
+  `count` int DEFAULT '1' COMMENT '发生次数',
+  `first_seen_at` datetime NOT NULL COMMENT '首次发生时间',
+  `last_seen_at` datetime NOT NULL COMMENT '最近发生时间',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'new' COMMENT '状态：new/ignored/resolved',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_fingerprint` (`fingerprint`),
+  KEY `idx_last_seen` (`last_seen_at`),
+  KEY `idx_source` (`source`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='错误日志表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `follow` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `followee_id` bigint NOT NULL,
+  `follower_id` bigint NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_follow_unique` (`follower_id`,`followee_id`),
+  KEY `idx_follow_follower` (`follower_id`,`created_at` DESC),
+  KEY `idx_follow_followee` (`followee_id`,`created_at` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `image_uploads` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint NOT NULL COMMENT '上传用户ID',
+  `file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '文件名',
+  `file_size` bigint DEFAULT NULL COMMENT '文件大小（字节）',
+  `file_url` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文件URL',
+  `ref_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '引用类型: post/comment/avatar/course/roadmap',
+  `ref_id` bigint DEFAULT NULL COMMENT '关联的资源ID',
+  `status` tinyint NOT NULL DEFAULT '0' COMMENT '状态: 0-未使用, 1-使用中',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `used_at` timestamp NULL DEFAULT NULL COMMENT '首次被引用时间',
+  `updated_at` datetime DEFAULT NULL COMMENT '更新时间（最后修改时间）',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_file_url` (`file_url`) COMMENT '根据URL快速查找',
+  KEY `idx_status_created` (`status`,`created_at`) COMMENT '定时清理未使用图片',
+  KEY `idx_ref` (`ref_type`,`ref_id`) COMMENT '删除内容时查找关联图片',
+  KEY `idx_user_created` (`user_id`,`created_at`) COMMENT '用户上传历史',
+  KEY `idx_user_type` (`user_id`,`ref_type`,`status`) COMMENT '查找用户特定类型图片'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='图片上传记录表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `memory_card` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `deck_id` bigint NOT NULL,
+  `creator_id` bigint NOT NULL,
+  `current_version_id` bigint NOT NULL,
+  `state` tinyint NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` datetime DEFAULT NULL COMMENT '删除时间，NULL表示未删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_memory_card_deck_state` (`deck_id`,`state`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `memory_card_deck` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `post_id` bigint NOT NULL,
+  `node_id` bigint NOT NULL,
+  `creator_id` bigint NOT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `version` int NOT NULL,
+  `state` tinyint NOT NULL,
+  `card_count` int NOT NULL DEFAULT '0',
+  `score` double NOT NULL DEFAULT '0',
+  `reason` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_deck_post` (`post_id`,`state`,`deleted_at`,`score` DESC,`id` DESC),
+  KEY `idx_deck_node` (`node_id`,`state`,`deleted_at`,`score` DESC,`id` DESC),
+  KEY `idx_deck_creator` (`creator_id`,`deleted_at`,`id` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `memory_card_version` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `card_id` bigint NOT NULL,
+  `version` int NOT NULL,
+  `creator_id` bigint NOT NULL,
+  `front` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `back` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content_hash` char(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_active` tinyint NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_card_version_card` (`card_id`,`version` DESC),
+  KEY `idx_card_version_active` (`card_id`,`is_active`),
+  KEY `idx_card_version_hash` (`content_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `message` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `sender_id` bigint NOT NULL,
+  `receiver_id` bigint NOT NULL,
+  `content` json NOT NULL,
+  `category` tinyint NOT NULL COMMENT '消息分类: 1=互动消息, 2=系统消息, 3=私信',
+  `type` tinyint NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_message_type_id` (`type`,`id` DESC,`created_at` DESC),
+  KEY `idx_message_conversation` (`sender_id`,`receiver_id`,`id` DESC,`created_at` DESC),
+  KEY `idx_message_system` (`sender_id`,`receiver_id`,`type`,`id` DESC),
+  KEY `idx_message_category` (`receiver_id`,`category`,`id` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `node` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(40) NOT NULL,
+  `description` varchar(1000) NOT NULL,
+  `course_id` bigint NOT NULL,
+  `creator_id` bigint NOT NULL,
+  `state` tinyint NOT NULL DEFAULT '0',
+  `reason` varchar(45) NOT NULL DEFAULT '',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `is_course_root` tinyint NOT NULL DEFAULT '0' COMMENT '是否为课程根节点：0=普通节点, 1=课程根节点',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_node_course_name` (`course_id`,`name`),
+  KEY `idx_node_filter` (`course_id`,`creator_id`,`state`,`id` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `node_toc` (
+  `hash` char(64) NOT NULL,
+  `toc` json NOT NULL,
+  `ref_count` int NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`hash`),
+  UNIQUE KEY `idx_node_toc_hash` (`hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `operation_log` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `operator_id` bigint NOT NULL COMMENT '操作人ID',
+  `operator_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '操作人名称（冗余字段，避免用户改名后无法追溯）',
+  `operator_role` tinyint NOT NULL COMMENT '操作人角色（0=普通用户, 1=审核员, 2=管理员, 3=超级管理员）',
+  `module` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '模块名称（用户管理、内容管理、系统配置等）',
+  `operation_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '操作类型（封禁用户、删除帖子、审核通过等）',
+  `operation_level` tinyint NOT NULL DEFAULT '2' COMMENT '操作级别（1=低, 2=中, 3=高）',
+  `target_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '目标类型（User, Post, Course, Comment, SystemConfig等）',
+  `target_id` bigint NOT NULL COMMENT '目标ID（SystemConfig类型时为0）',
+  `target_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '目标名称（冗余字段，便于查看）',
+  `reason` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '操作原因（如拒绝理由、屏蔽原因、封禁原因）',
+  `extra_data` json DEFAULT NULL COMMENT '额外数据（如修改前后的值、详细参数等）',
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '操作IP地址',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_operation_log_operator` (`operator_id`,`id` DESC),
+  KEY `idx_operation_log_time` (`created_at` DESC,`id` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `post` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `node_id` bigint NOT NULL,
+  `creator_id` bigint NOT NULL,
+  `type` tinyint NOT NULL,
+  `content` text NOT NULL,
+  `state` tinyint NOT NULL,
+  `score` double NOT NULL DEFAULT '0' COMMENT '计算出的排序分数',
+  `score_calculated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '分数计算时间',
+  `reason` varchar(45) NOT NULL DEFAULT '',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_post_node_score` (`node_id`,`state`,`deleted_at`,`score` DESC,`id` DESC),
+  KEY `idx_post_creator_type` (`creator_id`,`type`,`state`,`deleted_at`,`id` DESC),
+  KEY `idx_post_state_deleted` (`state`,`deleted_at`,`id` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `roadmap` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `content` json DEFAULT NULL,
+  `content_hash` varchar(64) DEFAULT NULL COMMENT 'SHA-256 hex of canonical content json',
+  `description` varchar(500) NOT NULL DEFAULT '',
+  `role_id` bigint NOT NULL,
+  `creator_id` bigint NOT NULL,
+  `state` varchar(32) NOT NULL DEFAULT 'NEVER_PUBLISHED' COMMENT '主体状态: NEVER_PUBLISHED / PUBLISHED / BANNED',
+  `current_revision_id` bigint DEFAULT NULL COMMENT '当前对外展示的 revision id（指向 content_revision.id）',
+  `pending_revision_id` bigint DEFAULT NULL COMMENT '正在审核中的 revision id（同一时间至多 1 个）',
+  `draft_content` json DEFAULT NULL COMMENT '作者编辑中的草稿；提交审核后清空',
+  `draft_updated_at` datetime DEFAULT NULL COMMENT '草稿最后修改时间',
+  `node_count` int NOT NULL DEFAULT '0' COMMENT '当前发布版本叶子节点数（c+n），approve 时从 revision.payload 重算',
+  `score` double NOT NULL DEFAULT '0' COMMENT '计算出的排序分数',
+  `score_calculated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '分数计算时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_roadmap_role` (`role_id`,`state`,`deleted_at`),
+  KEY `idx_roadmap_creator` (`creator_id`,`deleted_at`,`id` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `role` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(30) NOT NULL,
+  `description` varchar(2000) NOT NULL DEFAULT '',
+  `icon` varchar(45) NOT NULL DEFAULT '',
+  `skills` varchar(200) NOT NULL,
+  `main_category` int NOT NULL,
+  `sub_category` int NOT NULL,
+  `creator_id` bigint NOT NULL,
+  `state` tinyint NOT NULL,
+  `reason` varchar(200) NOT NULL DEFAULT '',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` timestamp NULL DEFAULT NULL COMMENT '删除时间，NULL表示未删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_role_state_id` (`state`,`id` DESC),
+  KEY `idx_role_categories` (`main_category`,`sub_category`,`state`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `system` (
+  `key` varchar(50) NOT NULL,
+  `value` text NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `upvote` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `object_id` bigint NOT NULL,
+  `object_type` tinyint NOT NULL,
+  `type` tinyint NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_upvote_unique` (`user_id`,`object_type`,`object_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_card_in_course` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `card_id` bigint NOT NULL,
+  `deck_id` bigint NOT NULL,
+  `course_id` bigint NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_card_in_course_user` (`user_id`,`course_id`,`card_id`),
+  KEY `idx_card_in_course_deck` (`deck_id`),
+  KEY `idx_card_in_course_user_card` (`user_id`,`card_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_card_srs` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `card_id` bigint NOT NULL,
+  `deck_id` bigint NOT NULL,
+  `course_id` bigint DEFAULT NULL COMMENT '课程ID：用户在哪个课程下学习这个节点',
+  `node_id` bigint NOT NULL,
+  `deck_version` int NOT NULL,
+  `card_version_id` bigint NOT NULL,
+  `review_due_at` datetime DEFAULT NULL,
+  `last_reviewed_at` datetime DEFAULT NULL,
+  `interval` int NOT NULL COMMENT '复习间隔: type=1/3时单位为分钟, type=2时单位为天',
+  `ease_factor` decimal(4,2) NOT NULL DEFAULT '2.50',
+  `repetitions` int NOT NULL DEFAULT '0',
+  `lapse_count` int NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `type` tinyint NOT NULL DEFAULT '0' COMMENT '卡片状态: 0=NEW, 1=LEARNING, 2=REVIEW, 3=RELEARNING',
+  `current_step` tinyint NOT NULL DEFAULT '0' COMMENT '学习/重学步骤索引，仅在 type=1/3 时有意义',
+  `lapse_old_interval` smallint DEFAULT NULL COMMENT '遗忘前的间隔(天), 仅在 type=3(RELEARNING) 时使用',
+  `reappear_at` bigint DEFAULT NULL COMMENT 'LEARNING/RELEARNING\n 卡片的下次再现计数，当 user.review_card_count >= reappear_at 时可展现',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_user_card_srs_unique` (`user_id`,`card_id`),
+  KEY `idx_user_card_srs_stats` (`user_id`,`last_reviewed_at`),
+  KEY `idx_user_card_srs_deck` (`deck_id`),
+  KEY `idx_user_card_srs_reappear` (`user_id`,`reappear_at`),
+  KEY `idx_user_course` (`user_id`,`course_id`),
+  KEY `idx_user_type_course_due` (`user_id`,`type`,`course_id`,`review_due_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_course` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `course_id` bigint NOT NULL,
+  `progress_percent` int NOT NULL DEFAULT '0',
+  `state` tinyint NOT NULL,
+  `started_at` datetime NOT NULL,
+  `completed_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_user_course_unique` (`user_id`,`course_id`),
+  KEY `idx_user_course_user_id` (`user_id`,`id` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_course_srs_setting` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `course_id` bigint NOT NULL,
+  `frequency_setting` tinyint NOT NULL DEFAULT '1',
+  `state` tinyint NOT NULL,
+  `card_order` tinyint DEFAULT '0' COMMENT '0=先复习后新卡，1=先新卡后复习',
+  `daily_new_limit` int DEFAULT '20' COMMENT '每日新卡上限',
+  `daily_review_limit` int DEFAULT '100' COMMENT '每日复习上限',
+  `frozen_at` datetime DEFAULT NULL COMMENT '冻结开始时间',
+  `frozen_duration` bigint DEFAULT '0' COMMENT '累计冻结时长（秒）',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_srs_setting_unique` (`user_id`,`course_id`),
+  KEY `idx_srs_setting_user` (`user_id`,`created_at` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_learning` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint unsigned NOT NULL COMMENT '用户ID',
+  `object_type` tinyint unsigned NOT NULL COMMENT '对象类型：2=node（节点/课程），4=roadmap（路线图）',
+  `object_id` bigint unsigned NOT NULL COMMENT '对象ID：对于课程是rootNodeId，对于路线图是roadmapId',
+  `parent_id` bigint unsigned DEFAULT NULL COMMENT '父对象ID：路线图使用（professionId），节点不使用',
+  `is_root_node` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否为课程根节点：0=普通节点/路线图，1=课程根节点',
+  `progress_percent` int unsigned NOT NULL DEFAULT '0' COMMENT '进度（0-10000，万分位精度）',
+  `nodes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '节点ID列表（JSON数组格式）：存储当前选择的第一个目\n 录的所有节点ID，用于快速计算进度。格式：[1,2,3,4,5]',
+  `started_at` datetime DEFAULT NULL COMMENT '开始学习时间',
+  `completed_at` datetime DEFAULT NULL COMMENT '完成时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_object` (`user_id`,`object_type`,`object_id`),
+  KEY `idx_user_type` (`user_id`,`object_type`),
+  KEY `idx_user_state` (`user_id`),
+  KEY `idx_user_type_parent` (`user_id`,`object_type`,`parent_id`),
+  KEY `idx_id_desc` (`id` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户学习记录表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_learning_daily` (
+  `user_id` bigint NOT NULL,
+  `stat_date` date NOT NULL,
+  `completed_nodes` int DEFAULT '0',
+  `cancel_completed_nodes` int DEFAULT '0',
+  `reviewed_cards` int DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`,`stat_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_node_completion` (
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `node_id` bigint NOT NULL COMMENT '节点ID',
+  `completed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '完成时间',
+  PRIMARY KEY (`user_id`,`node_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_node_id` (`node_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户节点完成记录表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_node_toc` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `node_id` bigint NOT NULL,
+  `toc` text NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_user_node_toc_unique` (`user_id`,`node_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_profile` (
+  `user_id` bigint NOT NULL,
+  `subscription` text NOT NULL,
+  `roadmap_pin` json NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_progress` (
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `node_ids` text NOT NULL COMMENT '已完成的节点ID列表，逗号分隔',
+  `count` smallint NOT NULL DEFAULT '0' COMMENT '已完成节点总数（冗余字段，便于统计）',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`user_id`),
+  KEY `idx_updated_at` (`updated_at`),
+  KEY `idx_completed_count` (`count`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户学习记录表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_roadmap` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `roadmap_id` bigint NOT NULL,
+  `role_id` bigint NOT NULL COMMENT '职业ID（冗余字段）',
+  `progress_percent` int NOT NULL DEFAULT '0',
+  `state` tinyint NOT NULL DEFAULT '0',
+  `started_at` datetime NOT NULL,
+  `completed_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_user_roadmap_unique` (`user_id`,`roadmap_id`),
+  KEY `idx_user_roadmap_user_id` (`user_id`,`created_at` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_stats` (
+  `user_id` bigint NOT NULL,
+  `view_count` int DEFAULT '0' COMMENT '总浏览量',
+  `twice_count` int DEFAULT '0' COMMENT '总两次能懂点赞数',
+  `like_count` int DEFAULT '0' COMMENT '总有用点赞数',
+  `comment_count` int DEFAULT '0' COMMENT '总评论数',
+  `learning_course_count` int DEFAULT '0' COMMENT '正在学习课程数',
+  `completed_course_count` int DEFAULT '0' COMMENT '已完成课程数',
+  `in_progress_role_count` int DEFAULT '0' COMMENT '正在进行职业数',
+  `completed_role_count` int DEFAULT '0' COMMENT '已完成职业数',
+  `following_user_count` int DEFAULT '0' COMMENT '关注的人数',
+  `following_course_count` int DEFAULT '0' COMMENT '关注的课程数',
+  `following_role_count` int DEFAULT '0' COMMENT '关注的职业数',
+  `created_article_count` int DEFAULT '0' COMMENT '创建的文章数',
+  `created_index_count` int DEFAULT '0' COMMENT '创建的目录数',
+  `created_roadmap_count` int DEFAULT '0' COMMENT '创建的路线图数',
+  `created_card_deck_count` int DEFAULT '0' COMMENT '创建的卡片组数',
+  `last_sync_date` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '最后同步日期(YYYY-MM-DD)',
+  `review_streak_days` int DEFAULT '0' COMMENT '记忆卡片连续复习天数',
+  `last_card_review_date` date DEFAULT NULL COMMENT '记忆卡片最后复习日期',
+  `learning_streak_days` int DEFAULT '0' COMMENT '连续学习天数',
+  `last_learning_date` date DEFAULT NULL COMMENT '最后学习日期',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `last_viewed_message_id` bigint DEFAULT '0' COMMENT '最后查看的消息ID',
+  `review_card_count` bigint DEFAULT '0' COMMENT '复习卡片计数器',
+  PRIMARY KEY (`user_id`),
+  UNIQUE KEY `uk_user_date` (`user_id`),
+  KEY `idx_updated_at` (`updated_at`),
+  KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户当日统计表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_stats_yearly` (
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `stat_year` int NOT NULL COMMENT '统计年份',
+  `stats` json NOT NULL COMMENT '统计数据，格式：{"1-1":{"views": 10, "twice": 3, "helpful": 2, \n  "once": 1, "comments": 5}, ...}',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`,`stat_year`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_stat_year` (`stat_year`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户年度统计表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+

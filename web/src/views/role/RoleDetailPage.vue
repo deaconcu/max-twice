@@ -124,7 +124,7 @@
             </div>
 
             <!-- 加载状态 -->
-            <LoadingSpinner v-if="loadingRoadmaps" />
+            <LoadingSpinner v-if="showLoading" />
 
             <!-- 空状态 -->
             <div v-else-if="filteredRoadmaps.length === 0" class="text-center py-12">
@@ -218,7 +218,7 @@
 
                             <!-- 详细描述 -->
                             <p class="text-body-2 text-grey-darken-2 mb-3">
-                              {{ roadmap.detail }}
+                              {{ roadmap.description }}
                             </p>
 
                             <!-- 统计信息 -->
@@ -277,7 +277,7 @@
                                   class="mr-2"
                                 />
                                 <span class="text-caption text-grey-darken-2">
-                                  {{ getTimeDisplay(roadmap.createdAt) }}
+                                  {{ getTimeDisplay(roadmap.createdAt ?? '') }}
                                 </span>
                               </div>
                             </div>
@@ -467,15 +467,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useFetch, useMutation } from '@/composables'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useRoleDetailQuery } from '@/queries/role'
+import { useUpvoteMutation, useBookmarkToggleMutation } from '@/queries/interaction'
+import {
+  useStartRoadmapMutation,
+  useCancelRoadmapMutation,
+  useLearningRoadmapsByRoleQuery,
+} from '@/queries/progress'
+import { useRoleRoadmapsQuery } from '@/queries/roadmap'
 import { useUserStore } from '@/stores'
-import { roleApi, roadmapApi, progressApi, upvoteApi, bookmarkApi } from '@/api'
 import { ObjectType, VoteType } from '@/enums'
 import { getColorByString } from '@/utils/color'
-import type { Role } from '@/types/role'
 import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -496,16 +500,8 @@ const roleId = computed(() => {
   return typeof id === 'string' ? parseInt(id, 10) : 0
 })
 
-// 使用 useFetch 加载职业详情
-const {
-  data: role,
-  loading,
-  error: fetchError,
-} = useFetch<Role | null>({
-  fetchFn: () => roleApi.getRole(roleId.value),
-  immediate: true,
-  defaultValue: null,
-})
+// 加载职业详情
+const { data: role, isLoading: loading, error: fetchError } = useRoleDetailQuery(roleId)
 
 // 状态管理
 const searchText = ref('')
@@ -520,86 +516,55 @@ const sortOptions = computed(() => [
 
 const error = computed(() => (fetchError.value ? t('roleDetail.loadFailed') : null))
 
-// 使用无限滚动加载路线图
+// 使用 TanStack 无限查询加载路线图
 const {
-  items: allRoadmaps,
-  loading: loadingRoadmaps,
-  hasMore,
-  loadMore: loadMoreRoadmaps,
-  reset: resetRoadmaps,
-} = useInfiniteScroll({
-  fetchFn: async (params) => {
-    const response = await roadmapApi.getRoleRoadmaps(
-      roleId.value,
-      params.lastId,
-      sortBy.value
-    )
-    return {
-      code: response.code,
-      data: response.data || [],
-      message: response.message || '',
-      hasMore: response.data?.length === 20, // 假设每页20条
-    }
-  },
-  getNextParams: (lastItem) => ({
-    lastId: lastItem.id,
-  }),
-  initialParams: { lastId: undefined },
-})
+  data: roleRoadmapsData,
+  isLoading: loadingRoadmaps,
+  hasNextPage: hasMore,
+  fetchNextPage,
+  isFetchingNextPage,
+} = useRoleRoadmapsQuery(roleId, sortBy)
 
-// 监听排序变化，重置列表
-watch(sortBy, () => {
-  resetRoadmaps()
-  loadMoreRoadmaps({ done: () => {} })
-})
+const allRoadmaps = computed<Roadmap[]>(
+  () => roleRoadmapsData.value?.pages.flatMap((p) => p as Roadmap[]) ?? []
+)
 
-// 学习中的路线图（单独接口，不分页）
-const learningRoadmaps = ref<any[]>([])
+// 监听排序变化，重置列表（TanStack 会自动因 queryKey 变化而重新请求）
+// useRoleRoadmapsQuery 的 queryKey 包含 sortBy，sortBy 变化时自动刷新
 
-// 监听筛选状态变化，加载学习中数据
-watch(filterStatus, async (newStatus) => {
-  if (newStatus === 'learning' && learningRoadmaps.value.length === 0) {
-    loadingRoadmaps.value = true
-    try {
-      const response = await progressApi.getLearningRoadmapsByRole(roleId.value)
-      if (response.code === 200) {
-        learningRoadmaps.value = response.data || []
-      }
-    } finally {
-      loadingRoadmaps.value = false
-    }
-  } else if (newStatus === 'all' && allRoadmaps.value.length === 0) {
-    loadMoreRoadmaps({ done: () => {} })
-  }
-})
+// 学习中的路线图
+const learningEnabled = computed(() => filterStatus.value === 'learning')
+const { data: learningRoadmapsData, isLoading: learningRoadmapsLoading } =
+  useLearningRoadmapsByRoleQuery(roleId, learningEnabled)
+const learningRoadmaps = computed(() => learningRoadmapsData.value ?? [])
 
-// 首次加载数据
-onMounted(() => {
-  if (allRoadmaps.value.length === 0) {
-    loadMoreRoadmaps({ done: () => {} })
-  }
-})
+// 综合加载状态
+const showLoading = computed(() =>
+  filterStatus.value === 'learning' ? learningRoadmapsLoading.value : loadingRoadmaps.value
+)
 
 // 加载更多
-const onLoadMore = async ({ done }: { done: (status: 'ok' | 'empty' | 'loading' | 'error') => void }) => {
-  await loadMoreRoadmaps({
-    done: () => {
-      done(hasMore.value ? 'ok' : 'empty')
-    },
-  })
+const onLoadMore = async ({
+  done,
+}: {
+  done: (status: 'ok' | 'empty' | 'loading' | 'error') => void
+}) => {
+  if (!hasMore.value) {
+    done('empty')
+    return
+  }
+  await fetchNextPage()
+  done(hasMore.value ? 'ok' : 'empty')
 }
 
 // 筛选后的路线图
 const filteredRoadmaps = computed(() => {
-  // 学习中状态：使用单独接口的数据
   if (filterStatus.value === 'learning') {
     return learningRoadmaps.value || []
   }
 
-  // 全部状态：使用滚动加载的数据
   let filtered = [...allRoadmaps.value]
 
-  // 搜索筛选
   if (searchText.value.trim()) {
     const searchLower = searchText.value.toLowerCase()
     filtered = filtered.filter((r) => r.description?.toLowerCase().includes(searchLower))
@@ -608,12 +573,7 @@ const filteredRoadmaps = computed(() => {
   return filtered
 })
 
-const roadmapsCount = computed(() => allRoadmaps.value.length)
-
-// 筛选和排序
-const filterRoadmaps = (): void => {
-  // 触发 filteredRoadmaps 重新计算
-}
+const filterRoadmaps = (): void => {}
 
 // 获取职业图标
 const getRoleIcon = () => {
@@ -650,21 +610,20 @@ const handleCreateRoadmap = (): void => {
 }
 
 // 切换职业收藏状态
-const { execute: executeToggleBookmark, loading: bookmarking } = useMutation(
-  () => bookmarkApi.toggle('role', roleId.value),
-  {
-    successMessage: '',
-    showToast: false,
-  }
-)
+const { mutate: bookmarkMutate, isPending: bookmarking } = useBookmarkToggleMutation()
 
-const handleToggleBookmark = async () => {
+const handleToggleBookmark = () => {
   if (!role.value) return
-
-  const result = await executeToggleBookmark()
-  if (result !== null && role.value) {
-    role.value.bookmarked = result
-  }
+  bookmarkMutate(
+    { contentType: 'role', contentId: roleId.value },
+    {
+      onSuccess: (result) => {
+        if (result !== null && role.value) {
+          role.value.bookmarked = result
+        }
+      },
+    }
+  )
 }
 
 // 打开路径详情
@@ -673,66 +632,44 @@ const handleGoToRoadmap = (roadmap: { id: number }): void => {
 }
 
 // 投票
-const { execute: toggleUpvote } = useMutation(
-  ({ roadmapId }: { roadmapId: number }) =>
-    upvoteApi.upvote(roadmapId, ObjectType.ROADMAP, VoteType.LIKE),
-  { showToast: false }
-)
+const { mutate: upvoteMutate } = useUpvoteMutation()
 
-const handleVote = async (roadmap: {
-  id: number
-  liked: boolean
-  likeCount: number
-}): Promise<void> => {
-  console.log('[点赞前] roadmap:', roadmap.id, 'likeCount:', roadmap.likeCount)
-  const result = await toggleUpvote({ roadmapId: roadmap.id })
-  console.log('[点赞后] result:', result)
-
-  // 调用成功，更新状态（使用后端返回的点赞数，而不是手动计算）
-  if (result) {
-    roadmap.liked = result.liked || false
-    roadmap.likeCount = result.likeCount || 0
-    console.log('[更新后] liked:', roadmap.liked, 'likeCount:', roadmap.likeCount)
-  }
-  // 调用失败，不做任何更新
+const handleVote = (roadmap: { id: number; liked?: boolean; likeCount?: number }): void => {
+  upvoteMutate(
+    { objectId: roadmap.id, objectType: ObjectType.ROADMAP, type: VoteType.LIKE },
+    {
+      onSuccess: (result) => {
+        if (result) {
+          roadmap.liked = result.liked || false
+          roadmap.likeCount = result.likeCount || 0
+        }
+      },
+    }
+  )
 }
 
-// 开始学习路线图的 mutation
-const { execute: startRoadmapMutation } = useMutation(progressApi.startRoadmap, {
-  successMessage: '',
-  showToast: false,
-})
+// 开始/取消学习路线图
+const { mutate: startRoadmap } = useStartRoadmapMutation()
+const { mutate: cancelRoadmap } = useCancelRoadmapMutation()
 
-// 取消学习路线图的 mutation
-const { execute: cancelRoadmapMutation } = useMutation(progressApi.cancelRoadmap, {
-  successMessage: '',
-  showToast: false,
-})
-
-// 开始学习
-const handleStartLearning = async (roadmap: { id: number; learning: boolean }): Promise<void> => {
-  try {
-    if (roadmap.learning) {
-      // 取消学习
-      const result = await cancelRoadmapMutation(roadmap.id)
-      if (result) {
-        roadmap.learning = result.learning
-      }
-    } else {
-      // 开始学习
-      const result = await startRoadmapMutation(roadmap.id)
-      if (result) {
-        roadmap.learning = result.learning
-      }
-    }
-  } catch (error) {
-    console.error('操作失败:', error)
+const handleStartLearning = (roadmap: { id: number; learning?: boolean }): void => {
+  if (roadmap.learning) {
+    cancelRoadmap(roadmap.id, {
+      onSuccess: (result) => {
+        if (result) roadmap.learning = result.learning
+      },
+    })
+  } else {
+    startRoadmap(roadmap.id, {
+      onSuccess: (result) => {
+        if (result) roadmap.learning = result.learning
+      },
+    })
   }
 }
 
 // 复制路径
 const handleCopy = (roadmap: { id: number }): void => {
-  console.log('复制路径:', roadmap.id)
   void router.push(`/role/${roleId.value}/roadmap/create?copy=${roadmap.id}`)
 }
 </script>

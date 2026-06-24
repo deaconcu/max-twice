@@ -8,6 +8,7 @@ export default {
 import { ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { bookmarkApi, type ContentType, type Bookmark } from '@/api/modules/bookmark'
+import { useBookmarkToggleMutation } from '@/queries/interaction'
 import { getColorByString } from '@/utils/color'
 import { formatRelativeTime } from '@/utils/format'
 import { useI18n } from '@/composables/useI18n'
@@ -33,7 +34,7 @@ const loading = ref(false)
 const loadingMore = ref(false)
 
 // 分页参数
-const lastIds = ref<Record<ContentType, number | undefined>>({
+const cursors = ref<Record<ContentType, string | undefined>>({
   role: undefined,
   course: undefined,
   roadmap: undefined,
@@ -63,27 +64,21 @@ async function loadBookmarks(type: ContentType, append = false) {
   }
 
   try {
-    const lastId = append ? lastIds.value[type] : undefined
-    const response = await bookmarkApi.getBookmarks(type, lastId, 20)
+    const cursor = append ? cursors.value[type] : undefined
+    const response = await bookmarkApi.getBookmarks(type, cursor, 20)
 
-    if (response.data) {
-      const items = response.data
+    const items = response.items
 
-      // 更新数据
-      if (!append) {
-        bookmarks.value[type] = items
-      } else {
-        bookmarks.value[type].push(...items)
-      }
-
-      // 更新分页参数
-      if (items.length > 0) {
-        lastIds.value[type] = items[items.length - 1].id
-        hasMore.value[type] = items.length === 20
-      } else {
-        hasMore.value[type] = false
-      }
+    // 更新数据
+    if (!append) {
+      bookmarks.value[type] = items
+    } else {
+      bookmarks.value[type].push(...items)
     }
+
+    // 更新分页参数
+    cursors.value[type] = response.nextCursor
+    hasMore.value[type] = response.hasMore
   } finally {
     loading.value = false
     loadingMore.value = false
@@ -109,16 +104,19 @@ watch(
 )
 
 // 取消收藏
-async function handleUnbookmark(item: Bookmark) {
-  try {
-    await bookmarkApi.toggle(activeType.value, item.objectId)
-    // 从列表中移除
-    bookmarks.value[activeType.value] = bookmarks.value[activeType.value].filter(
-      (b) => b.id !== item.id
-    )
-  } catch (error) {
-    console.error('unfavorite error:', error)
-  }
+const { mutate: bookmarkToggleMutate } = useBookmarkToggleMutation()
+
+function handleUnbookmark(item: Bookmark) {
+  bookmarkToggleMutate(
+    { contentType: activeType.value, contentId: item.objectId },
+    {
+      onSuccess: () => {
+        bookmarks.value[activeType.value] = bookmarks.value[activeType.value].filter(
+          (b) => b.id !== item.id
+        )
+      },
+    }
+  )
 }
 
 // 跳转到详情页
@@ -162,6 +160,29 @@ function getName(item: Bookmark): string {
 // 获取图标颜色
 function getIconColor(item: Bookmark): string {
   return getColorByString(getName(item))
+}
+
+// 获取节点数量
+function getNodeCount(item: Bookmark): number | null {
+  const obj = item.object as Record<string, unknown>
+  if (!obj) return null
+  const count = obj.nodeCount
+  return typeof count === 'number' ? count : null
+}
+
+// 获取卡片组名称
+function getDeckName(item: Bookmark): string {
+  const obj = item.object as Record<string, unknown>
+  if (!obj) return t('user.profile.unknown')
+  return (obj.name as string) || t('user.profile.unknown')
+}
+
+// 获取卡片数量
+function getCardCount(item: Bookmark): number | null {
+  const obj = item.object as Record<string, unknown>
+  if (!obj) return null
+  const count = obj.cardCount
+  return typeof count === 'number' ? count : null
 }
 
 // 获取文章的节点名称
@@ -254,7 +275,9 @@ function getPostIconColor(): string {
                   {{ getName(item) }}
                 </div>
                 <div class="d-flex align-center justify-end">
-                  <span class="text-caption text-grey">{{ formatRelativeTime(item.createdAt) }}</span>
+                  <span class="text-caption text-grey">{{
+                    formatRelativeTime(item.createdAt)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -300,14 +323,16 @@ function getPostIconColor(): string {
                 </div>
                 <div class="d-flex align-center justify-space-between">
                   <span
-                    v-if="(item.object as Record<string, unknown>)?.nodeCount"
+                    v-if="getNodeCount(item)"
                     class="text-caption text-medium-emphasis text-truncate"
                     style="flex: 1; min-width: 0"
                   >
-                    {{ (item.object as Record<string, unknown>).nodeCount }} {{ t('rightSidebar.knowledgeNodes') }}
+                    {{ getNodeCount(item) }} {{ t('rightSidebar.knowledgeNodes') }}
                   </span>
                   <span v-else style="flex: 1"></span>
-                  <span class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(item.createdAt) }}</span>
+                  <span class="text-caption text-grey flex-shrink-0 ml-2">{{
+                    formatRelativeTime(item.createdAt)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -353,14 +378,16 @@ function getPostIconColor(): string {
                 </div>
                 <div class="d-flex align-center justify-space-between">
                   <span
-                    v-if="(item.object as Record<string, unknown>)?.nodeCount"
+                    v-if="getNodeCount(item)"
                     class="text-caption text-medium-emphasis text-truncate"
                     style="flex: 1; min-width: 0"
                   >
-                    {{ (item.object as Record<string, unknown>).nodeCount }} {{ t('rightSidebar.knowledgeNodes') }}
+                    {{ getNodeCount(item) }} {{ t('rightSidebar.knowledgeNodes') }}
                   </span>
                   <span v-else style="flex: 1"></span>
-                  <span class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(item.createdAt) }}</span>
+                  <span class="text-caption text-grey flex-shrink-0 ml-2">{{
+                    formatRelativeTime(item.createdAt)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -390,10 +417,7 @@ function getPostIconColor(): string {
             />
             <div class="d-flex align-center ga-3">
               <div class="icon-container flex-shrink-0">
-                <v-icon
-                  size="24"
-                  :color="getPostIconColor()"
-                >
+                <v-icon size="24" :color="getPostIconColor()">
                   {{ getPostIcon(item) }}
                 </v-icon>
               </div>
@@ -405,8 +429,12 @@ function getPostIconColor(): string {
                   {{ getPostNodeName(item) || t('user.profile.unknownNode') }}
                 </div>
                 <div class="d-flex align-center justify-space-between">
-                  <span class="text-caption text-medium-emphasis">{{ getPostTypeLabel(item) }}</span>
-                  <span class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(item.createdAt) }}</span>
+                  <span class="text-caption text-medium-emphasis">{{
+                    getPostTypeLabel(item)
+                  }}</span>
+                  <span class="text-caption text-grey flex-shrink-0 ml-2">{{
+                    formatRelativeTime(item.createdAt)
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -443,18 +471,20 @@ function getPostIconColor(): string {
                   class="text-body-1 font-weight-bold text-truncate"
                   :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                 >
-                  {{ (item.object as Record<string, unknown>)?.name || t('user.profile.unknown') }}
+                  {{ getDeckName(item) }}
                 </div>
                 <div class="d-flex align-center justify-space-between">
                   <span
-                    v-if="(item.object as Record<string, unknown>)?.cardCount"
+                    v-if="getCardCount(item)"
                     class="text-caption text-medium-emphasis text-truncate"
                     style="flex: 1; min-width: 0"
                   >
-                    {{ (item.object as Record<string, unknown>).cardCount }} {{ t('review.cards') }}
+                    {{ getCardCount(item) }} {{ t('review.cards') }}
                   </span>
                   <span v-else style="flex: 1"></span>
-                  <span class="text-caption text-grey flex-shrink-0 ml-2">{{ formatRelativeTime(item.createdAt) }}</span>
+                  <span class="text-caption text-grey flex-shrink-0 ml-2">{{
+                    formatRelativeTime(item.createdAt)
+                  }}</span>
                 </div>
               </div>
             </div>

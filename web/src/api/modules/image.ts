@@ -1,5 +1,4 @@
 import apiClient from '../client'
-import type { ApiResponse } from '@/types/api'
 
 /**
  * 图片上传响应
@@ -44,12 +43,12 @@ export const imageApi = {
    * @param file 图片文件
    * @param refType 引用类型: post/comment/avatar/course/roadmap
    */
-  upload(file: File, refType: string): Promise<ApiResponse<ImageUploadResponse>> {
+  upload(file: File, refType: string): Promise<ImageUploadResponse> {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('refType', refType)
 
-    return apiClient.post('/v1/images/upload', formData, {
+    return apiClient.post('/images/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -61,8 +60,8 @@ export const imageApi = {
    * @param fileUrls 图片URL列表
    * @param refId 引用资源ID
    */
-  markAsUsed(fileUrls: string[], refId: number): Promise<ApiResponse<void>> {
-    return apiClient.post('/v1/images/mark-used', {
+  markAsUsed(fileUrls: string[], refId: number): Promise<void> {
+    return apiClient.post('/images/mark-used', {
       fileUrls,
       refId,
     })
@@ -72,8 +71,8 @@ export const imageApi = {
    * 删除图片
    * @param fileUrl 图片URL
    */
-  delete(fileUrl: string): Promise<ApiResponse<void>> {
-    return apiClient.delete('/v1/images', {
+  delete(fileUrl: string): Promise<void> {
+    return apiClient.delete('/images', {
       params: { fileUrl },
     })
   },
@@ -81,16 +80,16 @@ export const imageApi = {
   /**
    * 获取配额使用情况
    */
-  getQuota(): Promise<ApiResponse<QuotaUsage>> {
-    return apiClient.get('/v1/images/quota')
+  getQuota(): Promise<QuotaUsage> {
+    return apiClient.get('/images/quota')
   },
 
   /**
    * 获取上传历史
    * @param limit 返回数量
    */
-  getHistory(limit = 20): Promise<ApiResponse<ImageUploadHistory[]>> {
-    return apiClient.get('/v1/images/history', {
+  getHistory(limit = 20): Promise<ImageUploadHistory[]> {
+    return apiClient.get('/images/history', {
       params: { limit },
     })
   },

@@ -19,6 +19,7 @@ const props = withDefaults(defineProps<Props>(), {
   hasMore: true,
   targetCommentId: null,
   targetSubCommentId: null,
+  posts: () => [],
 })
 
 const emit = defineEmits<Emits>()
@@ -27,6 +28,7 @@ const { t } = useI18n()
 
 interface Props {
   data: any
+  posts?: any[]
   nodes: any[]
   currNodeId: number
   currNode: any
@@ -448,9 +450,9 @@ const completeButtonTooltip = () => {
         <template v-if="tab === 'list'">
           <div class="mt-4">
             <!-- 其他文章 -->
-            <div v-if="data.otherPostings && data.otherPostings.length > 0">
+            <div v-if="posts && posts.length > 0">
               <div
-                v-for="(posting, index) in data.otherPostings"
+                v-for="(posting, index) in posts"
                 :key="posting.id"
                 :class="index == 0 ? 'pt-4' : 'pt-8'"
               >
@@ -486,10 +488,7 @@ const completeButtonTooltip = () => {
             </div>
 
             <!-- 空状态 -->
-            <div
-              v-if="!data.otherPostings || data.otherPostings.length === 0"
-              class="text-center pa-12"
-            >
+            <div v-if="!posts || posts.length === 0" class="text-center pa-12">
               <v-icon
                 icon="mdi-text-box-outline"
                 size="64"

@@ -13,5 +13,5 @@ public class UpvoteDO {
 
     private Long userId;
 
-    private Integer type;
+    private String type;
 }

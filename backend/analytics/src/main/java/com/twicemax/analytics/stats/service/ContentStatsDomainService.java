@@ -4,10 +4,14 @@ import com.twicemax.analytics.dto.ContentStatsDTO;
 import com.twicemax.analytics.dto.DailyStatsDTO;
 import com.twicemax.analytics.stats.dataservice.ContentStatsDataService;
 import com.twicemax.analytics.stats.mapper.ContentStatsDO;
+import com.twicemax.shared.domain.Enums.NewContentState;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentRemovedEvent;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentRestoredEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.RoadmapApprovedEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.RoadmapBannedEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.RoadmapRestoredEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -164,7 +168,7 @@ public class ContentStatsDomainService {
 
         contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), 1);
 
-        if (event.getPostType() == PostType.index) {
+        if (event.getPostType() == PostType.INDEX) {
             contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), 1);
 
             // 批量更新被引用节点的引用数统计
@@ -173,7 +177,7 @@ public class ContentStatsDomainService {
                 log.debug("批量更新 {} 个节点引用数 +1（被目录帖子 {} 引用）",
                     event.getReferencedNodeIds().size(), event.getContentId());
             }
-        } else if (event.getPostType() == PostType.article) {
+        } else if (event.getPostType() == PostType.ARTICLE) {
             contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), 1);
         }
 
@@ -185,7 +189,7 @@ public class ContentStatsDomainService {
 
         contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), -1);
 
-        if (event.getPostType() == PostType.index) {
+        if (event.getPostType() == PostType.INDEX) {
             contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), -1);
 
             // 批量更新被引用节点的引用数统计
@@ -194,7 +198,7 @@ public class ContentStatsDomainService {
                 log.debug("批量更新 {} 个节点引用数 -1（目录帖子 {} 被下架）",
                     event.getReferencedNodeIds().size(), event.getContentId());
             }
-        } else if (event.getPostType() == PostType.article) {
+        } else if (event.getPostType() == PostType.ARTICLE) {
             contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), -1);
         }
 
@@ -206,7 +210,7 @@ public class ContentStatsDomainService {
 
         contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), -1);
 
-        if (event.getPostType() == PostType.index) {
+        if (event.getPostType() == PostType.INDEX) {
             contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), -1);
 
             // 批量更新被引用节点的引用数统计
@@ -215,26 +219,30 @@ public class ContentStatsDomainService {
                 log.debug("批量更新 {} 个节点引用数 -1（目录帖子 {} 被封禁）",
                     event.getReferencedNodeIds().size(), event.getContentId());
             }
-        } else if (event.getPostType() == PostType.article) {
+        } else if (event.getPostType() == PostType.ARTICLE) {
             contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), -1);
         }
     }
 
-    // ==================== Roadmap 处理 ====================
+    // ==================== Roadmap 处理（revision 模型，监听 Roadmap*Event） ====================
 
-    public void handleRoadmapApproved(ContentApprovedEvent event) {
+    public void handleRoadmapApproved(RoadmapApprovedEvent event) {
         if (event.getRoleId() == null) return;
         contentStatsDataService.incrementRoadmaps(ContentType.role, event.getRoleId(), 1);
     }
 
-    public void handleRoadmapRemoved(ContentRemovedEvent event) {
+    public void handleRoadmapBanned(RoadmapBannedEvent event) {
+        // 只有之前是 PUBLISHED 才需要回滚发布相关统计
+        if (event.getPreviousState() != NewContentState.PUBLISHED) return;
         if (event.getRoleId() == null) return;
         contentStatsDataService.incrementRoadmaps(ContentType.role, event.getRoleId(), -1);
     }
 
-    public void handleRoadmapBanned(ContentBannedEvent event) {
+    public void handleRoadmapRestored(RoadmapRestoredEvent event) {
+        // 仅当 restore 后变成 PUBLISHED 才需要恢复角色下的 roadmap 计数
+        if (event.getNewState() != NewContentState.PUBLISHED) return;
         if (event.getRoleId() == null) return;
-        contentStatsDataService.incrementRoadmaps(ContentType.role, event.getRoleId(), -1);
+        contentStatsDataService.incrementRoadmaps(ContentType.role, event.getRoleId(), 1);
     }
 
     // ==================== MemoryCardDeck 处理 ====================
@@ -276,17 +284,15 @@ public class ContentStatsDomainService {
             case post -> {
                 if (event.getNodeId() != null && event.getPostType() != null) {
                     contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), 1);
-                    if (event.getPostType() == PostType.index) {
+                    if (event.getPostType() == PostType.INDEX) {
                         contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), 1);
-                    } else if (event.getPostType() == PostType.article) {
+                    } else if (event.getPostType() == PostType.ARTICLE) {
                         contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), 1);
                     }
                 }
             }
             case roadmap -> {
-                if (event.getRoleId() != null) {
-                    contentStatsDataService.incrementRoadmaps(ContentType.role, event.getRoleId(), 1);
-                }
+                // roadmap 走独立 RoadmapRestoredEvent，旧 ContentRestoredEvent 不再触发
             }
             case memory_card_deck -> {
                 // CardDeck 同时属于 Post 和 Node，需要同时恢复两者的统计

@@ -2,7 +2,6 @@
  * 记忆卡片 API
  */
 import client from '../client'
-import type { ApiResponse } from '@/types/api'
 import type {
   MemoryCardView,
   MemoryCardDeck,
@@ -14,14 +13,15 @@ import type {
   ReviewSubmitResult,
   ReviewSummary,
 } from '@/types/memory'
+import type { CursorPage } from '@/types/api'
 
 /**
  * 获取复习概览（包含记忆库课程列表和统计数据）
  * @param state 课程状态：1=学习中，2=冻结，3=隐藏
  */
-export function getReviewSummary(state?: number): Promise<ApiResponse<ReviewSummary>> {
+export function getReviewSummary(state?: number): Promise<ReviewSummary> {
   const params = state ? { state } : {}
-  return client.get('/v1/memory/memory-bank/courses', { params })
+  return client.get('/memory/memory-bank/courses', { params })
 }
 
 /**
@@ -30,12 +30,11 @@ export function getReviewSummary(state?: number): Promise<ApiResponse<ReviewSumm
 export function getDecksByNode(
   nodeId: number,
   params?: {
-    lastScore?: number
-    lastId?: number
+    cursor?: string
     limit?: number
   }
-): Promise<ApiResponse<{ items: MemoryCardDeck[]; hasMore: boolean }>> {
-  return client.get(`/v1/memory/decks/node/${nodeId}`, { params })
+): Promise<CursorPage<MemoryCardDeck>> {
+  return client.get(`/memory/decks/node/${nodeId}`, { params })
 }
 
 /**
@@ -49,33 +48,29 @@ export function createDeck(data: {
     front: string
     back: string
   }[]
-}): Promise<ApiResponse<MemoryCardDeck>> {
-  return client.post('/v1/memory/decks', data)
+}): Promise<MemoryCardDeck> {
+  return client.post('/memory/decks', data)
 }
 
 /**
  * 获取复习队列(到期的卡片)
  */
-export function getReviewQueue(
-  params: GetReviewQueueParams
-): Promise<ApiResponse<MemoryCardView[]>> {
-  return client.get('/v1/memory/review/queue', { params })
+export function getReviewQueue(params: GetReviewQueueParams): Promise<MemoryCardView[]> {
+  return client.get('/memory/review/queue', { params })
 }
 
 /**
  * 获取卡片列表(所有卡片)
  */
-export function getCardList(params: GetCardListParams): Promise<ApiResponse<MemoryCardView[]>> {
-  return client.get('/v1/memory/review/cards', { params })
+export function getCardList(params: GetCardListParams): Promise<CursorPage<MemoryCardView>> {
+  return client.get('/memory/review/cards', { params })
 }
 
 /**
  * 获取下一张待复习卡片
  */
-export function getNextCard(params?: {
-  courseId?: number
-}): Promise<ApiResponse<ReviewSubmitResult>> {
-  return client.get('/v1/memory/review/next', { params })
+export function getNextCard(params?: { courseId?: number }): Promise<ReviewSubmitResult> {
+  return client.get('/memory/review/next', { params })
 }
 
 /**
@@ -87,22 +82,22 @@ export function reviewCard(params: {
   result: ReviewResult
   courseId?: number
   timeSpent?: number
-}): Promise<ApiResponse<ReviewSubmitResult>> {
-  return client.post('/v1/memory/review/submit', params)
+}): Promise<ReviewSubmitResult> {
+  return client.post('/memory/review/submit', params)
 }
 
 /**
  * 获取卡片组更新差异
  */
-export function getDeckDiff(deckId: number): Promise<ApiResponse<DeckUpdateDiff>> {
-  return client.get(`/v1/memory/decks/${String(deckId)}/diff`)
+export function getDeckDiff(deckId: number): Promise<DeckUpdateDiff> {
+  return client.get(`/memory/decks/${String(deckId)}/diff`)
 }
 
 /**
  * 获取卡片内容差异
  */
-export function getCardDiff(cardId: number): Promise<ApiResponse<CardContentDiff>> {
-  return client.get(`/v1/memory/cards/${String(cardId)}/diff`)
+export function getCardDiff(cardId: number): Promise<CardContentDiff> {
+  return client.get(`/memory/cards/${String(cardId)}/diff`)
 }
 
 /**
@@ -113,8 +108,8 @@ export function acceptDeckChanges(
   cardIds: number[],
   courseId?: number,
   removeOtherDeckCards?: boolean
-): Promise<ApiResponse<void>> {
-  return client.post(`/v1/memory/decks/${String(deckId)}/accept-changes`, {
+): Promise<void> {
+  return client.post(`/memory/decks/${String(deckId)}/accept-changes`, {
     cardIds,
     courseId,
     removeOtherDeckCards,
@@ -124,15 +119,15 @@ export function acceptDeckChanges(
 /**
  * 删除卡片（从复习计划中移除）
  */
-export function deleteCards(cardIds: number[]): Promise<ApiResponse<void>> {
-  return client.delete('/v1/memory/cards/study', { data: cardIds })
+export function deleteCards(cardIds: number[]): Promise<void> {
+  return client.delete('/memory/cards/study', { data: cardIds })
 }
 
 /**
  * 重置卡片学习进度
  */
-export function resetCardProgress(cardIds: number[]): Promise<ApiResponse<void>> {
-  return client.post('/v1/memory/cards/reset', { cardIds })
+export function resetCardProgress(cardIds: number[]): Promise<void> {
+  return client.post('/memory/cards/reset', { cardIds })
 }
 
 /**
@@ -145,15 +140,8 @@ export function updateCourseMemorySetting(params: {
   cardOrder?: number
   dailyNewLimit?: number
   dailyReviewLimit?: number
-}): Promise<ApiResponse<void>> {
-  return client.put(`/v1/memory/memory-bank/courses/${String(params.courseId)}/settings`, params)
-}
-
-/**
- * 移除课程记忆库
- */
-export function removeCourseMemoryBank(courseId: number): Promise<ApiResponse<void>> {
-  return client.delete(`/v1/memory/memory-bank/courses/${String(courseId)}`)
+}): Promise<void> {
+  return client.put(`/memory/memory-bank/courses/${String(params.courseId)}/settings`, params)
 }
 
 /**
@@ -164,21 +152,15 @@ export function getPostPublicDecks(
   params?: {
     sortBy?: string
     sortOrder?: string
-    lastScore?: number
-    lastId?: number
+    cursor?: string
     limit?: number
   }
-): Promise<
-  ApiResponse<{
-    items: MemoryCardDeck[]
-    hasMore: boolean
-    nextCursor?: {
-      lastScore?: number
-      lastId?: number
-    }
-  }>
-> {
-  return client.get(`/v1/memory/posts/${postId}/decks`, { params })
+): Promise<{
+  items: MemoryCardDeck[]
+  hasMore: boolean
+  nextCursor?: string
+}> {
+  return client.get(`/memory/posts/${postId}/decks`, { params })
 }
 
 /**
@@ -189,21 +171,15 @@ export function getPostCreatorDeck(
   params?: {
     sortBy?: string
     sortOrder?: string
-    lastScore?: number
-    lastId?: number
+    cursor?: string
     limit?: number
   }
-): Promise<
-  ApiResponse<{
-    items: MemoryCardDeck[]
-    hasMore: boolean
-    nextCursor?: {
-      lastScore?: number
-      lastId?: number
-    }
-  }>
-> {
-  return client.get(`/v1/memory/posts/${postId}/creator-deck`, { params })
+): Promise<{
+  items: MemoryCardDeck[]
+  hasMore: boolean
+  nextCursor?: string
+}> {
+  return client.get(`/memory/posts/${postId}/creator-deck`, { params })
 }
 
 /**
@@ -214,33 +190,25 @@ export function getMyPostDeck(
   params?: {
     sortBy?: string
     sortOrder?: string
-    lastScore?: number
-    lastId?: number
+    cursor?: string
     limit?: number
   }
-): Promise<
-  ApiResponse<{
-    items: MemoryCardDeck[]
-    hasMore: boolean
-    nextCursor?: {
-      lastScore?: number
-      lastId?: number
-    }
-  }>
-> {
-  return client.get(`/v1/memory/posts/${postId}/my-deck`, { params })
+): Promise<{
+  items: MemoryCardDeck[]
+  hasMore: boolean
+  nextCursor?: string
+}> {
+  return client.get(`/memory/posts/${postId}/my-deck`, { params })
 }
 
 /**
  * 点赞/取消点赞卡片组
  */
-export function upvoteDeck(deckId: number): Promise<
-  ApiResponse<{
-    liked: boolean
-    likeCount: number
-  }>
-> {
-  return client.post('/v1/upvotes', {
+export function upvoteDeck(deckId: number): Promise<{
+  liked: boolean
+  likeCount: number
+}> {
+  return client.post('/upvotes', {
     objectId: deckId,
     objectType: 5, // MEMORY_CARD_DECK
     type: 2, // LIKE
@@ -250,36 +218,36 @@ export function upvoteDeck(deckId: number): Promise<
 /**
  * 获取卡片组详情
  */
-export function getDeckDetail(deckId: number): Promise<ApiResponse<any>> {
-  return client.get(`/v1/memory/decks/${deckId}`)
+export function getDeckDetail(deckId: number): Promise<MemoryCardDeck> {
+  return client.get(`/memory/decks/${deckId}`)
 }
 
 /**
  * 获取用户在指定节点下学习的所有卡片
  */
-export function getUserCardsByNode(nodeId: number): Promise<ApiResponse<any[]>> {
-  return client.get(`/v1/memory/cards/node/${nodeId}`)
+export function getUserCardsByNode(nodeId: number): Promise<MemoryCardView[]> {
+  return client.get(`/memory/cards/node/${nodeId}`)
 }
 
 /**
  * 添加卡片到学习
  */
-export function addCardToStudy(cardId: number): Promise<ApiResponse<any>> {
-  return client.post(`/v1/memory/cards/${cardId}/study`)
+export function addCardToStudy(cardId: number): Promise<MemoryCardView> {
+  return client.post(`/memory/cards/${cardId}/study`)
 }
 
 /**
  * 移除卡片学习记录（从复习计划中全局移除）
  */
-export function removeCardsFromStudy(cardIds: number[]): Promise<ApiResponse<void>> {
-  return client.delete('/v1/memory/cards/study', { data: cardIds })
+export function removeCardsFromStudy(cardIds: number[]): Promise<void> {
+  return client.delete('/memory/cards/study', { data: cardIds })
 }
 
 /**
  * 删除卡片
  */
-export function deleteCard(cardId: number): Promise<ApiResponse<void>> {
-  return client.delete(`/v1/memory/cards/${cardId}`)
+export function deleteCard(cardId: number): Promise<void> {
+  return client.delete(`/memory/cards/${cardId}`)
 }
 
 /**
@@ -288,8 +256,8 @@ export function deleteCard(cardId: number): Promise<ApiResponse<void>> {
 export function updateCard(
   cardId: number,
   data: { front: string; back: string }
-): Promise<ApiResponse<any>> {
-  return client.put(`/v1/memory/cards/${cardId}`, data)
+): Promise<MemoryCardView> {
+  return client.put(`/memory/cards/${cardId}`, data)
 }
 
 /**
@@ -299,47 +267,47 @@ export function createCard(data: {
   deckId: number
   front: string
   back: string
-}): Promise<ApiResponse<any>> {
-  return client.post('/v1/memory/cards', data)
+}): Promise<MemoryCardView> {
+  return client.post('/memory/cards', data)
 }
 
 /**
  * 管理员：批准卡片组
  */
-export function approveDeck(deckId: number): Promise<ApiResponse<void>> {
-  return client.post(`/v1/admin/memory/decks/${deckId}/approve`)
+export function approveDeck(deckId: number): Promise<void> {
+  return client.post(`/admin/memory/decks/${deckId}/approve`)
 }
 
 /**
  * 管理员：拒绝卡片组
  */
-export function rejectDeck(deckId: number, reason?: string): Promise<ApiResponse<void>> {
-  return client.post(`/v1/admin/memory/decks/${deckId}/reject`, reason ? { reason } : undefined)
+export function rejectDeck(deckId: number, reason?: string): Promise<void> {
+  return client.post(`/admin/memory/decks/${deckId}/reject`, reason ? { reason } : undefined)
 }
 
 /**
  * 管理员：屏蔽卡片组
  */
-export function banDeck(deckId: number, reason?: string): Promise<ApiResponse<void>> {
-  return client.post(`/v1/admin/memory/decks/${deckId}/ban`, reason ? { reason } : undefined)
+export function banDeck(deckId: number, reason?: string): Promise<void> {
+  return client.post(`/admin/memory/decks/${deckId}/ban`, reason ? { reason } : undefined)
 }
 
 /**
  * 管理员：恢复卡片组
  */
-export function restoreDeck(deckId: number): Promise<ApiResponse<void>> {
-  return client.post(`/v1/admin/memory/decks/${deckId}/restore`)
+export function restoreDeck(deckId: number): Promise<void> {
+  return client.post(`/admin/memory/decks/${deckId}/restore`)
 }
 
 /**
  * 获取当前用户的所有卡片组
  */
 export function getCurrentUserDecks(params?: {
-  lastId?: number
+  cursor?: string
   limit?: number
   state?: number
-}): Promise<ApiResponse<{ items: MemoryCardDeck[]; hasMore: boolean }>> {
-  return client.get('/v1/memory/users/me/memory-decks', { params })
+}): Promise<CursorPage<MemoryCardDeck>> {
+  return client.get('/memory/users/me/memory-decks', { params })
 }
 
 /**
@@ -348,36 +316,33 @@ export function getCurrentUserDecks(params?: {
 export function getUserDecks(
   userId: number,
   params?: {
-    lastId?: number
+    cursor?: string
     limit?: number
   }
-): Promise<ApiResponse<{ items: MemoryCardDeck[]; hasMore: boolean }>> {
-  return client.get(`/v1/memory/users/${userId}/memory-decks`, { params })
+): Promise<CursorPage<MemoryCardDeck>> {
+  return client.get(`/memory/users/${userId}/memory-decks`, { params })
 }
 
 /**
  * 删除卡片组
  */
-export function deleteDeck(deckId: number): Promise<ApiResponse<void>> {
-  return client.delete(`/v1/memory/decks/${deckId}`)
+export function deleteDeck(deckId: number): Promise<void> {
+  return client.delete(`/memory/decks/${deckId}`)
 }
 
 /**
  * 添加卡片组到记忆库
  */
-export function addDeckToMemoryBank(request: {
-  deckId: number
-  courseId: number
-}): Promise<ApiResponse<any>> {
-  return client.post('/v1/memory/memory-bank/decks', request)
+export function addDeckToMemoryBank(request: { deckId: number; courseId: number }): Promise<void> {
+  return client.post('/memory/memory-bank/decks', request)
 }
 
 /**
  * 移动节点到课程
  * 将用户在指定节点下学习的所有卡片移动到指定课程
  */
-export function moveNodeToCourse(nodeId: number, courseId: number): Promise<ApiResponse<void>> {
-  return client.post(`/v1/memory/nodes/${nodeId}/move-to-course`, null, {
+export function moveNodeToCourse(nodeId: number, courseId: number): Promise<void> {
+  return client.post(`/memory/nodes/${nodeId}/move-to-course`, null, {
     params: { courseId },
   })
 }

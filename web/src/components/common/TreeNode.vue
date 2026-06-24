@@ -122,83 +122,83 @@ const scrollToTop = (): void => {
           <!-- 正常节点：可点击跳转 -->
           <template v-else>
             <router-link
-            :to="{
-              path: '/read',
-              query: courseId
-                ? { courseId: String(courseId), path: calculatePath(currPath, key as string) }
-                : { nodeId: String(nodeId), path: calculatePath(currPath, key as string) },
-            }"
-            class="custom-link"
-            @click="scrollToTop"
-          >
-            <div class="d-flex align-center flex-grow-1">
-              <!-- 完成状态图标 - 只在学习模式下且是第一个目录时显示 -->
-              <template v-if="isLearning && depth !== 1 && tocIndex === 0">
-                <!-- 判断是否被父节点覆盖 -->
-                <template v-if="isNodeCovered(key as string)">
-                  <!-- 被覆盖：全部灰色 -->
-                  <!-- 已完成：灰色勾 -->
-                  <v-icon
-                    v-if="nodeInfos[key]?.isCompleted"
-                    icon="mdi-check-circle"
-                    color="grey-lighten-1"
-                    size="16"
-                  ></v-icon>
-                  <!-- 未完成：灰色横线（无论目录还是叶子） -->
-                  <v-icon v-else icon="mdi-minus" color="grey-lighten-1" size="16"></v-icon>
-                </template>
-                <!-- 未被覆盖：正常显示 -->
-                <template v-else>
-                  <!-- 目录节点（有子节点） -->
-                  <template v-if="Object.keys(node).filter((k) => k !== '^').length > 0">
+              :to="{
+                path: '/read',
+                query: courseId
+                  ? { courseId: String(courseId), path: calculatePath(currPath, key as string) }
+                  : { nodeId: String(nodeId), path: calculatePath(currPath, key as string) },
+              }"
+              class="custom-link"
+              @click="scrollToTop"
+            >
+              <div class="d-flex align-center flex-grow-1">
+                <!-- 完成状态图标 - 只在学习模式下且是第一个目录时显示 -->
+                <template v-if="isLearning && depth !== 1 && tocIndex === 0">
+                  <!-- 判断是否被父节点覆盖 -->
+                  <template v-if="isNodeCovered(key as string)">
+                    <!-- 被覆盖：全部灰色 -->
+                    <!-- 已完成：灰色勾 -->
                     <v-icon
                       v-if="nodeInfos[key]?.isCompleted"
                       icon="mdi-check-circle"
-                      color="success"
-                      size="16"
-                    ></v-icon>
-                    <v-icon v-else icon="mdi-minus" color="grey-lighten-1" size="16"></v-icon>
-                  </template>
-                  <!-- 叶子节点 -->
-                  <template v-else>
-                    <v-icon
-                      v-if="nodeInfos[key]?.isCompleted"
-                      icon="mdi-check-circle"
-                      color="success"
-                      size="16"
-                    ></v-icon>
-                    <v-icon
-                      v-else
-                      icon="mdi-circle-outline"
                       color="grey-lighten-1"
                       size="16"
                     ></v-icon>
+                    <!-- 未完成：灰色横线（无论目录还是叶子） -->
+                    <v-icon v-else icon="mdi-minus" color="grey-lighten-1" size="16"></v-icon>
+                  </template>
+                  <!-- 未被覆盖：正常显示 -->
+                  <template v-else>
+                    <!-- 目录节点（有子节点） -->
+                    <template v-if="Object.keys(node).filter((k) => k !== '^').length > 0">
+                      <v-icon
+                        v-if="nodeInfos[key]?.isCompleted"
+                        icon="mdi-check-circle"
+                        color="success"
+                        size="16"
+                      ></v-icon>
+                      <v-icon v-else icon="mdi-minus" color="grey-lighten-1" size="16"></v-icon>
+                    </template>
+                    <!-- 叶子节点 -->
+                    <template v-else>
+                      <v-icon
+                        v-if="nodeInfos[key]?.isCompleted"
+                        icon="mdi-check-circle"
+                        color="success"
+                        size="16"
+                      ></v-icon>
+                      <v-icon
+                        v-else
+                        icon="mdi-circle-outline"
+                        color="grey-lighten-1"
+                        size="16"
+                      ></v-icon>
+                    </template>
                   </template>
                 </template>
-              </template>
 
-              <span
-                v-if="calculatePath(currPath, key as string) == path"
-                class="tree-node-text text-grey-darken-5 font-weight-black"
-              >
-                {{ nodeInfos[key]?.name || key }}
-              </span>
-              <span v-else class="tree-node-text">
-                {{ nodeInfos[key]?.name || key }}
-              </span>
+                <span
+                  v-if="calculatePath(currPath, key as string) == path"
+                  class="tree-node-text text-grey-darken-5 font-weight-black"
+                >
+                  {{ nodeInfos[key]?.name || key }}
+                </span>
+                <span v-else class="tree-node-text">
+                  {{ nodeInfos[key]?.name || key }}
+                </span>
 
-              <!-- 可完成标识 - 只在学习模式下且是第一个目录时显示 -->
-              <div
-                v-if="isLearning && nodeInfos[key]?.canComplete && tocIndex === 0"
-                class="d-inline-block"
-              >
-                <v-icon icon="mdi-playlist-check" color="green" size="18" class="ml-2"></v-icon>
-                <v-tooltip activator="parent" location="top">
-                  该目录下的所有节点都已完成，可以标记当前目录为已完成了！
-                </v-tooltip>
+                <!-- 可完成标识 - 只在学习模式下且是第一个目录时显示 -->
+                <div
+                  v-if="isLearning && nodeInfos[key]?.canComplete && tocIndex === 0"
+                  class="d-inline-block"
+                >
+                  <v-icon icon="mdi-playlist-check" color="green" size="18" class="ml-2"></v-icon>
+                  <v-tooltip activator="parent" location="top">
+                    该目录下的所有节点都已完成，可以标记当前目录为已完成了！
+                  </v-tooltip>
+                </div>
               </div>
-            </div>
-          </router-link>
+            </router-link>
           </template>
           <v-btn
             v-if="Object.keys(node).filter((key) => key !== '^').length > 0"

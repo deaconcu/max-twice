@@ -13,6 +13,8 @@ import com.twicemax.application.dto.request.CreatePostRequest;
 import com.twicemax.application.dto.request.MarkImageUsedRequest;
 import com.twicemax.application.dto.request.UpdatePostRequest;
 import com.twicemax.application.dto.response.KeysetPageResponse;
+import com.twicemax.application.dto.v2.CursorPage;
+import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.application.dto.response.post.PostAdminDTO;
 import com.twicemax.application.dto.response.post.PostFullDTO;
 import com.twicemax.application.dto.response.post.PostSummaryDTO;
@@ -158,18 +160,16 @@ public class PostService {
     /**
      * 获取用户帖子（带分页信息）
      */
-    public KeysetPageResponse<PostFullDTO> getUserPostsWithPagination(Long userId, Long lastId, PostType postType, Byte state) {
+    public CursorPage<PostFullDTO> getUserPostsWithPagination(Long userId, String cursor, PostType postType, Byte state) {
         userDataService.validateAndGet(userId);
 
         int count = CommonConstants.DEFAULT_PAGE_SIZE;
 
-        // 调用 DomainService 查询（包含 idToName 处理）
-        List<PostDO> postings = domainService.getUserPosts(userId, postType.value(), lastId, state, count + 1);
+        List<PostDO> postings = domainService.getUserPosts(userId, postType.value(), Cursor.decode(cursor).id(), state, count + 1);
         if (postings == null || postings.isEmpty()) {
-            return KeysetPageResponse.of(new ArrayList<>(), false, null, null);
+            return CursorPage.empty();
         }
 
-        // 判断是否还有更多数据
         boolean hasMore = postings.size() > count;
         if (hasMore) {
             postings = postings.subList(0, count);
@@ -177,10 +177,9 @@ public class PostService {
 
         List<PostFullDTO> dtoList = postAssembler.toFullDTO(postings, userId);
 
-        // 获取最后一项的ID
-        Long nextLastId = hasMore && !dtoList.isEmpty() ? dtoList.get(dtoList.size() - 1).getId() : null;
+        String nextCursor = hasMore && !dtoList.isEmpty() ? Cursor.of(dtoList.get(dtoList.size() - 1).getId()).encode() : null;
 
-        return KeysetPageResponse.of(dtoList, hasMore, null, nextLastId);
+        return CursorPage.of(dtoList, hasMore, nextCursor);
     }
 
 
@@ -200,34 +199,29 @@ public class PostService {
      * 获取节点帖子分页列表（带用户信息和投票状态）
      * 返回 KeysetPageResponse 格式
      */
-    public KeysetPageResponse<PostWithVoteDTO> getNodePostsPage(
-            Long nodeId, Double lastScore, Long lastPostingId, long userId) {
-        int pageSize = 20; // 每页数量
+    public CursorPage<PostWithVoteDTO> getNodePostsPage(Long nodeId, String cursor, long userId) {
+        int pageSize = 20;
 
-        // 查询 pageSize + 1 条数据，用于判断是否有更多
+        Cursor scoreIdCursor = Cursor.decode(cursor);
+
         List<PostDO> postDOList = domainService.getNodePostsByScore(
-                nodeId, lastScore, lastPostingId, pageSize + 1, ContentState.PUBLISHED.value());
+                nodeId, scoreIdCursor.score(), scoreIdCursor.id(), pageSize + 1, ContentState.PUBLISHED.value());
 
-        // 判断是否有更多数据
         boolean hasMore = postDOList.size() > pageSize;
         if (hasMore) {
-            postDOList = postDOList.subList(0, pageSize); // 只返回 pageSize 条
+            postDOList = postDOList.subList(0, pageSize);
         }
 
-        // DTO 转换
         postDOList.forEach(this::idToName);
         List<PostWithVoteDTO> items = postAssembler.toWithVoteDTO(postDOList, userId);
 
-        // 构建 nextCursor
-        Double nextLastScore = null;
-        Long nextLastId = null;
+        String nextCursor = null;
         if (hasMore && !items.isEmpty()) {
             PostWithVoteDTO lastItem = items.get(items.size() - 1);
-            nextLastScore = lastItem.getScore();
-            nextLastId = lastItem.getId();
+            nextCursor = Cursor.of(lastItem.getScore(), lastItem.getId()).encode();
         }
 
-        return KeysetPageResponse.of(items, hasMore, nextLastScore, nextLastId);
+        return CursorPage.of(items, hasMore, nextCursor);
     }
 
     /**
@@ -410,7 +404,7 @@ public class PostService {
 
         // 根据类型调用不同的 DomainService 方法
         Long postId;
-        if (postType == PostType.index) {
+        if (postType == PostType.INDEX) {
             postId = domainService.createIndexPost(userId, request.getNodeId(), request.getContent(), postState);
         } else {
             postId = domainService.createArticlePost(userId, request.getNodeId(), postType.value(), request.getContent(), postState);
@@ -512,7 +506,7 @@ public class PostService {
         PostDO postDO = domainService.validateAndGet(id);
 
         // 如果是index类型，需要先处理节点创建
-        if (postDO.getType() == PostType.index.value()) {
+        if (PostType.INDEX.value().equals(postDO.getType())) {
             // 处理节点创建并获取节点ID列表
             List<Long> referencedNodeIds = processIndexPostNodes(postDO);
 
@@ -610,7 +604,7 @@ public class PostService {
         postDataService.reject(id, reason);
 
         // 根据 postType 发布不同的事件
-        if (postDO.getType() == PostType.index.value()) {
+        if (PostType.INDEX.value().equals(postDO.getType())) {
             // index 类型：解析引用的节点ID列表
             List<Long> referencedNodeIds = parseReferencedNodeIds(postDO.getContent());
             eventPublisher.publishEvent(ContentRemovedEvent.forIndexPost(
@@ -716,7 +710,7 @@ public class PostService {
         postDataService.ban(id, reason);
 
         // 根据 postType 发布不同的事件
-        if (postDO.getType() == PostType.index.value()) {
+        if (PostType.INDEX.value().equals(postDO.getType())) {
             // index 类型：解析引用的节点ID列表
             List<Long> referencedNodeIds = parseReferencedNodeIds(postDO.getContent());
             eventPublisher.publishEvent(ContentBannedEvent.forIndexPost(

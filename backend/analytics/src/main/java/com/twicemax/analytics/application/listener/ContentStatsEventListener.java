@@ -149,8 +149,8 @@ public class ContentStatsEventListener {
         try {
             switch (event.getContentType()) {
                 case post -> contentStatsDomainService.handlePostApproved(event);
-                case roadmap -> contentStatsDomainService.handleRoadmapApproved(event);
                 case memory_card_deck -> contentStatsDomainService.handleCardDeckApproved(event);
+                // roadmap 走独立 RoadmapApprovedEvent
                 // comment 的统计由 RedisStatsEventListener 写入 Redis，定时同步到数据库
                 default -> log.debug("内容类型 {} 审核通过，无需更新对象统计", event.getContentType());
             }
@@ -204,7 +204,6 @@ public class ContentStatsEventListener {
             // 减少对象统计
             switch (event.getContentType()) {
                 case post -> contentStatsDomainService.handlePostRemoved(event);
-                case roadmap -> contentStatsDomainService.handleRoadmapRemoved(event);
                 case memory_card_deck -> contentStatsDomainService.handleCardDeckRemoved(event);
                 default -> log.warn("内容类型 {} 不支持 REMOVE 操作", event.getContentType());
             }
@@ -230,8 +229,8 @@ public class ContentStatsEventListener {
             // 减少对象统计
             switch (event.getContentType()) {
                 case post -> contentStatsDomainService.handlePostBanned(event);
-                case roadmap -> contentStatsDomainService.handleRoadmapBanned(event);
                 case memory_card_deck -> contentStatsDomainService.handleCardDeckBanned(event);
+                // roadmap 走独立 RoadmapBannedEvent
                 // comment 的统计由 RedisStatsEventListener 处理
                 default -> log.debug("内容类型 {} 封禁，无需更新对象统计", event.getContentType());
             }
@@ -262,6 +261,39 @@ public class ContentStatsEventListener {
         } catch (Exception e) {
             log.error("处理内容恢复事件失败: contentType={}, contentId={}",
                 event.getContentType(), event.getContentId(), e);
+        }
+    }
+
+    // ==================== Roadmap revision 模型独立事件 ====================
+
+    @EventListener
+    public void onRoadmapApproved(RoadmapApprovedEvent event) {
+        try {
+            contentStatsDomainService.handleRoadmapApproved(event);
+            log.debug("Roadmap 审核通过，统计++: roadmapId={}, roleId={}", event.getRoadmapId(), event.getRoleId());
+        } catch (Exception e) {
+            log.error("处理 Roadmap 审核通过事件失败: roadmapId={}", event.getRoadmapId(), e);
+        }
+    }
+
+    @EventListener
+    public void onRoadmapBanned(RoadmapBannedEvent event) {
+        try {
+            contentStatsDomainService.handleRoadmapBanned(event);
+            log.debug("Roadmap 封禁，统计--: roadmapId={}, previousState={}",
+                event.getRoadmapId(), event.getPreviousState());
+        } catch (Exception e) {
+            log.error("处理 Roadmap 封禁事件失败: roadmapId={}", event.getRoadmapId(), e);
+        }
+    }
+
+    @EventListener
+    public void onRoadmapRestored(RoadmapRestoredEvent event) {
+        try {
+            contentStatsDomainService.handleRoadmapRestored(event);
+            log.debug("Roadmap 恢复: roadmapId={}, newState={}", event.getRoadmapId(), event.getNewState());
+        } catch (Exception e) {
+            log.error("处理 Roadmap 恢复事件失败: roadmapId={}", event.getRoadmapId(), e);
         }
     }
 }

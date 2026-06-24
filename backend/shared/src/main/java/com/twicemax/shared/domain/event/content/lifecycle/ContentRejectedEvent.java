@@ -99,17 +99,7 @@ public class ContentRejectedEvent {
         return event;
     }
 
-    /** Roadmap 类型构造函数 */
-    public static ContentRejectedEvent forRoadmap(Long creatorId, Long roadmapId, Long roleId, String roleName, String reason) {
-        ContentRejectedEvent event = new ContentRejectedEvent();
-        event.creatorId = creatorId;
-        event.contentId = roadmapId;
-        event.contentType = ContentType.roadmap;
-        event.roleId = roleId;
-        event.roleName = roleName;
-        event.reason = reason;
-        return event;
-    }
+    /** Roadmap 类型构造函数 - 已废弃，使用 RoadmapRejectedEvent */
 
     /** MemoryCardDeck 类型构造函数 */
     public static ContentRejectedEvent forMemoryCardDeck(Long creatorId, Long deckId, Long postId, String postContentPreview, String reason) {

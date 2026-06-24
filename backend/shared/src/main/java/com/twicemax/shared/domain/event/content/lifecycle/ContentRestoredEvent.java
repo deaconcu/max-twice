@@ -80,20 +80,7 @@ public class ContentRestoredEvent {
         return event;
     }
 
-    /** Roadmap 类型构造函数 */
-    public static ContentRestoredEvent forRoadmap(Long operatorId, Long creatorId, Long roadmapId, ContentState previousState,
-                                                  Long roleId, String roleName, String reason) {
-        ContentRestoredEvent event = new ContentRestoredEvent();
-        event.operatorId = operatorId;
-        event.creatorId = creatorId;
-        event.contentId = roadmapId;
-        event.contentType = ContentType.roadmap;
-        event.previousState = previousState;
-        event.roleId = roleId;
-        event.roleName = roleName;
-        event.reason = reason;
-        return event;
-    }
+    /** Roadmap 类型构造函数 - 已废弃，使用 RoadmapRestoredEvent */
 
     /** MemoryCardDeck 类型构造函数 */
     public static ContentRestoredEvent forMemoryCardDeck(Long operatorId, Long creatorId, Long deckId, ContentState previousState,

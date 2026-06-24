@@ -69,7 +69,7 @@ public class UpvoteService {
      * @throws BusinessException 当参数无效或对象不存在时抛出异常
      */
     @Transactional
-    public void upvotePost(long postId, UserDO user, int type) {
+    public void upvotePost(long postId, UserDO user, String type) {
         // 验证和获取帖子对象
         PostDO postDO = postDataService.validateAndGet(postId);
 
@@ -82,7 +82,7 @@ public class UpvoteService {
         }
 
         // 验证点赞类型
-        if (type != VoteType.twice.value() && type != VoteType.like.value()) {
+        if (!VoteType.TWICE.value().equals(type) && !VoteType.LIKE.value().equals(type)) {
             throw StatusCode.INVALID_PARAMETER.exception("帖子仅支持 twice 或 like 点赞类型: " + type);
         }
 
@@ -98,7 +98,7 @@ public class UpvoteService {
         switch (action.getActionType()) {
             case REMOVED:
                 // 取消点赞
-                if (type == VoteType.twice.value()) {
+                if (VoteType.TWICE.value().equals(type)) {
                     eventPublisher.publishEvent(new TwiceUpvoteCancelledEvent<>(
                         user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO
                     ));
@@ -111,7 +111,7 @@ public class UpvoteService {
 
             case ADDED:
                 // 新增点赞
-                if (type == VoteType.twice.value()) {
+                if (VoteType.TWICE.value().equals(type)) {
                     eventPublisher.publishEvent(new TwiceUpvotedEvent<>(
                         user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO
                     ));
@@ -301,8 +301,8 @@ public class UpvoteService {
         if (upvoteDO != null) {
             // 帖子特殊处理：支持 twice 和 like 分别统计
             if (contentType == ContentType.post) {
-                twiced = upvoteDO.getType() == VoteType.twice.value();
-                liked = upvoteDO.getType() == VoteType.like.value();
+                twiced = VoteType.TWICE.value().equals(upvoteDO.getType());
+                liked = VoteType.LIKE.value().equals(upvoteDO.getType());
             } else {
                 // 其他内容类型只有 like 统计
                 liked = true;

@@ -2,16 +2,14 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
-import { useFetch } from '@/composables'
 import { useUserStore } from '@/stores/modules/user'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import DynamicIcon from '@/components/common/DynamicIcon.vue'
 import ActivityHeatmap from '@/components/profile/ActivityHeatmap.vue'
-import { homeApi } from '@/api/modules/home'
 import { getColorByString } from '@/utils/color'
-import type { HomePage } from '@/types/home'
+import { useHomePageQuery } from '@/queries/home'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -21,39 +19,7 @@ const userStore = useUserStore()
 const userName = computed(() => userStore.currentUser?.name ?? t('common.guest'))
 
 // 加载首页聚合数据
-const { data: homeData, loading: homeLoading } = useFetch<HomePage>({
-  fetchFn: () => homeApi.getHomePageData(),
-  immediate: userStore.isLoggedIn,
-  defaultValue: {
-    platformStats: {
-      courseCount: 0,
-      rolePathCount: 0,
-      roadmapCount: 0,
-      knowledgeNodeCount: 0,
-      articleCount: 0,
-      lastUpdated: '',
-    },
-    userStats: {
-      learningDays: 0,
-      coursesInProgress: 0,
-      rolesInProgress: 0,
-    },
-    bookmarkedRoles: [],
-    learningRoles: [],
-    learningCourses: [],
-    reviewSummary: {
-      todayTotal: 0,
-      todayCompleted: 0,
-      streakDays: 0,
-      courses: [],
-    },
-    hotRoles: [],
-    hotCourses: [],
-    beginnerRoles: [],
-    beginnerRoadmaps: [],
-    beginnerCourses: [],
-  },
-})
+const { data: homeData, isLoading: homeLoading } = useHomePageQuery(userStore.isLoggedIn)
 
 // 计算属性：用户学习统计
 const stats = computed(() => ({
@@ -168,9 +134,6 @@ const beginnerCourses = computed(() => {
 // 是否有更多职业（总数超过8个时，第8个显示为"更多"）
 const hasMoreRoles = computed(() => stats.value.rolesInProgress > 8)
 
-// 是否有更多课程（总数超过8个时，第8个显示为"更多"）
-const hasMoreCourses = computed(() => stats.value.coursesInProgress > 8)
-
 // 显示的职业列表（如果有更多，只显示前7个）
 const displayRoles = computed(() => {
   if (hasMoreRoles.value) {
@@ -180,6 +143,7 @@ const displayRoles = computed(() => {
 })
 
 // 显示的课程列表（如果有更多，只显示前7个）
+const hasMoreCourses = computed(() => recentCourses.value.length > 7)
 const displayCourses = computed(() => {
   if (hasMoreCourses.value) {
     return recentCourses.value.slice(0, 7)
@@ -243,9 +207,6 @@ const openRoadmap = (roadmapId: number): void => {
 const goSetPassword = (): void => {
   router.push('/settings/password')
 }
-
-// 暴露 homeLoading 供模板使用（可选，用于显示加载状态）
-void homeLoading
 </script>
 
 <template>

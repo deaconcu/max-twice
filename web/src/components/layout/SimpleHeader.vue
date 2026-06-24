@@ -24,12 +24,7 @@ const toggleLocale = () => {
 
         <!-- 语言切换 -->
         <v-col cols="auto">
-          <v-btn
-            variant="text"
-            size="small"
-            class="lang-btn"
-            @click="toggleLocale"
-          >
+          <v-btn variant="text" size="small" class="lang-btn" @click="toggleLocale">
             {{ locale === 'zh' ? '中' : 'EN' }}
           </v-btn>
         </v-col>

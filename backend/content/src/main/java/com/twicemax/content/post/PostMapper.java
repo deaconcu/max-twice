@@ -41,7 +41,7 @@ public interface PostMapper {
             "<if test='state == null'> AND p.state != " + Enums.ContentState.BANNED_VALUE + "</if>",
             "ORDER BY p.id DESC LIMIT #{count}",
             "</script>"})
-    List<PostDO> getPostsByUser(@Param("userId") long userId, @Param("type") int type, @Param("lastId") Long lastId, @Param("state") Byte state, @Param("count") int count);
+    List<PostDO> getPostsByUser(@Param("userId") long userId, @Param("type") String type, @Param("lastId") Long lastId, @Param("state") Byte state, @Param("count") int count);
 
     @Insert("INSERT INTO post (node_id, creator_id, type, content, state) " +
             "VALUES (#{nodeId}, #{creatorId}, #{type}, #{content}, #{state})")
@@ -116,5 +116,5 @@ public interface PostMapper {
             "<if test='lastId != null and lastId > 0'> AND id &gt; #{lastId}</if>",
             "ORDER BY id ASC LIMIT #{limit}",
             "</script>"})
-    List<PostDO> getPostsByTypeAndState(@Param("type") Integer type, @Param("state") Byte state, @Param("lastId") Long lastId, @Param("limit") int limit);
+    List<PostDO> getPostsByTypeAndState(@Param("type") String type, @Param("state") Byte state, @Param("lastId") Long lastId, @Param("limit") int limit);
 }

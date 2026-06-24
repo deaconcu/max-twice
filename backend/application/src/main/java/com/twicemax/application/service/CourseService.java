@@ -3,23 +3,28 @@ package com.twicemax.application.service;
 import com.twicemax.analytics.ranking.service.CourseRankingDomainService;
 import com.twicemax.application.assembler.CourseAssembler;
 import com.twicemax.application.dto.request.CreateCourseRequest;
+import com.twicemax.application.dto.request.UpdateCourseRequest;
 import com.twicemax.application.dto.response.KeysetPageResponse;
+import com.twicemax.application.dto.v2.CursorPage;
+import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.application.dto.response.course.CourseAdminDTO;
-import com.twicemax.application.dto.response.course.CourseBriefDTO;
 import com.twicemax.application.dto.response.course.CourseFullDTO;
 import com.twicemax.application.dto.response.course.CourseSummaryDTO;
-import com.twicemax.content.course.CourseDomainService;
-import com.twicemax.content.node.NodeDO;
 import com.twicemax.content.course.CourseDO;
 import com.twicemax.content.course.CourseDataService;
+import com.twicemax.content.course.CourseDomainService;
+import com.twicemax.content.node.NodeDO;
 import com.twicemax.content.node.NodeDataService;
 import com.twicemax.infrastructure.datasource.DataSourceContextHolder;
-import com.twicemax.shared.common.utils.Utils;
-import com.twicemax.shared.domain.Enums;
+import com.twicemax.shared.domain.Enums.Bool;
+import com.twicemax.shared.domain.Enums.ContentState;
+import com.twicemax.shared.domain.Enums.ContentType;
+import com.twicemax.shared.domain.Enums.NewContentState;
+import com.twicemax.shared.domain.Enums.UserRole;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentApprovedEvent;
+import com.twicemax.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.twicemax.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.twicemax.shared.domain.exception.StatusCode;
-import com.twicemax.application.dto.request.UpdateCourseRequest;
 import com.twicemax.shared.infrastructure.config.SystemDomainService;
 import com.twicemax.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
@@ -29,16 +34,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static com.twicemax.shared.domain.Enums.*;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CourseService {
+
+    private static final String DEFAULT_EMPTY_STRING = "";
 
     private final CourseDomainService courseDomainService;
     private final CourseDataService courseDataService;
@@ -64,14 +70,10 @@ public class CourseService {
 
     /**
      * 获取课程完整信息
-     * 用于课程详情页面
      */
     public CourseFullDTO getCourseById(Long id, Long userId) {
         CourseDO course = courseDataService.validateAndGet(id);
-
-        // 检查课程及其父课程的可见性
         contentVisibilityService.validateVisibility(ContentType.course, id, userId);
-
         return courseAssembler.toFullDTO(course, userId);
     }
 
@@ -93,146 +95,130 @@ public class CourseService {
     }
 
     /**
-     * 用户端按名称搜索已发布的课程（简单搜索，不分页）
+     * 用户端按名称搜索已发布的课程
      */
-    public List<CourseBriefDTO> searchPublishedCourses(String name) {
-        List<CourseDO> courseList = courseDataService.searchPublishedByName(name, 20);
-        return courseAssembler.toBriefDTO(courseList);
+    public List<CourseSummaryDTO> searchPublishedCourses(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<CourseDO> fallback = courseDataService.searchPublishedByName(name, 20);
+        return courseAssembler.toSummaryDTO(fallback);
     }
 
     /**
-     * 获取子课程列表（仅包含已批准的子课程）, 用于展示在课程详情页面
-     * @param parentCourseId
-     * @return
+     * 获取子课程列表（仅包含已发布的子课程）
      */
     public List<CourseSummaryDTO> getSubCourses(long parentCourseId) {
-        return courseAssembler.toSummaryDTO(courseDataService.listByParentAndState(ContentState.PUBLISHED, parentCourseId));
+        return courseAssembler.toSummaryDTO(
+                courseDataService.listByParentAndState(NewContentState.PUBLISHED_VALUE, parentCourseId));
     }
 
     /**
-     * 更新课程信息
-     *
-     * 应用层职责：
-     * 1. 权限验证（跨User域）
-     * 2. 调用领域服务执行更新
+     * 管理员编辑课程：走 revision 留审计。
+     * 仅 ADMIN 可调用；普通用户编辑走 resubmit。
      */
     @Transactional
     public void updateCourse(Long id, UpdateCourseRequest request, UserDO operator) {
-        // 先验证参数
         if (request == null) {
             throw StatusCode.INVALID_PARAMETER.exception("课程更新请求不能为空");
         }
-
-        // 验证权限：只有所有者或管理员可以修改
-        if (!courseDomainService.isCreator(id, operator.getId()) && !operator.hasRole(UserRole.ADMIN)) {
+        if (!operator.hasRole(UserRole.ADMIN)) {
             throw StatusCode.PERMISSION_DENIED.exception();
         }
-
-        // 调用领域服务执行更新
-        courseDomainService.updateCourse(
-            id,
-            request.getName(),
-            request.getDescription(),
-            request.getMainCategory(),
-            request.getSubCategory(),
-            request.getIcon()
+        courseDomainService.edit(
+                id,
+                operator.getId(),
+                request.getName(),
+                request.getDescription(),
+                request.getIcon(),
+                request.getMainCategory(),
+                request.getSubCategory()
         );
     }
 
-    // 根据状态和lastId获取课程列表
-    public List<CourseFullDTO> getListByState(ContentState state, Long lastId, Long userId) {
-        Byte stateValue = state != null ? state.value() : null;
+    // ========== 列表 / 分页查询 ==========
+
+    /**
+     * 按主体状态获取主课程列表（用户端简单分页）。
+     * state 为 NewContentState；旧调用方传 null 表示不过滤。
+     */
+    public List<CourseFullDTO> getListByState(NewContentState state, Long lastId, Long userId) {
+        String stateValue = state != null ? state.value() : null;
         List<CourseDO> courseDOList = courseDataService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE);
         return courseAssembler.toFullDTOList(courseDOList, userId);
     }
 
-    // 根据状态和lastId获取课程列表（分页版本）
-    public KeysetPageResponse<CourseFullDTO> getListByStatePage(ContentState state, Long lastId, Long userId) {
-        Byte stateValue = state != null ? state.value() : null;
-        List<CourseDO> courseDOList = courseDataService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE);
+    /**
+     * 按主体状态分页（CursorPage 版本）
+     */
+    public CursorPage<CourseFullDTO> getListByStatePage(NewContentState state, String cursor, Long userId) {
+        String stateValue = state != null ? state.value() : null;
+        List<CourseDO> courseDOList = courseDataService.listByState(stateValue, Cursor.decode(cursor).id(), DEFAULT_PAGE_SIZE);
         return buildPageResponse(courseDOList, userId);
     }
 
-    // 根据分类获取已批准的课程列表（支持只传主分类，支持分页）
     public List<CourseFullDTO> getListByCategory(Integer mainCategory, Integer subCategory, Long lastId, Long userId) {
         List<CourseDO> courseDOList;
-
-        // 如果传了子分类，按主分类+子分类查询
         if (subCategory != null) {
             courseDOList = courseDataService.listRootByCategory(mainCategory, subCategory, lastId);
-        }
-        // 只传了主分类，按主分类查询
-        else {
-            courseDOList = courseDataService.listRootByMainCategory(mainCategory, lastId);
-        }
-
-        return courseAssembler.toFullDTOList(courseDOList, userId);
-    }
-
-    // 根据分类获取已批准的课程列表（分页版本）
-    public KeysetPageResponse<CourseFullDTO> getListByCategoryPage(Integer mainCategory, Integer subCategory, Long lastId, Long userId) {
-        List<CourseDO> courseDOList;
-
-        // 如果传了子分类，按主分类+子分类查询
-        if (subCategory != null) {
-            courseDOList = courseDataService.listRootByCategory(mainCategory, subCategory, lastId);
-        }
-        // 只传了主分类，按主分类查询
-        else {
-            courseDOList = courseDataService.listRootByMainCategory(mainCategory, lastId);
-        }
-
-        return buildPageResponse(courseDOList, userId);
-    }
-
-    // 根据父课程ID获取子课程列表（用户端）
-    public List<CourseFullDTO> getListByParent(long parentId, ContentState state, Long userId) {
-        List<CourseDO> courseDOList;
-        if (state == null) { // null表示获取所有状态
-            courseDOList = courseDataService.listByParent(parentId);
         } else {
-            courseDOList = courseDataService.listByParentAndState(state, parentId);
+            courseDOList = courseDataService.listRootByMainCategory(mainCategory, lastId);
         }
         return courseAssembler.toFullDTOList(courseDOList, userId);
     }
 
-    // 根据父课程ID获取子课程列表（分页版本）
-    public KeysetPageResponse<CourseFullDTO> getListByParentPage(long parentId, ContentState state, Long lastId, Long userId) {
+    public CursorPage<CourseFullDTO> getListByCategoryPage(Integer mainCategory, Integer subCategory, String cursor, Long userId) {
+        Long lastId = Cursor.decode(cursor).id();
         List<CourseDO> courseDOList;
-        if (state == null) { // null表示获取所有状态
-            courseDOList = courseDataService.listByParent(parentId);
+        if (subCategory != null) {
+            courseDOList = courseDataService.listRootByCategory(mainCategory, subCategory, lastId);
         } else {
-            courseDOList = courseDataService.listByParentAndState(state, parentId);
+            courseDOList = courseDataService.listRootByMainCategory(mainCategory, lastId);
         }
         return buildPageResponse(courseDOList, userId);
     }
 
     /**
-     * 构建分页响应
-     * 课程使用简单的 ID 游标分页，不需要 score
+     * 按父课程ID获取子课程列表（用户端）
+     * @param state 可为 null（返回所有），或 NewContentState
      */
-    private KeysetPageResponse<CourseFullDTO> buildPageResponse(List<CourseDO> courseDOList, Long userId) {
-        int pageSize = 20;
-        boolean hasMore = courseDOList.size() > pageSize;
-
-        // 如果数据超过pageSize，只返回pageSize条
-        List<CourseDO> actualCourses = hasMore ? courseDOList.subList(0, pageSize) : courseDOList;
-
-        // 转换为 DTO
-        List<CourseFullDTO> items = courseAssembler.toFullDTOList(actualCourses, userId);
-
-        // 构建 nextCursor
-        Long nextLastId = null;
-        if (hasMore && !items.isEmpty()) {
-            nextLastId = items.get(items.size() - 1).getId();
+    public List<CourseFullDTO> getListByParent(long parentId, NewContentState state, Long userId) {
+        List<CourseDO> courseDOList;
+        if (state == null) {
+            courseDOList = courseDataService.listByParent(parentId);
+        } else {
+            courseDOList = courseDataService.listByParentAndState(state.value(), parentId);
         }
-
-        return KeysetPageResponse.of(items, hasMore, null, nextLastId);
+        return courseAssembler.toFullDTOList(courseDOList, userId);
     }
 
-    // 管理后台：根据状态获取课程列表（返回分页响应）
-    public KeysetPageResponse<CourseAdminDTO> listByState(ContentState state, Long lastId) {
-        Byte stateValue = state != null ? state.value() : null;
+    public CursorPage<CourseFullDTO> getListByParentPage(long parentId, NewContentState state, String cursor, Long userId) {
+        List<CourseDO> courseDOList;
+        if (state == null) {
+            courseDOList = courseDataService.listByParent(parentId);
+        } else {
+            courseDOList = courseDataService.listByParentAndState(state.value(), parentId);
+        }
+        return buildPageResponse(courseDOList, userId);
+    }
+
+    private CursorPage<CourseFullDTO> buildPageResponse(List<CourseDO> courseDOList, Long userId) {
+        int pageSize = 20;
+        boolean hasMore = courseDOList.size() > pageSize;
+        List<CourseDO> actualCourses = hasMore ? courseDOList.subList(0, pageSize) : courseDOList;
+        List<CourseFullDTO> items = courseAssembler.toFullDTOList(actualCourses, userId);
+
+        String nextCursor = null;
+        if (hasMore && !items.isEmpty()) {
+            nextCursor = Cursor.of(items.get(items.size() - 1).getId()).encode();
+        }
+
+        return CursorPage.of(items, hasMore, nextCursor);
+    }
+
+    // 管理后台：根据状态获取主课程列表
+    public KeysetPageResponse<CourseAdminDTO> listByState(NewContentState state, Long lastId) {
+        String stateValue = state != null ? state.value() : null;
         List<CourseDO> courseDOList = courseDataService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE + 1);
 
         boolean hasMore = courseDOList.size() > DEFAULT_PAGE_SIZE;
@@ -247,204 +233,225 @@ public class CourseService {
     }
 
     // 管理后台：根据父课程ID获取子课程列表
-    public List<CourseAdminDTO> getListByParent(long parentId, ContentState state) {
+    public List<CourseAdminDTO> getListByParent(long parentId, NewContentState state) {
         List<CourseDO> courseDOList;
-        if (state == null) { // null表示获取所有状态
+        if (state == null) {
             courseDOList = courseDataService.listByParent(parentId);
         } else {
-            courseDOList = courseDataService.listByParentAndState(state, parentId);
+            courseDOList = courseDataService.listByParentAndState(state.value(), parentId);
         }
-
         return courseAssembler.toAdminDTOList(courseDOList);
     }
 
     /**
-     * 审核通过课程
-     *
-     * 应用层职责：编排领域服务 + 发送通知（跨Interaction域）
+     * 用户视角：分页查看自己创建的课程申请。
+     * @param state 可为 null（默认排除 BANNED）；或 NEVER_PUBLISHED / PUBLISHED
      */
-    @Transactional
-    public void approve(long id, UserDO operator) {
-        CourseDO courseDO = courseDataService.validateAndGet(id);
-        Utils.validateStateTransition(courseDO.getState(), ContentState.PUBLISHED);
-
-        int rowsAffected = courseDataService.approve(id);
-        if (rowsAffected == 0) {
-            throw StatusCode.OPERATION_FAILED.exception();
-        }
-
-        // 如果是子课程，增加父课程的子课程数量
-        if (courseDO.getParentCourseId() != null && courseDO.getParentCourseId() > 0) {
-            courseDataService.incrementSubCourseCount(courseDO.getParentCourseId());
-        }
-
-        // 发布审核通过事件，触发消息通知
-        eventPublisher.publishEvent(ContentApprovedEvent.forCourse(
-            courseDO.getCreatorId(),
-            courseDO.getId(),
-            courseDO.getName()
-        ));
-
-        // 异步更新搜索索引
-        courseDO.setState(ContentState.PUBLISHED.value());
-        meilisearchService.indexCourse(courseDO, DataSourceContextHolder.getLanguage());
+    public List<CourseFullDTO> getUserCourses(Long userId, String cursor, NewContentState state, int limit) {
+        List<CourseDO> courseDOList = courseDomainService.listByCreator(
+                userId, Cursor.decode(cursor).id(), limit, state);
+        return courseAssembler.toFullDTOList(courseDOList, userId);
     }
+
+    // ========== Command 方法（revision 模型）==========
 
     /**
-     * 拒绝课程
-     *
-     * 应用层职责：编排领域服务 + 发送通知（跨Interaction域）
+     * 创建课程申请。parentCourseId=0 表示主课程，>0 表示子课程。
+     * 申请创建后立即创建一个 PUBLISHED 的 rootNode（保留现状，rootNode 可见性级联问题留作 TODO）。
      */
-    @Transactional
-    public void reject(long id, String reason, UserDO operator) {
-        CourseDO courseDO = courseDataService.validateAndGet(id);
-        Utils.validateStateTransition(courseDO.getState(), ContentState.REJECTED);
-
-        int rowsAffected = courseDataService.reject(id, reason);
-        if (rowsAffected == 0) {
-            throw StatusCode.OPERATION_FAILED.exception();
-        }
-
-        // 发布审核拒绝事件，触发消息通知
-        eventPublisher.publishEvent(ContentRejectedEvent.forCourse(
-            courseDO.getCreatorId(),
-            courseDO.getId(),
-            courseDO.getName(),
-            reason
-        ));
-
-        // 异步更新搜索索引（从索引中移除）
-        courseDO.setState(ContentState.REJECTED.value());
-        meilisearchService.indexCourse(courseDO, DataSourceContextHolder.getLanguage());
-    }
-
-    /**
-     * 封禁课程
-     *
-     * 应用层职责：编排领域服务，ban 不发送消息
-     */
-    @Transactional
-    public void ban(long id, String reason, UserDO operator) {
-        CourseDO courseDO = courseDataService.validateAndGet(id);
-        Utils.validateStateTransition(courseDO.getState(), ContentState.BANNED);
-
-        // 如果是已发布的子课程，减少父课程的子课程数量
-        boolean wasPublished = courseDO.getState() == ContentState.PUBLISHED.value();
-
-        int rowsAffected = courseDataService.ban(id, reason);
-        if (rowsAffected == 0) {
-            throw StatusCode.OPERATION_FAILED.exception();
-        }
-
-        // 只有之前是已发布状态的子课程，才减少父课程的计数
-        if (wasPublished && courseDO.getParentCourseId() != null && courseDO.getParentCourseId() > 0) {
-            courseDataService.decrementSubCourseCount(courseDO.getParentCourseId());
-        }
-
-        // ban 不发送任何消息或事件
-        log.info("课程 {} 被封禁，操作者: {}, 原因: {}", id, operator.getId(), reason);
-
-        // 异步更新搜索索引（从索引中移除）
-        courseDO.setState(ContentState.BANNED.value());
-        meilisearchService.indexCourse(courseDO, DataSourceContextHolder.getLanguage());
-    }
-
-    /**
-     * 删除课程
-     */
-    @Transactional
-    public void delete(long id, UserDO operator) {
-        CourseDO courseDO = courseDataService.validateAndGet(id);
-
-        // 如果是已发布的子课程，减少父课程的子课程数量
-        boolean wasPublished = courseDO.getState() == ContentState.PUBLISHED.value();
-        if (wasPublished && courseDO.getParentCourseId() != null && courseDO.getParentCourseId() > 0) {
-            courseDataService.decrementSubCourseCount(courseDO.getParentCourseId());
-        }
-
-        courseDomainService.deleteCourse(id);
-
-        // 异步从搜索索引中移除
-        meilisearchService.deleteCourse(id, DataSourceContextHolder.getLanguage());
-    }
-
     @Transactional
     public Long createCourse(CreateCourseRequest request, UserDO creator) {
-        // 先验证参数
         if (request == null) {
             throw StatusCode.INVALID_PARAMETER.exception("课程创建请求不能为空");
         }
 
-        // 验证分类是否有效
-        systemDomainService.validateCourseCategory(request.getMainCategory(), request.getSubCategory());
+        long parentCourseId = 0L;
+        Integer mainCategory = request.getMainCategory();
+        Integer subCategory = request.getSubCategory();
+        // 如果是子课程，从父课程继承分类（保持原 createSubcourse 的语义）
+        if (request.getParentCourseId() != null && request.getParentCourseId() > 0) {
+            CourseDO parentCourse = courseDataService.getById(request.getParentCourseId());
+            if (parentCourse == null) {
+                throw StatusCode.COURSE_PARENT_NOT_FOUND.exception();
+            }
+            parentCourseId = parentCourse.getId();
+            mainCategory = parentCourse.getMainCategory();
+            subCategory = parentCourse.getSubCategory();
+        } else {
+            systemDomainService.validateCourseCategory(mainCategory, subCategory);
+        }
 
-        // 验证通过后创建对象
-        CourseDO course = new CourseDO();
-        course.setName(request.getName());
-        course.setDescription(request.getDescription());
-        course.setCreatorId(creator.getId());
-        course.setRootNodeId(0L);
-        course.setParentCourseId(0L);
-        course.setState(ContentState.SUBMITTED.value());
-        course.setMainCategory(request.getMainCategory());
-        course.setSubCategory(request.getSubCategory());
-        courseDataService.insert(course);
+        Long courseId = courseDomainService.create(
+                creator.getId(),
+                request.getName(),
+                request.getDescription(),
+                null, // icon 由后续编辑/审核流程补充
+                mainCategory,
+                subCategory,
+                parentCourseId
+        );
 
-        NodeDO nodeDO = new NodeDO(creator.getId(), course.getId(), course.getName(),
-                course.getDescription(), ContentState.PUBLISHED.value(), Bool.TRUE.value());
+        // 创建 rootNode（保留现状）
+        NodeDO nodeDO = new NodeDO(creator.getId(), courseId, request.getName(),
+                request.getDescription(), ContentState.PUBLISHED.value(), Bool.TRUE.value());
         nodeDataService.insert(nodeDO);
 
-        course.setRootNodeId(nodeDO.getId());
-        courseDataService.update(course);
-
-        return course.getId();
-    }
-
-    /**
-     * 创建课程并自动审核通过（Admin专用）
-     */
-    @Transactional
-    public Long createAndApprove(CreateCourseRequest request, UserDO creator) {
-        // 先创建课程（状态为SUBMITTED）
-        Long courseId = createCourse(request, creator);
-
-        // 审核通过
-        approve(courseId, creator);
+        courseDomainService.bindRootNode(courseId, nodeDO.getId());
 
         return courseId;
     }
 
+    /**
+     * 创建课程并自动审核通过（Admin 专用）。
+     * 内部 = createCourse + approve；approve 走 revision 模型完成 PUBLISHED 切换。
+     */
     @Transactional
-    public void createSubcourse(String name, String description, long parentId, UserDO creator) {
-        CourseDO parentCourse = courseDataService.getById(parentId);
-        if (parentCourse == null) {
-            throw StatusCode.COURSE_PARENT_NOT_FOUND.exception();
+    public Long createAndApprove(CreateCourseRequest request, UserDO creator) {
+        Long courseId = createCourse(request, creator);
+        approve(courseId, creator);
+        return courseId;
+    }
+
+    /**
+     * 用户被驳回 / 撤回后重新提交。
+     */
+    @Transactional
+    public Long resubmit(Long courseId, UpdateCourseRequest request, UserDO author) {
+        if (request == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("更新请求不能为空");
+        }
+        return courseDomainService.resubmit(
+                courseId,
+                author.getId(),
+                request.getName(),
+                request.getDescription(),
+                request.getIcon(),
+                request.getMainCategory(),
+                request.getSubCategory()
+        );
+    }
+
+    /**
+     * 作者撤回审核中的版本。
+     */
+    @Transactional
+    public void withdraw(long courseId, UserDO author) {
+        courseDomainService.withdraw(courseId, author.getId());
+    }
+
+    /**
+     * 审核通过课程。
+     * 维护父课程子课程数：若是首次发布的子课程，父课程 subCourseCount + 1。
+     */
+    @Transactional
+    public void approve(long id, UserDO operator) {
+        CourseDO before = courseDataService.validateAndGet(id);
+        boolean wasPublished = NewContentState.PUBLISHED_VALUE.equals(before.getState());
+
+        CourseDomainService.CourseContent content = courseDomainService.approve(id, operator.getId());
+
+        // 仅在"从非 PUBLISHED 进入 PUBLISHED"时维护父课程计数
+        if (!wasPublished && content.parentCourseId > 0) {
+            courseDataService.incrementSubCourseCount(content.parentCourseId);
         }
 
-        CourseDO subCourse = new CourseDO();
-        subCourse.setName(name);
-        subCourse.setDescription(description);
-        subCourse.setCreatorId(creator.getId());
-        subCourse.setRootNodeId(0L);
-        subCourse.setParentCourseId(parentId);
-        subCourse.setState(ContentState.SUBMITTED.value());
-        subCourse.setMainCategory(parentCourse.getMainCategory());
-        subCourse.setSubCategory(parentCourse.getSubCategory());
+        CourseDO afterDO = courseDataService.validateAndGet(id);
 
-        courseDataService.insert(subCourse);
+        eventPublisher.publishEvent(ContentApprovedEvent.forCourse(
+                afterDO.getCreatorId(),
+                afterDO.getId(),
+                afterDO.getName()
+        ));
 
-        NodeDO nodeDO = new NodeDO(creator.getId(), subCourse.getId(), subCourse.getName(),
-                subCourse.getDescription(), ContentState.PUBLISHED.value(), Bool.TRUE.value());
-        nodeDataService.insert(nodeDO);
+        meilisearchService.indexCourse(afterDO, DataSourceContextHolder.getLanguage());
+    }
 
-        subCourse.setRootNodeId(nodeDO.getId());
-        courseDataService.update(subCourse);
+    /**
+     * 拒绝课程：revision → REJECTED。主体状态保持不变，无需维护子课程数。
+     */
+    @Transactional
+    public void reject(long id, String reason, UserDO operator) {
+        CourseDO course = courseDataService.validateAndGet(id);
+        courseDomainService.reject(id, reason, operator.getId());
+
+        String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
+        eventPublisher.publishEvent(ContentRejectedEvent.forCourse(
+                course.getCreatorId(),
+                course.getId(),
+                course.getName(),
+                reasonValue
+        ));
+
+        // reject 不改变主体可见性，不需要重建索引
+    }
+
+    /**
+     * 封禁课程。
+     * 维护父课程子课程数：若被封禁前是 PUBLISHED 的子课程，父课程 subCourseCount - 1。
+     */
+    @Transactional
+    public void ban(long id, String reason, UserDO operator) {
+        CourseDO course = courseDataService.validateAndGet(id);
+        boolean wasPublished = NewContentState.PUBLISHED_VALUE.equals(course.getState());
+        Long parentCourseId = course.getParentCourseId();
+
+        courseDomainService.ban(id, reason, operator.getId());
+
+        if (wasPublished && parentCourseId != null && parentCourseId > 0) {
+            courseDataService.decrementSubCourseCount(parentCourseId);
+        }
+
+        String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
+        eventPublisher.publishEvent(ContentBannedEvent.forCourse(
+                course.getCreatorId(),
+                course.getId(),
+                course.getName(),
+                reasonValue
+        ));
+
+        log.info("课程 {} 被封禁，操作者: {}, 原因: {}", id, operator.getId(), reasonValue);
+
+        meilisearchService.indexCourse(courseDataService.getById(id), DataSourceContextHolder.getLanguage());
+    }
+
+    /**
+     * 解封课程。
+     * 若解封后状态为 PUBLISHED 且是子课程，父课程 subCourseCount + 1。
+     */
+    @Transactional
+    public void restore(long id, UserDO operator) {
+        CourseDO course = courseDataService.validateAndGet(id);
+        Long parentCourseId = course.getParentCourseId();
+
+        NewContentState newState = courseDomainService.restore(id);
+
+        if (NewContentState.PUBLISHED.equals(newState) && parentCourseId != null && parentCourseId > 0) {
+            courseDataService.incrementSubCourseCount(parentCourseId);
+        }
+
+        meilisearchService.indexCourse(courseDataService.getById(id), DataSourceContextHolder.getLanguage());
+    }
+
+    /**
+     * 删除课程。
+     * 若删除前是 PUBLISHED 的子课程，父课程 subCourseCount - 1。
+     */
+    @Transactional
+    public void delete(long id, UserDO operator) {
+        CourseDO course = courseDataService.validateAndGet(id);
+        boolean wasPublished = NewContentState.PUBLISHED_VALUE.equals(course.getState());
+        if (wasPublished && course.getParentCourseId() != null && course.getParentCourseId() > 0) {
+            courseDataService.decrementSubCourseCount(course.getParentCourseId());
+        }
+
+        courseDomainService.deleteCourse(id);
+
+        meilisearchService.deleteCourse(id, DataSourceContextHolder.getLanguage());
     }
 
     // 获取热门课程（使用Redis排行榜）
     public List<CourseFullDTO> getHotCourses(int limit) {
         try {
-            // 从Redis获取2倍数量，以防过滤后不足limit个
             int fetchLimit = limit * 2;
             List<Long> hotCourseIds = courseRankingDomainService.getHotCourseIds(fetchLimit);
 
@@ -456,9 +463,9 @@ public class CourseService {
 
             // 过滤已发布状态的课程
             List<CourseDO> publishedCourses = courseDOList.stream()
-                .filter(c -> c.getState() == ContentState.PUBLISHED.value())
-                .limit(limit)
-                .collect(Collectors.toList());
+                    .filter(c -> NewContentState.PUBLISHED_VALUE.equals(c.getState()))
+                    .limit(limit)
+                    .collect(Collectors.toList());
 
             return courseAssembler.toFullDTOList(publishedCourses, null);
 
@@ -469,34 +476,27 @@ public class CourseService {
 
     /**
      * 重新计算所有课程的子课程数量
-     * 分批处理，只更新不一致的记录
-     *
-     * @param progressCallback 进度回调，传入当前进度信息
-     * @return 包含 checked（检查的父课程数）、updated（更新的数量）、timeout（是否超时）
      */
     public Map<String, Integer> recalculateAllSubCourseCounts(java.util.function.Consumer<Object> progressCallback) {
         long startTime = System.currentTimeMillis();
-        long timeout = 10 * 60 * 1000; // 10分钟超时
+        long timeout = 10 * 60 * 1000;
 
         int checked = 0;
         int updated = 0;
         Long lastId = null;
 
         while (true) {
-            // 每批检查是否超时
             if ((System.currentTimeMillis() - startTime) > timeout) {
                 log.warn("子课程数量重算任务超时，已处理 {} 个，更新 {} 个", checked, updated);
                 return Map.of("checked", checked, "updated", updated, "timeout", 1);
             }
 
-            // 分页查询所有课程
             List<CourseDO> courses = courseDataService.listByLastId(lastId);
             if (courses.isEmpty()) {
                 break;
             }
 
             for (CourseDO course : courses) {
-                // 跳过子课程
                 if (course.getParentCourseId() != null && course.getParentCourseId() > 0) {
                     continue;
                 }
@@ -505,7 +505,6 @@ public class CourseService {
                 int actualCount = courseDataService.countPublishedSubCourses(course.getId());
                 int currentCount = course.getSubCourseCount() != null ? course.getSubCourseCount() : 0;
 
-                // 只有不一致时才更新
                 if (actualCount != currentCount) {
                     courseDataService.updateSubCourseCount(course.getId(), actualCount);
                     updated++;
@@ -515,7 +514,6 @@ public class CourseService {
 
             lastId = courses.get(courses.size() - 1).getId();
 
-            // 每批处理完后报告进度
             if (progressCallback != null) {
                 final int currentChecked = checked;
                 final int currentUpdated = updated;

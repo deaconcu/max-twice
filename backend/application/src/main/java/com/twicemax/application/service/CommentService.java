@@ -9,6 +9,7 @@ import com.twicemax.application.converter.UserConverter;
 import com.twicemax.application.dto.request.CreateCommentRequest;
 import com.twicemax.application.dto.response.comment.CommentDTO;
 import com.twicemax.application.dto.response.KeysetPageResponse;
+import com.twicemax.application.dto.v2.CursorPage;
 import com.twicemax.application.dto.response.comment.CommentAdminDTO;
 import com.twicemax.application.dto.response.comment.CommentBasicDTO;
 import com.twicemax.application.dto.response.comment.CommentContextDTO;
@@ -42,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import com.twicemax.application.dto.v2.Cursor;
 
 import static com.twicemax.shared.domain.Enums.*;
 import static com.twicemax.shared.domain.Enums.ContentType.*;
@@ -226,9 +228,13 @@ public class CommentService {
      * @param pageSize 每页数量
      * @return KeysetPageResponse<CommentWithRepliesDTO> 包含子评论的评论列表
      */
-    public KeysetPageResponse<CommentWithRepliesDTO> getCommentsByObject(Long objectId, Integer type, Double lastScore, Long lastId, int pageSize, UserDO currentUser) {
+    public CursorPage<CommentWithRepliesDTO> getCommentsByObject(Long objectId, Integer type, String cursor, int pageSize, UserDO currentUser) {
         validateCommentType(type);
         pageSize = Math.min(pageSize, CommonConstants.MAX_PAGE_SIZE);
+
+        Cursor scoreIdCursor = Cursor.decode(cursor);
+        Double lastScore = scoreIdCursor.score();
+        Long lastId = scoreIdCursor.id();
 
         // 调用 DomainService 获取评论列表
         List<CommentDO> commentDOList = commentDomainService.getCommentsByObject(objectId, type, lastScore, lastId, pageSize);
@@ -245,11 +251,12 @@ public class CommentService {
 
         // 构建响应
         if (commentDTOList.isEmpty()) {
-            return KeysetPageResponse.of(commentDTOList, false, null, null);
+            return CursorPage.empty();
         }
 
         CommentWithRepliesDTO lastComment = commentDTOList.get(commentDTOList.size() - 1);
-        return KeysetPageResponse.of(commentDTOList, hasMore, lastComment.getScore(), lastComment.getId());
+        String nextCursor = hasMore ? Cursor.of(lastComment.getScore(), lastComment.getId()).encode() : null;
+        return CursorPage.of(commentDTOList, hasMore, nextCursor);
     }
 
     /**
@@ -259,11 +266,13 @@ public class CommentService {
      * @param pageSize 每页数量
      * @return KeysetPageResponse<CommentDetailDTO> 不包含子评论的评论详情列表
      */
-    public KeysetPageResponse<CommentDetailDTO> getCommentReplies(Long id, Double lastScore, Long lastId, int pageSize, UserDO currentUser) {
+    public CursorPage<CommentDetailDTO> getCommentReplies(Long id, String cursor, int pageSize, UserDO currentUser) {
         pageSize = Math.min(pageSize, CommonConstants.MAX_PAGE_SIZE);
 
+        Cursor scoreIdCursor = Cursor.decode(cursor);
+
         // 调用 DomainService 获取子评论列表
-        List<CommentDO> commentDOList = commentDomainService.getCommentReplies(id, lastScore, lastId, pageSize);
+        List<CommentDO> commentDOList = commentDomainService.getCommentReplies(id, scoreIdCursor.score(), scoreIdCursor.id(), pageSize);
 
         // 判断是否还有更多数据
         boolean hasMore = commentDOList.size() > pageSize;
@@ -286,11 +295,12 @@ public class CommentService {
 
         // 构建响应
         if (commentDTOList.isEmpty()) {
-            return KeysetPageResponse.of(commentDTOList, false, null, null);
+            return CursorPage.empty();
         }
 
         CommentDetailDTO lastComment = commentDTOList.get(commentDTOList.size() - 1);
-        return KeysetPageResponse.of(commentDTOList, hasMore, lastComment.getScore(), lastComment.getId());
+        String nextCursor = hasMore ? Cursor.of(lastComment.getScore(), lastComment.getId()).encode() : null;
+        return CursorPage.of(commentDTOList, hasMore, nextCursor);
     }
 
     /**
@@ -539,7 +549,7 @@ public class CommentService {
         // 批量查询点赞记录
         List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, commentIds, comment.value());
         Set<Long> upvotedSet = upvoteList.stream()
-                .filter(upvote -> upvote.getType() == VoteType.like.value())
+                .filter(upvote -> VoteType.LIKE.value().equals(upvote.getType()))
                 .map(UpvoteDO::getObjectId)
                 .collect(Collectors.toSet());
 
@@ -572,7 +582,7 @@ public class CommentService {
         // 填充点赞状态
         commentDTO.setLiked(false);
         UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, commentDO.getId(), comment.value());
-        if (upvoteDO != null && upvoteDO.getType() == VoteType.like.value()) {
+        if (upvoteDO != null && VoteType.LIKE.value().equals(upvoteDO.getType())) {
             commentDTO.setLiked(true);
         }
 
@@ -711,12 +721,10 @@ public class CommentService {
         // 设置游标
         if (!commentDTOList.isEmpty()) {
             CommentWithRepliesDTO first = commentDTOList.get(0);
-            dto.setFirstScore(first.getScore());
-            dto.setFirstId(first.getId());
+            dto.setFirstCursor(Cursor.of(first.getScore(), first.getId()).encode());
 
             CommentWithRepliesDTO last = commentDTOList.get(commentDTOList.size() - 1);
-            dto.setLastScore(last.getScore());
-            dto.setLastId(last.getId());
+            dto.setLastCursor(Cursor.of(last.getScore(), last.getId()).encode());
         }
 
         return dto;
@@ -749,12 +757,10 @@ public class CommentService {
         // 设置游标
         if (!subCommentDTOList.isEmpty()) {
             CommentDetailDTO first = subCommentDTOList.get(0);
-            dto.setFirstScore(first.getScore());
-            dto.setFirstId(first.getId());
+            dto.setFirstCursor(Cursor.of(first.getScore(), first.getId()).encode());
 
             CommentDetailDTO last = subCommentDTOList.get(subCommentDTOList.size() - 1);
-            dto.setLastScore(last.getScore());
-            dto.setLastId(last.getId());
+            dto.setLastCursor(Cursor.of(last.getScore(), last.getId()).encode());
         }
 
         return dto;

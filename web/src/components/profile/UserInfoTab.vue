@@ -269,29 +269,15 @@
         </div>
       </v-card-text>
     </v-card>
-
-    <!-- 提示信息 -->
-    <v-alert
-      v-if="showSuccessAlert"
-      type="success"
-      variant="tonal"
-      rounded="lg"
-      class="mt-6"
-      closable
-      @click:close="showSuccessAlert = false"
-    >
-      {{ t('user.profile.userInfo.saveSuccess') }}
-    </v-alert>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, inject, computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import { useMutation } from '@/composables/useMutation'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
-import { userApi } from '@/api'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import { useUpdateCurrentUserMutation, useUpdateAvatarMutation } from '@/queries/user'
 
 // Props
 const props = defineProps<{
@@ -329,7 +315,6 @@ const localUserInfo = ref({
   ...props.userInfo,
   timezone: props.userInfo.timezone || DEFAULT_TIMEZONE,
 })
-const showSuccessAlert = ref(false)
 
 // 显示修改状态
 const displayModifyName = ref(false)
@@ -374,13 +359,8 @@ const getTimezoneLabel = (timezone?: string) => {
 // 头像上传相关
 const fileInput = ref<HTMLInputElement>()
 
-// 使用 useMutation 上传头像（调用新的一体化接口）
-const { execute: uploadAvatar, loading: uploadingAvatar } = useMutation(
-  (file: File) => userApi.updateAvatar(file),
-  {
-    showToast: false,
-  }
-)
+const uploadAvatarMutation = useUpdateAvatarMutation()
+const uploadingAvatar = uploadAvatarMutation.isPending
 
 // 触发文件选择
 const triggerFileInput = () => {
@@ -388,7 +368,7 @@ const triggerFileInput = () => {
 }
 
 // 处理头像上传
-const handleAvatarUpload = async (event: Event) => {
+const handleAvatarUpload = (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
 
@@ -407,43 +387,19 @@ const handleAvatarUpload = async (event: Event) => {
     return
   }
 
-  try {
-    // 调用接口：上传图片 + 更新数据库，返回头像地址
-    const avatarUrl = await uploadAvatar(file)
-
-    // 如果返回 null，说明上传失败
-    if (!avatarUrl) {
-      showSnackbar?.(t('user.profile.userInfo.avatarUploadFailed'), 'error')
-      return
-    }
-
-    // 通知父组件更新 profileUser
-    emit('updateAvatar', avatarUrl)
-    showSnackbar?.(t('user.profile.userInfo.avatarUpdateSuccess'), 'success')
-  } catch (error: any) {
-    console.error('Avatar upload failed:', error)
-    showSnackbar?.(error.message || t('user.profile.userInfo.avatarUploadFailed'), 'error')
-  } finally {
-    // 清空 input，允许重复选择同一文件
-    if (target) target.value = ''
-  }
+  uploadAvatarMutation.mutate(file, {
+    onSuccess: (avatarUrl) => {
+      emit('updateAvatar', avatarUrl)
+      showSnackbar?.(t('user.profile.userInfo.avatarUpdateSuccess'), 'success')
+    },
+    onSettled: () => {
+      target.value = ''
+    },
+  })
 }
 
-// 使用 useMutation 更新用户信息
-const { execute: updateUser, loading: updating } = useMutation(
-  (data: { name: string; biography: string; avatar?: string; timezone?: string }) =>
-    userApi.updateCurrentUser(data.name, data.biography, data.avatar, data.timezone),
-  {
-    successMessage: '',
-    showToast: false, // 我们使用自定义的 alert
-    onSuccess: () => {
-      showSuccessAlert.value = true
-      setTimeout(() => {
-        showSuccessAlert.value = false
-      }, 3000)
-    },
-  }
-)
+// 使用 TanStack mutation 更新用户信息
+const updateUserMutation = useUpdateCurrentUserMutation()
 
 // 监听 props 变化
 watch(
@@ -458,31 +414,34 @@ watch(
 )
 
 // 修改姓名
-const onModifyName = async () => {
+const onModifyName = () => {
   displayModifyName.value = false
-  await updateUser({
-    name: localUserInfo.value.name,
-    biography: localUserInfo.value.bio,
-  })
+  updateUserMutation.mutate(
+    { name: localUserInfo.value.name, biography: localUserInfo.value.bio },
+    { onSuccess: () => showSnackbar?.(t('user.profile.userInfo.saveSuccess'), 'success') }
+  )
 }
 
 // 修改简介
-const onModifyBio = async () => {
+const onModifyBio = () => {
   displayModifyBio.value = false
-  await updateUser({
-    name: localUserInfo.value.name,
-    biography: localUserInfo.value.bio,
-  })
+  updateUserMutation.mutate(
+    { name: localUserInfo.value.name, biography: localUserInfo.value.bio },
+    { onSuccess: () => showSnackbar?.(t('user.profile.userInfo.saveSuccess'), 'success') }
+  )
 }
 
 // 修改时区
-const onModifyTimezone = async () => {
+const onModifyTimezone = () => {
   displayModifyTimezone.value = false
-  await updateUser({
-    name: localUserInfo.value.name,
-    biography: localUserInfo.value.bio,
-    timezone: localUserInfo.value.timezone,
-  })
+  updateUserMutation.mutate(
+    {
+      name: localUserInfo.value.name,
+      biography: localUserInfo.value.bio,
+      timezone: localUserInfo.value.timezone,
+    },
+    { onSuccess: () => showSnackbar?.(t('user.profile.userInfo.saveSuccess'), 'success') }
+  )
 }
 </script>
 

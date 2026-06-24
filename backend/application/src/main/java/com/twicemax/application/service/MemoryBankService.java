@@ -188,7 +188,7 @@ public class MemoryBankService {
         List<UserCourseSrsSettingDO> validSettings = settings.stream()
                 .filter(setting -> {
                     CourseDO course = courseMap.get(setting.getCourseId());
-                    return course != null && ContentState.PUBLISHED.value().equals(course.getState());
+                    return course != null && NewContentState.PUBLISHED_VALUE.equals(course.getState());
                 })
                 .collect(Collectors.toList());
 

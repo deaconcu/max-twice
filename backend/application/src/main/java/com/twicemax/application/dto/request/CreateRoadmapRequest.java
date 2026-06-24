@@ -20,9 +20,9 @@ public class CreateRoadmapRequest {
     private String description;
 
     /**
-     * 初始状态：0-草稿，1-提交审核
-     * 必须传递，只能是这两个值
+     * 是否在创建后立即提交审核：
+     * - true：createDraft 后立刻 submit（产生一条 SUBMITTED revision）
+     * - false 或不传：仅保存为草稿（state=NEVER_PUBLISHED，无 revision）
      */
-    @NotNull(message = "状态不能为空")
-    private Byte state;
+    private Boolean submit;
 }

@@ -8,7 +8,9 @@ test.describe('用户登录和注册', () => {
     await page.goto('/login')
 
     // 验证页面标题
-    await expect(page.locator('h2, h1').filter({ hasText: /登录|Login/ })).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('h2, h1').filter({ hasText: /登录|Login/ })).toBeVisible({
+      timeout: 10000,
+    })
 
     // 验证表单元素存在（等待加载）
     await expect(page.locator('input').first()).toBeVisible({ timeout: 10000 })
@@ -45,7 +47,10 @@ test.describe('用户登录和注册', () => {
 
     // 等待错误提示显示（使用 first() 避免 strict mode violation）
     await expect(
-      page.locator('.v-alert').filter({ hasText: /密码|错误|失败|不正确/ }).first()
+      page
+        .locator('.v-alert')
+        .filter({ hasText: /密码|错误|失败|不正确/ })
+        .first()
     ).toBeVisible({ timeout: 5000 })
   })
 })

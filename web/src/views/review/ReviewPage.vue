@@ -208,9 +208,7 @@
                   {{ t('review.cards') }}
                 </span>
                 <span
-                  v-if="
-                    selectedCourseLearningCards > 0 && (selectedCourse?.dueCardCount || 0) > 0
-                  "
+                  v-if="selectedCourseLearningCards > 0 && (selectedCourse?.dueCardCount || 0) > 0"
                   >·</span
                 >
                 <span v-if="(selectedCourse?.dueCardCount || 0) > 0">
@@ -746,7 +744,7 @@
                     variant="outlined"
                     rounded="lg"
                     :size="$vuetify.display.mobile ? 'default' : 'large'"
-                    :loading="listLoading"
+                    :loading="isFetchingNextPage"
                     @click="loadMoreListCards"
                   >
                     {{ t('common.loadMore') }}
@@ -1056,14 +1054,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import { useFetch, useMutation } from '@/composables'
-import { memoryApi } from '@/api'
-import type {
-  MemoryCardView,
-  CourseStudyStatus,
-  ReviewSummary,
-  CourseMemoryBank,
-} from '@/types/memory'
+import * as memoryApi from '@/api/modules/memory'
+import type { MemoryCardView, CourseStudyStatus } from '@/types/memory'
 import {
   ReviewResult,
   FrequencySetting,
@@ -1075,6 +1067,14 @@ import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import DynamicIcon from '@/components/common/DynamicIcon.vue'
 import { getColorByString } from '@/utils/color'
+import {
+  useReviewSummaryQuery,
+  useReviewCardMutation,
+  useDeleteCardsMutation,
+  useResetCardProgressMutation,
+  useUpdateCourseMemorySettingMutation,
+  useCardListQuery,
+} from '@/queries/memory'
 
 const { t } = useI18n()
 
@@ -1094,40 +1094,41 @@ const reviewLoading = ref(false)
 // 动态卡片高度
 const cardHeight = ref(800)
 
-// 列表分页
-const listCards = ref<MemoryCardView[]>([])
-const listLoading = ref(false)
-const listLastId = ref<number | undefined>(undefined)
-const listHasMore = ref(true)
-
-// 学习中的课程
-const { data: studyingSummary, refresh: refreshStudying } = useFetch<ReviewSummary>({
-  fetchFn: () => memoryApi.getReviewSummary(Status.STUDYING),
-  immediate: true,
-  defaultValue: { todayTotal: 0, todayCompleted: 0, streakDays: 0, courses: [] },
+// 列表分页（useInfiniteQuery）
+const selectedCourseId = computed(() => {
+  if (activeTab.value === 'all') return undefined
+  return parseInt(activeTab.value)
 })
 
-// 冻结的课程
 const {
-  data: frozenSummary,
-  refresh: refreshFrozen,
-  loading: frozenLoading,
-} = useFetch<ReviewSummary>({
-  fetchFn: () => memoryApi.getReviewSummary(Status.FROZEN),
-  immediate: false,
-  defaultValue: { todayTotal: 0, todayCompleted: 0, streakDays: 0, courses: [] },
-})
+  data: cardListData,
+  isLoading: listLoading,
+  isFetchingNextPage,
+  hasNextPage: listHasMore,
+  fetchNextPage,
+} = useCardListQuery(selectedCourseId)
 
-// 隐藏的课程
-const {
-  data: hiddenSummary,
-  refresh: refreshHidden,
-  loading: hiddenLoading,
-} = useFetch<ReviewSummary>({
-  fetchFn: () => memoryApi.getReviewSummary(Status.HIDDEN),
-  immediate: false,
-  defaultValue: { todayTotal: 0, todayCompleted: 0, streakDays: 0, courses: [] },
-})
+const listCards = computed(() => cardListData.value?.pages.flatMap((p) => p.items) ?? [])
+
+const loadMoreListCards = () => {
+  void fetchNextPage()
+}
+
+// 学习中的课程（立即加载）
+const { data: studyingSummary, refetch: refreshStudying } = useReviewSummaryQuery(Status.STUDYING)
+
+// 冻结/隐藏的课程（懒加载，点击 tab 时才触发）
+const frozenEnabled = ref(false)
+const hiddenEnabled = ref(false)
+
+const { data: frozenSummary, isLoading: frozenLoading } = useReviewSummaryQuery(
+  Status.FROZEN,
+  frozenEnabled
+)
+const { data: hiddenSummary, isLoading: hiddenLoading } = useReviewSummaryQuery(
+  Status.HIDDEN,
+  hiddenEnabled
+)
 
 // 当前状态 tab 对应的课程列表
 const currentCourseList = computed(() => {
@@ -1145,22 +1146,21 @@ const currentCourseList = computed(() => {
 
 // 课程列表加载状态
 const courseListLoadingComputed = computed(() => {
-  return frozenLoading.value || hiddenLoading.value
+  if (courseStateTab.value === Status.FROZEN) return frozenLoading.value
+  if (courseStateTab.value === Status.HIDDEN) return hiddenLoading.value
+  return false
 })
 
 // 从复习概览中提取课程列表（学习中的课程，兼容现有代码）
 const courseMemoryBanks = computed(() => studyingSummary.value?.courses ?? [])
 
-// 刷新课程列表的方法（兼容现有代码）
-const refreshCourses = refreshStudying
-
 // 切换课程状态 Tab，懒加载数据
 const switchCourseStateTab = (state: number) => {
   courseStateTab.value = state
-  if (state === Status.FROZEN && (frozenSummary.value?.courses.length ?? 0) === 0) {
-    void refreshFrozen()
-  } else if (state === Status.HIDDEN && (hiddenSummary.value?.courses.length ?? 0) === 0) {
-    void refreshHidden()
+  if (state === Status.FROZEN) {
+    frozenEnabled.value = true
+  } else if (state === Status.HIDDEN) {
+    hiddenEnabled.value = true
   }
 }
 
@@ -1263,13 +1263,6 @@ const switchTab = (tabValue: string) => {
   // 切换课程时重置为复习模式
   viewMode.value = 'review'
   resetReview()
-
-  if (tabValue === 'all') return
-
-  // 选中具体课程时，加载列表数据备用
-  listCards.value = []
-  listLastId.value = undefined
-  listHasMore.value = true
 }
 
 const switchViewMode = (mode: 'review' | 'list' | 'manage') => {
@@ -1278,15 +1271,11 @@ const switchViewMode = (mode: 'review' | 'list' | 'manage') => {
   if (mode === 'review') {
     resetReview()
   } else if (mode === 'list') {
-    listCards.value = []
-    listLastId.value = undefined
-    listHasMore.value = true
-    void loadListCards(true)
+    // useCardListQuery 会根据 selectedCourseId 自动重新获取
   }
 }
 
 const startReview = async () => {
-  // 必须选择具体课程才能开始复习
   if (!selectedCourse.value) return
   const courseId = selectedCourse.value.course.id
   const courseDueCards = selectedCourseDueCards.value + selectedCourseNewCards.value
@@ -1294,13 +1283,11 @@ const startReview = async () => {
 
   reviewLoading.value = true
   try {
-    const response = await memoryApi.getNextCard({ courseId })
-    if (response.code === 200 && response.data) {
-      currentCard.value = response.data.nextCard
-      if (currentCard.value) {
-        isReviewing.value = true
-        showAnswer.value = false
-      }
+    const result = await memoryApi.getNextCard({ courseId })
+    currentCard.value = result.nextCard ?? null
+    if (currentCard.value) {
+      isReviewing.value = true
+      showAnswer.value = false
     }
   } finally {
     reviewLoading.value = false
@@ -1318,93 +1305,43 @@ const revealAnswer = () => {
 }
 
 // 提交复习
-const { execute: executeReview, loading: submitting } = useMutation(
-  (params: { cardId: number; result: ReviewResult; courseId?: number; timeSpent?: number }) => {
-    return memoryApi.reviewCard(params)
-  },
-  {
-    showToast: false,
-    onSuccess: (result) => {
-      if (!result) return
-
-      // 更新当前课程卡片统计
-      if (result.courseStats && selectedCourse.value) {
-        const courseId = selectedCourse.value.course.id
-        const bank = studyingSummary.value?.courses.find((b) => b.course.id === courseId)
-        if (bank) {
-          bank.newCardCount = result.courseStats.newCardCount
-          bank.dueCardCount = result.courseStats.dueCardCount
-          bank.learningCount = result.courseStats.learningCount
-        }
-      }
-
-      // 后端返回下一张卡片
-      currentCard.value = result.nextCard
-
-      if (!currentCard.value) {
-        // 无更多卡片，复习完成
-        void completeReview()
-      } else {
-        showAnswer.value = false
-      }
-    },
-  }
-)
+const reviewCardMutation = useReviewCardMutation()
+const submitting = reviewCardMutation.isPending
 
 const submitReview = (result: ReviewResult) => {
   if (!currentCard.value || submitting.value) return
 
   const courseId = selectedCourse.value?.course.id
-  void executeReview({
-    cardId: currentCard.value.id,
-    result,
-    courseId,
-    timeSpent: 5,
-  })
+  reviewCardMutation.mutate(
+    { cardId: currentCard.value.id, result, courseId, timeSpent: 5 },
+    {
+      onSuccess: (data) => {
+        if (!data) return
+        // 更新当前课程卡片统计
+        if (data.courseStats && selectedCourse.value) {
+          const courseId = selectedCourse.value.course.id
+          const bank = studyingSummary.value?.courses.find((b) => b.course.id === courseId)
+          if (bank) {
+            bank.newCardCount = data.courseStats.newCardCount
+            bank.dueCardCount = data.courseStats.dueCardCount
+            bank.learningCount = data.courseStats.learningCount
+          }
+        }
+        currentCard.value = data.nextCard
+        if (!currentCard.value) {
+          void completeReview()
+        } else {
+          showAnswer.value = false
+        }
+      },
+    }
+  )
 }
 
 const completeReview = async () => {
   isReviewing.value = false
   currentCard.value = null
-  await refreshCourses()
-}
-
-// 列表卡片
-const loadListCards = async (reset = false) => {
-  if (listLoading.value) return
-
-  listLoading.value = true
-  try {
-    const response = await memoryApi.getCardList({
-      courseId: selectedCourse.value?.course.id,
-      limit: 20,
-      lastId: reset ? undefined : listLastId.value,
-    })
-
-    if (response.code === 200 && response.data) {
-      if (reset) {
-        listCards.value = response.data
-        listLastId.value = undefined
-      } else {
-        listCards.value = [...listCards.value, ...response.data]
-      }
-
-      if (response.data.length > 0) {
-        const lastCard = response.data[response.data.length - 1]
-        if (lastCard) {
-          listLastId.value = lastCard.id
-        }
-      }
-
-      listHasMore.value = response.data.length === 20
-    }
-  } finally {
-    listLoading.value = false
-  }
-}
-
-const loadMoreListCards = () => {
-  void loadListCards(false)
+  await refreshStudying()
 }
 
 // 卡片选择
@@ -1425,68 +1362,45 @@ const toggleSelectAll = () => {
   }
 }
 
-// 批量操作
-const { execute: executeDelete } = useMutation(memoryApi.deleteCards, {
-  successMessage: t('review.deleteSuccess'),
-  onSuccess: () => {
-    listCards.value = listCards.value.filter((card) => !selectedCards.value.includes(card.id))
-    selectedCards.value = []
-    void refreshCourses() // 刷新课程列表以更新待复习数量
-  },
-})
+// 批量删除卡片
+const deleteCardsMutation = useDeleteCardsMutation()
 
 const deleteSelectedCards = () => {
   if (selectedCards.value.length === 0) return
-  void executeDelete(selectedCards.value)
+  deleteCardsMutation.mutate(selectedCards.value, {
+    onSuccess: () => {
+      selectedCards.value = []
+      void refreshStudying()
+    },
+  })
 }
 
-// 获取下一张卡片
-const { refresh: fetchNextCard } = useFetch({
-  fetchFn: () => memoryApi.getNextCard({ courseId: selectedCourse.value?.course.id }),
-  immediate: false,
-  onSuccess: (result) => {
-    if (result) {
-      currentCard.value = result.nextCard
-      if (!currentCard.value) {
-        void completeReview()
-      } else {
-        showAnswer.value = false
-      }
-    }
-  },
-})
-
-// 删除被屏蔽的卡片
-const { execute: executeDeleteBlockedCard } = useMutation(
-  (cardIds: number[]) => memoryApi.deleteCards(cardIds),
-  {
-    successMessage: t('review.deleteSuccess'),
-    onSuccess: () => {
-      void refreshCourses()
-      void fetchNextCard()
-    },
-  }
-)
-
+// 删除被屏蔽的卡片（复用 deleteCardsMutation，成功后拿下一张）
 const deleteBlockedCard = () => {
   if (!currentCard.value) return
-  void executeDeleteBlockedCard([currentCard.value.id])
+  deleteCardsMutation.mutate([currentCard.value.id], {
+    onSuccess: async () => {
+      void refreshStudying()
+      const result = await memoryApi.getNextCard({ courseId: selectedCourse.value?.course.id })
+      currentCard.value = result.nextCard ?? null
+      if (!currentCard.value) void completeReview()
+      else showAnswer.value = false
+    },
+  })
 }
 
-const { execute: executeReset } = useMutation(memoryApi.resetCardProgress, {
-  successMessage: t('review.resetSuccess'),
-  onSuccess: () => {
-    selectedCards.value = []
-    void refreshCourses() // 刷新课程列表以更新待复习数量
-    if (viewMode.value === 'list') {
-      void loadListCards(true)
-    }
-  },
-})
+// 重置卡片进度
+const resetCardsMutation = useResetCardProgressMutation()
 
 const resetSelectedCards = () => {
   if (selectedCards.value.length === 0) return
-  void executeReset(selectedCards.value)
+  resetCardsMutation.mutate(selectedCards.value, {
+    onSuccess: () => {
+      selectedCards.value = []
+      void refreshStudying()
+      // useResetCardProgressMutation 已通过 invalidateQueries 自动刷新卡片列表
+    },
+  })
 }
 
 const reviewSelectedCards = () => {
@@ -1494,44 +1408,21 @@ const reviewSelectedCards = () => {
 }
 
 // 更新课程设置
-const { execute: executeUpdateSetting } = useMutation(
-  () => {
-    if (!selectedCourse.value) throw new Error('No course selected')
-    return memoryApi.updateCourseMemorySetting({
+const updateCourseSettingMutation = useUpdateCourseMemorySettingMutation()
+
+const updateCourseSetting = () => {
+  if (!selectedCourse.value) return
+  updateCourseSettingMutation.mutate(
+    {
       courseId: selectedCourse.value.course.id,
       status: selectedCourse.value.setting.state,
       frequencySetting: selectedCourse.value.setting.frequencySetting,
       cardOrder: selectedCourse.value.setting.cardOrder,
       dailyNewLimit: settingDailyNewLimit.value,
       dailyReviewLimit: settingDailyReviewLimit.value,
-    })
-  },
-  {
-    successMessage: t('review.updateSuccess'),
-  }
-)
-
-const updateCourseSetting = () => {
-  void executeUpdateSetting()
-}
-
-// 移除课程
-const { execute: executeRemove } = useMutation(
-  () => {
-    if (!selectedCourse.value) throw new Error('No course selected')
-    return memoryApi.removeCourseMemoryBank(selectedCourse.value.course.id)
-  },
-  {
-    successMessage: t('review.removeSuccess'),
-    onSuccess: () => {
-      void refreshCourses()
-      activeTab.value = 'all'
     },
-  }
-)
-
-const removeCourse = () => {
-  void executeRemove()
+    { onSuccess: () => void refreshStudying() }
+  )
 }
 
 // 工具函数

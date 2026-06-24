@@ -32,7 +32,7 @@
 <script setup lang="ts">
 import { provide, ref, onMounted, computed, watch } from 'vue'
 import type { Ref } from 'vue'
-import { setGlobalSnackbar } from '@/composables/utils'
+import { setGlobalSnackbar } from '@/composables/config'
 import { useRouter } from 'vue-router'
 
 interface Snackbar {
@@ -135,7 +135,7 @@ const showSnackbar = (message: string, type = 'info'): void => {
 watch(
   () => currentSnackbar.value?.visible,
   (newVisible) => {
-    if (newVisible === false && snackbars.value.length > 0) {
+    if (!newVisible && snackbars.value.length > 0) {
       // visible 变为 false 时，延迟移除消息（等动画结束）
       setTimeout(() => {
         if (snackbars.value.length > 0) {

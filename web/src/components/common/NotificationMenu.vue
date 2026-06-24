@@ -1,86 +1,76 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, inject, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
-import { messageApi } from '@/api'
-import { MessageCategory, MessageType, ObjectType } from '@/enums'
+import { MessageCategory, MessageType } from '@/enums'
 import type { Message } from '@/types/message'
+import { useMessagesQuery, useUnreadCountQuery } from '@/queries/message'
 
 const { t } = useI18n()
 const router = useRouter()
-const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
-// 通知列表引用
 const notificationList = ref<HTMLElement | null>(null)
-
-// 筛选状态
 const filterCategory = ref<'all' | 'interaction' | 'system'>('all')
-
-// 底部提示状态
 const showBottomTip = ref(false)
-
-// 下拉刷新状态
-const isRefreshing = ref(false)
-const isPulling = ref(false)
-
-// 消息数据
-const messages = ref<Message[]>([])
-const loading = ref(false)
-const lastId = ref<number | undefined>(undefined)
-const hasMore = ref(true)
-
-// 会话期间的 lastViewedMessageId（用于标记 NEW）
 const sessionLastId = ref<number>(0)
-
-// 菜单状态
 const menuOpen = ref(false)
 
-// 未读通知数量
-const unreadCount = ref<number>(0)
-
-// 根据筛选条件过滤消息
-const filteredMessages = computed(() => {
-  if (filterCategory.value === 'all') {
-    return messages.value
-  }
-
-  const categoryTypes = {
-    interaction: [
-      MessageType.FOLLOW,
-      MessageType.UPVOTE,
-      MessageType.INVITE,
-      MessageType.NODE_COMMENT,
-      MessageType.POST_COMMENT,
-      MessageType.REPLY_NODE_COMMENT,
-      MessageType.REPLY_POSTING_COMMENT,
-      MessageType.REPLY_ROADMAP_COMMENT,
-      MessageType.ROADMAP_COMMENT,
-    ],
-    system: [
-      MessageType.APPLY_COURSE,
-      MessageType.COURSE_REJECTED,
-      MessageType.COURSE_BANNED,
-      MessageType.COURSE_APPROVED,
-      MessageType.POST_REJECTED,
-      MessageType.POST_BANNED,
-      MessageType.COMMENT_REJECTED,
-      MessageType.COMMENT_BANNED,
-      MessageType.ROLE_REJECTED,
-      MessageType.ROLE_BANNED,
-      MessageType.ROLE_APPROVED,
-      MessageType.ROADMAP_REJECTED,
-      MessageType.ROADMAP_BANNED,
-      MessageType.MEMORY_DECK_REJECTED,
-      MessageType.MEMORY_DECK_BANNED,
-      MessageType.NODE_REJECTED,
-      MessageType.NODE_BANNED,
-      MessageType.SYSTEM,
-    ],
-  }
-
-  const types = categoryTypes[filterCategory.value] || []
-  return messages.value.filter((m) => m.type && (types as number[]).includes(m.type))
+const currentCategory = computed(() => {
+  if (filterCategory.value === 'interaction') return MessageCategory.INTERACTION
+  if (filterCategory.value === 'system') return MessageCategory.SYSTEM
+  return MessageCategory.ALL
 })
+
+const {
+  data: messagesData,
+  isFetching: loading,
+  hasNextPage,
+  fetchNextPage,
+  refetch: refetchMessages,
+} = useMessagesQuery(currentCategory)
+
+const { data: unreadCount } = useUnreadCountQuery()
+
+const messages = computed<Message[]>(() => {
+  if (!messagesData.value) return []
+  const firstPage = messagesData.value.pages[0]
+  if (firstPage?.lastViewedMessageId != null) {
+    sessionLastId.value = firstPage.lastViewedMessageId
+  }
+  return messagesData.value.pages.flatMap((page) => page.messages ?? [])
+})
+
+const filteredMessages = computed(() =>
+  messages.value.map((msg) => ({
+    ...msg,
+    isNew: msg.id > sessionLastId.value,
+  }))
+)
+
+watch(menuOpen, (isOpen) => {
+  if (isOpen) {
+    void refetchMessages()
+  }
+})
+
+const triggerRefresh = () => {
+  void refetchMessages()
+}
+
+const handleScroll = (event: Event) => {
+  const target = event.target as HTMLElement
+  const { scrollTop, scrollHeight, clientHeight } = target
+  if (scrollTop + clientHeight >= scrollHeight - 5) {
+    if (hasNextPage.value && !loading.value) {
+      void fetchNextPage()
+    }
+    showBottomTip.value = !hasNextPage.value
+  } else {
+    showBottomTip.value = false
+  }
+}
+
+defineExpose({ unreadCount })
 
 // 获取消息图标和颜色
 const getMessageIcon = (message: Message): { icon: string; color: string } => {
@@ -94,18 +84,20 @@ const getMessageIcon = (message: Message): { icon: string; color: string } => {
     return { icon: 'mdi-thumb-up', color: 'primary' }
   }
   if (
-    ([MessageType.NODE_COMMENT, MessageType.POST_COMMENT, MessageType.ROADMAP_COMMENT] as number[]).includes(
-      type as number
-    )
+    (
+      [MessageType.NODE_COMMENT, MessageType.POST_COMMENT, MessageType.ROADMAP_COMMENT] as number[]
+    ).includes(type as number)
   ) {
     return { icon: 'mdi-comment', color: 'primary' }
   }
   if (
-    ([
-      MessageType.REPLY_NODE_COMMENT,
-      MessageType.REPLY_POSTING_COMMENT,
-      MessageType.REPLY_ROADMAP_COMMENT,
-    ] as number[]).includes(type as number)
+    (
+      [
+        MessageType.REPLY_NODE_COMMENT,
+        MessageType.REPLY_POSTING_COMMENT,
+        MessageType.REPLY_ROADMAP_COMMENT,
+      ] as number[]
+    ).includes(type as number)
   ) {
     return { icon: 'mdi-reply', color: 'primary' }
   }
@@ -114,36 +106,42 @@ const getMessageIcon = (message: Message): { icon: string; color: string } => {
   }
 
   // 审核通过消息
-  if (([MessageType.COURSE_APPROVED, MessageType.ROLE_APPROVED] as number[]).includes(type as number)) {
+  if (
+    ([MessageType.COURSE_APPROVED, MessageType.ROLE_APPROVED] as number[]).includes(type as number)
+  ) {
     return { icon: 'mdi-check-circle', color: 'success' }
   }
 
   // 拒绝消息
   if (
-    ([
-      MessageType.COURSE_REJECTED,
-      MessageType.POST_REJECTED,
-      MessageType.COMMENT_REJECTED,
-      MessageType.ROLE_REJECTED,
-      MessageType.ROADMAP_REJECTED,
-      MessageType.MEMORY_DECK_REJECTED,
-      MessageType.NODE_REJECTED,
-    ] as number[]).includes(type as number)
+    (
+      [
+        MessageType.COURSE_REJECTED,
+        MessageType.POST_REJECTED,
+        MessageType.COMMENT_REJECTED,
+        MessageType.ROLE_REJECTED,
+        MessageType.ROADMAP_REJECTED,
+        MessageType.MEMORY_DECK_REJECTED,
+        MessageType.NODE_REJECTED,
+      ] as number[]
+    ).includes(type as number)
   ) {
     return { icon: 'mdi-alert-circle', color: 'warning' }
   }
 
   // 封禁消息
   if (
-    ([
-      MessageType.COURSE_BANNED,
-      MessageType.POST_BANNED,
-      MessageType.COMMENT_BANNED,
-      MessageType.ROLE_BANNED,
-      MessageType.ROADMAP_BANNED,
-      MessageType.MEMORY_DECK_BANNED,
-      MessageType.NODE_BANNED,
-    ] as number[]).includes(type as number)
+    (
+      [
+        MessageType.COURSE_BANNED,
+        MessageType.POST_BANNED,
+        MessageType.COMMENT_BANNED,
+        MessageType.ROLE_BANNED,
+        MessageType.ROADMAP_BANNED,
+        MessageType.MEMORY_DECK_BANNED,
+        MessageType.NODE_BANNED,
+      ] as number[]
+    ).includes(type as number)
   ) {
     return { icon: 'mdi-cancel', color: 'error' }
   }
@@ -424,126 +422,6 @@ const formatTime = (timeStr?: string): string => {
   return timeStr.split(' ')[0] || timeStr
 }
 
-// 加载消息
-const loadMessages = async (reset = false) => {
-  if (loading.value || (!hasMore.value && !reset)) return
-
-  try {
-    loading.value = true
-    if (reset) {
-      lastId.value = undefined
-      messages.value = []
-      hasMore.value = true
-    }
-
-    // 根据筛选获取消息分类
-    let category: MessageCategory = MessageCategory.ALL
-    if (filterCategory.value === 'interaction') {
-      category = MessageCategory.INTERACTION
-    } else if (filterCategory.value === 'system') {
-      category = MessageCategory.SYSTEM
-    }
-
-    // 调用接口（返回 MessageListResponse）
-    const res = await messageApi.getMessagesByCategory(category, lastId.value)
-
-    if (res.code === 200 && res.data) {
-      const { messages: newMessages, lastViewedMessageId } = res.data
-
-      // 第一页时保存 lastViewedMessageId
-      if (reset && lastViewedMessageId != null) {
-        sessionLastId.value = lastViewedMessageId
-      }
-
-      // 合并消息
-      if (reset) {
-        messages.value = newMessages
-      } else {
-        messages.value.push(...newMessages)
-      }
-
-      // 更新分页信息
-      if (newMessages.length > 0) {
-        lastId.value = newMessages[newMessages.length - 1].id
-      }
-
-      hasMore.value = newMessages.length >= 10
-
-      // 标记新消息
-      markNewMessages()
-    }
-  } catch (error) {
-    console.error('Error loading messages:', error)
-    showSnackbar?.(t('error.loadFailed'), 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-// 标记新消息（id > sessionLastId 显示 NEW 标签）
-const markNewMessages = () => {
-  messages.value.forEach((msg) => {
-    msg.isNew = msg.id > sessionLastId.value
-
-    // 30秒后移除 NEW 标签
-    if (msg.isNew) {
-      setTimeout(() => {
-        msg.isNew = false
-      }, 30000)
-    }
-  })
-}
-
-// 监听菜单打开/关闭
-watch(menuOpen, (isOpen) => {
-  if (!isOpen) {
-    // 关闭菜单时清空数据
-    messages.value = []
-    sessionLastId.value = 0
-    lastId.value = undefined
-    hasMore.value = true
-  } else {
-    // 打开菜单时加载第一页
-    loadMessages(true)
-  }
-})
-
-// 触发刷新（等同于关闭再打开）
-const triggerRefresh = async () => {
-  if (loading.value) return
-
-  // 清空数据，重新加载第一页
-  sessionLastId.value = 0
-  await loadMessages(true)
-}
-
-// 滚动处理
-const handleScroll = (event: Event) => {
-  const target = event.target as HTMLElement
-  const scrollTop = target.scrollTop
-  const scrollHeight = target.scrollHeight
-  const clientHeight = target.clientHeight
-
-  // 检测是否滚动到顶部 (下拉刷新)
-  if (scrollTop === 0 && !isRefreshing.value) {
-    isPulling.value = true
-  } else {
-    isPulling.value = false
-  }
-
-  // 检测是否滚动到底部，加载更多
-  if (scrollTop + clientHeight >= scrollHeight - 5 && hasMore.value && !loading.value) {
-    loadMessages(false)
-  }
-
-  // 显示底部提示
-  if (scrollTop + clientHeight >= scrollHeight - 5) {
-    showBottomTip.value = !hasMore.value
-  } else {
-    showBottomTip.value = false
-  }
-}
-
 // 点击消息项
 const handleMessageClick = (message: Message) => {
   try {
@@ -607,10 +485,17 @@ const handleMessageClick = (message: Message) => {
       type === MessageType.COURSE_REJECTED ||
       type === MessageType.COURSE_BANNED
     ) {
-      // 课程审核 - 跳转到课程
-      const courseId = data.courseId
-      if (courseId) {
-        url = `/course/${courseId}`
+      // 课程审核：
+      // - APPROVED：跳详情页
+      // - REJECTED：跳"我的课程"列表，方便重新提交
+      // - BANNED：跳详情页（页面会显示封禁态/不可见）
+      if (type === MessageType.COURSE_REJECTED) {
+        url = '/users/me?mode=creator&tab=created-courses'
+      } else {
+        const courseId = data.courseId
+        if (courseId) {
+          url = `/courses/${courseId}`
+        }
       }
     } else if (type === MessageType.POST_REJECTED || type === MessageType.POST_BANNED) {
       // 帖子审核 - 跳转到帖子
@@ -629,16 +514,27 @@ const handleMessageClick = (message: Message) => {
       type === MessageType.ROLE_REJECTED ||
       type === MessageType.ROLE_BANNED
     ) {
-      // 角色审核 - 跳转到角色
-      const roleId = data.roleId
-      if (roleId) {
-        url = `/role/${roleId}`
+      // 角色审核：
+      // - APPROVED：跳详情页
+      // - REJECTED：跳"我的角色"列表，方便重新提交
+      // - BANNED：跳详情页（页面会显示封禁态/不可见）
+      if (type === MessageType.ROLE_REJECTED) {
+        url = '/users/me?mode=creator&tab=created-roles'
+      } else {
+        const roleId = data.roleId
+        if (roleId) {
+          url = `/role/${roleId}`
+        }
       }
     } else if (type === MessageType.ROADMAP_REJECTED || type === MessageType.ROADMAP_BANNED) {
-      // 路线图审核 - 跳转到角色/路线图
-      const roleId = data.roleId
-      if (roleId) {
-        url = `/role/${roleId}`
+      // 路线图审核：REJECTED 跳"我的路线图"列表，BANNED 跳所属角色
+      if (type === MessageType.ROADMAP_REJECTED) {
+        url = '/users/me?mode=creator&tab=roadmaps'
+      } else {
+        const roleId = data.roleId
+        if (roleId) {
+          url = `/role/${roleId}`
+        }
       }
     } else if (
       type === MessageType.MEMORY_DECK_REJECTED ||
@@ -665,30 +561,6 @@ const handleMessageClick = (message: Message) => {
     console.error('处理消息点击失败:', error)
   }
 }
-
-// 获取未读消息数量
-const fetchUnreadCount = async () => {
-  try {
-    const res = await messageApi.getUnreadCount()
-    if (res.code === 200 && res.data != null) {
-      unreadCount.value = res.data
-    }
-  } catch (error) {
-    console.error('获取未读数量失败:', error)
-  }
-}
-
-// 组件挂载时获取未读数量
-onMounted(() => {
-  fetchUnreadCount()
-
-  // 每30秒轮询一次未读数量
-  setInterval(fetchUnreadCount, 30000)
-})
-
-defineExpose({
-  unreadCount,
-})
 </script>
 
 <template>

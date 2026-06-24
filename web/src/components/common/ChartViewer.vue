@@ -16,8 +16,6 @@
 import { ref, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 
-const { t } = useI18n()
-
 const props = defineProps<{
   modelValue: boolean
   svgContent: string
@@ -26,6 +24,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
 }>()
+
+const { t } = useI18n()
 
 const visible = ref(props.modelValue)
 

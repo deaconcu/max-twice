@@ -25,7 +25,8 @@ public class RoadmapSummaryDTO {
 
     private String description;
 
-    private Byte state;
+    /** 路线图主体状态：NEVER_PUBLISHED / PUBLISHED / BANNED，参见 Enums.RoadmapState。 */
+    private String state;
 
     private Integer likeCount;
 

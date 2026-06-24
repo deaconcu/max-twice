@@ -58,7 +58,6 @@
               v-model:sub-category="selectedSubCategory"
               :categories="categories"
               :sub-categories="subCategories"
-              @change="handleFilterChange"
             />
 
             <!-- 加载状态 -->
@@ -77,14 +76,10 @@
                   {{ t('roleCenter.empty.noJobs') }}
                 </h3>
                 <p class="text-body-1 text-grey-darken-1 mb-4">
-                  {{
-                    searchText
-                      ? t('roleCenter.empty.noSearchResultsDesc')
-                      : t('roleCenter.empty.noRelatedJobsDesc')
-                  }}
+                  {{ t('roleCenter.empty.noRelatedJobsDesc') }}
                 </p>
                 <v-btn
-                  v-if="selectedMainCategory || searchText"
+                  v-if="selectedMainCategory"
                   color="primary"
                   variant="outlined"
                   rounded="lg"
@@ -100,7 +95,7 @@
               <!-- 职业网格 -->
               <div class="role-grid">
                 <RoleCard
-                  v-for="role in displayedRoles"
+                  v-for="role in filteredRoles"
                   :key="role.id"
                   :role="role"
                   @click="goToRoleDetail"
@@ -134,7 +129,9 @@
                     <div class="text-subtitle-1 font-weight-bold text-grey-darken-4">
                       {{ t('roleCenter.search.applyJob') }}
                     </div>
-                  <div class="text-caption text-grey">{{ t('roleCenter.search.applyJobHint') }}</div>
+                    <div class="text-caption text-grey">
+                      {{ t('roleCenter.search.applyJobHint') }}
+                    </div>
                   </div>
                   <v-icon icon="mdi-chevron-right" size="20" color="grey-lighten-1" />
                 </div>
@@ -297,12 +294,17 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
-import { useFetch, useMutation } from '@/composables'
-import { handleApiCall } from '@/composables/utils'
-import { roleApi } from '@/api'
+import {
+  useHotRolesQuery,
+  useRoleListQuery,
+  useCreateRoleMutation,
+  useResubmitRoleMutation,
+} from '@/queries/role'
+import { roleApi } from '@/api/modules/role'
+import { getGlobalSnackbar } from '@/composables/config'
 import type { Role } from '@/types/role'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { useCategoryStore } from '@/stores'
@@ -312,6 +314,7 @@ import RoleCard from '@/components/features/role/RoleCard.vue'
 import RoleFilter from '@/components/features/role/RoleFilter.vue'
 
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
 const categoryStore = useCategoryStore()
 
@@ -322,7 +325,6 @@ const roleNameMaxLength = useMaxLength('role-name')
 const roleDescriptionMaxLength = useMaxLength('role-description')
 
 // 状态管理
-const searchText = ref('')
 const selectedMainCategory = ref<number | undefined>()
 const selectedSubCategory = ref<number | undefined>()
 const applicationDialog = ref(false)
@@ -338,157 +340,74 @@ const applicationForm = ref({
   skills: '',
 })
 
-// 当前分类查询参数
-const currentCategory = ref<{ mainCategory: number; subCategory: number } | null>(null)
+// 重新提交模式（resubmit）：通过 query ?resubmitId=xxx 触发；为 null 表示新建模式
+const resubmitId = ref<number | null>(null)
 
-// 职业列表状态
-const roles = ref<Role[]>([])
-const loading = ref(false)
-const loadingMore = ref(false)
-const hasMore = ref(true)
-const lastId = ref<number | undefined>(undefined)
+// 监听 query：进入 resubmit 模式时拉取角色信息回填表单并打开对话框
+watch(
+  () => route.query.resubmitId,
+  async (val) => {
+    const idStr = Array.isArray(val) ? val[0] : val
+    if (idStr == null) return
+    const id = Number(idStr)
+    if (!Number.isFinite(id) || id <= 0) return
+    try {
+      const role = await roleApi.getRole(id)
+      applicationForm.value = {
+        name: role.name ?? '',
+        description: role.description ?? '',
+        mainCategory: role.mainCategory,
+        subCategory: role.subCategory,
+        skills: role.skills ?? '',
+      }
+      resubmitId.value = id
+      applicationDialog.value = true
+    } catch (e) {
+      getGlobalSnackbar()?.(t('common.fetchFailed'), 'error')
+    }
+  },
+  { immediate: true }
+)
 
 // 页面加载时获取分类数据
 onMounted(async () => {
   await categoryStore.checkAndLoad()
 })
 
-// 使用 useFetch 加载热门职业
-const { data: hotRolesData, loading: _loadingHotRoles } = useFetch<Role[]>({
-  fetchFn: () => roleApi.getHotRoles(15),
-  immediate: true,
-  defaultValue: [],
-})
+// 热门职业
+const { data: hotRolesData } = useHotRolesQuery()
+
+// 职业列表（infinite query，按分类）
+const {
+  data: roleListData,
+  isLoading: loading,
+  isFetchingNextPage: loadingMore,
+  hasNextPage: hasMore,
+  fetchNextPage,
+} = useRoleListQuery(selectedMainCategory, selectedSubCategory)
+
+// 展开分页数据
+const allRoles = computed<Role[]>(() => roleListData.value?.pages.flatMap((p) => p.items) ?? [])
+
+const filteredRoles = allRoles
 
 // 计算属性 - 从 Store 中获取分类数据
-const categories = computed(() => {
-  return categoryStore.getRoleMainCategories()
-})
+const categories = computed(() => categoryStore.getRoleMainCategories())
 
 const subCategories = computed(() => {
-  const allSubCategories: { id: number; name: string; mainCategoryId: number }[] = []
-
-  categories.value.forEach((mainCategory) => {
-    const subs = categoryStore.getRoleSubCategories(mainCategory.id)
-    subs.forEach((sub) => {
-      allSubCategories.push({
-        id: sub.id,
-        name: sub.name,
-        mainCategoryId: mainCategory.id,
-      })
+  const allSubs: { id: number; name: string; mainCategoryId: number }[] = []
+  categories.value.forEach((main) => {
+    categoryStore.getRoleSubCategories(main.id).forEach((sub) => {
+      allSubs.push({ id: sub.id, name: sub.name, mainCategoryId: main.id })
     })
   })
-
-  return allSubCategories
+  return allSubs
 })
 
 const hotRoles = computed(() => hotRolesData.value ?? [])
 
-// 筛选后的职业（只在前端筛选搜索关键词）
-const filteredRoles = computed(() => {
-  let result = roles.value
-
-  // 按搜索关键词筛选
-  if (searchText.value) {
-    const keyword = searchText.value.toLowerCase()
-    result = result.filter(
-      (role) =>
-        role.name.toLowerCase().includes(keyword) ||
-        (role.description?.toLowerCase().includes(keyword) ?? false) ||
-        (role.skills?.toLowerCase().includes(keyword) ?? false)
-    )
-  }
-
-  return result
-})
-
-// 显示的职业列表
-const displayedRoles = computed(() => {
-  return filteredRoles.value
-})
-
 // 热门职业 - 前15个
-const popularRoles = computed(() => {
-  return hotRoles.value.slice(0, 15)
-})
-
-/**
- * 加载职业列表（初始加载或重新加载）
- */
-const loadRoles = async (reset = false) => {
-  if (reset) {
-    roles.value = []
-    lastId.value = undefined
-    hasMore.value = true
-  }
-
-  try {
-    loading.value = true
-
-    const fetchFn = currentCategory.value
-      ? () =>
-          roleApi.getRolesByCategory(
-            lastId.value,
-            currentCategory.value!.mainCategory,
-            currentCategory.value!.subCategory
-          )
-      : () => roleApi.getRolesByCategory(lastId.value)
-
-    const result = await handleApiCall(fetchFn, {
-      showToast: false,
-      onError: (error) => {
-        console.error('加载职业失败:', error.message)
-      },
-    })
-
-    if (result?.items && result.items.length > 0) {
-      roles.value = [...roles.value, ...result.items]
-      lastId.value = result.items[result.items.length - 1].id
-      hasMore.value = result.hasMore
-    } else {
-      hasMore.value = false
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-/**
- * 加载更多职业
- */
-const loadMore = async () => {
-  if (loadingMore.value || !hasMore.value) return
-
-  try {
-    loadingMore.value = true
-
-    const fetchFn = currentCategory.value
-      ? () =>
-          roleApi.getRolesByCategory(
-            lastId.value,
-            currentCategory.value!.mainCategory,
-            currentCategory.value!.subCategory
-          )
-      : () => roleApi.getRolesByCategory(lastId.value)
-
-    const result = await handleApiCall(fetchFn, {
-      showToast: false,
-      onError: (error) => {
-        console.error('加载更多职业失败:', error.message)
-      },
-    })
-
-    if (result?.items && result.items.length > 0) {
-      roles.value = [...roles.value, ...result.items]
-      lastId.value = result.items[result.items.length - 1].id
-      hasMore.value = result.hasMore
-    } else {
-      hasMore.value = false
-    }
-  } finally {
-    loadingMore.value = false
-  }
-}
+const popularRoles = computed(() => hotRoles.value.slice(0, 15))
 
 /**
  * 格式化数字（千位分隔）
@@ -528,72 +447,7 @@ const getSubCategoriesForMain = (mainCategoryId?: number) => {
 const clearAll = () => {
   selectedMainCategory.value = undefined
   selectedSubCategory.value = undefined
-  searchText.value = ''
-  currentCategory.value = null
-  void loadRoles(true)
 }
-
-/**
- * 根据分类加载职业
- */
-const loadRolesByCategory = async (mainCategory: number, subCategory: number): Promise<void> => {
-  currentCategory.value = { mainCategory, subCategory }
-  await loadRoles(true)
-}
-
-/**
- * 处理搜索
- */
-const handleSearch = async () => {
-  if (!searchText.value) {
-    currentCategory.value = null
-    await loadRoles(true)
-    return
-  }
-
-  try {
-    loading.value = true
-    const result = await handleApiCall(() => roleApi.searchRoles(searchText.value), {
-      showToast: false,
-      onError: (error) => {
-        console.error('搜索职业失败:', error.message)
-      },
-    })
-
-    if (result) {
-      roles.value = result
-      hasMore.value = false // 搜索结果不分页
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-/**
- * 处理筛选变化
- */
-const handleFilterChange = () => {
-  searchText.value = '' // 清空搜索
-  // watch 会自动处理加载，不需要在这里重复调用
-}
-
-/**
- * 监听分类变化，自动加载职业
- */
-watch([selectedMainCategory, selectedSubCategory], async () => {
-  // 先清理旧的 observer
-  cleanupInfiniteScroll()
-
-  if (selectedMainCategory.value && selectedSubCategory.value) {
-    await loadRolesByCategory(selectedMainCategory.value, selectedSubCategory.value)
-  } else {
-    currentCategory.value = null
-    await loadRoles(true)
-  }
-
-  // 数据加载完成后，重新设置无限滚动
-  setTimeout(setupInfiniteScroll, 100)
-})
 
 /**
  * Intersection Observer 实例
@@ -610,14 +464,10 @@ const setupInfiniteScroll = () => {
     (entries) => {
       const entry = entries[0]
       if (entry?.isIntersecting && hasMore.value && !loadingMore.value) {
-        void loadMore()
+        void fetchNextPage()
       }
     },
-    {
-      root: null,
-      rootMargin: '100px',
-      threshold: 0.1,
-    }
+    { root: null, rootMargin: '100px', threshold: 0.1 }
   )
 
   observer.observe(loadMoreTrigger.value)
@@ -635,14 +485,10 @@ const cleanupInfiniteScroll = () => {
 }
 
 /**
- * 组件挂载时设置无限滚动和加载初始数据
+ * 组件挂载时设置无限滚动和加载分类数据
  */
 onMounted(async () => {
-  // 加载分类数据
   await categoryStore.checkAndLoad()
-  // 加载职业数据
-  await loadRoles(true)
-  // 数据加载完成后设置无限滚动
   setTimeout(setupInfiniteScroll, 100)
 })
 
@@ -679,6 +525,14 @@ const closeApplicationDialog = () => {
     subCategory: undefined,
     skills: '',
   }
+  if (resubmitId.value !== null) {
+    resubmitId.value = null
+    // 清掉 query，避免再次触发 watch
+    if (route.query.resubmitId !== undefined) {
+      const { resubmitId: _omit, ...rest } = route.query
+      void router.replace({ query: rest })
+    }
+  }
 }
 
 /**
@@ -691,41 +545,41 @@ const categoryRules = [(v: number) => !!v || t('validation.required.mainCategory
 const descriptionRules = roleDescriptionRules
 
 /**
- * 使用 useMutation 提交职业申请
+ * 提交职业申请（创建或重新提交）
  */
-const { execute: executeSubmit, loading: submitting } = useMutation(
-  (data: {
-    name: string
-    description: string
-    mainCategory: number
-    subCategory: number
-    skills: string
-  }) => roleApi.createRole(data),
-  {
-    successMessage: t('roleCenter.application.submittedSuccess'),
-    onSuccess: () => {
-      closeApplicationDialog()
-      // 刷新职业列表
-      void loadRoles(true)
-    },
-  }
-)
+const { mutate: createRoleMutate, isPending: createPending } = useCreateRoleMutation()
+const { mutate: resubmitRoleMutate, isPending: resubmitPending } = useResubmitRoleMutation()
+const submitting = computed(() => createPending.value || resubmitPending.value)
 
-/**
- * 提交申请
- */
-const submitApplication = async () => {
-  if (!applicationForm.value.mainCategory || !applicationForm.value.subCategory) {
-    return
-  }
+const submitApplication = () => {
+  if (!applicationForm.value.mainCategory || !applicationForm.value.subCategory) return
 
-  await executeSubmit({
+  const payload = {
     name: applicationForm.value.name,
     description: applicationForm.value.description,
     mainCategory: applicationForm.value.mainCategory,
     subCategory: applicationForm.value.subCategory,
     skills: applicationForm.value.skills || '',
-  })
+  }
+
+  if (resubmitId.value !== null) {
+    resubmitRoleMutate(
+      { id: resubmitId.value, data: payload },
+      {
+        onSuccess: () => {
+          getGlobalSnackbar()?.(t('roleCenter.application.submittedSuccess'), 'success')
+          closeApplicationDialog()
+        },
+      }
+    )
+  } else {
+    createRoleMutate(payload, {
+      onSuccess: () => {
+        getGlobalSnackbar()?.(t('roleCenter.application.submittedSuccess'), 'success')
+        closeApplicationDialog()
+      },
+    })
+  }
 }
 </script>
 

@@ -81,24 +81,13 @@ public class ContentRemovedEvent {
         event.contentId = postId;
         event.contentType = ContentType.post;
         event.nodeId = nodeId;
-        event.postType = PostType.index;
+        event.postType = PostType.INDEX;
         event.reason = reason;
         event.referencedNodeIds = referencedNodeIds;
         return event;
     }
 
-    /** Roadmap 类型构造函数 */
-    public static ContentRemovedEvent forRoadmap(Long creatorId, Long roadmapId, Long roleId,
-                                                 String roleName, String reason) {
-        ContentRemovedEvent event = new ContentRemovedEvent();
-        event.creatorId = creatorId;
-        event.contentId = roadmapId;
-        event.contentType = ContentType.roadmap;
-        event.roleId = roleId;
-        event.roleName = roleName;
-        event.reason = reason;
-        return event;
-    }
+    /** Roadmap 类型构造函数 - 已废弃，roadmap 不再有 remove 操作（统一走 ban） */
 
     /** MemoryCardDeck 类型构造函数 */
     public static ContentRemovedEvent forMemoryCardDeck(Long creatorId, Long deckId, Long postId, Long nodeId,

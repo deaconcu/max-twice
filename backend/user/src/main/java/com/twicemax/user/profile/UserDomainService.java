@@ -67,9 +67,9 @@ public class UserDomainService {
      * @param roleCode 新角色代码
      */
     @Transactional
-    public void setUserRole(Long userId, Long operatorId, UserRole operatorRole, Integer roleCode) {
+    public void setUserRole(Long userId, Long operatorId, UserRole operatorRole, String roleName) {
         UserDO targetUser = userDataService.validateAndGet(userId);
-        UserRole newRole = UserRole.fromCode(roleCode);
+        UserRole newRole = UserRole.fromName(roleName);
 
         // 1. 防止用户修改自己的角色
         if (userId.equals(operatorId)) {
@@ -77,12 +77,12 @@ public class UserDomainService {
         }
 
         // 2. 只有超级管理员可以设置超级管理员
-        if (newRole == UserRole.SUPER_ADMIN && operatorRole != UserRole.SUPER_ADMIN) {
+        if (newRole == UserRole.SUPER && operatorRole != UserRole.SUPER) {
             throw StatusCode.PERMISSION_DENIED.exception("只有超级管理员可以设置超级管理员");
         }
 
         // 3. 执行角色修改
-        userDataService.updateRole(userId, roleCode);
+        userDataService.updateRole(userId, newRole.value());
 
         log.info("用户角色变更: userId={}，新角色={}，操作者={}", userId, newRole.getDescription(), operatorId);
     }
@@ -122,10 +122,11 @@ public class UserDomainService {
      *
      * @param email 邮箱
      * @param password 密码（明文，将被BCrypt加密）；可传 null 表示无密码账号（邮箱验证码登录建号）
+     * @param locale 用户偏好语言（"zh" / "en"）；调用方负责保证非空合法
      * @return 创建的用户对象
      */
     @Transactional
-    public UserDO createUser(String email, String password) {
+    public UserDO createUser(String email, String password, String locale) {
         // 检查用户是否已存在
         UserDO existingUser = userDataService.getByEmail(email);
         if (existingUser != null) {
@@ -140,12 +141,25 @@ public class UserDomainService {
         user.setBiography("");
         user.setAvatar("");
         user.setState(UserState.ACTIVE.value());
-        user.setRole(UserRole.USER.getCode());
+        user.setRole(UserRole.USER.value());
         user.setEmailValidated(false); // 设置邮箱验证状态默认值
+        user.setLocale(locale);
         userDataService.insert(user);
 
         log.info("用户创建成功: userId={}", user.getId());
         return user;
+    }
+
+    /**
+     * 更新用户偏好语言。白名单校验在上层（UserService）。
+     */
+    @Transactional
+    public void updateUserLocale(Long userId, String locale) {
+        int updated = userDataService.updateLocale(userId, locale);
+        if (updated == 0) {
+            throw StatusCode.USER_NOT_FOUND.exception();
+        }
+        log.info("用户语言更新: userId={}, locale={}", userId, locale);
     }
 
     /**
@@ -282,7 +296,7 @@ public class UserDomainService {
             throw StatusCode.USER_LOGIN_FAILED.exception();
         }
 
-        if (userDO.getState() != null && userDO.getState() == UserState.BANNED.value()) {
+        if (UserState.BANNED.value().equals(userDO.getState())) {
             throw StatusCode.USER_BANNED.exception();
         }
 
@@ -313,7 +327,7 @@ public class UserDomainService {
             throw StatusCode.USER_EMAIL_NOT_VALIDATED.exception();
         }
 
-        if (userDO.getState() != null && userDO.getState() == UserState.BANNED.value()) {
+        if (UserState.BANNED.value().equals(userDO.getState())) {
             throw StatusCode.USER_BANNED.exception();
         }
 

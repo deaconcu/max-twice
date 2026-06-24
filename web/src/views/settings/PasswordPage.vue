@@ -7,9 +7,10 @@ export default {
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useMutation } from '@tanstack/vue-query'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import { useI18n } from '@/composables/useI18n'
-import { handleApiCall } from '@/composables/utils'
+import { getGlobalSnackbar } from '@/composables/config'
 import { usePasswordStrength } from '@/composables/usePasswordStrength'
 import { useUserStore } from '@/stores/modules/user'
 import { accountApi } from '@/api'
@@ -29,8 +30,6 @@ const email = computed(() => userStore.currentUser?.email ?? '')
 
 // 流程状态
 const codeSent = ref(false)
-const sending = ref(false)
-const confirming = ref(false)
 
 // 表单数据
 const code = ref('')
@@ -61,36 +60,36 @@ onUnmounted(() => {
   if (resendTimer) clearInterval(resendTimer)
 })
 
-async function handleSendCode() {
+const { mutate: sendCodeMutate, isPending: sending } = useMutation({
+  mutationFn: () => accountApi.sendSetPasswordCode(),
+  onSuccess: (data) => {
+    codeSent.value = true
+    startResendCountdown(data.resendAvailableIn)
+    getGlobalSnackbar()?.(t('settings.password.codeSent'), 'success')
+  },
+})
+
+function handleSendCode() {
   if (sending.value || resendSeconds.value > 0) return
-  sending.value = true
-  await handleApiCall(() => accountApi.sendSetPasswordCode(), {
-    successMessage: t('settings.password.codeSent'),
-    onSuccess: (data) => {
-      codeSent.value = true
-      startResendCountdown(data.resendAvailableIn)
-    },
-  }).finally(() => {
-    sending.value = false
-  })
+  sendCodeMutate()
 }
+
+const { mutate: confirmMutate, isPending: confirming } = useMutation({
+  mutationFn: () => accountApi.confirmSetPassword(code.value.trim(), newPassword.value),
+  onSuccess: () => {
+    getGlobalSnackbar()?.(t('settings.password.success'), 'success')
+    userStore.updateUser({ hasPassword: true })
+    void router.replace('/')
+  },
+})
 
 const canConfirm = computed(() => {
   return code.value.trim().length > 0 && isAcceptable.value && !confirming.value
 })
 
-async function handleConfirm() {
+function handleConfirm() {
   if (!canConfirm.value) return
-  confirming.value = true
-  await handleApiCall(() => accountApi.confirmSetPassword(code.value.trim(), newPassword.value), {
-    successMessage: t('settings.password.success'),
-    onSuccess: () => {
-      userStore.updateUser({ hasPassword: true })
-      void router.replace('/')
-    },
-  }).finally(() => {
-    confirming.value = false
-  })
+  confirmMutate()
 }
 </script>
 
@@ -113,7 +112,9 @@ async function handleConfirm() {
             class="text-caption mb-1"
             :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
           >
-            {{ codeSent ? t('settings.password.emailLabelSent') : t('settings.password.emailLabel') }}
+            {{
+              codeSent ? t('settings.password.emailLabelSent') : t('settings.password.emailLabel')
+            }}
           </div>
           <div class="d-flex align-center ga-3 flex-wrap">
             <div class="text-body-1 font-weight-medium">{{ email }}</div>
@@ -173,11 +174,7 @@ async function handleConfirm() {
                   :class="i <= score + 1 ? `bg-${color}` : ''"
                 />
               </div>
-              <v-icon
-                tabindex="-1"
-                style="cursor: pointer"
-                @click="showPassword = !showPassword"
-              >
+              <v-icon tabindex="-1" style="cursor: pointer" @click="showPassword = !showPassword">
                 {{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}
               </v-icon>
             </template>

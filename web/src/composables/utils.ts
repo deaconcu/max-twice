@@ -1,16 +1,9 @@
-import { globalConfig, getDefaultErrorMessage } from './config'
-import type { ApiResponse } from './types'
+import { ApiError } from '@/api/client'
+import { getGlobalSnackbar, getGlobalRouter } from './config'
+import i18n from '@/i18n'
 
-type ShowSnackbarFn = (message: string, type: string) => void
-
-// 全局 snackbar 函数引用
-let globalShowSnackbar: ShowSnackbarFn | null = null
-
-/**
- * 设置全局 snackbar 函数
- */
-export function setGlobalSnackbar(fn: ShowSnackbarFn) {
-  globalShowSnackbar = fn
+function t(key: string): string {
+  return i18n.global.t(key)
 }
 
 /**
@@ -21,14 +14,9 @@ export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   delay: number
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout> | null = null
-
   return function (...args: Parameters<T>) {
-    if (timeoutId) {
-      clearTimeout(timeoutId)
-    }
-    timeoutId = setTimeout(() => {
-      fn(...args)
-    }, delay)
+    if (timeoutId) clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => fn(...args), delay)
   }
 }
 
@@ -40,7 +28,6 @@ export function throttle<T extends (...args: Parameters<T>) => ReturnType<T>>(
   delay: number
 ): (...args: Parameters<T>) => void {
   let lastCall = 0
-
   return function (...args: Parameters<T>) {
     const now = Date.now()
     if (now - lastCall >= delay) {
@@ -51,10 +38,28 @@ export function throttle<T extends (...args: Parameters<T>) => ReturnType<T>>(
 }
 
 /**
- * 统一的 API 调用处理函数
+ * 将 ApiError 转换为用户可读的错误信息
+ */
+export function getErrorMessage(error: unknown, fallback?: string): string {
+  if (error instanceof ApiError) {
+    return error.message
+  }
+  if (error instanceof Error) {
+    return error.message
+  }
+  return fallback ?? t('error.retryLater')
+}
+
+/**
+ * 统一的 API 调用处理函数（v2）
+ *
+ * apiFn 直接返回 Promise<T>（无 ApiResponse 包装）。
+ * 错误由 axios 拦截器转为 ApiError 抛出，这里统一处理：
+ * - 401 → 跳转登录页
+ * - 其他 → 显示 snackbar 错误提示
  */
 export async function handleApiCall<T>(
-  apiFn: () => Promise<ApiResponse<T>>,
+  apiFn: () => Promise<T>,
   options: {
     successMessage?: string
     errorMessage?: string
@@ -63,66 +68,38 @@ export async function handleApiCall<T>(
     showToast?: boolean
   } = {}
 ): Promise<T | null> {
-  const showSnackbar = globalShowSnackbar
+  const showSnackbar = getGlobalSnackbar()
+  const router = getGlobalRouter()
 
   try {
-    const response = await apiFn()
+    const result = await apiFn()
 
-    if (response.code === 200) {
-      // 成功处理
-      if (options.showToast !== false && options.successMessage) {
-        showSnackbar?.(options.successMessage, 'success')
-      }
-      if (options.onSuccess) {
-        await options.onSuccess(response.data as T)
-      }
-      return response.data ?? null
-    } else {
-      console.log('[handleApiCall] 非200响应:', {
-        code: response.code,
-        message: response.message,
-        hasHandler: !!globalConfig.statusHandlers[response.code],
-        allHandlers: Object.keys(globalConfig.statusHandlers),
-      })
-
-      // 检查是否有自定义状态码处理器
-      const handler = globalConfig.statusHandlers[response.code]
-      if (handler) {
-        console.log('[handleApiCall] 找到处理器，准备执行:', response.code)
-        const handled = handler(response)
-        console.log('[handleApiCall] 处理器执行完毕，返回:', handled)
-        if (handled) {
-          // 如果处理器返回 true，表示已完全处理，不再继续
-          return null
-        }
-      } else {
-        console.log('[handleApiCall] 未找到处理器，使用默认错误处理')
-      }
-
-      // 默认错误处理
-      const message = response.message ?? options.errorMessage ?? getDefaultErrorMessage()
-
-      if (globalConfig.showErrorToast && options.showToast !== false) {
-        showSnackbar?.(message, 'error')
-      }
-
-      const error = new Error(message)
-      options.onError?.(error)
-      throw error
+    if (options.showToast !== false && options.successMessage) {
+      showSnackbar?.(options.successMessage, 'success')
     }
+
+    if (options.onSuccess) {
+      await options.onSuccess(result)
+    }
+
+    return result
   } catch (err) {
-    // 网络错误或其他异常
-    if (err instanceof Error && err.message) {
-      // 已经是处理过的错误，直接抛出
-      throw err
+    const error = err instanceof Error ? err : new Error(t('error.retryLater'))
+
+    // 401 → 跳转登录
+    if (err instanceof ApiError && err.httpStatus === 401) {
+      showSnackbar?.(t('error.pleaseLogin'), 'error')
+      router?.push('/login')
+      options.onError?.(error)
+      return null
     }
 
-    const message = options.errorMessage ?? getDefaultErrorMessage()
-    if (globalConfig.showErrorToast && options.showToast !== false) {
+    const message = options.errorMessage ?? getErrorMessage(err, t('error.retryLater'))
+
+    if (options.showToast !== false) {
       showSnackbar?.(message, 'error')
     }
 
-    const error = err instanceof Error ? err : new Error('Unknown error')
     options.onError?.(error)
     throw error
   }

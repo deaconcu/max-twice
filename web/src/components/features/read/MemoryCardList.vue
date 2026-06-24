@@ -105,13 +105,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
-import { memoryApi, bookmarkApi } from '@/api'
-import { useMutation } from '@/composables'
 import { useUserStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/format'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck } from '@/types/memory'
 import { useI18n } from '@/composables/useI18n'
+import { useDecksByNodeQuery, useUpvoteDeckMutation } from '@/queries/memory'
+import { useBookmarkToggleMutation } from '@/queries/interaction'
 
 const props = defineProps<Props>()
 
@@ -129,95 +129,46 @@ interface Emits {
 }
 
 const userStore = useUserStore()
-
-const decks = ref<MemoryCardDeck[]>([])
-const loading = ref(false)
-const hasMore = ref(true)
-const lastId = ref<number>(0)
-const lastScore = ref<number>(0)
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 
 const currentUserId = computed(() => userStore.currentUser?.id)
 
-// 加载卡片组列表
-const loadDecks = async (reset = false) => {
-  if (reset) {
-    decks.value = []
-    lastId.value = 0
-    lastScore.value = 0
-    hasMore.value = true
-  }
+const nodeId = computed(() => props.nodeId)
+const {
+  data,
+  isLoading: loading,
+  hasNextPage: hasMore,
+  fetchNextPage,
+} = useDecksByNodeQuery(nodeId)
 
-  if (loading.value || !hasMore.value) return
+const decks = computed(() => data.value?.pages.flatMap((p) => p.items) ?? [])
 
-  try {
-    loading.value = true
+// 点赞
+const upvoteDeckMutation = useUpvoteDeckMutation()
+const bookmarkToggleMutation = useBookmarkToggleMutation()
 
-    const queryParams: any = {
-      limit: 20,
-    }
-
-    // 只有在非第一页时才添加 lastScore 和 lastId
-    if (lastId.value > 0) {
-      queryParams.lastScore = lastScore.value
-      queryParams.lastId = lastId.value
-    }
-
-    const response = await memoryApi.getDecksByNode(props.nodeId, queryParams)
-
-    if (response.data?.items) {
-      const items = response.data.items
-      decks.value = reset ? items : [...decks.value, ...items]
-
-      if (items.length > 0) {
-        const lastItem = items[items.length - 1]
-        lastId.value = lastItem.id
-        lastScore.value = lastItem.likeCount || 0
-      }
-
-      hasMore.value = response.data.hasMore
-    } else {
-      hasMore.value = false
-    }
-  } catch (error) {
-    console.error('Failed to load memory decks:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-// 使用 useMutation 处理点赞
-const { execute: upvoteDeck } = useMutation((deckId: number) => memoryApi.upvoteDeck(deckId), {
-  showToast: false,
-  onSuccess: (result, deckId) => {
-    const deck = decks.value.find((d) => d.id === deckId)
-    if (deck && result) {
-      deck.hasLiked = result.liked
-      deck.likeCount = result.likeCount
-    }
-  },
-})
-
-const handleUpvote = async (deck: MemoryCardDeck) => {
-  await upvoteDeck(deck.id)
-}
-
-// 使用 useMutation 处理收藏
-const { execute: toggleBookmark } = useMutation(
-  (deckId: number) => bookmarkApi.toggle('memory_card_deck', deckId),
-  {
-    showToast: false,
-    onSuccess: (result, deckId) => {
-      const deck = decks.value.find((d) => d.id === deckId)
-      if (deck && result !== null) {
-        deck.bookmarked = result
+const handleUpvote = (deck: MemoryCardDeck) => {
+  upvoteDeckMutation.mutate(deck.id, {
+    onSuccess: (result) => {
+      if (result) {
+        deck.hasLiked = result.liked
+        deck.likeCount = result.likeCount
       }
     },
-  }
-)
+  })
+}
 
-const handleToggleBookmark = async (deck: MemoryCardDeck) => {
-  await toggleBookmark(deck.id)
+const handleToggleBookmark = (deck: MemoryCardDeck) => {
+  bookmarkToggleMutation.mutate(
+    { contentType: 'memory_card_deck', contentId: deck.id },
+    {
+      onSuccess: (result) => {
+        if (result !== null) {
+          deck.bookmarked = result
+        }
+      },
+    }
+  )
 }
 
 const viewDeckDetail = (deck: MemoryCardDeck) => {
@@ -256,14 +207,9 @@ const getStateColor = (state: number) => {
   }
 }
 
-/**
- * Intersection Observer 实例
- */
+// Intersection Observer 实现无限滚动
 let observer: IntersectionObserver | null = null
 
-/**
- * 设置无限滚动
- */
 const setupInfiniteScroll = () => {
   if (!loadMoreTrigger.value) return
 
@@ -271,7 +217,7 @@ const setupInfiniteScroll = () => {
     (entries) => {
       const entry = entries[0]
       if (entry?.isIntersecting && hasMore.value && !loading.value) {
-        void loadDecks(false)
+        void fetchNextPage()
       }
     },
     {
@@ -284,9 +230,6 @@ const setupInfiniteScroll = () => {
   observer.observe(loadMoreTrigger.value)
 }
 
-/**
- * 清理 Intersection Observer
- */
 const cleanupInfiniteScroll = () => {
   if (observer && loadMoreTrigger.value) {
     observer.unobserve(loadMoreTrigger.value)
@@ -296,7 +239,6 @@ const cleanupInfiniteScroll = () => {
 }
 
 onMounted(() => {
-  void loadDecks(true)
   setTimeout(setupInfiniteScroll, 100)
 })
 

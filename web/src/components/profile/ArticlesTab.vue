@@ -53,11 +53,7 @@
     <LoadingSpinner v-if="loading && articles.length === 0" />
 
     <!-- 文章列表 -->
-    <v-infinite-scroll
-      v-if="articles.length > 0"
-      :items="articles"
-      @load="onLoadMore"
-    >
+    <v-infinite-scroll v-if="articles.length > 0" :items="articles" @load="onLoadMore">
       <div v-for="(article, index) in articles" :key="article.id">
         <v-card rounded="lg" hover border class="article-card mb-5" @click="goToArticle(article)">
           <v-card-text class="pa-4 pb-2">
@@ -202,10 +198,18 @@
         class="mb-3 mb-md-4"
       />
       <p class="text-body-2 text-md-body-1 text-grey-darken-2">
-        {{ statusFilter !== 'all' ? t('user.profile.noArticlesFound') : t('user.profile.noArticlesCreated') }}
+        {{
+          statusFilter !== 'all'
+            ? t('user.profile.noArticlesFound')
+            : t('user.profile.noArticlesCreated')
+        }}
       </p>
       <p class="text-caption text-md-body-2 text-grey">
-        {{ statusFilter !== 'all' ? t('user.profile.adjustFilters') : t('user.profile.shareExperience') }}
+        {{
+          statusFilter !== 'all'
+            ? t('user.profile.adjustFilters')
+            : t('user.profile.shareExperience')
+        }}
       </p>
     </div>
 
@@ -228,12 +232,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
-import { useMutation } from '@/composables/useMutation'
+import { useQueryClient } from '@tanstack/vue-query'
+import { useMyPostsQuery, useUserPostsQuery } from '@/queries/user'
+import { useDeletePostMutation } from '@/queries/post'
+import { userKeys } from '@/queries/keys'
 import { useI18n } from '@/composables/useI18n'
-import { userApi, postApi } from '@/api'
+import { getGlobalSnackbar } from '@/composables/config'
 import { PostType, ContentState } from '@/enums'
 
 const props = withDefaults(defineProps<Props>(), {
@@ -253,12 +259,13 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import ArticleEditModal from '@/components/profile/ArticleEditModal.vue'
 
 const router = useRouter()
+const queryClient = useQueryClient()
 
 // 状态筛选
 const statusFilter = ref<'all' | 'draft' | 'pending' | 'published' | 'rejected'>('all')
 
 // 将 statusFilter 转换为后端 state 值
-const getStateValue = (): number | undefined => {
+const stateValue = computed((): number | undefined => {
   switch (statusFilter.value) {
     case 'draft':
       return ContentState.DRAFT
@@ -269,8 +276,58 @@ const getStateValue = (): number | undefined => {
     case 'rejected':
       return ContentState.REJECTED
     default:
-      return undefined // all - 后端返回除 BANNED 外的所有状态
+      return undefined
   }
+})
+
+const isOwn = computed(() => props.isOwnProfile || props.userId === null)
+
+// 自己的文章
+const {
+  data: myPostsData,
+  isLoading: myPostsLoading,
+  hasNextPage: myHasMore,
+  fetchNextPage: myFetchNext,
+  isFetchingNextPage: myFetchingNext,
+} = useMyPostsQuery(
+  computed(() => PostType.ARTICLE),
+  stateValue,
+  isOwn
+)
+
+// 他人的文章
+const {
+  data: userPostsData,
+  isLoading: userPostsLoading,
+  hasNextPage: userHasMore,
+  fetchNextPage: userFetchNext,
+  isFetchingNextPage: userFetchingNext,
+} = useUserPostsQuery(
+  computed(() => props.userId ?? 0),
+  PostType.ARTICLE,
+  computed(() => !isOwn.value && !!props.userId)
+)
+
+const posts = computed(() => {
+  if (isOwn.value) {
+    return myPostsData.value?.pages.flatMap((p) => p.items) ?? []
+  }
+  return userPostsData.value?.pages.flatMap((p) => p.items) ?? []
+})
+
+const loading = computed(() => (isOwn.value ? myPostsLoading.value : userPostsLoading.value))
+const hasMore = computed(() => (isOwn.value ? !!myHasMore.value : !!userHasMore.value))
+
+// 加载更多（适配 v-infinite-scroll）
+type LoadMoreCallback = (status: 'ok' | 'empty') => void
+const onLoadMore = async ({ done }: { done: LoadMoreCallback }): Promise<void> => {
+  if (!hasMore.value) {
+    done('empty')
+    return
+  }
+  if (isOwn.value) await myFetchNext()
+  else await userFetchNext()
+  done(hasMore.value ? 'ok' : 'empty')
 }
 
 // 编辑功能状态
@@ -281,92 +338,21 @@ const editingArticle = ref<any>(null)
 const showDeleteDialog = ref(false)
 const articleToDelete = ref<number | null>(null)
 
-// 使用 useInfiniteScroll 加载文章列表
-const {
-  items: posts,
-  loading,
-  hasMore,
-  loadMore: loadMorePosts,
-  reset: resetPosts,
-} = useInfiniteScroll({
-  fetchFn: async (params) => {
-    if (props.isOwnProfile || props.userId === null) {
-      // 获取当前用户的文章
-      const response = await userApi.getCurrentUserAllPosts(
-        params.lastId,
-        PostType.ARTICLE,
-        getStateValue()
-      )
-      return {
-        code: response.code,
-        data: response.data?.items || [],
-        message: response.message || '',
-        hasMore: response.data?.hasMore || false,
-      }
-    } else {
-      // 获取指定用户的文章
-      const response = await userApi.getUserPosts(props.userId, params.lastId, PostType.ARTICLE)
-      return {
-        code: response.code,
-        data: response.data?.items || [],
-        message: response.message || '',
-        hasMore: response.data?.hasMore || false,
-      }
-    }
-  },
-  getNextParams: (lastItem) => ({
-    lastId: lastItem.id,
-  }),
-  initialParams: { lastId: undefined },
-})
-
-// 监听 statusFilter 变化，重新加载列表
-watch(statusFilter, () => {
-  resetPosts()
-  loadMorePosts()
-})
-
 // 删除文章
-const { execute: deletePost } = useMutation((postId: number) => postApi.deletePost(postId), {
-  successMessage: t('user.profile.articleDeleted'),
-  onSuccess: () => {
-    // 从列表中移除已删除的项
-    posts.value = posts.value.filter((p) => p.id !== articleToDelete.value)
-  },
-})
+const { mutate: deletePostMutate } = useDeletePostMutation()
+
+const deletePost = (postId: number) => {
+  deletePostMutate(postId, {
+    onSuccess: () => {
+      getGlobalSnackbar()?.(t('user.profile.articleDeleted'), 'success')
+      void queryClient.invalidateQueries({ queryKey: userKeys.myPosts() })
+    },
+  })
+}
 
 // 文章编辑/创建成功后的处理
-const handleArticleSuccess = (updatedArticle: any) => {
-  console.log('handleArticleSuccess called')
-  console.log('updatedArticle:', updatedArticle)
-  console.log('editingArticle.value:', editingArticle.value)
-
-  if (!updatedArticle) {
-    console.log('No updatedArticle, just closing dialog')
-    // 创建并直接发布：文章待审核，列表不变，只关闭对话框
-    showEditModal.value = false
-    editingArticle.value = null
-    return
-  }
-
-  if (editingArticle.value) {
-    // 编辑模式：只更新内容和状态，保留原有的 node、course 等信息
-    const index = posts.value.findIndex((p) => p.id === updatedArticle.id)
-    console.log('Editing mode, found index:', index)
-    if (index !== -1) {
-      // 只更新变化的字段，保留原有的嵌套结构
-      posts.value[index].content = updatedArticle.content
-      posts.value[index].state = updatedArticle.state
-      posts.value[index].updatedAt = updatedArticle.updatedAt
-      console.log('After update, state:', posts.value[index].state)
-    }
-  } else {
-    // 创建模式保存草稿：添加到列表顶部
-    console.log('Creating new draft, adding to top')
-    posts.value.unshift(updatedArticle)
-  }
-
-  // 关闭编辑对话框
+const handleArticleSuccess = (_updatedArticle: unknown) => {
+  void queryClient.invalidateQueries({ queryKey: userKeys.myPosts() })
   showEditModal.value = false
   editingArticle.value = null
 }
@@ -450,9 +436,9 @@ const deleteArticle = (articleId: number) => {
 }
 
 // 确认删除
-const confirmDelete = async () => {
+const confirmDelete = () => {
   if (articleToDelete.value !== null) {
-    await deletePost(articleToDelete.value)
+    deletePost(articleToDelete.value)
   }
   articleToDelete.value = null
 }
@@ -475,24 +461,6 @@ const handleCancelEdit = () => {
   showEditModal.value = false
   editingArticle.value = null
 }
-
-// 适配 v-infinite-scroll 的回调接口
-type LoadMoreCallback = (status: 'ok' | 'empty') => void
-
-const onLoadMore = async ({ done }: { done: LoadMoreCallback }): Promise<void> => {
-  if (!hasMore.value || loading.value) {
-    done('empty')
-    return
-  }
-
-  await loadMorePosts({ done: () => {} })
-  done(hasMore.value ? 'ok' : 'empty')
-}
-
-onMounted(() => {
-  // 加载第一页数据
-  loadMorePosts({ done: () => {} })
-})
 </script>
 
 <style scoped>

@@ -7,6 +7,7 @@ import com.twicemax.application.converter.UserLearningConverter;
 import com.twicemax.application.dto.response.course.CourseBriefDTO;
 import com.twicemax.application.dto.response.roadmap.RoadmapBriefDTO;
 import com.twicemax.application.dto.response.userlearning.UserLearningDTO;
+import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.content.course.CourseDO;
 import com.twicemax.content.course.CourseDataService;
 import com.twicemax.content.roadmap.RoadmapDO;
@@ -116,8 +117,8 @@ public class UserLearningService {
     /**
      * 获取用户的学习记录列表（带关联对象）
      */
-    public List<UserLearningDTO<Object>> getByUserWithObjects(Long userId, Enums.ContentType objectType, Byte state, Long lastId, int limit) {
-        List<UserLearningDO> learnings = userLearningDomainService.getByUser(userId, objectType, state, lastId, limit);
+    public List<UserLearningDTO<Object>> getByUserWithObjects(Long userId, Enums.ContentType objectType, Byte state, String cursor, int limit) {
+        List<UserLearningDO> learnings = userLearningDomainService.getByUser(userId, objectType, state, Cursor.decode(cursor).id(), limit);
 
         if (learnings.isEmpty()) {
             return List.of();
@@ -141,9 +142,9 @@ public class UserLearningService {
      * @param lastId 分页游标（null=第一页）
      * @param limit 每页数量
      */
-    public List<UserLearningDTO<Object>> getAllCoursesProgress(Long userId, Byte state, Long lastId, int limit) {
+    public List<UserLearningDTO<Object>> getAllCoursesProgress(Long userId, Byte state, String cursor, int limit) {
         // 查询课程类型的学习记录（is_root_node=1）
-        List<UserLearningDO> learnings = userLearningDomainService.getCoursesByUser(userId, state, lastId, limit);
+        List<UserLearningDO> learnings = userLearningDomainService.getCoursesByUser(userId, state, Cursor.decode(cursor).id(), limit);
 
         if (learnings.isEmpty()) {
             return List.of();
@@ -178,9 +179,9 @@ public class UserLearningService {
      * 根据父对象查询用户的路径学习记录（带 roadmap 对象）
      * 用于查询：某个 role 下的 roadmap 学习记录
      */
-    public List<UserLearningDTO<Object>> getRoadmapListByUserWithParent(Long userId, Long roleId, Byte state, Long lastId, int limit) {
+    public List<UserLearningDTO<Object>> getRoadmapListByUserWithParent(Long userId, Long roleId, Byte state, String cursor, int limit) {
         List<UserLearningDO> learnings = userLearningDomainService.getByUserAndTypeAndParent(
-            userId, Enums.ContentType.roadmap, roleId, state, lastId, limit
+            userId, Enums.ContentType.roadmap, roleId, state, Cursor.decode(cursor).id(), limit
         );
 
         if (learnings.isEmpty()) {

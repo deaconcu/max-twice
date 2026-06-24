@@ -85,11 +85,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/modules/user'
-import { useFetch } from '@/composables/useFetch'
-import { useMutation } from '@/composables/useMutation'
+import { useFolloweesQuery, useUnfollowMutation } from '@/queries/user'
 import { useI18n } from '@/composables/useI18n'
-import { followApi } from '@/api'
 import { formatRelativeTime } from '@/utils/format'
+import { getGlobalSnackbar } from '@/composables/config'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
@@ -98,30 +97,20 @@ const { t } = useI18n()
 const userStore = useUserStore()
 
 // 获取关注的用户列表
-const {
-  data: followingUsers,
-  loading,
-  execute: fetchFollowees,
-} = useFetch({
-  fetchFn: () => {
-    const userId = userStore.userId
-    if (!userId) throw new Error('User ID not found')
-    return followApi.getFollowees(userId)
-  },
-  immediate: true,
-  defaultValue: [],
-})
+const { data: followingUsers, isLoading: loading } = useFolloweesQuery(
+  computed(() => userStore.userId ?? 0)
+)
 
 // 取消关注
-const { execute: unfollowAction } = useMutation(
-  (followeeId: number) => followApi.unfollow(followeeId),
-  {
-    successMessage: t('user.profile.unfollowSuccess'),
+const { mutate: unfollowAction } = useUnfollowMutation()
+
+const doUnfollow = (followeeId: number) => {
+  unfollowAction(followeeId, {
     onSuccess: () => {
-      fetchFollowees()
+      getGlobalSnackbar()?.(t('user.profile.unfollowSuccess'), 'success')
     },
-  }
-)
+  })
+}
 
 // 统计数据
 const stats = computed(() => ({
@@ -155,9 +144,9 @@ const unfollow = (userId: number) => {
 }
 
 // 确认取消关注
-const confirmUnfollow = async () => {
+const confirmUnfollow = () => {
   if (userToUnfollow.value !== null) {
-    await unfollowAction(userToUnfollow.value)
+    doUnfollow(userToUnfollow.value)
   }
   userToUnfollow.value = null
 }

@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.twicemax.shared.domain.Enums.UserState.ACTIVE_VALUE;
+import static com.twicemax.shared.domain.Enums.UserState;
 
 @Mapper
 public interface UserMapper {
@@ -14,8 +14,8 @@ public interface UserMapper {
     @Select("SELECT * FROM user WHERE id = #{id}")
     UserDO getById(long id);
 
-    @Select("SELECT * FROM user WHERE INSTR(name, #{name}) > 0 AND state = " + ACTIVE_VALUE + " LIMIT 20")
-    List<UserDO> searchByName(String name);
+    @Select("SELECT * FROM user WHERE INSTR(name, #{name}) > 0 AND state = #{state} LIMIT 20")
+    List<UserDO> searchByName(@Param("name") String name, @Param("state") String state);
 
     @Select({"<script>SELECT * FROM user where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
@@ -34,25 +34,28 @@ public interface UserMapper {
     @Select("SELECT * FROM user WHERE name = #{name} limit 1")
     UserDO getByName(String name);
 
-    @Insert("INSERT INTO user(name, password, phone, email, email_validated, biography, avatar, role, state) " +
-            "VALUES (#{name}, #{password}, #{phone}, #{email}, #{emailValidated}, #{biography}, #{avatar}, #{role}, #{state})")
+    @Insert("INSERT INTO user(name, password, phone, email, email_validated, biography, avatar, role, state, locale) " +
+            "VALUES (#{name}, #{password}, #{phone}, #{email}, #{emailValidated}, #{biography}, #{avatar}, #{role}, #{state}, #{locale})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserDO user);
 
     // 只更新基本信息字段，不更新敏感字段(password, email, email_validated, state, role)
     @Update("UPDATE user SET name = #{name}, phone = #{phone}, biography = #{biography}, " +
-            "avatar = #{avatar}, timezone = #{timezone}, updated_at = #{updatedAt} WHERE id = #{id}")
+            "avatar = #{avatar}, timezone = #{timezone}, locale = #{locale}, updated_at = #{updatedAt} WHERE id = #{id}")
     void update(UserDO user);
 
     @Update("UPDATE user SET avatar = #{avatar} WHERE id = #{userId}")
     int updateAvatar(@Param("userId") long userId, @Param("avatar") String avatar);
 
+    @Update("UPDATE user SET locale = #{locale}, updated_at = #{updatedAt} WHERE id = #{userId}")
+    int updateLocale(@Param("userId") long userId, @Param("locale") String locale, @Param("updatedAt") LocalDateTime updatedAt);
+
     // 敏感字段的专用更新方法
     @Update("UPDATE user SET state = #{state}, updated_at = #{updatedAt} WHERE id = #{userId}")
-    void updateState(@Param("userId") long userId, @Param("state") byte state, @Param("updatedAt") LocalDateTime updatedAt);
+    void updateState(@Param("userId") long userId, @Param("state") String state, @Param("updatedAt") LocalDateTime updatedAt);
 
     @Update("UPDATE user SET role = #{role}, updated_at = #{updatedAt} WHERE id = #{userId}")
-    void updateRole(@Param("userId") long userId, @Param("role") int role, @Param("updatedAt") LocalDateTime updatedAt);
+    void updateRole(@Param("userId") long userId, @Param("role") String role, @Param("updatedAt") LocalDateTime updatedAt);
 
     @Update("UPDATE user SET email_validated = #{emailValidated}, updated_at = #{updatedAt} WHERE id = #{userId}")
     void updateEmailValidated(@Param("userId") long userId, @Param("emailValidated") boolean emailValidated, @Param("updatedAt") LocalDateTime updatedAt);
@@ -72,5 +75,5 @@ public interface UserMapper {
             "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
             "ORDER BY id DESC LIMIT #{limit}",
             "</script>"})
-    List<UserDO> listByState(@Param("state") Byte state, @Param("lastId") Long lastId, @Param("limit") int limit);
+    List<UserDO> listByState(@Param("state") String state, @Param("lastId") Long lastId, @Param("limit") int limit);
 }

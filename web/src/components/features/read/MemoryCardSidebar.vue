@@ -30,7 +30,7 @@
             color="grey-darken-2"
             :loading="loading"
             class="me-1"
-            @click="loadDecks(true)"
+            @click="activeQuery.refetch()"
           >
             <v-icon icon="mdi-refresh" size="16"></v-icon>
           </v-btn>
@@ -252,14 +252,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
-import { memoryApi, bookmarkApi } from '@/api'
-import { useMutation } from '@/composables'
+import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores'
 import { formatRelativeTime } from '@/utils/format'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck } from '@/types/memory'
 import { useI18n } from '@/composables/useI18n'
+import {
+  usePostDecksQuery,
+  usePostCreatorDeckQuery,
+  useMyPostDeckQuery,
+  useUpvoteDeckMutation,
+} from '@/queries/memory'
+import { useBookmarkToggleMutation } from '@/queries/interaction'
 
 const props = defineProps<Props>()
 
@@ -282,109 +287,60 @@ const userStore = useUserStore()
 const sortBy = ref<'score' | 'createdAt' | 'upvoteCount'>('score')
 const showAuthorOnly = ref(false)
 const showMyOnly = ref(false)
-const decks = ref<MemoryCardDeck[]>([])
-const loading = ref(false)
-const hasMore = ref(true)
-const lastId = ref<number>(0)
-const lastScore = ref<number>(0)
 const isHovering = ref(false)
 
 const currentUserId = computed(() => userStore.currentUser?.id)
 
-// 加载卡片组列表
-const loadDecks = async (reset = false) => {
-  if (reset) {
-    decks.value = []
-    lastId.value = 0
-    lastScore.value = 0
-    hasMore.value = true
-  }
+// 根据当前筛选模式选择对应的 query
+const postId = computed(() => props.postId)
+const sortByRef = computed(() => sortBy.value as string)
 
-  if (loading.value || !hasMore.value) return
+const publicQuery = usePostDecksQuery(postId, sortByRef)
+const creatorQuery = usePostCreatorDeckQuery(postId, sortByRef)
+const myQuery = useMyPostDeckQuery(postId, sortByRef)
 
-  try {
-    loading.value = true
+const activeQuery = computed(() => {
+  if (showAuthorOnly.value) return creatorQuery
+  if (showMyOnly.value) return myQuery
+  return publicQuery
+})
 
-    const queryParams: any = {
-      sortBy: sortBy.value,
-      sortOrder: 'desc' as const,
-      limit: 20,
-    }
+const decks = computed(() => activeQuery.value.data.value?.pages.flatMap((p) => p.items) ?? [])
+const loading = computed(() => activeQuery.value.isLoading.value)
+const hasMore = computed(() => activeQuery.value.hasNextPage.value)
 
-    // 只有在非第一页时才添加 lastScore 和 lastId
-    if (lastId.value > 0) {
-      queryParams.lastScore = lastScore.value
-      queryParams.lastId = lastId.value
-    }
-
-    let response
-    if (showAuthorOnly.value) {
-      response = await memoryApi.getPostCreatorDeck(props.postId, queryParams)
-    } else if (showMyOnly.value) {
-      response = await memoryApi.getMyPostDeck(props.postId, queryParams)
-    } else {
-      response = await memoryApi.getPostPublicDecks(props.postId, queryParams)
-    }
-
-    if (response.data?.items) {
-      const items = response.data.items
-      decks.value = reset ? items : [...decks.value, ...items]
-
-      if (items.length > 0) {
-        const lastItem = items[items.length - 1]
-        lastId.value = lastItem.id
-        lastScore.value = lastItem.likeCount || 0
-      }
-
-      hasMore.value = items.length >= 20
-    } else {
-      hasMore.value = false
-    }
-  } catch (error) {
-    console.error('Failed to load memory decks:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-// 加载更多
 const loadMore = () => {
-  loadDecks(false)
+  void activeQuery.value.fetchNextPage()
 }
 
-// 监听筛选条件变化，重新加载数据
-watch([sortBy, showAuthorOnly, showMyOnly], () => {
-  loadDecks(true)
-})
+// 点赞
+const upvoteDeckMutation = useUpvoteDeckMutation()
+const bookmarkToggleMutation = useBookmarkToggleMutation()
 
-// 使用 useMutation 处理点赞
-const { execute: upvoteDeck } = useMutation((deckId: number) => memoryApi.upvoteDeck(deckId), {
-  showToast: false,
-  onSuccess: (result, deckId) => {
-    const deck = decks.value.find((d) => d.id === deckId)
-    if (deck && result) {
-      deck.hasLiked = result.liked
-      deck.likeCount = result.likeCount
-    }
-  },
-})
-
-const { execute: toggleBookmark } = useMutation(
-  (deckId: number) => bookmarkApi.toggle('memory_card_deck', deckId),
-  {
-    showToast: false,
-    onSuccess: (result, deckId) => {
-      const deck = decks.value.find((d) => d.id === deckId)
-      if (deck && result !== null) {
-        deck.bookmarked = result
+const handleUpvote = (deck: MemoryCardDeck, event: Event) => {
+  event.stopPropagation()
+  upvoteDeckMutation.mutate(deck.id, {
+    onSuccess: (result) => {
+      if (result) {
+        deck.hasLiked = result.liked
+        deck.likeCount = result.likeCount
       }
     },
-  }
-)
+  })
+}
 
-const handleToggleBookmark = async (deck: MemoryCardDeck, event: Event) => {
+const handleToggleBookmark = (deck: MemoryCardDeck, event: Event) => {
   event.stopPropagation()
-  await toggleBookmark(deck.id)
+  bookmarkToggleMutation.mutate(
+    { contentType: 'memory_card_deck', contentId: deck.id },
+    {
+      onSuccess: (result) => {
+        if (result !== null) {
+          deck.bookmarked = result
+        }
+      },
+    }
+  )
 }
 
 const handleSort = (newSortBy: typeof sortBy.value) => {
@@ -412,12 +368,6 @@ const handleShowAll = () => {
 
 const viewDeckDetail = (deck: MemoryCardDeck) => {
   emit('viewDeck', deck)
-}
-
-// 处理点赞
-const handleUpvote = async (deck: MemoryCardDeck, event: Event) => {
-  event.stopPropagation()
-  await upvoteDeck(deck.id)
 }
 
 // 切换到"我提交的"标签
@@ -459,12 +409,10 @@ const getStateColor = (state: number | undefined) => {
 
 // 暴露方法给父组件
 defineExpose({
-  loadDecks,
   switchToMyDecks,
 })
 
-// 初始加载
-loadDecks(true)
+// 初始加载由 TanStack Query 自动触发
 </script>
 
 <style scoped>

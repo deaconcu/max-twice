@@ -71,15 +71,15 @@ export const useValidationConfigStore = defineStore(
     async function loadConfig() {
       loading.value = true
       try {
-        const response = await apiClient.get<ValidationConfig>('/v1/config/validation')
+        const response = await apiClient.get<ValidationConfig>('/system/validation')
 
-        if (response.data) {
+        if (response) {
           const oldConfig = JSON.stringify(config.value)
-          const newConfig = JSON.stringify(response.data)
+          const newConfig = JSON.stringify(response)
 
           if (oldConfig !== newConfig) {
             console.log('[ValidationConfig] ✅ 配置已更新')
-            config.value = response.data
+            config.value = response
           } else {
             console.log('[ValidationConfig] 配置无变化')
           }

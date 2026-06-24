@@ -39,17 +39,20 @@ onActivated(() => {
 ### 用户操作流程
 
 1. **进入 ProfilePage（第一次）**
+
    ```
    创建组件 → setup() → onMounted() → 显示
    ```
 
 2. **切换 Tab（ArticlesTab → CommentsTab）**
+
    ```
    每个 Tab 首次显示时会加载数据
    已显示过的 Tab 从缓存恢复
    ```
 
 3. **点击文章进入详情页**
+
    ```
    ProfilePage: onDeactivated() → 缓存（不销毁）
    详情页: 正常创建和显示
@@ -74,11 +77,12 @@ onActivated(() => {
 const { data, loading, loadMore } = useInfiniteScroll({
   fetchFn: async (params) => {
     // 加载数据
-  }
+  },
 })
 ```
 
 **行为：**
+
 - ✅ 首次进入 Tab：加载数据
 - ✅ 切换到其他 Tab：新 Tab 首次加载数据
 - ✅ 切换回之前的 Tab：从缓存恢复（不重新加载）
@@ -153,12 +157,14 @@ ProfilePage activated
 ## 优缺点
 
 ### 优点
+
 - ✅ 用户体验极佳：瞬间恢复，滚动位置完美保留
 - ✅ 实现简单：只需几行代码
 - ✅ 性能好：避免重复渲染和数据请求
 - ✅ 自动保持状态：Tab 选择、表单输入、滚动位置等
 
 ### 缺点
+
 - ❌ 占用内存：缓存组件会占用内存
 - ❌ 数据可能过期：需要手动刷新机制
 - ❌ 调试复杂：组件不会重新创建，可能遗留状态
@@ -188,6 +194,7 @@ ProfilePage activated
 如果需要更精细的控制，可以：
 
 1. **添加刷新按钮**
+
    ```vue
    <v-btn @click="refreshCurrentTab">
      <v-icon>mdi-refresh</v-icon>
@@ -196,6 +203,7 @@ ProfilePage activated
    ```
 
 2. **智能刷新策略**
+
    ```ts
    const lastRefreshTime = ref<Record<string, number>>({})
 
@@ -221,6 +229,7 @@ ProfilePage activated
 ## 总结
 
 当前实现已经满足基本需求：
+
 - ✅ 从文章详情返回时保留滚动位置
 - ✅ Tab 切换正常工作
 - ✅ 数据加载逻辑不变

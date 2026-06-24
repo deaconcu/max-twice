@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import SinglePost from './SinglePost.vue'
@@ -8,13 +8,11 @@ import CreateDeckDialog from './CreateDeckDialog.vue'
 import MemoryCardSidebar from './MemoryCardSidebar.vue'
 import DeckDetailDialog from './DeckDetailDialog.vue'
 import AiAssistant from './AiAssistant.vue'
-import { pageApi, memoryApi } from '@/api'
-import type { ReadResponse } from '@/api/modules/page'
 import type { MemoryCardDeck } from '@/types/memory'
-import { useFetch } from '@/composables/useFetch'
 import { ObjectType } from '@/enums'
 import { convertVoteType } from '@/utils/postUtils'
 import { useI18n } from '@/composables/useI18n'
+import { usePostDetailPageQuery } from '@/queries/page'
 
 const props = withDefaults(defineProps<Props>(), {
   showNodeHeader: true,
@@ -64,59 +62,54 @@ const targetSubCommentId = computed(() => {
   return null
 })
 
-// 使用 useFetch 加载页面数据
+// 查询参数
+const queryParams = computed(() => {
+  if (route.query.postId) return { postId: Number(route.query.postId) }
+  if (route.query.commentId) return { commentId: Number(route.query.commentId) }
+  return {}
+})
+
 const {
-  data,
-  loading: dataLoading,
-  execute: loadData,
-} = useFetch<ReadResponse>({
-  fetchFn: () => {
-    const params: { postId?: number; commentId?: number } = {}
-    if (route.query.postId) {
-      params.postId = Number(route.query.postId)
-    } else if (route.query.commentId) {
-      params.commentId = Number(route.query.commentId)
-    } else {
-      return Promise.reject(new Error(t('postDetail.missingParams')))
-    }
-    return pageApi.readPostDetail(params)
-  },
-  immediate: true,
-  onDataReady: () => {
-    // data.value 在 onDataReady 中一定存在
-    const dataValue = data.value!
+  data: rawData,
+  isLoading: dataLoading,
+  error: dataError,
+} = usePostDetailPageQuery(queryParams)
 
-    // 特殊处理：如果返回了 commentId 和 subCommentId，说明需要重定向
-    if (dataValue.commentId && dataValue.subCommentId) {
-      router.replace({
-        path: '/read',
-        query: {
-          ...(route.query.courseId ? { courseId: route.query.courseId } : {}),
-          ...(route.query.nodeId ? { nodeId: route.query.nodeId } : {}),
-          commentId: String(dataValue.commentId),
-          subCommentId: String(dataValue.subCommentId),
-        },
-      })
-      return
-    }
+// 处理数据
+const data = computed(() => {
+  if (!rawData.value) return null
+  const d = rawData.value
 
-    // 处理投票类型
-    const posting = dataValue.post
-    if (posting) {
-      posting.voteType = convertVoteType(posting.voteType) as any
-    }
-
-    // 处理 otherPostings
-    dataValue.otherPostings?.forEach((posting: any) => {
-      posting.voteType = convertVoteType(posting.voteType)
+  // 特殊处理：如果返回了 commentId 和 subCommentId，说明需要重定向
+  if (d.commentId && d.subCommentId) {
+    router.replace({
+      path: '/read',
+      query: {
+        ...(route.query.courseId ? { courseId: route.query.courseId } : {}),
+        ...(route.query.nodeId ? { nodeId: route.query.nodeId } : {}),
+        commentId: String(d.commentId),
+        subCommentId: String(d.subCommentId),
+      },
     })
-  },
-  onError: () => {
+    return null
+  }
+
+  // 处理投票类型
+  if (d.post) {
+    d.post.voteType = convertVoteType(d.post.voteType) as any
+  }
+
+  return d
+})
+
+// 处理错误
+watch(dataError, (err) => {
+  if (err) {
     router.replace({
       path: '/error/404',
       state: { message: t('common.notFound') },
     })
-  },
+  }
 })
 
 // 处理创建卡片组成功
@@ -153,17 +146,6 @@ const handleViewAllComments = () => {
     })
   }
 }
-
-// 监听路由变化，重新加载数据
-watch(
-  () => [route.query.postId, route.query.commentId],
-  () => {
-    if (route.query.postId || route.query.commentId) {
-      loadData()
-    }
-  },
-  { deep: true }
-)
 
 // 是否在课程模式下（有 courseId 或 nodeId）
 const isInCourseMode = computed(() => {

@@ -1,6 +1,7 @@
 package com.twicemax.application.service;
 
 import com.twicemax.application.dto.response.FolloweeDTO;
+import com.twicemax.application.dto.v2.Cursor;
 import com.twicemax.interaction.follow.FollowDO;
 import com.twicemax.interaction.follow.FollowDomainService;
 import com.twicemax.shared.common.utils.Utils;
@@ -105,12 +106,12 @@ public class FollowService {
      * @return 关注者DTO列表
      * @throws BusinessException 当用户不存在时抛出异常
      */
-    public List<FolloweeDTO> getFollowees(Long userId, Long lastId) {
+    public List<FolloweeDTO> getFollowees(Long userId, String cursor) {
         // 验证用户存在性（跨域查询）
         userDataService.validateAndGet(userId);
 
         // 获取关注记录列表（interaction 域）
-        List<FollowDO> followDOList = followDomainService.getFollowees(userId, lastId);
+        List<FollowDO> followDOList = followDomainService.getFollowees(userId, Cursor.decode(cursor).id());
 
         if (followDOList.isEmpty()) {
             return new ArrayList<>();

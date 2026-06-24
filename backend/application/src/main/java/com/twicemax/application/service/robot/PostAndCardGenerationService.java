@@ -85,7 +85,7 @@ public class PostAndCardGenerationService {
         if (postId != null && recursive) {
             // 检查创建的帖子类型，如果是目录类型则将目录节点放入AI生成队列
             PostDO createdPost = postDataService.getById(postId);
-            if (createdPost != null && createdPost.getType() == Enums.PostType.index.value()) {
+            if (createdPost != null && Enums.PostType.INDEX.value().equals(createdPost.getType())) {
                 // post.content 存储的是节点ID列表，以逗号分隔
                 if (createdPost.getContent() != null && !createdPost.getContent().isEmpty()) {
                     String[] nodeIds = createdPost.getContent().split(",");
@@ -278,9 +278,9 @@ public class PostAndCardGenerationService {
 
             Enums.PostType postType;
             if (content.startsWith("[A]")) {
-                postType = Enums.PostType.article;
+                postType = Enums.PostType.ARTICLE;
             } else if (content.startsWith("[C]")) {
-                postType = Enums.PostType.index;
+                postType = Enums.PostType.INDEX;
             } else {
                 throw new RuntimeException("unknown content prefix, must start with [A] or [C]");
             }
@@ -293,7 +293,7 @@ public class PostAndCardGenerationService {
             UserDO userDO = userDataService.getById(aiUserId);
 
             // index类型需要先创建为SUBMITTED，然后approve来处理子节点创建
-            if (postType == Enums.PostType.index) {
+            if (postType == Enums.PostType.INDEX) {
                 Long postId = postService.createPost(userDO, req, Enums.ContentState.SUBMITTED);
                 postService.approve(postId, userDO);
                 return postId;

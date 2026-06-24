@@ -268,15 +268,11 @@ public class PageService {
         if (chosenPosting != null) {
             userIds.add(chosenPosting.getCreatorId());
         }
-        List<PostDO> otherPostings = getOtherPostings(targetNodeDO.getId(), userIds);
 
         Map<Long, UserBriefDTO> userMap = buildUserMap(userIds);
 
         // 转换帖子为 DTO
         PostWithVoteDTO chosenPostingDTO = convertPostToDTO(chosenPosting, userMap, userId);
-        List<PostWithVoteDTO> otherPostingsDTO = convertPostListToDTO(otherPostings, userMap, userId);
-
-        long lastId = calculateLastId(chosenPosting, otherPostings);
 
         // 获取学习状态
         boolean learning = checkLearningStatus(userId, courseDO.getId());
@@ -289,7 +285,7 @@ public class PageService {
 
         // 构建响应
         return buildPageDataResponse(nodeTocDTO, targetNodeDO, parentCourse, courseDO, subCourseList,
-                chosenPostingDTO, otherPostingsDTO, lastId, path, userMap.values(),
+                chosenPostingDTO, path, userMap.values(),
                 learning, null, nodeCompleted, courseProgress, nodeId, userId); // nodeId 是 TOC 的根节点
     }
 
@@ -475,16 +471,12 @@ public class PageService {
             throw StatusCode.NODE_STATE_INVALID.exception();
         }
 
-        List<PostDO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
         Map<Long, UserBriefDTO> userMap = buildUserMap(userIds);
 
         PostWithVoteDTO postDTO = buildPostDTO(postDO, userMap, userId);
 
         // 转换帖子为 DTO 并填充关联信息
         PostWithVoteDTO chosenPostingDTO = convertPostToDTO(chosenPosting, userMap, userId);
-        List<PostWithVoteDTO> otherPostingsDTO = convertPostListToDTO(otherPostings, userMap, userId);
-
-        long lastId = calculateLastId(chosenPosting, otherPostings);
 
         boolean learning = checkLearningStatus(userId, courseDO.getId());
         CourseFullDTO parentCourse = buildParentCourse(courseDO, userId);
@@ -494,7 +486,7 @@ public class PageService {
         Integer courseProgress = userLearningService.getProgress(userId, ContentType.node, courseDO.getRootNodeId());
 
         return buildPageDataResponse(nodeTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
-                chosenPostingDTO, otherPostingsDTO, lastId, path, userMap.values(),
+                chosenPostingDTO, path, userMap.values(),
                 learning, postDTO, nodeCompleted, courseProgress, courseDO.getRootNodeId(), userId); // course 的 rootNodeId
     }
 
@@ -522,14 +514,10 @@ public class PageService {
             throw StatusCode.NODE_STATE_INVALID.exception();
         }
 
-        List<PostDO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
         Map<Long, UserBriefDTO> userMap = buildUserMap(userIds);
 
         // 转换帖子为 DTO 并填充关联信息（公开版本不需要投票信息）
         PostWithVoteDTO chosenPostingDTO = convertPostToDTO(chosenPosting, userMap, null);
-        List<PostWithVoteDTO> otherPostingsDTO = convertPostListToDTO(otherPostings, userMap, null);
-
-        long lastId = calculateLastId(chosenPosting, otherPostings);
 
         // 构建父课程（无个性化信息）
         CourseFullDTO parentCourse;
@@ -543,14 +531,14 @@ public class PageService {
         List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
 
         return buildPageDataResponsePublic(nodeTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
-                chosenPostingDTO, otherPostingsDTO, lastId, path, userMap.values(), courseDO.getRootNodeId());
+                chosenPostingDTO, path, userMap.values(), courseDO.getRootNodeId());
     }
 
     // ========== 私有辅助方法 ==========
 
     private CourseDO validateCourseExists(Long courseId) {
         CourseDO courseDO = courseDataService.validateAndGet(courseId);
-        if (courseDO.getState() != ContentState.PUBLISHED.value()) {
+        if (!NewContentState.PUBLISHED_VALUE.equals(courseDO.getState())) {
             throw StatusCode.COURSE_IS_NOT_PUBLISHED.exception();
         }
         return courseDO;
@@ -601,12 +589,6 @@ public class PageService {
     }
 
 
-    private List<PostDO> getOtherPostings(Long nodeId, List<Long> userIds) {
-        List<PostDO> postDOList = postService.getList(nodeId);
-        postDOList.forEach(postDO -> userIds.add(postDO.getCreatorId()));
-        return postDOList;
-    }
-    
     private Map<Long, UserBriefDTO> buildUserMap(List<Long> userIds) {
         if (userIds.isEmpty()) {
             return new HashMap<>();
@@ -695,7 +677,7 @@ public class PageService {
         postDTO.setCreator(userMap.get(postDTO.getCreatorId()));
 
         // 目录类型帖子：将逗号分隔的 node id 转换为包含完整 node 信息的 JSON
-        if (postDO.getType() != null && postDO.getType() == PostType.index.value()) {
+        if (postDO.getType() != null && PostType.INDEX.value().equals(postDO.getType())) {
             String enrichedContent = enrichIndexPostContent(postDO.getContent());
             postDTO.setContent(enrichedContent);
         }
@@ -765,17 +747,6 @@ public class PageService {
         }
     }
 
-    private long calculateLastId(PostDO chosenPosting, List<PostDO> otherPostings) {
-        long lastId = -1;
-
-        if (chosenPosting != null) lastId = Math.max(lastId, chosenPosting.getId());
-        if (otherPostings != null) {
-            lastId = Math.max(lastId, otherPostings.stream().mapToLong(PostDO::getId).max().orElse(-1));
-        }
-
-        return lastId;
-    }
-
     private boolean checkLearningStatus(long userId, Long courseId) {
         return userLearningService.isLearningCourse(userId, courseId);
     }
@@ -791,8 +762,8 @@ public class PageService {
 
     private Map<String, Object> buildPageDataResponse(NodeTocDTO nodeTocDTO, NodeDO nodeDO,
                                                       CourseFullDTO parentCourse, CourseDO courseDO, List<CourseSummaryDTO> subCourseList,
-                                                      PostWithVoteDTO chosenPosting, List<PostWithVoteDTO> otherPostings,
-                                                      long lastId, String path, Collection<UserBriefDTO> users, boolean learning,
+                                                      PostWithVoteDTO chosenPosting,
+                                                      String path, Collection<UserBriefDTO> users, boolean learning,
                                                       PostWithVoteDTO postDTO, boolean nodeCompleted, Integer courseProgress, Long rootNodeId, Long userId) {
 
         Map<String, Object> data = new HashMap<>();
@@ -816,8 +787,6 @@ public class PageService {
         data.put("course", courseAssembler.toFullDTO(courseDO, userId));
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
-        data.put("otherPostings", otherPostings);
-        data.put("lastId", lastId);
         data.put("tocNodeInfos", nodeTocDTO.getNodeInfos());
         data.put("path", path);
         data.put("users", new ArrayList<>(users));
@@ -845,8 +814,8 @@ public class PageService {
      */
     private Map<String, Object> buildPageDataResponsePublic(NodeTocDTO nodeTocDTO, NodeDO nodeDO,
                                                             CourseFullDTO parentCourse, CourseDO courseDO, List<CourseSummaryDTO> subCourseList,
-                                                            PostWithVoteDTO chosenPosting, List<PostWithVoteDTO> otherPostings,
-                                                            long lastId, String path, Collection<UserBriefDTO> users, Long rootNodeId) {
+                                                            PostWithVoteDTO chosenPosting,
+                                                            String path, Collection<UserBriefDTO> users, Long rootNodeId) {
 
         Map<String, Object> data = new HashMap<>();
 
@@ -868,8 +837,6 @@ public class PageService {
         data.put("course", courseAssembler.toFullDTO(courseDO, null)); // 未登录用户
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
-        data.put("otherPostings", otherPostings);
-        data.put("lastId", lastId);
         data.put("tocNodeInfos", nodeTocDTO.getNodeInfos());
         data.put("path", path);
         data.put("users", new ArrayList<>(users));

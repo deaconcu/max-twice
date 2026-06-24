@@ -10,7 +10,6 @@ export interface Role {
   id: number
   name: string // 角色名称
   description?: string // 角色描述
-  price?: string // 价格
   skills?: string // 技能要求
   mainCategory?: number // 主分类
   subCategory?: number // 子分类
@@ -18,6 +17,12 @@ export interface Role {
   learnerCount?: number // 学习人数
   createdAt?: string // 创建时间
   bookmarked?: boolean // 是否已收藏
+  /** 主体状态（NewContentState）：NEVER_PUBLISHED / PUBLISHED / BANNED */
+  state?: 'NEVER_PUBLISHED' | 'PUBLISHED' | 'BANNED'
+  /** 审核中版本 ID（有值表示存在 pending revision） */
+  pendingRevisionId?: number | null
+  /** 已发布版本 ID（NEVER_PUBLISHED 时为 null） */
+  currentRevisionId?: number | null
 }
 
 /**

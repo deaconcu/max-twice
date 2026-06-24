@@ -1,19 +1,7 @@
 import apiClient from '../client'
-import type { ApiResponse } from '@/types/api'
 import type { Comment } from '@/types/comment'
 import type { ObjectType } from '@/enums'
-
-/**
- * 分页响应
- */
-export interface KeysetPageResponse<T> {
-  items: T[]
-  hasMore: boolean
-  nextCursor?: {
-    lastScore: number
-    lastId: number
-  }
-}
+import type { CursorPage } from '@/types/api'
 
 /**
  * 评论基本信息响应
@@ -35,15 +23,12 @@ export interface CommentContextResponse {
   parentCommentId?: number
   hasMoreBefore: boolean
   hasMoreAfter: boolean
-  firstScore?: number
-  firstId?: number
-  lastScore?: number
-  lastId?: number
+  firstCursor?: string
+  lastCursor?: string
 }
 
 /**
  * 评论管理相关 API
- * 参考：web-ts/src/services/api/v1/apiServiceV1.ts (commentServiceV1)
  */
 export const commentApi = {
   /**
@@ -55,7 +40,7 @@ export const commentApi = {
     replyTo?: number | null,
     toUser?: number | null,
     content?: string
-  ): Promise<ApiResponse<Comment>> {
+  ): Promise<Comment> {
     const body: Record<string, unknown> = {
       objectId,
       objectType,
@@ -67,47 +52,34 @@ export const commentApi = {
     if (toUser !== null && toUser !== undefined) {
       body.toUser = toUser
     }
-    return apiClient.post('/v1/comments', body)
+    return apiClient.post('/comments', body)
   },
 
   /**
    * 获取评论列表
    * @param objectId 对象ID
    * @param objectType 对象类型
-   * @param lastScore 上一页最后一条记录的分数，首页不传
-   * @param lastId 上一页最后一条记录的ID，首页不传
+   * @param cursor 分页游标
    */
   getComments(
     objectId: number,
     objectType: ObjectType,
-    lastScore?: number,
-    lastId?: number
-  ): Promise<ApiResponse<KeysetPageResponse<Comment>>> {
+    cursor?: string
+  ): Promise<CursorPage<Comment>> {
     const params: Record<string, unknown> = { objectId, objectType }
-    if (lastScore !== undefined && lastId !== undefined) {
-      params.lastScore = lastScore
-      params.lastId = lastId
-    }
-    return apiClient.get('/v1/comments', { params })
+    if (cursor !== undefined) params.cursor = cursor
+    return apiClient.get('/comments', { params })
   },
 
   /**
    * 获取评论的回复列表
    * @param id 评论ID
-   * @param lastScore 上一页最后一条记录的分数，首页不传
-   * @param lastId 上一页最后一条记录的ID，首页不传
+   * @param cursor 分页游标
    */
-  getCommentReplies(
-    id: number,
-    lastScore?: number,
-    lastId?: number
-  ): Promise<ApiResponse<KeysetPageResponse<Comment>>> {
+  getCommentReplies(id: number, cursor?: string): Promise<CursorPage<Comment>> {
     const params: Record<string, unknown> = {}
-    if (lastScore !== undefined && lastId !== undefined) {
-      params.lastScore = lastScore
-      params.lastId = lastId
-    }
-    return apiClient.get(`/v1/comments/${String(id)}/replies`, { params })
+    if (cursor !== undefined) params.cursor = cursor
+    return apiClient.get(`/comments/${String(id)}/replies`, { params })
   },
 
   /**
@@ -115,15 +87,15 @@ export const commentApi = {
    * 根据评论ID获取该评论及其前后评论，用于从外部链接跳转到特定评论
    * @param id 评论ID
    */
-  getCommentContext(id: number): Promise<ApiResponse<CommentContextResponse>> {
-    return apiClient.get(`/v1/comments/${String(id)}/context`)
+  getCommentContext(id: number): Promise<CommentContextResponse> {
+    return apiClient.get(`/comments/${String(id)}/context`)
   },
 
   /**
    * 获取评论基本信息
    * @param id 评论ID
    */
-  getCommentBasic(id: number): Promise<ApiResponse<CommentBasicResponse>> {
-    return apiClient.get(`/v1/comments/${String(id)}`)
+  getCommentBasic(id: number): Promise<CommentBasicResponse> {
+    return apiClient.get(`/comments/${String(id)}`)
   },
 }

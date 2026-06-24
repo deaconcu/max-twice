@@ -50,7 +50,7 @@ public class UserProfileDTO extends UserSummaryDTO {
 
     /**
      * 用户角色
-     * 说明：USER(0), MODERATOR(1), ADMIN(2), SUPER_ADMIN(3)
+     * 说明：USER, MODERATOR, ADMIN, SUPER
      */
     private Integer role;
 
@@ -71,6 +71,12 @@ public class UserProfileDTO extends UserSummaryDTO {
      * 说明：IANA 时区格式，如 America/Los_Angeles
      */
     private String timezone;
+
+    /**
+     * 用户偏好语言
+     * 说明：'zh' / 'en'，决定 UI 语言和内容库路由
+     */
+    private String locale;
 
     /**
      * 是否已设置密码

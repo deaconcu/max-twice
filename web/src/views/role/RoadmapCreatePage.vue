@@ -3,8 +3,7 @@
     <div class="roadmap-create-page">
       <!-- 页面标题 -->
       <div class="mb-6 mb-md-8">
-        <div class="d-flex align-center title-row">
-          <!-- 图标和标题 -->
+        <div class="d-flex align-center justify-space-between">
           <div class="d-flex align-center" style="min-width: 0">
             <v-avatar
               color="primary"
@@ -36,42 +35,102 @@
               </p>
             </div>
           </div>
+
+          <v-btn
+            :size="$vuetify.display.mobile ? 'small' : 'default'"
+            variant="tonal"
+            color="grey-darken-1"
+            rounded="lg"
+            @click="goToMyRoadmaps"
+          >
+            <v-icon icon="mdi-format-list-bulleted" size="18" class="mr-1" />
+            <span class="d-none d-sm-inline">{{ t('roadmapCreate.myRoadmaps') }}</span>
+          </v-btn>
         </div>
       </div>
 
       <!-- 加载状态 -->
       <LoadingSpinner v-if="loading" />
 
-      <div v-else class="content-layout">
-        <!-- 左侧：流程图编辑器 -->
+      <div v-if="!loading" class="content-layout">
+        <!-- 编辑器主区 -->
         <div class="main-content">
           <v-card border rounded="xl" class="flow-editor-card">
             <v-card-title
-              class="pa-3 pa-sm-4 d-flex flex-row align-center justify-space-between ga-2 ga-sm-3"
+              class="pa-3 pa-sm-4 d-flex flex-row align-center ga-2 ga-sm-3"
             >
-              <div class="d-flex align-center">
-                <span class="text-h6 font-weight-bold me-4">{{
-                  t('roadmapCreate.editorTitle')
-                }}</span>
-                <v-chip v-if="nodes.length > 1" size="small" color="primary" variant="tonal">
-                  {{ nodes.length - 1 }} {{ t('roadmapCreate.nodeCount') }}
-                </v-chip>
-              </div>
-              <div class="d-flex flex-wrap align-center gap-2">
+              <span class="text-h6 font-weight-bold flex-shrink-0">{{
+                t('roadmapCreate.editorTitle')
+              }}</span>
+
+              <!-- 草稿描述：标题与按钮组之间，占据剩余空间 -->
+              <div
+                v-if="savedDraftDescription"
+                class="draft-description-inline d-flex align-center flex-grow-1"
+                style="min-width: 0"
+              >
+                <v-tooltip location="bottom" max-width="400">
+                  <template #activator="{ props: tipProps }">
+                    <div
+                      v-bind="tipProps"
+                      class="draft-description-text-inline text-body-2 text-grey-darken-2"
+                    >
+                      <span class="text-caption text-grey-darken-1 mr-2">{{
+                        t('roadmapCreate.draftDescription')
+                      }}</span>
+                      <span>{{ savedDraftDescription }}</span>
+                    </div>
+                  </template>
+                  <div>{{ savedDraftDescription }}</div>
+                </v-tooltip>
                 <v-btn
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
-                  variant="tonal"
-                  color="error"
-                  rounded="lg"
-                  @click="deleteSelectedNodes"
+                  icon
+                  size="small"
+                  variant="text"
+                  density="comfortable"
+                  class="flex-shrink-0 ml-1"
+                  @click="showSaveDialog = true"
                 >
-                  <v-icon
-                    icon="mdi-delete"
-                    :size="$vuetify.display.mobile ? 16 : 18"
-                    class="mr-1"
-                  />
-                  <span class="d-none d-sm-inline">{{ t('roadmapCreate.deleteSelected') }}</span>
+                  <v-icon icon="mdi-file-document-edit-outline" color="grey-darken-1" size="18" />
                 </v-btn>
+              </div>
+              <div v-else class="flex-grow-1"></div>
+
+              <div class="d-flex flex-wrap align-center gap-2 flex-shrink-0">
+                <v-tooltip :text="t('roadmapCreate.undo')" location="top" :open-delay="100">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn
+                      v-bind="tipProps"
+                      :size="$vuetify.display.mobile ? 'small' : 'default'"
+                      variant="tonal"
+                      color="grey-darken-1"
+                      rounded="lg"
+                      icon
+                      density="comfortable"
+                      :disabled="!canUndo"
+                      @click="undo"
+                    >
+                      <v-icon icon="mdi-undo" size="18" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip :text="t('roadmapCreate.redo')" location="top" :open-delay="100">
+                  <template #activator="{ props: tipProps }">
+                    <v-btn
+                      v-bind="tipProps"
+                      :size="$vuetify.display.mobile ? 'small' : 'default'"
+                      variant="tonal"
+                      color="grey-darken-1"
+                      rounded="lg"
+                      icon
+                      density="comfortable"
+                      :disabled="!canRedo"
+                      @click="redo"
+                    >
+                      <v-icon icon="mdi-redo" size="18" />
+                    </v-btn>
+                  </template>
+                </v-tooltip>
                 <v-btn
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
                   variant="tonal"
@@ -79,26 +138,8 @@
                   rounded="lg"
                   @click="resetAll"
                 >
-                  <v-icon
-                    icon="mdi-refresh"
-                    :size="$vuetify.display.mobile ? 16 : 18"
-                    class="mr-1"
-                  />
+                  <v-icon icon="mdi-refresh" size="18" class="mr-1" />
                   <span class="d-none d-sm-inline">{{ t('roadmapCreate.reset') }}</span>
-                </v-btn>
-                <v-btn
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
-                  variant="tonal"
-                  color="info"
-                  rounded="lg"
-                  @click="applyAutoLayout(true)"
-                >
-                  <v-icon
-                    icon="mdi-auto-fix"
-                    :size="$vuetify.display.mobile ? 16 : 18"
-                    class="mr-1"
-                  />
-                  <span class="d-none d-sm-inline">{{ t('roadmapCreate.autoLayout') }}</span>
                 </v-btn>
                 <v-btn
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
@@ -107,116 +148,55 @@
                   rounded="lg"
                   @click="showSave"
                 >
-                  <v-icon
-                    icon="mdi-content-save"
-                    :size="$vuetify.display.mobile ? 16 : 18"
-                    class="mr-1"
-                  />
+                  <v-icon icon="mdi-content-save" size="18" class="mr-1" />
                   <span class="d-none d-sm-inline">{{
                     t('roadmapCreate.saveWithDescription')
                   }}</span>
-                </v-btn>
-                <v-divider vertical class="mx-2 toolbar-divider" />
-                <v-btn
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
-                  variant="tonal"
-                  color="grey-darken-1"
-                  rounded="lg"
-                  @click="goToMyRoadmaps"
-                >
-                  <v-icon
-                    icon="mdi-format-list-bulleted"
-                    :size="$vuetify.display.mobile ? 16 : 18"
-                    class="mr-1"
-                  />
-                  <span class="d-none d-sm-inline">{{ t('roadmapCreate.myRoadmaps') }}</span>
                 </v-btn>
               </div>
             </v-card-title>
             <v-card-text class="pa-0">
               <div class="flow-editor">
-                <VueFlow
-                  :nodes="nodes"
-                  :edges="edges"
-                  :min-zoom="0.7"
-                  :max-zoom="1.1"
-                  :zoom-on-scroll="false"
-                  fit-view-on-init
-                  :snap-to-grid="true"
-                  :snap-grid="[20, 20]"
-                  :nodes-selectable="true"
-                  :edges-selectable="true"
-                  :selection-mode="SelectionMode.Partial"
-                  :multi-selection-key-code="'Shift'"
-                  @connect="onConnect"
-                  @nodes-change="onNodesChange"
-                  @edges-change="onEdgesChange"
-                >
-                  <Background variant="dots" pattern-color="#bdbdbd" :gap="30" :size="2" />
-                  <MiniMap v-if="$vuetify.display.mdAndUp" />
-                  <Controls :show-interactive="false" />
-                </VueFlow>
+                <RoadmapEditor
+                  ref="editorRef"
+                  v-model="trunk"
+                  :role-name="roleName"
+                  @request-bind="onRequestBind"
+                  @cancel-bind="onCancelBind"
+                  @show-message="(msg, type) => showSnackbar(msg, type ?? 'info')"
+                />
               </div>
             </v-card-text>
           </v-card>
         </div>
 
-        <!-- 右侧：工具面板 -->
-        <div class="right-sidebar">
-          <!-- 课程/节点搜索区 -->
+        <!-- 右侧：课程/节点搜索面板 -->
+        <div v-if="bindingType" class="right-sidebar">
           <v-card class="course-search-card sticky-card no-border" elevation="0">
             <v-card-text class="pa-0 ps-4">
-              <!-- 草稿描述显示 -->
-              <div v-if="savedDraftDescription" class="draft-description-section mb-4">
-                <div class="d-flex align-start justify-space-between">
-                  <div class="flex-1" style="min-width: 0">
-                    <div class="text-caption text-grey-darken-1 mb-1">
-                      {{ t('roadmapCreate.draftDescription') }}
-                    </div>
-                    <div
-                      class="text-body-2 font-weight-medium text-grey-darken-3 draft-description-text"
-                    >
-                      {{ savedDraftDescription }}
-                    </div>
-                  </div>
-                  <v-btn icon size="small" variant="text" @click="showSaveDialog = true">
-                    <v-icon icon="mdi-file-document-edit-outline" color="grey-darken-1" size="20" />
-                  </v-btn>
-                </div>
-              </div>
-
-              <!-- 分隔线 -->
-              <v-divider v-if="savedDraftDescription" class="mt-6 mb-6" />
-
-              <!-- Tab 切换 -->
-              <v-tabs v-model="searchTab" color="primary" density="compact" class="mb-3">
-                <v-tab value="course">
-                  <v-icon icon="mdi-book-multiple" size="18" class="mr-1" />
-                  {{ t('roadmapCreate.addCourse') }}
-                </v-tab>
-                <v-tab value="node">
-                  <v-icon icon="mdi-file-tree-outline" size="18" class="mr-1" />
-                  {{ t('roadmapCreate.addNode') }}
-                </v-tab>
-              </v-tabs>
-
-              <!-- 课程搜索 Tab -->
-              <div v-show="searchTab === 'course'">
-                <!-- 标题和统计 -->
+              <div v-if="bindingType === 'course'">
                 <div class="d-flex align-center justify-space-between mb-3">
                   <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">{{
                     t('roadmapCreate.searchCourses')
                   }}</span>
-                  <a
-                    href="/courses"
-                    target="_blank"
-                    class="text-caption text-primary text-decoration-none"
-                  >
-                    {{ t('common.viewAll') }}
-                  </a>
+                  <div class="d-flex align-center ga-2">
+                    <a
+                      href="/courses"
+                      target="_blank"
+                      class="text-caption text-primary text-decoration-none"
+                    >
+                      {{ t('common.viewAll') }}
+                    </a>
+                    <v-btn
+                      icon="mdi-close"
+                      variant="text"
+                      size="small"
+                      density="comfortable"
+                      @click="closeBinding"
+                    />
+                  </div>
                 </div>
 
-                <!-- 搜索框 -->
                 <v-text-field
                   v-model="searchText"
                   :placeholder="t('roadmapCreate.searchCoursesPlaceholder')"
@@ -226,23 +206,26 @@
                   class="mb-3"
                   rounded="lg"
                   autocomplete="off"
-                  @keydown.enter="handleSearch"
-                  @click:clear="handleClearSearch"
+                  @keydown.enter="searchCourses"
+                  @click:clear="
+                    () => {
+                      searchText = ''
+                      availableCourses = []
+                    }
+                  "
                 >
                   <template #append-inner>
-                    <v-btn icon size="small" variant="text" @click="handleSearch">
+                    <v-btn icon size="small" variant="text" @click="searchCourses">
                       <v-icon icon="mdi-magnify" size="20" />
                     </v-btn>
                   </template>
                 </v-text-field>
 
-                <!-- 加载状态 -->
                 <div v-if="coursesLoading" class="text-center py-8">
                   <v-progress-circular indeterminate color="primary" size="40" width="3" />
                   <p class="text-body-2 text-grey-darken-1 mt-3">{{ t('common.loading') }}</p>
                 </div>
 
-                <!-- 空状态 -->
                 <div v-else-if="!searchText.trim()" class="empty-state text-center py-8">
                   <div class="empty-icon-wrapper mb-3">
                     <v-icon icon="mdi-magnify" size="56" color="grey-lighten-1" />
@@ -255,10 +238,9 @@
                   </p>
                 </div>
 
-                <!-- 课程列表 -->
                 <div v-else class="course-list-wrapper">
-                  <div v-if="filteredCourses.length > 0" class="course-list">
-                    <div v-for="course in filteredCourses" :key="course.id" class="course-item">
+                  <div v-if="availableCourses.length > 0" class="course-list">
+                    <div v-for="course in availableCourses" :key="course.id" class="course-item">
                       <v-tooltip location="left" max-width="300" content-class="rounded-lg">
                         <template #activator="{ props }">
                           <div
@@ -290,11 +272,11 @@
                         size="x-small"
                         color="primary"
                         variant="flat"
-                        :disabled="isNodeAdded(course.rootNodeId)"
-                        @click.stop="addCourseNode(course)"
+                        :disabled="isCourseAdded(course)"
+                        @click.stop="bindCourse(course)"
                       >
                         <v-icon size="14">{{
-                          isNodeAdded(course.rootNodeId) ? 'mdi-check' : 'mdi-plus'
+                          isCourseAdded(course) ? 'mdi-check' : 'mdi-plus'
                         }}</v-icon>
                       </v-btn>
                     </div>
@@ -311,16 +293,20 @@
                 </div>
               </div>
 
-              <!-- 节点搜索 Tab -->
-              <div v-show="searchTab === 'node'">
-                <!-- 标题 -->
-                <div class="mb-3">
+              <div v-else-if="bindingType === 'node'">
+                <div class="d-flex align-center justify-space-between mb-3">
                   <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">{{
                     t('roadmapCreate.searchNodes')
                   }}</span>
+                  <v-btn
+                    icon="mdi-close"
+                    variant="text"
+                    size="small"
+                    density="comfortable"
+                    @click="closeBinding"
+                  />
                 </div>
 
-                <!-- 搜索框 -->
                 <v-text-field
                   v-model="nodeSearchText"
                   :placeholder="t('roadmapCreate.searchNodesPlaceholder')"
@@ -330,23 +316,26 @@
                   class="mb-3"
                   rounded="lg"
                   autocomplete="off"
-                  @keydown.enter="handleNodeSearch"
-                  @click:clear="handleClearNodeSearch"
+                  @keydown.enter="searchNodes"
+                  @click:clear="
+                    () => {
+                      nodeSearchText = ''
+                      availableNodes = []
+                    }
+                  "
                 >
                   <template #append-inner>
-                    <v-btn icon size="small" variant="text" @click="handleNodeSearch">
+                    <v-btn icon size="small" variant="text" @click="searchNodes">
                       <v-icon icon="mdi-magnify" size="20" />
                     </v-btn>
                   </template>
                 </v-text-field>
 
-                <!-- 加载状态 -->
                 <div v-if="nodesLoading" class="text-center py-8">
                   <v-progress-circular indeterminate color="success" size="40" width="3" />
                   <p class="text-body-2 text-grey-darken-1 mt-3">{{ t('common.loading') }}</p>
                 </div>
 
-                <!-- 空状态 -->
                 <div v-else-if="!nodeSearchText.trim()" class="empty-state text-center py-8">
                   <div class="empty-icon-wrapper mb-3">
                     <v-icon icon="mdi-magnify" size="56" color="grey-lighten-1" />
@@ -357,10 +346,9 @@
                   <p class="text-caption text-grey">{{ t('roadmapCreate.searchNodesSubHint') }}</p>
                 </div>
 
-                <!-- 节点列表 -->
                 <div v-else class="course-list-wrapper">
-                  <div v-if="filteredNodes.length > 0" class="course-list">
-                    <div v-for="node in filteredNodes" :key="node.id" class="course-item">
+                  <div v-if="availableNodes.length > 0" class="course-list">
+                    <div v-for="node in availableNodes" :key="node.id" class="course-item">
                       <v-tooltip location="left" max-width="300" content-class="rounded-lg">
                         <template #activator="{ props }">
                           <div class="node-content" v-bind="props">
@@ -387,11 +375,11 @@
                         size="x-small"
                         color="success"
                         variant="flat"
-                        :disabled="isNodeAdded(node.id)"
-                        @click.stop="addNode(node)"
+                        :disabled="isNodeAdded(node)"
+                        @click.stop="bindNode(node)"
                       >
                         <v-icon size="14">{{
-                          isNodeAdded(node.id) ? 'mdi-check' : 'mdi-plus'
+                          isNodeAdded(node) ? 'mdi-check' : 'mdi-plus'
                         }}</v-icon>
                       </v-btn>
                     </div>
@@ -407,28 +395,6 @@
                   </div>
                 </div>
               </div>
-
-              <!-- 操作指南 -->
-              <div class="tips-section">
-                <div class="tips-header">
-                  <v-icon
-                    icon="mdi-information-outline"
-                    size="16"
-                    class="mr-1"
-                    color="grey-darken-1"
-                  />
-                  <span class="text-caption text-grey-darken-1">{{
-                    t('roadmapCreate.operationGuide')
-                  }}</span>
-                </div>
-                <div class="tips-list-simple">
-                  <div class="tip-simple">{{ t('roadmapCreate.tip1') }}</div>
-                  <div class="tip-simple">{{ t('roadmapCreate.tip2') }}</div>
-                  <div class="tip-simple">{{ t('roadmapCreate.tip3') }}</div>
-                  <div class="tip-simple">{{ t('roadmapCreate.tip4') }}</div>
-                  <div class="tip-simple">{{ t('roadmapCreate.tip5') }}</div>
-                </div>
-              </div>
             </v-card-text>
           </v-card>
         </div>
@@ -438,7 +404,6 @@
     <!-- 保存对话框 -->
     <v-dialog v-model="showSaveDialog" max-width="600px">
       <v-card rounded="xl" border>
-        <!-- 关闭按钮 -->
         <v-btn
           icon="mdi-close"
           variant="text"
@@ -467,17 +432,6 @@
             :hint="t('roadmapCreate.descriptionHint')"
             persistent-hint
           />
-
-          <!-- 孤立节点提示 -->
-          <v-alert
-            v-if="hasIsolatedNodes"
-            type="warning"
-            variant="tonal"
-            density="compact"
-            class="mt-4"
-          >
-            {{ t('roadmapCreate.isolatedNodesWarning', { count: isolatedNodesCount }) }}
-          </v-alert>
         </v-card-text>
         <v-card-actions class="px-6 pb-6 pt-4">
           <v-spacer />
@@ -506,7 +460,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- 统一确认对话框 -->
     <ConfirmDialog
       v-model="confirmDialogVisible"
       :title="confirmDialogConfig.title"
@@ -523,24 +476,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, inject, watch } from 'vue'
+import { ref, computed, inject, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { VueFlow, useVueFlow } from '@vue-flow/core'
-import { Background } from '@vue-flow/background'
-import { MiniMap } from '@vue-flow/minimap'
-import { Controls } from '@vue-flow/controls'
-import { Position, SelectionMode } from '@vue-flow/core'
-import type { Node, Edge, Connection } from '@vue-flow/core'
-import dagre from 'dagre'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import RoadmapEditor from '@/components/features/role/RoadmapEditor.vue'
+import type { RoadmapNode } from '@/components/features/role/RoadmapEditor.vue'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
-import { useFetch } from '@/composables'
 import { useCategoryStore } from '@/stores'
 import { courseApi } from '@/api/modules/course'
-import { roadmapApi } from '@/api/modules/roadmap'
 import { searchApi } from '@/api/modules/search'
+import {
+  useRoadmapDetailQuery,
+  useRoadmapEditQuery,
+  useCreateRoadmapMutation,
+  useUpdateRoadmapMutation,
+  useSubmitRoadmapMutation,
+} from '@/queries/roadmap'
+import { useRoleDetailQuery } from '@/queries/role'
+import { getGlobalSnackbar } from '@/composables/config'
 import type { Course } from '@/types/course'
 import type { SearchResultItem } from '@/api/modules/search'
 import { useI18n } from '@/composables/useI18n'
@@ -551,17 +506,13 @@ const router = useRouter()
 const route = useRoute()
 const categoryStore = useCategoryStore()
 
-// 注入全局 snackbar
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')!
+const globalSnackbar = getGlobalSnackbar()
 
-// 获取 VueFlow 实例
-const { fitView, setCenter } = useVueFlow()
-
-// 验证规则
 const roadmapDescriptionRules = useValidationRules('roadmap-description')
 const roadmapDescriptionMaxLength = useMaxLength('roadmap-description')
 
-// 从路由获取参数
+/* ========== 路由参数 ========== */
 const roleId = computed(() => {
   const id = route.params.id
   return typeof id === 'string' ? parseInt(id, 10) : 0
@@ -573,56 +524,109 @@ const roadmapId = computed(() => {
 const isEditMode = computed(() => roadmapId.value !== null)
 const copyId = ref(route.query.copy ? Number(route.query.copy) : null)
 
-// 状态管理
-const loading = ref(false)
+/* ========== 状态 ========== */
+const trunk = ref<RoadmapNode[]>([])
+const editorRef = ref<InstanceType<typeof RoadmapEditor> | null>(null)
+
+/* ========== 历史栈（撤销/重做） ========== */
+const HISTORY_LIMIT = 50
+const history = ref<RoadmapNode[][]>([[]])
+const historyIndex = ref(0)
+let isTimeTraveling = false
+
+const canUndo = computed(() => historyIndex.value > 0)
+const canRedo = computed(() => historyIndex.value < history.value.length - 1)
+
+const resetHistory = (initial: RoadmapNode[]) => {
+  history.value = [JSON.parse(JSON.stringify(initial))]
+  historyIndex.value = 0
+}
+
+watch(
+  trunk,
+  (newVal) => {
+    if (isTimeTraveling) return
+    const snapshot = JSON.parse(JSON.stringify(newVal)) as RoadmapNode[]
+    // 截断 redo 部分
+    history.value = history.value.slice(0, historyIndex.value + 1)
+    history.value.push(snapshot)
+    if (history.value.length > HISTORY_LIMIT) {
+      history.value.shift()
+    }
+    historyIndex.value = history.value.length - 1
+  },
+  { deep: true }
+)
+
+const undo = () => {
+  if (!canUndo.value) return
+  isTimeTraveling = true
+  historyIndex.value--
+  trunk.value = JSON.parse(JSON.stringify(history.value[historyIndex.value]))
+  nextTick(() => {
+    isTimeTraveling = false
+  })
+}
+
+const redo = () => {
+  if (!canRedo.value) return
+  isTimeTraveling = true
+  historyIndex.value++
+  trunk.value = JSON.parse(JSON.stringify(history.value[historyIndex.value]))
+  nextTick(() => {
+    isTimeTraveling = false
+  })
+}
+
+/* ========== 快捷键: Cmd/Ctrl+Z = undo, Cmd/Ctrl+Shift+Z 或 Ctrl+Y = redo ========== */
+const isEditableTarget = (el: EventTarget | null): boolean => {
+  if (!(el instanceof HTMLElement)) return false
+  const tag = el.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
+  if (el.isContentEditable) return true
+  return false
+}
+
+const onKeydown = (e: KeyboardEvent) => {
+  // 只在 Mac 用 metaKey，其它平台用 ctrlKey
+  const mod = e.metaKey || e.ctrlKey
+  if (!mod) return
+  // 在输入框内不拦截原生 undo/redo
+  if (isEditableTarget(e.target)) return
+
+  const key = e.key.toLowerCase()
+  if (key === 'z' && !e.shiftKey) {
+    e.preventDefault()
+    undo()
+  } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+    e.preventDefault()
+    redo()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+})
+
 const saving = ref(false)
-const saveType = ref<'draft' | 'publish' | ''>('') // 保存类型
+const saveType = ref<'draft' | 'publish' | ''>('')
 const showSaveDialog = ref(false)
 const roadmapDescription = ref('')
-const savedDraftDescription = ref('') // 已保存的草稿描述
-const draftRoadmapId = ref<number | null>(null) // 草稿路线图ID
-const roadmapState = ref<number | null>(null) // 路线图状态：0=草稿，1=审核中，2=已发布
-const roleName = ref('') // TODO: 从 API 获取
+const savedDraftDescription = ref('')
+const draftRoadmapId = ref<number | null>(null)
+const roadmapState = ref<'NEVER_PUBLISHED' | 'PUBLISHED' | 'BANNED' | null>(null)
 
-// Tab 切换状态
-const searchTab = ref<'course' | 'node'>('course')
-const nodeSearchText = ref('')
+const { data: roleData } = useRoleDetailQuery(roleId)
+const roleName = computed(() => roleData.value?.name ?? '')
 
-// 是否可以保存为草稿：只有草稿状态(0)或新建时可以保存为草稿，已发布(2)不能变回草稿
-const canSaveAsDraft = computed(() => {
-  return roadmapState.value === null || roadmapState.value === 0
-})
+// BANNED 路线图禁止任何编辑保存；其它状态都允许保存草稿（包括已发布的——草稿留给作者，不影响线上版）
+const canSaveAsDraft = computed(() => roadmapState.value !== 'BANNED')
 
-// 计算孤立节点
-const hasIsolatedNodes = computed(() => {
-  if (nodes.value.length <= 1 || edges.value.length === 0) {
-    return false
-  }
-
-  const connectedNodeIds = new Set<string>()
-  edges.value.forEach((e) => {
-    connectedNodeIds.add(e.source)
-    connectedNodeIds.add(e.target)
-  })
-
-  return nodes.value.some((n) => !connectedNodeIds.has(n.id))
-})
-
-const isolatedNodesCount = computed((): number => {
-  if (!hasIsolatedNodes.value) {
-    return 0
-  }
-
-  const connectedNodeIds = new Set<string>()
-  edges.value.forEach((e) => {
-    connectedNodeIds.add(e.source)
-    connectedNodeIds.add(e.target)
-  })
-
-  return nodes.value.filter((n) => !connectedNodeIds.has(n.id)).length
-})
-
-// 确认对话框状态
+/* ========== 确认对话框 ========== */
 const confirmDialogVisible = ref(false)
 const confirmDialogConfig = ref({
   title: '',
@@ -636,26 +640,47 @@ const confirmDialogConfig = ref({
   onConfirm: () => {},
 })
 
-// 可用课程列表
+/* ========== 绑定面板 ========== */
+const bindingType = ref<'course' | 'node' | null>(null)
+const pendingNodeId = ref<string | null>(null)
+
+const onRequestBind = (payload: { nodeId: string; type: 'course' | 'node' }) => {
+  pendingNodeId.value = payload.nodeId
+  bindingType.value = payload.type
+  if (payload.type === 'course') {
+    searchText.value = ''
+    availableCourses.value = []
+  } else {
+    nodeSearchText.value = ''
+    availableNodes.value = []
+  }
+}
+
+const onCancelBind = () => {
+  bindingType.value = null
+  pendingNodeId.value = null
+}
+
+const closeBinding = () => {
+  bindingType.value = null
+  pendingNodeId.value = null
+  editorRef.value?.cancelSelection()
+}
+
+/* ========== 课程搜索 ========== */
+const searchText = ref('')
 const availableCourses = ref<Course[]>([])
 const coursesLoading = ref(false)
-const searchText = ref('')
 
-// 搜索课程
 const searchCourses = async () => {
   if (!searchText.value.trim()) {
     availableCourses.value = []
     return
   }
-
   coursesLoading.value = true
   try {
-    const response = await courseApi.searchCourses(searchText.value.trim())
-    if (response.code === 200) {
-      availableCourses.value = response.data ?? []
-    } else {
-      showSnackbar(t('roadmapCreate.messages.searchCoursesFailed'), 'error')
-    }
+    const data = await courseApi.searchCourses(searchText.value.trim())
+    availableCourses.value = data ?? []
   } catch (error) {
     console.error('搜索课程失败:', error)
     showSnackbar(t('roadmapCreate.messages.searchCoursesFailed'), 'error')
@@ -664,365 +689,176 @@ const searchCourses = async () => {
   }
 }
 
-// 手动搜索方法（点击搜索按钮或按下回车触发）
-const handleSearch = () => {
-  searchCourses()
-}
-
-// 清除搜索
-const handleClearSearch = () => {
-  searchText.value = ''
-  availableCourses.value = []
-}
-
-// 监听搜索文本变化，清空旧的搜索结果
 watch(searchText, () => {
   availableCourses.value = []
 })
 
-const filteredCourses = computed(() => availableCourses.value)
+const isCourseAdded = (course: Course) =>
+  editorRef.value?.isNodeAddedById(course.rootNodeId ?? 0, 'course') ?? false
 
-// 节点搜索
-const {
-  data: availableNodes,
-  loading: nodesLoading,
-  execute: loadAvailableNodes,
-} = useFetch<SearchResultItem[]>({
-  fetchFn: () => searchApi.searchNodes(nodeSearchText.value.trim()),
-  immediate: false,
-  defaultValue: [],
-  onError: (error) => {
-    console.error('搜索节点失败:', error)
-    showSnackbar(t('roadmapCreate.messages.searchNodesFailed'), 'error')
-  },
-})
-
-// 手动搜索节点
-const handleNodeSearch = () => {
-  if (!nodeSearchText.value.trim()) {
-    availableNodes.value = []
-    return
-  }
-  loadAvailableNodes()
-}
-
-// 清除节点搜索
-const handleClearNodeSearch = () => {
-  nodeSearchText.value = ''
-  availableNodes.value = []
-}
-
-// 监听节点搜索文本变化，清空旧的搜索结果
-watch(nodeSearchText, () => {
-  availableNodes.value = []
-})
-
-const filteredNodes = computed(() => availableNodes.value ?? [])
-
-// 节点样式常量
-const ROOT_NODE_STYLE = {
-  background: '#616161',
-  color: '#ffffff',
-  border: '2px solid #9e9e9e',
-  borderRadius: '12px',
-  padding: '10px',
-  fontWeight: '600',
-  fontSize: '14px',
-}
-
-const COURSE_NODE_STYLE = {
-  background: '#fafafa',
-  color: '#424242',
-  border: '2px solid #bdbdbd',
-  borderRadius: '12px',
-  padding: '10px',
-  fontWeight: '500',
-  fontSize: '13px',
-}
-
-// 普通节点样式（绿色，区别于课程节点）
-const NODE_STYLE = {
-  background: '#f1f8e9',
-  color: '#33691e',
-  border: '2px solid #aed581',
-  borderRadius: '12px',
-  padding: '10px',
-  fontWeight: '500',
-  fontSize: '13px',
-}
-
-const EDGE_STYLE = {
-  stroke: '#78909c',
-  strokeWidth: 2,
-}
-
-// 节点和边
-const nodes = ref<Node[]>([
-  {
-    id: '0',
-    type: 'default',
-    data: { label: roleName.value },
-    position: { x: 400, y: 100 },
-    sourcePosition: undefined,
-    targetPosition: Position.Left,
-    style: ROOT_NODE_STYLE,
-  },
-])
-
-const edges = ref<Edge[]>([])
-
-// 计算新节点位置的公共方法
-const calculateNodePosition = (): { x: number; y: number } => {
-  let x: number
-  let y: number
-
-  if (nodes.value.length === 1) {
-    // 第一个节点：放在根节点下方居中
-    const rootNode = nodes.value[0]
-    x = rootNode.position.x
-    y = rootNode.position.y + 100
-  } else {
-    // 找到 y 坐标最大的节点（最下面的节点）
-    const bottomNode = nodes.value.reduce((lowest, node) => {
-      return node.position.y > lowest.position.y ? node : lowest
-    })
-
-    // 计算所有节点的 x 坐标中心位置
-    const sumX = nodes.value.reduce((sum, node) => sum + node.position.x, 0)
-    const centerX = sumX / nodes.value.length
-
-    // 新节点位置：x 为所有节点中心，y 在最下面节点下方 60px
-    x = centerX
-    y = bottomNode.position.y + 60
-  }
-
-  return { x, y }
-}
-
-// 添加课程节点
-const addCourseNode = (course: Course) => {
+const bindCourse = (course: Course) => {
   if (!course.rootNodeId) {
     showSnackbar(t('roadmapCreate.messages.courseCannotBeAdded'), 'warning')
     return
   }
-  const nodeId = course.rootNodeId.toString()
+  if (!pendingNodeId.value) return
+  editorRef.value?.applyBinding(pendingNodeId.value, {
+    type: 'course',
+    id: course.id,
+    rootNodeId: course.rootNodeId,
+    label: `${t('roadmapDetail.courseLabel')} ${course.name}`,
+  })
+  // 绑定后 selectedNodeForBinding 已变为新 id
+  const newId = editorRef.value?.getSelectedNodeId()
+  if (newId) pendingNodeId.value = newId
+}
 
-  // 检查是否已存在
-  if (nodes.value.find((n) => n.id === nodeId)) {
-    showSnackbar(t('roadmapCreate.messages.courseAlreadyAdded'), 'warning')
+/* ========== 节点搜索 ========== */
+const nodeSearchText = ref('')
+const availableNodes = ref<SearchResultItem[]>([])
+const nodesLoading = ref(false)
+
+const searchNodes = async () => {
+  if (!nodeSearchText.value.trim()) {
+    availableNodes.value = []
     return
   }
-
-  // 计算位置
-  const { x, y } = calculateNodePosition()
-
-  nodes.value.push({
-    id: nodeId, // 使用 rootNodeId
-    type: 'default',
-    data: { label: `${t('roadmapDetail.courseLabel')} ${course.name}` }, // 课程前面加文字标识
-    position: { x, y },
-    sourcePosition: Position.Right,
-    targetPosition: Position.Left,
-    style: COURSE_NODE_STYLE,
-  })
-
-  // 聚焦到新节点（使用 nextTick 确保 DOM 更新后再聚焦）
-  setTimeout(() => {
-    setCenter(x, y, { zoom: 1, duration: 300 })
-  }, 50)
-}
-
-/**
- * 检查节点是否已添加
- */
-const isNodeAdded = (nodeId: number | undefined): boolean => {
-  if (!nodeId) return false
-  return nodes.value.some((n) => n.id === nodeId.toString())
-}
-
-/**
- * 跳转到课程详情页
- */
-const goToCourseDetail = (courseId: number) => {
-  window.open(`/courses/${courseId}`, '_blank')
-}
-
-/**
- * 跳转到节点详情页
- */
-const goToNodeDetail = (nodeId: number) => {
-  window.open(`/read?nodeId=${nodeId}`, '_blank')
-}
-
-/**
- * 添加普通节点
- */
-const addNode = (node: SearchResultItem) => {
-  const nodeId = node.id.toString()
-
-  // 检查是否已存在
-  if (nodes.value.find((n) => n.id === nodeId)) {
-    showSnackbar(t('roadmapCreate.messages.nodeAlreadyAdded'), 'warning')
-    return
+  nodesLoading.value = true
+  try {
+    const data = await searchApi.searchNodes(nodeSearchText.value.trim())
+    availableNodes.value = data ?? []
+  } catch (error) {
+    console.error('搜索节点失败:', error)
+    showSnackbar(t('roadmapCreate.messages.searchNodesFailed'), 'error')
+  } finally {
+    nodesLoading.value = false
   }
+}
 
-  // 计算位置
-  const { x, y } = calculateNodePosition()
+watch(nodeSearchText, () => {
+  availableNodes.value = []
+})
 
-  nodes.value.push({
-    id: nodeId,
-    type: 'default',
-    data: { label: `${t('roadmapDetail.nodeLabel')} ${node.name}` }, // 节点前面加文字标识
-    position: { x, y },
-    sourcePosition: Position.Right,
-    targetPosition: Position.Left,
-    style: NODE_STYLE, // 使用绿色节点样式
+const isNodeAdded = (node: SearchResultItem) =>
+  editorRef.value?.isNodeAddedById(node.id, 'node') ?? false
+
+const bindNode = (node: SearchResultItem) => {
+  if (!pendingNodeId.value) return
+  editorRef.value?.applyBinding(pendingNodeId.value, {
+    type: 'node',
+    id: node.id,
+    label: `${t('roadmapDetail.nodeLabel')} ${node.name}`,
   })
-
-  // 聚焦到新节点
-  setTimeout(() => {
-    setCenter(x, y, { zoom: 1, duration: 300 })
-  }, 50)
+  const newId = editorRef.value?.getSelectedNodeId()
+  if (newId) pendingNodeId.value = newId
 }
 
-/**
- * 跳转到我的路线图页面
- */
-const goToMyRoadmaps = () => {
-  router.push('/users/me?mode=creator&tab=roadmaps')
-}
+/* ========== 跳转 ========== */
+const goToCourseDetail = (id: number) => window.open(`/courses/${id}`, '_blank')
+const goToNodeDetail = (id: number) => window.open(`/read?nodeId=${id}`, '_blank')
+const goToMyRoadmaps = () => router.push('/users/me?mode=creator&tab=roadmaps')
 
-// 删除选中的节点和边
-const deleteSelectedNodes = () => {
-  const selectedNodes = nodes.value.filter((n) => (n as any).selected && n.id !== '0')
-  const selectedEdges = edges.value.filter((e) => (e as any).selected)
-
-  const totalSelected = selectedNodes.length + selectedEdges.length
-
-  if (totalSelected === 0) {
-    showSnackbar(t('roadmapCreate.messages.noSelectionToDelete'), 'warning')
-    return
-  }
-
-  const itemsText: string[] = []
-  if (selectedNodes.length > 0)
-    itemsText.push(t('roadmapCreate.messages.nodeCount', { count: selectedNodes.length }))
-  if (selectedEdges.length > 0)
-    itemsText.push(t('roadmapCreate.messages.edgeCount', { count: selectedEdges.length }))
-
-  confirmDialogConfig.value = {
-    title: t('roadmapCreate.messages.deleteConfirmTitle'),
-    message: t('roadmapCreate.messages.deleteConfirmMsg', {
-      items: itemsText.join(t('roadmapCreate.messages.and')),
-    }),
-    confirmText: t('common.delete'),
-    cancelText: t('common.cancel'),
-    confirmColor: 'error',
-    icon: 'mdi-delete-outline',
-    iconColor: 'error-lighten-4',
-    iconForeground: 'error',
-    onConfirm: () => {
-      // 删除选中的节点
-      const selectedNodeIds = new Set(selectedNodes.map((n) => n.id))
-      nodes.value = nodes.value.filter((n) => !selectedNodeIds.has(n.id))
-
-      // 删除选中的边，以及与被删除节点相关的边
-      const selectedEdgeIds = new Set(selectedEdges.map((e) => e.id))
-      edges.value = edges.value.filter(
-        (e) =>
-          !selectedEdgeIds.has(e.id) &&
-          !selectedNodeIds.has(e.source) &&
-          !selectedNodeIds.has(e.target)
-      )
-
-      showSnackbar(
-        t('roadmapCreate.messages.deleted', {
-          items: itemsText.join(t('roadmapCreate.messages.and')),
-        }),
-        'success'
-      )
-    },
-  }
-  confirmDialogVisible.value = true
-}
-
-// 处理连接
-const onConnect = (connection: Connection) => {
-  // 不允许从根节点出发的连接（根节点只有入口，没有出口）
-  if (connection.source === '0') return
-
-  // 检查该源节点是否已经有出口连接
-  const hasSourceConnection = edges.value.find((e) => e.source === connection.source)
-  if (hasSourceConnection) {
-    showSnackbar(t('roadmapCreate.messages.singleConnectionOnly'), 'warning')
-    return
-  }
-
-  // 检查是否已存在相同的连接
-  const exists = edges.value.find(
-    (e) => e.source === connection.source && e.target === connection.target
-  )
-  if (exists) return
-
-  edges.value.push({
-    id: `${connection.source}-${connection.target}`,
-    source: connection.source ?? '',
-    target: connection.target ?? '',
-    type: 'default',
-    animated: true,
-    style: EDGE_STYLE,
-  })
-}
-
-// 处理节点变化（包括选中状态和位置）
-const onNodesChange = (changes: any[]) => {
-  changes.forEach((change) => {
-    if (change.type === 'select') {
-      const node = nodes.value.find((n) => n.id === change.id)
-      if (node) {
-        ;(node as any).selected = change.selected
-      }
-    } else if (change.type === 'position') {
-      // 拖动过程中和拖动结束时都更新位置
-      const node = nodes.value.find((n) => n.id === change.id)
-      if (node && change.position) {
-        node.position = change.position
-      }
-    }
-  })
-}
-
-// 处理边变化（包括选中状态）
-const onEdgesChange = (changes: any[]) => {
-  changes.forEach((change) => {
-    if (change.type === 'select') {
-      const edge = edges.value.find((e) => e.id === change.id)
-      if (edge) {
-        ;(edge as any).selected = change.selected
-      }
-    }
-  })
-}
-
-// 显示保存对话框
+/* ========== 保存对话框 ========== */
 const showSave = () => {
-  if (nodes.value.length <= 1) {
+  if (trunk.value.length === 0) {
     showSnackbar(t('roadmapCreate.messages.addNodesFirst'), 'warning')
     return
   }
   showSaveDialog.value = true
 }
 
-// 保存路径
-const saveRoadmap = async (type: 'draft' | 'publish') => {
+/* ========== 校验 + 序列化 ========== */
+// 序列化为后端格式（去 group 的 tmp id；只保留 t/id/label/children）
+interface SerializedNode {
+  t: 'c' | 'n' | 'g' | 'o'
+  id?: number
+  label?: string
+  children?: SerializedNode[]
+}
+
+const serialize = (nodes: RoadmapNode[]): SerializedNode[] => {
+  return nodes.map((n) => {
+    let t: 'c' | 'n' | 'g' | 'o' = 'g'
+    let id: number | undefined
+    if (n.nodeType === 'course') {
+      t = 'c'
+      id = n.courseId
+    } else if (n.nodeType === 'node') {
+      t = 'n'
+      // node 的 id 形如 "n123"
+      const num = parseInt(n.id.replace(/^n/, ''), 10)
+      if (!isNaN(num)) id = num
+    } else if (n.nodeType === 'note') {
+      t = 'o'
+    }
+    const out: SerializedNode = { t }
+    // 只有 group / note 的 label 是用户输入数据，需要保存
+    if (t === 'g' || t === 'o') out.label = n.label
+    if (id !== undefined) out.id = id
+    if (n.children?.length) out.children = serialize(n.children)
+    return out
+  })
+}
+
+// 反序列化
+let loadGroupSeq = 0
+const deserialize = (nodes: SerializedNode[]): RoadmapNode[] => {
+  return nodes.map((n) => {
+    let id: string
+    let nodeType: 'course' | 'node' | 'group' | 'note' | undefined
+    let courseId: number | undefined
+    if (n.t === 'c' && n.id != null) {
+      id = `c${n.id}`
+      nodeType = 'course'
+      courseId = n.id
+    } else if (n.t === 'n' && n.id != null) {
+      id = `n${n.id}`
+      nodeType = 'node'
+    } else if (n.t === 'o') {
+      id = `g_load_${++loadGroupSeq}`
+      nodeType = 'note'
+    } else {
+      id = `g_load_${++loadGroupSeq}`
+      nodeType = n.children?.length ? 'group' : undefined
+    }
+    const out: RoadmapNode = { id, label: n.label ?? '', nodeType }
+    if (courseId !== undefined) out.courseId = courseId
+    if (n.children?.length) out.children = deserialize(n.children)
+    return out
+  })
+}
+
+// 校验：所有叶子节点必须已绑定 course/node/note；中间节点视为 group，无需绑定
+const validateAllBound = (nodes: RoadmapNode[]): boolean => {
+  for (const n of nodes) {
+    if (n.children?.length) {
+      // 中间节点：递归校验子节点
+      if (!validateAllBound(n.children)) return false
+    } else {
+      // 叶子节点：必须有明确类型且不是 group
+      if (!n.nodeType || n.nodeType === 'group') return false
+    }
+  }
+  return true
+}
+
+/* ========== 保存 ========== */
+const { mutate: createRoadmapMutate } = useCreateRoadmapMutation()
+const { mutate: updateRoadmapMutate } = useUpdateRoadmapMutation()
+const { mutate: submitRoadmapMutate } = useSubmitRoadmapMutation()
+
+const saveRoadmap = (type: 'draft' | 'publish') => {
   if (!roadmapDescription.value.trim()) {
     showSnackbar(t('roadmapCreate.messages.enterDescription'), 'warning')
     return
   }
-
-  // 验证至少有一个课程节点（除了根节点）
-  if (nodes.value.length <= 1) {
+  if (trunk.value.length === 0) {
     showSnackbar(t('roadmapCreate.messages.addNodesFirst'), 'warning')
+    return
+  }
+  // 发布模式要求所有节点已绑定
+  if (type === 'publish' && !validateAllBound(trunk.value)) {
+    showSnackbar(t('roadmapCreate.messages.connectCourses'), 'warning')
     return
   }
 
@@ -1030,242 +866,99 @@ const saveRoadmap = async (type: 'draft' | 'publish') => {
   saveType.value = type
 
   try {
-    // 序列化边数组：[[source, target], ...]
-    const edgeArray = edges.value
-      .map((e) => {
-        const source = parseInt(e.source)
-        const target = parseInt(e.target)
-        if (isNaN(source) || isNaN(target)) {
-          return null
-        }
-        return [source, target]
-      })
-      .filter((edge): edge is [number, number] => edge !== null)
+    const content = JSON.stringify({ v: 2, trunk: serialize(trunk.value) })
 
-    // 找出所有有连接的节点ID
-    const connectedNodeIds = new Set<number>()
-    edgeArray.forEach(([source, target]) => {
-      connectedNodeIds.add(source)
-      connectedNodeIds.add(target)
-    })
-
-    // 获取所有节点ID
-    const allNodeIds = nodes.value
-      .map((n) => {
-        const id = parseInt(n.id)
-        if (isNaN(id)) {
-          return null
-        }
-        return id
-      })
-      .filter((id): id is number => id !== null)
-
-    let nodeArray: number[]
-
-    if (type === 'draft') {
-      // 草稿模式：保留所有节点（包括孤立节点）
-      nodeArray = allNodeIds
-    } else {
-      // 发布模式：只保留有连接的节点
-      nodeArray = allNodeIds.filter((id) => connectedNodeIds.has(id))
-
-      // 检查是否有有效节点
-      if (nodeArray.length === 0) {
-        showSnackbar(t('roadmapCreate.messages.connectCourses'), 'warning')
-        return
-      }
-
-      // 验证树结构：边数 = 节点数 - 1
-      if (edgeArray.length !== nodeArray.length - 1) {
-        showSnackbar(
-          t('roadmapCreate.messages.invalidTreeStructure', {
-            nodes: nodeArray.length,
-            edges: edgeArray.length,
-            expectedEdges: nodeArray.length - 1,
-          }),
-          'error'
-        )
-        return
-      }
-    }
-
-    // 后端期望的格式：[边数组, 节点ID数组]
-    const content = JSON.stringify([edgeArray, nodeArray])
-
-    console.log('保存路径数据:', {
-      saveType: type,
-      totalNodes: nodes.value.length,
-      savedNodes: nodeArray.length,
-      edges: edgeArray.length,
-      removedNodes: nodes.value.length - nodeArray.length,
-      edgeArray,
-      nodeArray,
-      content,
-    })
-
-    // 调用 API
-    const state = type === 'draft' ? 0 : 1 // 0-草稿，1-提交审核
-    let response
-
-    if (draftRoadmapId.value) {
-      // 已有草稿ID，调用更新接口
-      response = await roadmapApi.updateRoadmap(
-        draftRoadmapId.value,
-        content,
-        roadmapDescription.value.trim(),
-        state
-      )
-    } else {
-      // 首次创建
-      response = await roadmapApi.createRoadmap(
-        roleId.value,
-        content,
-        roadmapDescription.value.trim(),
-        state
-      )
-    }
-
-    if (response.code === 200) {
+    const onSaveSuccess = (
+      result:
+        | {
+            id?: number
+            invalidReferences?: { missingCourseIds: number[]; missingNodeIds: number[] }
+          }
+        | null
+        | undefined
+    ) => {
       const message =
         type === 'draft'
           ? t('roadmapCreate.messages.draftSaved')
           : t('roadmapCreate.messages.published')
-      showSnackbar(message, 'success')
+      globalSnackbar?.(message, 'success')
       showSaveDialog.value = false
-
-      // 草稿模式：保存描述和ID，留在当前页面
       if (type === 'draft') {
         savedDraftDescription.value = roadmapDescription.value.trim()
-        if (response.data?.id) {
-          draftRoadmapId.value = response.data.id
-        }
+        if (result?.id) draftRoadmapId.value = result.id
       } else {
-        // 发布模式：返回列表页
         router.back()
       }
+      saving.value = false
+      saveType.value = ''
+
+      // 处理失效引用：草稿允许保存但要标红提示用户
+      const invalid = result?.invalidReferences
+      if (invalid && (invalid.missingCourseIds.length || invalid.missingNodeIds.length)) {
+        editorRef.value?.markInvalidRefs(invalid.missingCourseIds, invalid.missingNodeIds)
+        showSnackbar(t('roadmapCreate.messages.invalidReferencesWarning'), 'warning')
+      } else {
+        editorRef.value?.clearInvalidRefs()
+      }
+    }
+    const onSaveError = (error: unknown) => {
+      // 提交失败：从异常 details 解析失效引用，标红节点
+      const apiErr = error as
+        | { details?: { missingCourseIds?: number[]; missingNodeIds?: number[] } }
+        | undefined
+      const missingCourseIds = apiErr?.details?.missingCourseIds ?? []
+      const missingNodeIds = apiErr?.details?.missingNodeIds ?? []
+      if (missingCourseIds.length || missingNodeIds.length) {
+        editorRef.value?.markInvalidRefs(missingCourseIds, missingNodeIds)
+        showSnackbar(t('roadmapCreate.messages.invalidReferencesError'), 'error')
+      } else {
+        showSnackbar(t('roadmapCreate.messages.saveFailedRetry'), 'error')
+      }
+      saving.value = false
+      saveType.value = ''
+    }
+
+    if (draftRoadmapId.value) {
+      // 已有 roadmap：先 update 草稿；如果是 publish 再 submit
+      const id = draftRoadmapId.value
+      updateRoadmapMutate(
+        { id, content, description: roadmapDescription.value.trim() },
+        {
+          onSuccess: (saveResult) => {
+            if (type === 'draft') {
+              onSaveSuccess(saveResult)
+              return
+            }
+            // 发布：用 submit 端点产生新 revision
+            submitRoadmapMutate(id, {
+              onSuccess: (submitResult) => onSaveSuccess(submitResult),
+              onError: onSaveError,
+            })
+          },
+          onError: onSaveError,
+        }
+      )
     } else {
-      showSnackbar(response.message || t('roadmapCreate.messages.saveFailed'), 'error')
+      // 新建：直接通过 createRoadmap 的 submit 标志一次性完成
+      createRoadmapMutate(
+        {
+          roleId: roleId.value,
+          content,
+          description: roadmapDescription.value.trim(),
+          submit: type === 'publish',
+        },
+        { onSuccess: onSaveSuccess, onError: onSaveError }
+      )
     }
   } catch (error) {
     console.error('保存路径失败:', error)
     showSnackbar(t('roadmapCreate.messages.saveFailedRetry'), 'error')
-  } finally {
     saving.value = false
     saveType.value = ''
   }
 }
 
-// 自动布局
-const applyAutoLayout = (showMessage = false) => {
-  if (nodes.value.length <= 1) {
-    if (showMessage) {
-      showSnackbar(t('roadmapCreate.messages.needNodesForLayout'), 'warning')
-    }
-    return
-  }
-
-  // 先找出所有有连接关系的节点ID
-  const connectedNodeIds = new Set<string>()
-  edges.value.forEach((edge) => {
-    connectedNodeIds.add(edge.source.toString())
-    connectedNodeIds.add(edge.target.toString())
-  })
-
-  // 分离有连接的节点和无连接的节点
-  const connectedNodes = nodes.value.filter((node) => connectedNodeIds.has(node.id.toString()))
-  const unconnectedNodes = nodes.value.filter((node) => !connectedNodeIds.has(node.id.toString()))
-
-  // 如果有连接的节点，使用 dagre 布局
-  if (connectedNodes.length > 0) {
-    const dagreGraph = new dagre.graphlib.Graph()
-    dagreGraph.setDefaultEdgeLabel(() => ({}))
-    dagreGraph.setGraph({
-      rankdir: 'LR', // Left to Right - 叶子节点在左边，根节点在右边
-      nodesep: 20,
-      ranksep: 150,
-      marginx: 20,
-      marginy: 20,
-    })
-
-    const nodeWidth = 120
-    const nodeHeight = 40
-
-    // 只添加有连接的节点到 dagre 图
-    connectedNodes.forEach((node) => {
-      dagreGraph.setNode(node.id.toString(), { width: nodeWidth, height: nodeHeight })
-    })
-
-    // 添加边到 dagre 图
-    edges.value.forEach((edge) => {
-      dagreGraph.setEdge(edge.source.toString(), edge.target.toString())
-    })
-
-    // 计算布局
-    dagre.layout(dagreGraph)
-
-    // 更新有连接节点的位置
-    connectedNodes.forEach((node) => {
-      const nodeWithPosition = dagreGraph.node(node.id.toString())
-      node.position = {
-        x: nodeWithPosition.x - nodeWidth / 2,
-        y: nodeWithPosition.y - nodeHeight / 2,
-      }
-    })
-  }
-
-  // 处理没有连接关系的节点
-  if (unconnectedNodes.length > 0) {
-    // 找到有连接的节点中 x 坐标最大的（最右边的节点）
-    let rightX = 0
-    let centerY = 400 // 默认中心位置
-
-    if (connectedNodes.length > 0) {
-      const rightNode = connectedNodes.reduce((rightmost, node) => {
-        return node.position.x > rightmost.position.x ? node : rightmost
-      })
-      rightX = rightNode.position.x
-
-      // 计算有连接节点的 y 坐标中心位置
-      const sumY = connectedNodes.reduce((sum, node) => sum + node.position.y, 0)
-      centerY = sumY / connectedNodes.length
-    }
-
-    // 网格布局参数
-    const rows = 3 // 每列3个节点
-    const horizontalSpacing = 200 // 水平间距
-    const verticalSpacing = 100 // 垂直间距
-    const startX = rightX + 200 // 在最右边节点右侧200px开始
-
-    // 排列无连接的节点
-    unconnectedNodes.forEach((node, index) => {
-      const col = Math.floor(index / rows)
-      const row = index % rows
-
-      // 计算该列的起始 y 坐标，使这一列居中对齐
-      const colHeight = Math.min(unconnectedNodes.length - col * rows, rows) * verticalSpacing
-      const colStartY = centerY - colHeight / 2 + verticalSpacing / 2
-
-      node.position = {
-        x: startX + col * horizontalSpacing,
-        y: colStartY + row * verticalSpacing,
-      }
-    })
-  }
-
-  // 重新构建完整的节点数组
-  nodes.value = [...connectedNodes, ...unconnectedNodes]
-
-  // 布局完成后，调用 fitView 聚焦到所有节点
-  setTimeout(() => {
-    fitView({ padding: 0.2, duration: 300 })
-  }, 50)
-
-  if (showMessage) {
-    showSnackbar(t('roadmapCreate.messages.autoLayoutDone'), 'success')
-  }
-}
-
-// 重置
+/* ========== 重置 ========== */
 const resetAll = () => {
   confirmDialogConfig.value = {
     title: t('roadmapCreate.messages.resetTitle'),
@@ -1277,196 +970,78 @@ const resetAll = () => {
     iconColor: 'warning-lighten-4',
     iconForeground: 'warning',
     onConfirm: () => {
-      nodes.value = [
-        {
-          id: '0',
-          type: 'default',
-          data: { label: roleName.value },
-          position: { x: 400, y: 100 },
-          sourcePosition: undefined,
-          targetPosition: Position.Left,
-          style: ROOT_NODE_STYLE,
-        },
-      ]
-      edges.value = []
+      trunk.value = []
       roadmapDescription.value = ''
+      bindingType.value = null
+      pendingNodeId.value = null
       showSnackbar(t('roadmapCreate.messages.resetSuccess'), 'success')
     },
   }
   confirmDialogVisible.value = true
 }
 
-// 编辑模式：加载已有路线图数据
-const { data: roadmapData, loading: roadmapLoading } = useFetch({
-  fetchFn: () => roadmapApi.getRoadmap(roadmapId.value!),
-  immediate: isEditMode.value,
-  defaultValue: null,
-})
+/* ========== 加载 ========== */
+const { data: roadmapEditData, isLoading: roadmapLoading } = useRoadmapEditQuery(
+  computed(() => roadmapId.value ?? 0),
+  { enabled: isEditMode }
+)
 
-// 复制模式：加载要复制的路线图数据
-const { data: copyRoadmapData, loading: copyRoadmapLoading } = useFetch({
-  fetchFn: () => roadmapApi.getRoadmap(copyId.value!),
-  immediate: !!copyId.value,
-  defaultValue: null,
-})
+const { data: copyRoadmapData, isLoading: copyRoadmapLoading } = useRoadmapDetailQuery(
+  computed(() => copyId.value ?? 0),
+  { enabled: computed(() => !!copyId.value) }
+)
 
-// 监听加载状态
-watch(roadmapLoading, (isLoading) => {
-  loading.value = isLoading
-})
+const loading = computed(() => roadmapLoading.value || copyRoadmapLoading.value)
 
-watch(copyRoadmapLoading, (isLoading) => {
-  loading.value = isLoading
-})
+const loadFromContent = (raw: string | object | undefined): RoadmapNode[] => {
+  if (!raw) return []
+  try {
+    const data = typeof raw === 'string' ? JSON.parse(raw) : raw
+    if (data && data.v === 2 && Array.isArray(data.trunk)) {
+      return deserialize(data.trunk)
+    }
+    // 旧格式不兼容
+    showSnackbar(t('roadmapCreate.messages.loadFailed'), 'warning')
+    return []
+  } catch (e) {
+    console.error('解析路线图内容失败:', e)
+    showSnackbar(t('roadmapCreate.messages.loadFailed'), 'error')
+    return []
+  }
+}
 
-// 监听路线图数据加载完成
-watch(roadmapData, (newData) => {
+watch(roadmapEditData, (newData) => {
   if (newData && isEditMode.value) {
-    console.log('加载的路线图数据:', newData)
-
-    // 设置描述和状态
     roadmapDescription.value = newData.description || ''
     savedDraftDescription.value = newData.description || ''
     draftRoadmapId.value = newData.id
-    roadmapState.value = newData.state ?? null // 保存路线图状态
+    roadmapState.value = newData.state ?? null
+    isTimeTraveling = true
+    trunk.value = loadFromContent(newData.content ?? undefined)
+    resetHistory(trunk.value)
+    nextTick(() => {
+      isTimeTraveling = false
+    })
 
-    // 解析 content 并设置节点和边
-    try {
-      // content 是 JSON 字符串，格式为 {nodes: [], edges: []}
-      const contentData =
-        typeof newData.content === 'string' ? JSON.parse(newData.content) : newData.content
-
-      console.log('解析后的 content:', contentData)
-
-      if (contentData.nodes && contentData.edges) {
-        // 设置边
-        edges.value = contentData.edges.map((edge: any) => ({
-          id: `${edge.source}-${edge.target}`,
-          source: edge.source.toString(),
-          target: edge.target.toString(),
-          type: 'default',
-          animated: true,
-          style: EDGE_STYLE,
-        }))
-
-        // 设置节点
-        nodes.value = contentData.nodes.map((node: any) => {
-          if (node.id === '0' || node.id === 0) {
-            return {
-              id: '0',
-              type: 'default',
-              data: { label: roleName.value },
-              position: { x: 0, y: 0 },
-              sourcePosition: undefined,
-              targetPosition: Position.Left,
-              style: ROOT_NODE_STYLE,
-            }
-          } else {
-            return {
-              id: node.id.toString(),
-              type: 'default',
-              data: { label: node.name || `${t('roadmapDetail.courseLabel')} ${node.id}` },
-              position: { x: 0, y: 0 },
-              sourcePosition: Position.Right,
-              targetPosition: Position.Left,
-              style: COURSE_NODE_STYLE,
-            }
-          }
-        })
-
-        console.log('设置的节点:', nodes.value.length, '设置的边:', edges.value.length)
-
-        // 使用自动布局
-        setTimeout(() => {
-          applyAutoLayout()
-        }, 100)
-      }
-    } catch (parseError) {
-      console.error('解析路线图内容失败:', parseError)
-      showSnackbar(t('roadmapCreate.messages.loadFailed'), 'error')
+    // 上次审核被驳回的提示（lastReject 由后端返回）
+    if (newData.lastReject?.reason) {
+      showSnackbar(
+        t('roadmapCreate.messages.lastRejectReason', { reason: newData.lastReject.reason }),
+        'warning'
+      )
     }
   }
 })
 
-// 监听复制路线图数据加载完成
 watch(copyRoadmapData, (newData) => {
   if (newData && copyId.value) {
-    console.log('加载的复制路线图数据:', newData)
-
-    // 设置描述（添加"副本"标识）
     roadmapDescription.value = `${newData.description || t('roadmapCreate.unnamedRoadmap')} ${t('roadmapCreate.copySuffix')}`
-
-    // 解析 content 并设置节点和边
-    try {
-      const contentData =
-        typeof newData.content === 'string' ? JSON.parse(newData.content) : newData.content
-
-      console.log('解析后的 content:', contentData)
-
-      if (contentData.nodes && contentData.edges) {
-        // 重新生成节点ID，避免ID冲突
-        const idMap = new Map<string, string>()
-        const newNodes = contentData.nodes.map((node: any) => {
-          const newId =
-            node.id === '0' || node.id === 0
-              ? '0'
-              : `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          idMap.set(node.id.toString(), newId)
-
-          if (node.id === '0' || node.id === 0) {
-            return {
-              id: '0',
-              type: 'default',
-              data: { label: roleName.value },
-              position: { x: 0, y: 0 },
-              sourcePosition: undefined,
-              targetPosition: Position.Left,
-              style: ROOT_NODE_STYLE,
-            }
-          } else {
-            return {
-              id: newId,
-              type: 'default',
-              data: { label: node.name || `${t('roadmapDetail.courseLabel')} ${node.id}` },
-              position: { x: 0, y: 0 },
-              sourcePosition: Position.Right,
-              targetPosition: Position.Left,
-              style: COURSE_NODE_STYLE,
-            }
-          }
-        })
-
-        // 更新边的ID引用
-        const newEdges = contentData.edges.map((edge: any) => ({
-          id: `${idMap.get(edge.source.toString())}-${idMap.get(edge.target.toString())}`,
-          source: idMap.get(edge.source.toString()) || edge.source.toString(),
-          target: idMap.get(edge.target.toString()) || edge.target.toString(),
-          type: 'default',
-          animated: true,
-          style: EDGE_STYLE,
-        }))
-
-        nodes.value = newNodes
-        edges.value = newEdges
-
-        console.log('设置的节点:', nodes.value.length, '设置的边:', edges.value.length)
-
-        // 使用自动布局
-        setTimeout(() => {
-          applyAutoLayout()
-        }, 100)
-      }
-    } catch (parseError) {
-      console.error('解析复制路线图内容失败:', parseError)
-      showSnackbar(t('roadmapCreate.messages.loadFailed'), 'error')
-    }
-  }
-})
-
-// 如果是复制模式,加载数据
-onMounted(() => {
-  if (copyId.value) {
-    // 数据加载已由 useFetch 处理，这里不需要额外操作
+    isTimeTraveling = true
+    trunk.value = loadFromContent(newData.content)
+    resetHistory(trunk.value)
+    nextTick(() => {
+      isTimeTraveling = false
+    })
   }
 })
 </script>
@@ -1476,22 +1051,15 @@ onMounted(() => {
   /* 使用 DefaultLayout 的默认 padding */
 }
 
-/* 草稿描述区域样式 */
-.draft-description-section {
-  padding: 0;
-}
-
-/* 草稿描述文本样式 - 最多显示5行 */
-.draft-description-text {
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  -webkit-box-orient: vertical;
+.draft-description-text-inline {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
-  word-break: break-word;
-  line-height: 1.5;
+  text-overflow: ellipsis;
+  cursor: help;
 }
 
-/* 对话框关闭按钮 */
 .dialog-close-btn {
   position: absolute;
   top: 16px;
@@ -1499,14 +1067,6 @@ onMounted(() => {
   z-index: 1;
 }
 
-/* 宽屏时向左延伸，让后退按钮露出到页面外 */
-@media (min-width: 1800px) {
-  .title-row {
-    margin-left: -56px;
-  }
-}
-
-/* 内容布局 */
 .content-layout {
   display: flex;
   flex-direction: column;
@@ -1542,7 +1102,6 @@ onMounted(() => {
   }
 }
 
-/* 右侧课程列表 */
 .right-sidebar {
   width: 100%;
 }
@@ -1559,19 +1118,11 @@ onMounted(() => {
   border: 1px solid rgb(var(--v-theme-outline));
 }
 
-/* 右侧面板卡片样式 */
 .course-search-card {
   background-color: rgb(var(--v-theme-surface));
   transition: box-shadow 0.2s ease;
 }
 
-/* 搜索框样式 */
-.search-field :deep(.v-field) {
-  border-radius: 12px;
-  background-color: transparent !important;
-}
-
-/* 空状态图标动画 */
 .empty-icon-wrapper {
   animation: float 3s ease-in-out infinite;
 }
@@ -1586,7 +1137,6 @@ onMounted(() => {
   }
 }
 
-/* 课程列表样式 */
 .course-list-wrapper {
   max-height: 350px;
   overflow-y: auto;
@@ -1664,43 +1214,6 @@ onMounted(() => {
   color: rgb(var(--v-theme-primary));
 }
 
-/* 操作指南样式 */
-.tips-section {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid rgb(var(--v-theme-grey-lighten-4));
-}
-
-.tips-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12px;
-  opacity: 0.7;
-}
-
-.tips-list-simple {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.tip-simple {
-  font-size: 12px;
-  line-height: 1.5;
-  color: rgb(var(--v-theme-grey-darken-1));
-  padding-left: 12px;
-  position: relative;
-}
-
-.tip-simple::before {
-  content: '·';
-  position: absolute;
-  left: 0;
-  font-size: 16px;
-  line-height: 1.2;
-  color: rgb(var(--v-theme-grey));
-}
-
 .flow-editor {
   height: 500px;
   min-height: 400px;
@@ -1731,41 +1244,5 @@ onMounted(() => {
 
 .gap-2 {
   gap: 8px;
-}
-
-/* Vue Flow 节点样式 */
-:deep(.vue-flow__node) {
-  cursor: move;
-}
-
-:deep(.vue-flow__node.selected) {
-  box-shadow: 0 0 0 2px rgb(var(--v-theme-primary));
-}
-
-/* Vue Flow 边（连接线）样式 */
-:deep(.vue-flow__edge) {
-  cursor: pointer;
-}
-
-:deep(.vue-flow__edge.selected) {
-  z-index: 1000;
-}
-
-:deep(.vue-flow__edge.selected .vue-flow__edge-path) {
-  stroke: rgb(var(--v-theme-primary)) !important;
-  stroke-width: 3px !important;
-}
-
-/* 工具栏分隔符 */
-.toolbar-divider {
-  height: 24px;
-  align-self: center;
-}
-
-/* 隐藏根节点的 source handle */
-:deep(.vue-flow__node[data-id='0'] .vue-flow__handle.source),
-:deep(.vue-flow__node[data-id='0'] .vue-flow__handle-right),
-:deep(.vue-flow__node[data-id='0'] .vue-flow__handle-bottom) {
-  display: none !important;
 }
 </style>

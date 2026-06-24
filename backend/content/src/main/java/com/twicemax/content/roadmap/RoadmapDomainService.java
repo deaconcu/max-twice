@@ -1,13 +1,12 @@
 package com.twicemax.content.roadmap;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.twicemax.content.node.NodeDO;
-import com.twicemax.shared.common.utils.UnionFind;
-import com.twicemax.shared.common.utils.Utils;
+import com.twicemax.content.shared.revision.ContentRevisionDO;
+import com.twicemax.content.shared.revision.ContentRevisionDataService;
+import com.twicemax.shared.common.utils.CanonicalJson;
+import com.twicemax.shared.domain.Enums.NewContentType;
+import com.twicemax.shared.domain.Enums.RevisionStatus;
+import com.twicemax.shared.domain.Enums.NewContentState;
 import com.twicemax.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,14 +14,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
-
-import static com.twicemax.shared.domain.Enums.ContentState;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
- * 路线图领域服务
- *
- * 只依赖 content 域，处理路线图的核心业务逻辑
+ * 路线图领域服务（revision 模型）。
+ * <p>
+ * 主体状态（roadmap.state）只有 NEVER_PUBLISHED / PUBLISHED / BANNED 三种，描述对外可见性；
+ * 一次"提交→审核"的生命周期落在 {@link ContentRevisionDO}（status: SUBMITTED / PUBLISHED /
+ * REJECTED / WITHDRAWN）。两者通过 current_revision_id（已发布版本）和 pending_revision_id
+ * （审核中版本）连接。
+ * <p>
+ * 内容格式 v=2：
+ * <pre>
+ * { "v": 2, "trunk": [ { "t": "c"|"n"|"g"|"o", "id": 123, "label": "...", "children": [...] } ] }
+ * </pre>
  */
 @Slf4j
 @Service
@@ -31,50 +42,45 @@ public class RoadmapDomainService {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    private static final int CURRENT_VERSION = RoadmapContentDTO.CURRENT_VERSION;
+    private static final int MAX_DEPTH = 4;
+    private static final int MAX_TRUNK_SIZE = 50;
+    private static final int MAX_CHILDREN_PER_NODE = 20;
+    private static final int MAX_GROUP_LABEL_LEN = 20;
+    private static final int MAX_NOTE_LABEL_LEN = 50;
+
+    private static final String TYPE_COURSE = "c";
+    private static final String TYPE_NODE = "n";
+    private static final String TYPE_GROUP = "g";
+    private static final String TYPE_NOTE = "o";
+
+    private static final String CONTENT_TYPE = NewContentType.ROADMAP_VALUE;
+
     private final RoadmapDataService roadmapDataService;
+    private final ContentRevisionDataService revisionDataService;
 
     // ========== Query 方法 ==========
 
-    /**
-     * 按状态查询路线图列表
-     */
-    public List<RoadmapDO> listByState(ContentState state, Long lastId, int limit) {
+    public List<RoadmapDO> listByState(NewContentState state, Long lastId, int limit) {
         return roadmapDataService.listByState(state != null ? state.value() : null, lastId, limit);
     }
 
-    /**
-     * 高级筛选路线图列表
-     */
     public List<RoadmapDO> listByFilter(Long roadmapId, Long roleId, Long creatorId, Long lastId, int limit) {
         return roadmapDataService.listByFilter(roadmapId, roleId, creatorId, lastId, limit);
     }
 
-    /**
-     * 获取角色路线图列表（公开接口）
-     * 用于匿名用户浏览，按分数排序
-     *
-     * @param roleId 角色ID
-     * @param lastId 最后一个路线图ID（分页游标）
-     * @param limit 查询数量限制
-     * @return 路线图列表
-     */
     public List<RoadmapDO> getRoadmapsByRolePublic(Long roleId, Long lastId, int limit) {
         if (lastId == null || lastId == 0) {
             return roadmapDataService.getListByRoleOrderBy(roleId, limit, "score");
-        } else {
-            RoadmapDO lastRoadmap = roadmapDataService.getById(lastId);
-            if (lastRoadmap != null) {
-                return roadmapDataService.getListByRoleAfterCursorOrderBy(
-                    roleId, lastRoadmap.getScore(), lastRoadmap.getCreatedAt(), lastId, limit, "score");
-            } else {
-                return new ArrayList<>();
-            }
         }
+        RoadmapDO lastRoadmap = roadmapDataService.getById(lastId);
+        if (lastRoadmap == null) {
+            return new ArrayList<>();
+        }
+        return roadmapDataService.getListByRoleAfterCursorOrderBy(
+            roleId, lastRoadmap.getScore(), lastRoadmap.getCreatedAt(), lastId, limit, "score");
     }
 
-    /**
-     * 获取角色路线图列表（支持动态排序）
-     */
     public List<RoadmapDO> getRoadmapsByRole(Long roleId, Long lastId, int limit, String sortBy) {
         if (lastId != null) {
             RoadmapDO lastRoadmap = roadmapDataService.getById(lastId);
@@ -83,455 +89,460 @@ public class RoadmapDomainService {
                     roleId, lastRoadmap.getScore(), lastRoadmap.getCreatedAt(), lastId, limit, sortBy);
             }
         }
-
-        // 首次加载
         return roadmapDataService.getListByRoleOrderBy(roleId, limit, sortBy);
     }
 
     /**
-     * 获取用户创建的路线图列表
-     *
-     * @param userId 用户ID
-     * @param lastId 分页游标
-     * @param limit 查询数量限制
-     * @param state 状态过滤（可选）
-     * @return 路线图列表
+     * @param state 仅传入 PUBLISHED / NEVER_PUBLISHED / BANNED；null 时 mapper 默认排除 BANNED。
      */
-    public List<RoadmapDO> getUserRoadmaps(Long userId, Long lastId, int limit, Byte state) {
-        return roadmapDataService.getListByCreatorWithPaging(userId, lastId, limit, state);
+    public List<RoadmapDO> getUserRoadmaps(Long userId, Long lastId, int limit, NewContentState state) {
+        return roadmapDataService.getListByCreatorWithPaging(
+            userId, lastId, limit, state != null ? state.value() : null);
     }
 
-    /**
-     * 根据ID列表批量获取路线图
-     * @param roadmapIds 路线图ID列表
-     * @return 路线图列表
-     */
     public List<RoadmapDO> getRoadmapsByIds(List<Long> roadmapIds) {
         return roadmapDataService.getByIds(roadmapIds);
     }
 
+    // ========== 内容校验与处理 ==========
+
     /**
-     * 标准化content内容并计算hash值
-     * @param content 原始content字符串，格式: [[[1,2],[2,3]],[1,2,3]]
-     * @return 标准化后的hash值
+     * 校验路线图内容格式合法性，并去掉 c/n 节点的 label（由数据库回填）。
+     * 返回的 JSON 已做 Jackson 序列化，但未做 canonical 化；调用方需要 hash/落库时请额外走 {@link CanonicalJson}.
      */
-    public String calculateContentHash(String content) {
+    public String validateAndStrip(String content) {
+        RoadmapContentDTO dto = parseContent(content);
+
+        if (dto.getV() != CURRENT_VERSION) {
+            throw StatusCode.ROADMAP_CONTENT_INVALID.exception("协议版本不支持: v=" + dto.getV());
+        }
+        List<RoadmapNodeDTO> trunk = dto.getTrunk();
+        if (trunk == null || trunk.isEmpty()) {
+            throw StatusCode.ROADMAP_CONTENT_INVALID.exception("主干为空");
+        }
+        if (trunk.size() > MAX_TRUNK_SIZE) {
+            throw StatusCode.ROADMAP_CONTENT_INVALID.exception("主干节点过多");
+        }
+
+        for (RoadmapNodeDTO node : trunk) {
+            validateNode(node, 1);
+        }
+
         try {
-            JsonNode rootNode = objectMapper.readTree(content);
-            if (!rootNode.isArray() || rootNode.size() != 2) {
-                throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
-            }
-
-            JsonNode edgesNode = rootNode.get(0);
-            JsonNode nodesNode = rootNode.get(1);
-
-            List<List<Integer>> edges = new ArrayList<>();
-            for (JsonNode edge : edgesNode) {
-                List<Integer> edgePair = new ArrayList<>();
-                edgePair.add(edge.get(0).asInt());
-                edgePair.add(edge.get(1).asInt());
-                edges.add(edgePair);
-            }
-
-            edges.sort((a, b) -> {
-                int firstCompare = Integer.compare(a.get(0), b.get(0));
-                return firstCompare != 0 ? firstCompare : Integer.compare(a.get(1), b.get(1));
-            });
-
-            List<Integer> nodes = new ArrayList<>();
-            for (JsonNode node : nodesNode) {
-                nodes.add(node.asInt());
-            }
-            Collections.sort(nodes);
-
-            ArrayNode standardizedContent = JsonNodeFactory.instance.arrayNode();
-
-            ArrayNode standardizedEdges = JsonNodeFactory.instance.arrayNode();
-            for (List<Integer> edge : edges) {
-                ArrayNode edgeArray = JsonNodeFactory.instance.arrayNode();
-                edgeArray.add(edge.get(0));
-                edgeArray.add(edge.get(1));
-                standardizedEdges.add(edgeArray);
-            }
-            standardizedContent.add(standardizedEdges);
-
-            ArrayNode standardizedNodes = JsonNodeFactory.instance.arrayNode();
-            for (Integer node : nodes) {
-                standardizedNodes.add(node);
-            }
-            standardizedContent.add(standardizedNodes);
-
-            String standardizedString = standardizedContent.toString();
-            return Utils.md5(standardizedString);
-
+            return objectMapper.writeValueAsString(dto);
         } catch (Exception e) {
-            log.error("内容哈希计算失败: {}", content, e);
-            throw StatusCode.CONTENT_HASH_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 验证content基本格式和边的节点存在性（不验证树结构）
-     * 用于草稿模式，允许有孤立节点，但边必须指向存在的节点
-     */
-    public boolean isValidContentBasicFormat(String content) {
-        try {
-            JsonNode rootNode = objectMapper.readTree(content);
-            if (!rootNode.isArray() || rootNode.size() != 2) {
-                return false;
-            }
-
-            JsonNode edgesNode = rootNode.get(0);
-            JsonNode nodesNode = rootNode.get(1);
-
-            // 验证节点数组格式
-            if (!nodesNode.isArray()) {
-                return false;
-            }
-            Set<Integer> nodeSet = new HashSet<>();
-            for (JsonNode node : nodesNode) {
-                if (!node.isInt()) {
-                    return false;
-                }
-                nodeSet.add(node.asInt());
-            }
-
-            // 验证边数组格式和节点存在性
-            if (!edgesNode.isArray()) {
-                return false;
-            }
-            for (JsonNode edge : edgesNode) {
-                if (!edge.isArray() || edge.size() != 2) {
-                    return false;
-                }
-                if (!edge.get(0).isInt() || !edge.get(1).isInt()) {
-                    return false;
-                }
-                // 验证边的两个节点都在节点集合中
-                int source = edge.get(0).asInt();
-                int target = edge.get(1).asInt();
-                if (!nodeSet.contains(source) || !nodeSet.contains(target)) {
-                    return false;
-                }
-            }
-
-            return true;
-
-        } catch (Exception e) {
-            log.warn("内容基本格式验证失败", e);
-            return false;
-        }
-    }
-
-    /**
-     * 验证content格式是否正确并且是一棵树
-     */
-    public boolean isValidContentFormat(String content) {
-        try {
-            JsonNode rootNode = objectMapper.readTree(content);
-            if (!rootNode.isArray() || rootNode.size() != 2) {
-                return false;
-            }
-
-            JsonNode edgesNode = rootNode.get(0);
-            JsonNode nodesNode = rootNode.get(1);
-
-            if (!edgesNode.isArray()) {
-                return false;
-            }
-
-            List<int[]> edges = new ArrayList<>();
-            for (JsonNode edge : edgesNode) {
-                if (!edge.isArray() || edge.size() != 2) {
-                    return false;
-                }
-                if (!edge.get(0).isInt() || !edge.get(1).isInt()) {
-                    return false;
-                }
-                edges.add(new int[]{edge.get(0).asInt(), edge.get(1).asInt()});
-            }
-
-            if (!nodesNode.isArray()) {
-                return false;
-            }
-
-            Set<Integer> nodeSet = new HashSet<>();
-            for (JsonNode node : nodesNode) {
-                if (!node.isInt()) {
-                    return false;
-                }
-                nodeSet.add(node.asInt());
-            }
-
-            return isValidTree(edges, nodeSet);
-
-        } catch (Exception e) {
-            log.warn("内容格式验证失败", e);
-            return false;
-        }
-    }
-
-    /**
-     * 校验是否是有效的树结构
-     * @param edges 边的列表
-     * @param nodes 节点集合
-     * @return 是否是有效的树
-     */
-    private boolean isValidTree(List<int[]> edges, Set<Integer> nodes) {
-        int nodeCount = nodes.size();
-        int edgeCount = edges.size();
-
-        // 特殊情况：只有一个节点且没有边，也是树
-        if (nodeCount == 1 && edgeCount == 0) {
-            return true;
-        }
-
-        // 树的必要条件：n个节点，n-1条边
-        if (edgeCount != nodeCount - 1) {
-            return false;
-        }
-
-        // 检查所有边的节点是否都在节点集合中
-        for (int[] edge : edges) {
-            if (!nodes.contains(edge[0]) || !nodes.contains(edge[1])) {
-                return false;
-            }
-        }
-
-        // 使用并查集检查连通性和是否有环
-        UnionFind uf = new UnionFind(nodes);
-
-        for (int[] edge : edges) {
-            int u = edge[0];
-            int v = edge[1];
-
-            // 如果两个节点已经连通，说明有环
-            if (uf.connected(u, v)) {
-                return false;
-            }
-
-            uf.union(u, v);
-        }
-
-        // 检查是否所有节点都连通
-        return uf.getComponentCount() == 1;
-    }
-
-    // ========== Command 方法 ==========
-
-    /**
-     * 创建路线图
-     */
-    @Transactional
-    public Long createRoadmap(long roleId, String content, String description, long userId, int nodeCount, Byte state) {
-        // Domain 层安全验证：状态只能是草稿或提交审核
-        if (!ContentState.DRAFT.value().equals(state) && !ContentState.SUBMITTED.value().equals(state)) {
-            throw new IllegalArgumentException("状态非法");
-        }
-
-        RoadmapDO roadmapDO = new RoadmapDO();
-        roadmapDO.setContent(content);
-        roadmapDO.setContentHash(calculateContentHash(content));
-        roadmapDO.setDescription(description);
-        roadmapDO.setRoleId(roleId);
-        roadmapDO.setCreatorId(userId);
-        roadmapDO.setNodeCount(nodeCount);
-        roadmapDO.setState(state);
-        roadmapDO.setScore(0.0);
-
-        roadmapDataService.insert(roadmapDO);
-        log.info("路线图 创建成功: roadmapId={}，roleId={}，userId={}，state={}",
-            roadmapDO.getId(), roleId, userId, state);
-
-        return roadmapDO.getId();
-    }
-
-    /**
-     * 更新路线图
-     */
-    @Transactional
-    public void updateRoadmap(long id, String content, int nodeCount) {
-        roadmapDataService.validateExists(id);
-
-        RoadmapDO roadmapDO = roadmapDataService.getById(id);
-        roadmapDO.setContent(content);
-        roadmapDO.setContentHash(calculateContentHash(content));
-        roadmapDO.setNodeCount(nodeCount);
-        roadmapDO.setUpdatedAt(LocalDateTime.now());
-
-        roadmapDataService.update(roadmapDO);
-        log.info("路线图 更新成功: roadmapId={}", id);
-    }
-
-    /**
-     * 删除路线图（软删除）
-     */
-    @Transactional
-    public void deleteRoadmap(long id) {
-        roadmapDataService.validateExists(id);
-
-        int result = roadmapDataService.softDelete(id);
-        if (result == 0) {
-            throw StatusCode.ROADMAP_NOT_FOUND.exception();
-        }
-        log.info("路线图 删除成功: roadmapId={}", id);
-    }
-
-    /**
-     * 批准路线图
-     */
-    @Transactional
-    public void approve(long id) {
-        roadmapDataService.validateExists(id);
-
-        RoadmapDO roadmap = roadmapDataService.getById(id);
-        Utils.validateStateTransition(roadmap.getState(), ContentState.PUBLISHED);
-
-        roadmapDataService.approve(id);
-        log.info("路线图 审核通过: roadmapId={}", id);
-    }
-
-    /**
-     * 拒绝路线图
-     */
-    @Transactional
-    public void reject(long id, String reason) {
-        roadmapDataService.validateExists(id);
-
-        RoadmapDO roadmap = roadmapDataService.getById(id);
-        Utils.validateStateTransition(roadmap.getState(), ContentState.REJECTED);
-
-        roadmapDataService.reject(id, reason);
-        log.info("路线图 审核拒绝: roadmapId={}，reason={}", id, reason);
-    }
-
-    /**
-     * 封禁路线图
-     */
-    @Transactional
-    public void ban(long id, String reason) {
-        roadmapDataService.validateExists(id);
-
-        RoadmapDO roadmap = roadmapDataService.getById(id);
-        Utils.validateStateTransition(roadmap.getState(), ContentState.BANNED);
-
-        roadmapDataService.ban(id, reason);
-        log.info("路线图 封禁: roadmapId={}，reason={}", id, reason);
-    }
-
-    /**
-     * 更新路线图描述（管理员操作）
-     */
-    @Transactional
-    public void updateDescription(long id, String description) {
-        roadmapDataService.validateExists(id);
-
-        RoadmapDO roadmap = roadmapDataService.getById(id);
-        roadmap.setDescription(description != null ? description : "");
-        roadmapDataService.update(roadmap);
-
-        log.info("路线图 描述更新成功: roadmapId={}", id);
-    }
-
-    // ========== 内容解析方法 ==========
-
-    /**
-     * 解析路线图内容为图形格式
-     *
-     * @param content 原始内容
-     * @param nodeProgress 节点ID到进度百分比的映射（0-10000）
-     * @param nodeMap 节点ID到节点实体的映射（包含 name, is_course_root, course_id 等）
-     * @return JSON格式的图形数据
-     */
-    public String parseContentToGraphFormat(String content,
-                                           Map<Long, Integer> nodeProgress,
-                                           Map<Long, NodeDO> nodeMap) {
-        try {
-            List<List<Object>> contentData = objectMapper.readValue(content, new TypeReference<>() {});
-
-            Map<String, Object> graphData = new HashMap<>();
-            List<Map<String, String>> edges = new ArrayList<>();
-            List<Map<String, Object>> nodes = new ArrayList<>();
-
-            if (contentData.size() >= 2) {
-                edges = parseEdges(contentData.get(0));
-                nodes = parseNodes(contentData.get(1), nodeProgress, nodeMap);
-            }
-
-            graphData.put("edges", edges);
-            graphData.put("nodes", nodes);
-
-            return objectMapper.writeValueAsString(graphData);
-        } catch (Exception e) {
-            log.error("内容解析为图形格式失败", e);
             throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
         }
     }
 
-    /**
-     * 解析边数据
-     */
-    private List<Map<String, String>> parseEdges(List<Object> edgeDataRaw) {
-        List<Map<String, String>> edges = new ArrayList<>();
-        for (Object edgeObj : edgeDataRaw) {
-            if (edgeObj instanceof List) {
-                List<Object> edge = (List<Object>) edgeObj;
-                if (edge.size() >= 2) {
-                    Map<String, String> edgeMap = new HashMap<>();
-                    edgeMap.put("source", String.valueOf(edge.get(0)));
-                    edgeMap.put("target", String.valueOf(edge.get(1)));
-                    edges.add(edgeMap);
+    private void validateNode(RoadmapNodeDTO node, int depth) {
+        if (node == null) {
+            throw StatusCode.ROADMAP_CONTENT_INVALID.exception("节点为空");
+        }
+        if (depth > MAX_DEPTH) {
+            throw StatusCode.ROADMAP_CONTENT_INVALID.exception("节点深度超过上限");
+        }
+        String t = node.getT();
+        if (t == null) {
+            throw StatusCode.ROADMAP_CONTENT_INVALID.exception("节点缺少类型");
+        }
+
+        List<RoadmapNodeDTO> children = node.getChildren();
+        boolean hasChildren = children != null && !children.isEmpty();
+
+        switch (t) {
+            case TYPE_COURSE:
+            case TYPE_NODE: {
+                if (node.getId() == null || node.getId() <= 0) {
+                    throw StatusCode.ROADMAP_CONTENT_INVALID.exception(t + " 节点缺少 id");
                 }
+                if (hasChildren) {
+                    throw StatusCode.ROADMAP_CONTENT_INVALID.exception(t + " 节点不允许有子节点");
+                }
+                node.setLabel(null);
+                break;
+            }
+            case TYPE_GROUP: {
+                String label = trim(node.getLabel());
+                if (label.isEmpty()) {
+                    throw StatusCode.ROADMAP_CONTENT_INVALID.exception("分组节点缺少标签");
+                }
+                if (label.length() > MAX_GROUP_LABEL_LEN) {
+                    throw StatusCode.ROADMAP_CONTENT_INVALID.exception(
+                        "分组节点标签过长（最多 " + MAX_GROUP_LABEL_LEN + " 字）");
+                }
+                node.setLabel(label);
+                node.setId(null);
+                break;
+            }
+            case TYPE_NOTE: {
+                String label = trim(node.getLabel());
+                if (label.isEmpty()) {
+                    throw StatusCode.ROADMAP_CONTENT_INVALID.exception("说明节点缺少文本");
+                }
+                if (label.length() > MAX_NOTE_LABEL_LEN) {
+                    throw StatusCode.ROADMAP_CONTENT_INVALID.exception(
+                        "说明节点文本过长（最多 " + MAX_NOTE_LABEL_LEN + " 字）");
+                }
+                if (hasChildren) {
+                    throw StatusCode.ROADMAP_CONTENT_INVALID.exception("说明节点不允许有子节点");
+                }
+                node.setLabel(label);
+                node.setId(null);
+                break;
+            }
+            default:
+                throw StatusCode.ROADMAP_CONTENT_INVALID.exception("非法节点类型: " + t);
+        }
+
+        if (hasChildren) {
+            if (children.size() > MAX_CHILDREN_PER_NODE) {
+                throw StatusCode.ROADMAP_CONTENT_INVALID.exception("子节点数量超过上限");
+            }
+            for (RoadmapNodeDTO child : children) {
+                validateNode(child, depth + 1);
             }
         }
-        return edges;
+    }
+
+    public BoundIds collectBoundIds(String content) {
+        RoadmapContentDTO dto = parseContent(content);
+        Set<Long> courseIds = new HashSet<>();
+        Set<Long> nodeIds = new HashSet<>();
+        if (dto.getTrunk() != null) {
+            for (RoadmapNodeDTO node : dto.getTrunk()) {
+                walkCollect(node, courseIds, nodeIds);
+            }
+        }
+        return new BoundIds(courseIds, nodeIds);
+    }
+
+    private void walkCollect(RoadmapNodeDTO node, Set<Long> courseIds, Set<Long> nodeIds) {
+        if (node == null) return;
+        if (TYPE_COURSE.equals(node.getT()) && node.getId() != null) {
+            courseIds.add(node.getId());
+        } else if (TYPE_NODE.equals(node.getT()) && node.getId() != null) {
+            nodeIds.add(node.getId());
+        }
+        if (node.getChildren() != null) {
+            for (RoadmapNodeDTO child : node.getChildren()) {
+                walkCollect(child, courseIds, nodeIds);
+            }
+        }
+    }
+
+    public int countLeafBindings(String content) {
+        RoadmapContentDTO dto = parseContent(content);
+        int[] counter = {0};
+        if (dto.getTrunk() != null) {
+            for (RoadmapNodeDTO node : dto.getTrunk()) {
+                walkCount(node, counter);
+            }
+        }
+        return counter[0];
+    }
+
+    private void walkCount(RoadmapNodeDTO node, int[] counter) {
+        if (node == null) return;
+        if (TYPE_COURSE.equals(node.getT()) || TYPE_NODE.equals(node.getT())) {
+            counter[0]++;
+        }
+        if (node.getChildren() != null) {
+            for (RoadmapNodeDTO child : node.getChildren()) {
+                walkCount(child, counter);
+            }
+        }
+    }
+
+    public String enrichLabels(String content,
+                               Map<Long, String> courseNames,
+                               Map<Long, String> nodeNames) {
+        RoadmapContentDTO dto = parseContent(content);
+        if (dto.getTrunk() != null) {
+            for (RoadmapNodeDTO node : dto.getTrunk()) {
+                walkEnrich(node, courseNames != null ? courseNames : Collections.emptyMap(),
+                    nodeNames != null ? nodeNames : Collections.emptyMap());
+            }
+        }
+        try {
+            return objectMapper.writeValueAsString(dto);
+        } catch (Exception e) {
+            throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
+        }
+    }
+
+    private void walkEnrich(RoadmapNodeDTO node,
+                            Map<Long, String> courseNames,
+                            Map<Long, String> nodeNames) {
+        if (node == null) return;
+        if (TYPE_COURSE.equals(node.getT()) && node.getId() != null) {
+            String name = courseNames.get(node.getId());
+            node.setLabel(name != null ? name : "");
+        } else if (TYPE_NODE.equals(node.getT()) && node.getId() != null) {
+            String name = nodeNames.get(node.getId());
+            node.setLabel(name != null ? name : "");
+        }
+        if (node.getChildren() != null) {
+            for (RoadmapNodeDTO child : node.getChildren()) {
+                walkEnrich(child, courseNames, nodeNames);
+            }
+        }
+    }
+
+    private RoadmapContentDTO parseContent(String content) {
+        try {
+            RoadmapContentDTO dto = objectMapper.readValue(content, RoadmapContentDTO.class);
+            if (dto == null) {
+                throw StatusCode.ROADMAP_CONTENT_INVALID.exception("内容为空");
+            }
+            return dto;
+        } catch (com.twicemax.shared.domain.exception.BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.warn("路线图内容解析失败", e);
+            throw StatusCode.ROADMAP_CONTENT_INVALID.exception("内容格式错误");
+        }
+    }
+
+    private static String trim(String s) {
+        return s == null ? "" : s.trim();
+    }
+
+    public static final class BoundIds {
+        private final Set<Long> courseIds;
+        private final Set<Long> nodeIds;
+
+        public BoundIds(Set<Long> courseIds, Set<Long> nodeIds) {
+            this.courseIds = courseIds;
+            this.nodeIds = nodeIds;
+        }
+
+        public Set<Long> getCourseIds() {
+            return courseIds;
+        }
+
+        public Set<Long> getNodeIds() {
+            return nodeIds;
+        }
+    }
+
+    // ========== Command 方法（revision 模型）==========
+
+    /**
+     * 创建一个空的 roadmap 主体（NEVER_PUBLISHED，仅承载 draft）。
+     * 不写 revision，不写 content/content_hash；node_count = 0。
+     */
+    @Transactional
+    public Long createDraft(long roleId, String draftContent, String description, long userId) {
+        RoadmapDO roadmapDO = new RoadmapDO();
+        roadmapDO.setRoleId(roleId);
+        roadmapDO.setCreatorId(userId);
+        roadmapDO.setDescription(description);
+        roadmapDO.setState(NewContentState.NEVER_PUBLISHED_VALUE);
+        roadmapDO.setDraftContent(draftContent);
+        roadmapDO.setDraftUpdatedAt(LocalDateTime.now());
+        roadmapDO.setNodeCount(0);
+        roadmapDO.setScore(0.0);
+        roadmapDataService.insert(roadmapDO);
+        log.info("Roadmap 创建草稿: roadmapId={}, roleId={}, userId={}", roadmapDO.getId(), roleId, userId);
+        return roadmapDO.getId();
     }
 
     /**
-     * 解析节点数据
-     *
-     * @param nodeIdsRaw 原始节点ID列表
-     * @param nodeProgress 节点进度映射（0-10000）
-     * @param nodeDataMap 节点实体映射（包含所有元数据）
-     * @return 节点列表
+     * 仅更新草稿（save-draft）。不动 state / current / pending。
      */
-    private List<Map<String, Object>> parseNodes(List<Object> nodeIdsRaw,
-                                                 Map<Long, Integer> nodeProgress,
-                                                 Map<Long, NodeDO> nodeDataMap) {
-        List<Long> nodeIds = new ArrayList<>();
-        for (Object nodeIdObj : nodeIdsRaw) {
-            if (nodeIdObj instanceof Number) {
-                nodeIds.add(((Number) nodeIdObj).longValue());
-            }
-        }
-
-        List<Map<String, Object>> nodes = new ArrayList<>();
-        for (long nodeId : nodeIds) {
-            // 获取节点实体
-            NodeDO nodeDO = nodeDataMap.get(nodeId);
-            String nodeName = nodeDO != null && nodeDO.getName() != null ? nodeDO.getName() : "节点" + nodeId;
-
-            // 获取进度信息（0-10000，转换为 0.0-100.0）
-            Integer progressInt = nodeProgress.get(nodeId);
-            double progressPercent = progressInt != null ? progressInt / 100.0 : 0.0;
-
-            // 获取节点元数据
-            boolean isCourseRoot = nodeDO != null && nodeDO.getIsCourseRoot() != null && nodeDO.getIsCourseRoot() == 1;
-            Long courseId = nodeDO != null ? nodeDO.getCourseId() : null;
-
-            // 构建节点数据
-            Map<String, Object> nodeMap = new HashMap<>();
-            nodeMap.put("id", String.valueOf(nodeId));
-            nodeMap.put("name", nodeName);
-            nodeMap.put("progress", progressPercent);
-            nodeMap.put("isCourseRoot", isCourseRoot);
-            if (courseId != null) {
-                nodeMap.put("courseId", courseId);
-            }
-            nodes.add(nodeMap);
-        }
-
-        return nodes;
+    @Transactional
+    public void saveDraft(long roadmapId, String draftContent, String description) {
+        roadmapDataService.validateExists(roadmapId);
+        roadmapDataService.updateDraft(roadmapId, draftContent, LocalDateTime.now(), description);
+        log.info("Roadmap 保存草稿: roadmapId={}", roadmapId);
     }
 
+    /**
+     * 提交审核：基于 cleanedContent 生成 canonical payload + SHA-256 hash，
+     * 与最近一次 revision 比对去重，写入新的 SUBMITTED revision，并把
+     * roadmap.pending_revision_id 切到新 revision、清空 draft。
+     *
+     * @param cleanedContent 已经过 {@link #validateAndStrip} 的内容
+     * @return 新 revision 的 id
+     * @throws com.twicemax.shared.domain.exception.BusinessException 已存在 pending 或 hash 与最近一次相同
+     */
+    @Transactional
+    public Long submit(long roadmapId, String cleanedContent, long authorId) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(roadmapId);
+
+        if (NewContentState.BANNED_VALUE.equals(roadmap.getState())) {
+            throw StatusCode.INVALID_PARAMETER.exception("已封禁的路线图不能提交");
+        }
+        if (roadmap.getPendingRevisionId() != null) {
+            throw StatusCode.INVALID_PARAMETER.exception("已有审核中的版本，请先撤回再提交");
+        }
+
+        String payload = CanonicalJson.canonicalize(cleanedContent);
+        String hash = CanonicalJson.hash(cleanedContent);
+
+        // 与最近一次 revision（任意状态）比对，禁止重复提交相同内容
+        ContentRevisionDO latest = revisionDataService.getLatest(CONTENT_TYPE, roadmapId);
+        if (latest != null && Objects.equals(hash, latest.getHash())) {
+            throw StatusCode.INVALID_PARAMETER.exception("内容与最近一次版本相同，无需重复提交");
+        }
+
+        ContentRevisionDO revision = new ContentRevisionDO();
+        revision.setContentType(CONTENT_TYPE);
+        revision.setContentId(roadmapId);
+        revision.setRevisionNo(revisionDataService.nextRevisionNo(CONTENT_TYPE, roadmapId));
+        revision.setStatus(RevisionStatus.SUBMITTED_VALUE);
+        revision.setPayload(payload);
+        revision.setHash(hash);
+        revision.setAuthorId(authorId);
+        revisionDataService.insert(revision);
+
+        // 切 pending、清 draft
+        roadmapDataService.updatePending(roadmapId, revision.getId(), null, null);
+        log.info("Roadmap 提交审核: roadmapId={}, revisionId={}, revisionNo={}",
+            roadmapId, revision.getId(), revision.getRevisionNo());
+        return revision.getId();
+    }
+
+    /**
+     * 作者撤回审核中的版本。revision → WITHDRAWN，pending 清空，回填 draft（payload）。
+     */
+    @Transactional
+    public void withdraw(long roadmapId, long authorId) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(roadmapId);
+        Long pendingId = roadmap.getPendingRevisionId();
+        if (pendingId == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("当前没有审核中的版本");
+        }
+        ContentRevisionDO revision = revisionDataService.validateAndGet(pendingId);
+        if (!RevisionStatus.SUBMITTED_VALUE.equals(revision.getStatus())) {
+            throw StatusCode.INVALID_PARAMETER.exception("版本状态非 SUBMITTED，无法撤回");
+        }
+
+        revision.setStatus(RevisionStatus.WITHDRAWN_VALUE);
+        revision.setReviewedAt(LocalDateTime.now());
+        revisionDataService.updateStatus(revision);
+
+        roadmapDataService.updatePending(roadmapId, null, revision.getPayload(), LocalDateTime.now());
+        log.info("Roadmap 撤回审核: roadmapId={}, revisionId={}, authorId={}", roadmapId, pendingId, authorId);
+    }
+
+    /**
+     * 审核通过：revision → PUBLISHED，roadmap.state = PUBLISHED，
+     * content/contentHash/nodeCount/current_revision_id 一并更新，pending 清空。
+     */
+    @Transactional
+    public void approve(long roadmapId, long reviewerId) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(roadmapId);
+        Long pendingId = roadmap.getPendingRevisionId();
+        if (pendingId == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("当前没有审核中的版本");
+        }
+        ContentRevisionDO revision = revisionDataService.validateAndGet(pendingId);
+        if (!RevisionStatus.SUBMITTED_VALUE.equals(revision.getStatus())) {
+            throw StatusCode.INVALID_PARAMETER.exception("版本状态非 SUBMITTED，无法通过");
+        }
+
+        revision.setStatus(RevisionStatus.PUBLISHED_VALUE);
+        revision.setReviewerId(reviewerId);
+        revision.setReviewedAt(LocalDateTime.now());
+        revisionDataService.updateStatus(revision);
+
+        Integer nodeCount = countLeafBindings(revision.getPayload());
+        roadmapDataService.approve(roadmapId, revision.getPayload(), revision.getHash(), nodeCount, revision.getId());
+        log.info("Roadmap 审核通过: roadmapId={}, revisionId={}, reviewerId={}", roadmapId, pendingId, reviewerId);
+    }
+
+    /**
+     * 审核驳回：revision → REJECTED（带 reason），pending 清空，回填 draft（payload 供作者继续编辑）。
+     */
+    @Transactional
+    public void reject(long roadmapId, String reason, long reviewerId) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(roadmapId);
+        Long pendingId = roadmap.getPendingRevisionId();
+        if (pendingId == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("当前没有审核中的版本");
+        }
+        ContentRevisionDO revision = revisionDataService.validateAndGet(pendingId);
+        if (!RevisionStatus.SUBMITTED_VALUE.equals(revision.getStatus())) {
+            throw StatusCode.INVALID_PARAMETER.exception("版本状态非 SUBMITTED，无法驳回");
+        }
+
+        revision.setStatus(RevisionStatus.REJECTED_VALUE);
+        revision.setRejectReason(reason);
+        revision.setReviewerId(reviewerId);
+        revision.setReviewedAt(LocalDateTime.now());
+        revisionDataService.updateStatus(revision);
+
+        roadmapDataService.updatePending(roadmapId, null, revision.getPayload(), LocalDateTime.now());
+        log.info("Roadmap 审核驳回: roadmapId={}, revisionId={}, reason={}", roadmapId, pendingId, reason);
+    }
+
+    /**
+     * 封禁：roadmap.state = BANNED；若存在 pending revision，连带标 REJECTED。draft 回填 pending payload。
+     */
+    @Transactional
+    public void ban(long roadmapId, String reason, long operatorId) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(roadmapId);
+        if (NewContentState.BANNED_VALUE.equals(roadmap.getState())) {
+            throw StatusCode.INVALID_PARAMETER.exception("已是封禁状态");
+        }
+
+        String draftContent = null;
+        LocalDateTime draftUpdatedAt = null;
+
+        Long pendingId = roadmap.getPendingRevisionId();
+        if (pendingId != null) {
+            ContentRevisionDO revision = revisionDataService.validateAndGet(pendingId);
+            if (RevisionStatus.SUBMITTED_VALUE.equals(revision.getStatus())) {
+                revision.setStatus(RevisionStatus.REJECTED_VALUE);
+                revision.setRejectReason(reason);
+                revision.setReviewerId(operatorId);
+                revision.setReviewedAt(LocalDateTime.now());
+                revisionDataService.updateStatus(revision);
+            }
+            draftContent = revision.getPayload();
+            draftUpdatedAt = LocalDateTime.now();
+        }
+
+        roadmapDataService.ban(roadmapId, draftContent, draftUpdatedAt);
+        log.info("Roadmap 封禁: roadmapId={}, operatorId={}, reason={}", roadmapId, operatorId, reason);
+    }
+
+    /**
+     * 解封：根据是否存在已发布版本恢复到 PUBLISHED 或 NEVER_PUBLISHED。
+     */
+    @Transactional
+    public void restore(long roadmapId) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(roadmapId);
+        if (!NewContentState.BANNED_VALUE.equals(roadmap.getState())) {
+            throw StatusCode.INVALID_PARAMETER.exception("仅 BANNED 状态可解封");
+        }
+        String newState = roadmap.getCurrentRevisionId() != null
+            ? NewContentState.PUBLISHED_VALUE
+            : NewContentState.NEVER_PUBLISHED_VALUE;
+        roadmapDataService.updateState(roadmapId, newState);
+        log.info("Roadmap 解封: roadmapId={}, newState={}", roadmapId, newState);
+    }
+
+    @Transactional
+    public void deleteRoadmap(long id) {
+        roadmapDataService.validateExists(id);
+        int result = roadmapDataService.softDelete(id);
+        if (result == 0) {
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
+        }
+        log.info("Roadmap 删除: roadmapId={}", id);
+    }
+
+    /**
+     * 仅更新主表 description（管理员/作者用）。
+     */
+    @Transactional
+    public void updateDescription(long id, String description) {
+        RoadmapDO roadmap = roadmapDataService.validateAndGet(id);
+        roadmap.setDescription(description != null ? description : "");
+        roadmapDataService.update(roadmap);
+        log.info("Roadmap 描述更新: roadmapId={}", id);
+    }
 }

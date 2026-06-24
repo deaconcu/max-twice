@@ -70,7 +70,8 @@ public interface RoadmapConverter {
     List<RoadmapWithStatusDTO> toWithStatusDTO(List<RoadmapDO> roadmapDOList);
 
     /**
-     * 转换为管理后台DTO（包含 reason，需要在 Service 层填充 role 和 creator）
+     * 转换为管理后台DTO（reason 由 Service 层从最近一条 REJECTED revision 单独填充；
+     * role 和 creator 也在 Service 层填充）
      */
     @Named("toAdminDTO")
     @BeanMapping(ignoreByDefault = true)
@@ -80,7 +81,8 @@ public interface RoadmapConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "description")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
+    @Mapping(target = "currentRevisionId")
+    @Mapping(target = "pendingRevisionId")
     @Mapping(target = "nodeCount")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")

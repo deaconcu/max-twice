@@ -13,7 +13,7 @@ public class PostDO {
 
     private Long creatorId;
 
-    private Integer type;
+    private String type;
 
     private String content;
 

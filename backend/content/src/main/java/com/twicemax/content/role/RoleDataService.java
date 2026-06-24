@@ -1,6 +1,5 @@
 package com.twicemax.content.role;
 
-import com.twicemax.shared.domain.Enums;
 import com.twicemax.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +17,9 @@ import java.util.stream.Collectors;
 
 /**
  * 角色数据服务
- * 负责角色数据的 CRUD 和缓存管理
+ * <p>
+ * 配合 revision 模型：state 是 NewContentState 字符串值；写入/状态切换通过专用方法
+ * （updatePending / approve / ban / updateState）协同 RoleMapper 完成。
  */
 @Slf4j
 @Service
@@ -29,9 +30,6 @@ public class RoleDataService {
 
     // ==================== 查询方法 ====================
 
-    /**
-     * 根据ID查询角色
-     */
     @Cacheable(value = "roles", key = "#id", unless = "#result == null")
     public RoleDO getById(Long id) {
         if (id == null) {
@@ -40,9 +38,6 @@ public class RoleDataService {
         return roleMapper.getById(id);
     }
 
-    /**
-     * 批量根据ID查询角色
-     */
     public List<RoleDO> getByIds(Collection<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return new ArrayList<>();
@@ -57,68 +52,51 @@ public class RoleDataService {
         return roleMapper.getByIds(validIds);
     }
 
-    /**
-     * 批量根据ID查询角色并转为Map
-     */
     public Map<Long, RoleDO> getMapByIds(Collection<Long> ids) {
         return getByIds(ids).stream()
                 .collect(Collectors.toMap(RoleDO::getId, Function.identity()));
     }
 
-    /**
-     * 统计活跃角色数量
-     */
     public Long countActiveRoles() {
         return roleMapper.countActiveRoles();
     }
 
     /**
-     * 根据状态获取角色列表
+     * 按主体状态分页（state 为 NewContentState 字符串值）。
      */
-    public List<RoleDO> listByState(Byte state, Long lastId, int limit) {
+    public List<RoleDO> listByState(String state, Long lastId, int limit) {
         return roleMapper.listByState(state, lastId, limit);
     }
 
-    /**
-     * 根据主分类查询
-     */
     public List<RoleDO> listByMainCategoryAndLastId(int mainCategory, Long lastId, int limit) {
         return roleMapper.listByMainCategoryAndLastId(mainCategory, lastId, limit);
     }
 
-    /**
-     * 根据子分类查询
-     */
     public List<RoleDO> listBySubCategoryAndLastId(int subCategory, Long lastId, int limit) {
         return roleMapper.listBySubCategoryAndLastId(subCategory, lastId, limit);
     }
 
-    /**
-     * 根据主分类和子分类查询
-     */
     public List<RoleDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId, int limit) {
         return roleMapper.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId, limit);
     }
 
-    /**
-     * 搜索角色（按关键词，用户端）
-     */
     public List<RoleDO> searchByKeyword(String keyword) {
         return roleMapper.searchByKeyword(keyword);
     }
 
-    /**
-     * 管理后台按名称搜索角色
-     */
     public List<RoleDO> searchByName(String name, Long lastId, int limit) {
         return roleMapper.searchByName(name, lastId, limit);
     }
 
+    /**
+     * 按创建者分页（state 为 NewContentState 字符串值，可为 null 表示默认排除 BANNED）。
+     */
+    public List<RoleDO> listByCreator(long creatorId, Long lastId, int limit, String state) {
+        return roleMapper.listByCreator(creatorId, lastId, limit, state);
+    }
+
     // ==================== 验证方法 ====================
 
-    /**
-     * 验证角色ID并获取角色
-     */
     public RoleDO validateAndGet(Long id) {
         if (id == null || id <= 0) {
             throw StatusCode.INVALID_PARAMETER.exception("角色ID无效");
@@ -130,25 +108,16 @@ public class RoleDataService {
         return roleDO;
     }
 
-    /**
-     * 验证角色存在
-     */
     public void validateExists(Long id) {
         validateAndGet(id);
     }
 
     // ==================== 写入方法 ====================
 
-    /**
-     * 插入角色
-     */
     public void insert(RoleDO roleDO) {
         roleMapper.insert(roleDO);
     }
 
-    /**
-     * 更新角色
-     */
     @CacheEvict(value = "roles", key = "#roleDO.id")
     public void update(RoleDO roleDO) {
         if (roleDO == null || roleDO.getId() == null) {
@@ -158,32 +127,38 @@ public class RoleDataService {
     }
 
     /**
-     * 审批通过角色
+     * 切换 pending_revision_id（提交 / 撤回 / 驳回 时用）。
      */
     @CacheEvict(value = "roles", key = "#id")
-    public int approve(long id) {
-        return roleMapper.updateState(id, Enums.ContentState.PUBLISHED.value(), "");
+    public int updatePending(long id, Long pendingRevisionId) {
+        return roleMapper.updatePending(id, pendingRevisionId);
     }
 
     /**
-     * 拒绝角色申请
+     * 审核通过：state=PUBLISHED，刷新内容镜像字段，设置 current_revision_id，清空 pending_revision_id。
      */
     @CacheEvict(value = "roles", key = "#id")
-    public int reject(long id, String reason) {
-        return roleMapper.updateState(id, Enums.ContentState.REJECTED.value(), reason);
+    public int approve(long id, String name, String description, String icon, String skills,
+                       int mainCategory, int subCategory, long currentRevisionId) {
+        return roleMapper.approve(id, name, description, icon, skills, mainCategory, subCategory, currentRevisionId);
     }
 
     /**
-     * 封禁角色
+     * 封禁：state=BANNED，pending_revision_id 清空。
      */
     @CacheEvict(value = "roles", key = "#id")
-    public int ban(long id, String reason) {
-        return roleMapper.updateState(id, Enums.ContentState.BANNED.value(), reason);
+    public int ban(long id) {
+        return roleMapper.ban(id);
     }
 
     /**
-     * 删除角色
+     * 简单状态切换（解封时使用）。
      */
+    @CacheEvict(value = "roles", key = "#id")
+    public int updateState(long id, String state) {
+        return roleMapper.updateState(id, state);
+    }
+
     @CacheEvict(value = "roles", key = "#id")
     public void delete(long id) {
         roleMapper.delete(id);

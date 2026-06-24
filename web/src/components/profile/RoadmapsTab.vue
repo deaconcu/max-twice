@@ -15,19 +15,10 @@
         variant="text"
         size="small"
         rounded="lg"
-        :color="statusFilter === 'draft' ? 'primary' : 'default'"
-        @click="statusFilter = 'draft'"
+        :color="statusFilter === 'unpublished' ? 'primary' : 'default'"
+        @click="statusFilter = 'unpublished'"
       >
         {{ t('user.profile.draft') }}
-      </v-btn>
-      <v-btn
-        variant="text"
-        size="small"
-        rounded="lg"
-        :color="statusFilter === 'pending' ? 'primary' : 'default'"
-        @click="statusFilter = 'pending'"
-      >
-        {{ t('user.profile.pending') }}
       </v-btn>
       <v-btn
         variant="text"
@@ -37,15 +28,6 @@
         @click="statusFilter = 'published'"
       >
         {{ t('user.profile.published') }}
-      </v-btn>
-      <v-btn
-        variant="text"
-        size="small"
-        rounded="lg"
-        :color="statusFilter === 'rejected' ? 'primary' : 'default'"
-        @click="statusFilter = 'rejected'"
-      >
-        {{ t('user.profile.rejected') }}
       </v-btn>
     </div>
 
@@ -171,7 +153,9 @@
         {{ statusFilter !== 'all' ? t('user.profile.noArticlesFound') : t('learning.noRoadmaps') }}
       </p>
       <p class="text-caption text-md-body-2 text-grey">
-        {{ statusFilter !== 'all' ? t('user.profile.adjustFilters') : t('roadmap.systematicLearning') }}
+        {{
+          statusFilter !== 'all' ? t('user.profile.adjustFilters') : t('roadmap.systematicLearning')
+        }}
       </p>
     </div>
 
@@ -187,13 +171,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
-import { useMutation } from '@/composables/useMutation'
+import { useMyRoadmapsQuery, useUserRoadmapsQuery, useDeleteRoadmapMutation } from '@/queries/user'
 import { useI18n } from '@/composables/useI18n'
-import { userApi } from '@/api'
-import { ContentState } from '@/enums'
+import { getGlobalSnackbar } from '@/composables/config'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
@@ -211,126 +193,104 @@ interface Props {
 
 const router = useRouter()
 
-// 搜索和筛选
-const statusFilter = ref<'all' | 'draft' | 'pending' | 'published' | 'rejected'>('all')
+// 搜索和筛选（revision 模型主体只有 NEVER_PUBLISHED / PUBLISHED / BANNED；BANNED 由后端过滤掉）
+const statusFilter = ref<'all' | 'unpublished' | 'published'>('all')
 
-// 将 statusFilter 转换为后端 state 值
-const getStateValue = (): number | undefined => {
+// 将 statusFilter 转换为后端 RoadmapState 字符串
+const stateValue = computed((): string | undefined => {
   switch (statusFilter.value) {
-    case 'draft':
-      return ContentState.DRAFT
-    case 'pending':
-      return ContentState.SUBMITTED
+    case 'unpublished':
+      return 'NEVER_PUBLISHED'
     case 'published':
-      return ContentState.PUBLISHED
-    case 'rejected':
-      return ContentState.REJECTED
+      return 'PUBLISHED'
     default:
-      return undefined // all - 后端返回除 BANNED 外的所有状态
+      return undefined
   }
-}
+})
 
-// 使用无限滚动加载路线图
+const isOwn = computed(() => props.isOwnProfile || props.userId === null)
+
+// 自己的路线图
 const {
-  items: roadmapsData,
-  loading,
-  hasMore,
-  loadMore: loadMoreRoadmaps,
-  reset: resetRoadmaps,
-} = useInfiniteScroll({
-  fetchFn: async (params) => {
-    if (props.isOwnProfile || props.userId === null) {
-      // 获取当前用户的路线图
-      const response = await userApi.getCurrentUserRoadmaps(params.lastId, getStateValue())
-      return {
-        code: response.code,
-        data: response.data || [],
-        message: response.message || '',
-        hasMore: response.data?.length === 20, // 假设每页20条
-      }
-    } else {
-      // 获取指定用户的路线图
-      const response = await userApi.getUserRoadmaps(props.userId, params.lastId)
-      return {
-        code: response.code,
-        data: response.data || [],
-        message: response.message || '',
-        hasMore: response.data?.length === 20, // 假设每页20条
-      }
-    }
-  },
-  getNextParams: (lastItem) => ({
-    lastId: lastItem.id,
-  }),
-  initialParams: { lastId: undefined },
+  data: myRoadmapsData,
+  isLoading: myLoading,
+  hasNextPage: myHasMore,
+  fetchNextPage: myFetchNext,
+} = useMyRoadmapsQuery(stateValue, isOwn)
+
+// 他人的路线图
+const {
+  data: userRoadmapsData,
+  isLoading: userLoading,
+  hasNextPage: userHasMore,
+  fetchNextPage: userFetchNext,
+} = useUserRoadmapsQuery(
+  computed(() => props.userId ?? 0),
+  computed(() => !isOwn.value && !!props.userId)
+)
+
+const roadmapsData = computed(() => {
+  if (isOwn.value) return myRoadmapsData.value?.pages.flatMap((p) => p as unknown[]) ?? []
+  return userRoadmapsData.value?.pages.flatMap((p) => p as unknown[]) ?? []
 })
 
-// 监听 statusFilter 变化，重新加载列表
-watch(statusFilter, () => {
-  resetRoadmaps()
-  loadMoreRoadmaps()
-})
+const loading = computed(() => (isOwn.value ? myLoading.value : userLoading.value))
+const hasMore = computed(() => (isOwn.value ? !!myHasMore.value : !!userHasMore.value))
 
-// 首次加载数据
-onMounted(() => {
-  if (roadmapsData.value.length === 0) {
-    loadMoreRoadmaps({ done: () => {} })
-  }
-})
+// 加载更多
+const loadMoreRoadmaps = async ({ done }: { done: () => void } = { done: () => {} }) => {
+  if (isOwn.value) await myFetchNext()
+  else await userFetchNext()
+  done()
+}
 
 // 删除确认对话框
 const showDeleteDialog = ref(false)
 const roadmapToDelete = ref<number | null>(null)
 
 // 删除路线图
-const { execute: deleteRoadmapAction } = useMutation(
-  (roadmapId: number) => userApi.deleteRoadmap(roadmapId),
-  {
-    successMessage: t('user.profile.roadmapDeleted'),
+const { mutate: deleteRoadmapMutate } = useDeleteRoadmapMutation()
+
+const deleteRoadmapAction = (roadmapId: number) => {
+  deleteRoadmapMutate(roadmapId, {
     onSuccess: () => {
-      // 刷新列表
-      roadmapsData.value = []
-      loadMoreRoadmaps()
+      getGlobalSnackbar()?.(t('user.profile.roadmapDeleted'), 'success')
+      // useDeleteRoadmapMutation 内部已 invalidateQueries
     },
-  }
-)
+  })
+}
 
 // 转换路线图数据
 const roadmaps = computed(() => {
-  if (!roadmapsData?.value || !Array.isArray(roadmapsData.value)) return []
+  if (!roadmapsData.value.length) return []
 
-  return roadmapsData.value.map((roadmap) => ({
-    id: roadmap.id,
-    roleId: roadmap.role?.id || roadmap.roleId,
-    name: roadmap.role?.name || t('user.profile.unknownRole'),
-    role: roadmap.role?.name || t('user.profile.unknownRole'),
-    description: roadmap.description || t('hotRanking.noDescription'),
-    usageCount: roadmap.learnerCount || 0,
-    starCount: roadmap.likeCount || 0,
-    nodeCount: roadmap.nodeCount || 0,
-    status:
-      roadmap.state === 0
-        ? 'draft'
-        : roadmap.state === 1
-          ? 'submitted'
-          : roadmap.state === 2
-            ? 'published'
-            : roadmap.state === 3
-              ? 'rejected'
-              : roadmap.state === 4
-                ? 'banned'
-                : 'unknown',
-    createdAt: roadmap.createdAt || '',
-  }))
+  return roadmapsData.value.map((item) => {
+    const roadmap = item as Record<string, any>
+    return {
+      id: roadmap.id,
+      roleId: roadmap.role?.id || roadmap.roleId,
+      name: roadmap.role?.name || t('user.profile.unknownRole'),
+      role: roadmap.role?.name || t('user.profile.unknownRole'),
+      description: roadmap.description || t('hotRanking.noDescription'),
+      usageCount: roadmap.learnerCount || 0,
+      starCount: roadmap.likeCount || 0,
+      nodeCount: roadmap.nodeCount || 0,
+      status:
+        roadmap.state === 'PUBLISHED'
+          ? 'published'
+          : roadmap.state === 'BANNED'
+            ? 'banned'
+            : 'unpublished',
+      createdAt: roadmap.createdAt || '',
+    }
+  })
 })
 
 // 获取状态颜色
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
-    draft: 'grey',
-    submitted: 'warning',
+    unpublished: 'grey',
     published: 'success',
-    rejected: 'error',
     banned: 'error',
   }
   return colors[status] || 'grey'
@@ -339,10 +299,8 @@ const getStatusColor = (status: string) => {
 // 获取状态文本
 const getStatusText = (status: string) => {
   const texts: Record<string, string> = {
-    draft: t('user.profile.draft'),
-    submitted: t('admin.pending'),
+    unpublished: t('user.profile.draft'),
     published: t('user.profile.published'),
-    rejected: t('admin.rejected'),
     banned: t('admin.banned'),
   }
   return texts[status] || t('user.profile.unknown')
@@ -371,9 +329,9 @@ const deleteRoadmap = (roadmapId: number) => {
 }
 
 // 确认删除
-const confirmDelete = async () => {
+const confirmDelete = () => {
   if (roadmapToDelete.value !== null) {
-    await deleteRoadmapAction(roadmapToDelete.value)
+    deleteRoadmapAction(roadmapToDelete.value)
   }
   roadmapToDelete.value = null
 }

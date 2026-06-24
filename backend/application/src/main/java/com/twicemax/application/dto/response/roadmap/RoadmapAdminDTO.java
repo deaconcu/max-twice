@@ -29,10 +29,17 @@ public class RoadmapAdminDTO {
 
     private String description;
 
-    private Byte state;
+    /** 路线图主体状态：NEVER_PUBLISHED / PUBLISHED / BANNED。 */
+    private String state;
+
+    /** 当前对外展示的 revision id（NEVER_PUBLISHED 时为 null）。 */
+    private Long currentRevisionId;
+
+    /** 正在审核中的 revision id（无审核中版本时为 null）。 */
+    private Long pendingRevisionId;
 
     /**
-     * 拒绝/封禁原因
+     * 最近一次 REJECTED revision 的驳回原因（admin 列表展示用，可为 null）。
      */
     private String reason;
 

@@ -617,10 +617,9 @@
 import { ref, watch, computed, onBeforeUnmount, onMounted, inject } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import { useI18n } from '@/composables/useI18n'
-import { useMutation } from '@/composables/useMutation'
+import { useImageUploadMutation } from '@/queries/image'
 import { getTipTapExtensions } from '@/config/tiptap'
 import { parseVideoUrl } from '@/config/tiptap-video'
-import { imageApi } from '@/api'
 
 interface Props {
   modelValue?: string
@@ -654,13 +653,8 @@ const showSnackbar = inject<(message: string, type: string) => void>('showSnackb
 // 文件上传相关
 const fileInput = ref<HTMLInputElement>()
 
-// 使用 useMutation 上传图片
-const { execute: uploadImage, loading: uploadingImage } = useMutation(
-  (file: File) => imageApi.upload(file, 'post'),
-  {
-    showToast: false,
-  }
-)
+// 使用 useImageUploadMutation 上传图片
+const { mutateAsync: uploadImage, isPending: uploadingImage } = useImageUploadMutation()
 
 // 编辑器实例
 const editor = useEditor({
@@ -955,7 +949,7 @@ const handleFileUpload = async (event: Event) => {
 
   try {
     // 上传图片
-    const response = await uploadImage(file)
+    const response = await uploadImage({ file, refType: 'post' })
 
     // 如果返回 null，说明上传失败
     if (!response?.fileUrl) {

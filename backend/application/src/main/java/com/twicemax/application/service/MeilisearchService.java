@@ -164,7 +164,7 @@ public class MeilisearchService {
             int total = 0;
             Long lastId = null;
             while (true) {
-                List<CourseDO> list = courseDataService.listByState(Enums.ContentState.PUBLISHED.value(), lastId, 1000);
+                List<CourseDO> list = courseDataService.listByState(Enums.NewContentState.PUBLISHED_VALUE, lastId, 1000);
                 if (list.isEmpty()) break;
 
                 bulkIndexCourses(list);
@@ -263,7 +263,7 @@ public class MeilisearchService {
             Long lastId = null;
             while (true) {
                 List<RoleDO> list = roleDataService.listByState(
-                        Enums.ContentState.PUBLISHED.value(), lastId, 1000);
+                        Enums.NewContentState.PUBLISHED_VALUE, lastId, 1000);
                 if (list.isEmpty()) break;
 
                 bulkIndexRoles(list);
@@ -338,7 +338,7 @@ public class MeilisearchService {
         if (meilisearchClient == null) return;
         DataSourceContextHolder.setLanguage(language);
         try {
-            if (course.getState() != Enums.ContentState.PUBLISHED.value()) {
+            if (!Enums.NewContentState.PUBLISHED_VALUE.equals(course.getState())) {
                 deleteCourseInternal(course.getId());
                 return;
             }
@@ -437,7 +437,7 @@ public class MeilisearchService {
         if (meilisearchClient == null) return;
         DataSourceContextHolder.setLanguage(language);
         try {
-            if (roleDO.getState() != Enums.ContentState.PUBLISHED.value()) {
+            if (!Enums.NewContentState.PUBLISHED_VALUE.equals(roleDO.getState())) {
                 deleteRoleInternal(roleDO.getId());
                 return;
             }

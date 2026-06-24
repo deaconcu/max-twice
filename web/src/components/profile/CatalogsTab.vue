@@ -53,11 +53,7 @@
     <LoadingSpinner v-if="loading && catalogs.length === 0" />
 
     <!-- 目录列表 -->
-    <v-infinite-scroll
-      v-else-if="catalogs.length > 0"
-      :items="catalogs"
-      @load="onLoadMore"
-    >
+    <v-infinite-scroll v-else-if="catalogs.length > 0" :items="catalogs" @load="onLoadMore">
       <div v-for="(catalog, index) in catalogs" :key="catalog.id">
         <v-card
           rounded="lg"
@@ -222,10 +218,18 @@
         class="mb-3 mb-md-4"
       />
       <p class="text-body-2 text-md-body-1 text-grey-darken-2">
-        {{ statusFilter !== 'all' ? t('user.profile.noCatalogsFound') : t('user.profile.noCatalogsCreated') }}
+        {{
+          statusFilter !== 'all'
+            ? t('user.profile.noCatalogsFound')
+            : t('user.profile.noCatalogsCreated')
+        }}
       </p>
       <p class="text-caption text-md-body-2 text-grey">
-        {{ statusFilter !== 'all' ? t('user.profile.adjustFilters') : t('user.profile.createCatalogHint') }}
+        {{
+          statusFilter !== 'all'
+            ? t('user.profile.adjustFilters')
+            : t('user.profile.createCatalogHint')
+        }}
       </p>
     </div>
 
@@ -252,10 +256,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
-import { useMutation } from '@/composables/useMutation'
+import { useQueryClient } from '@tanstack/vue-query'
+import { useMyPostsQuery } from '@/queries/user'
+import { useDeletePostMutation } from '@/queries/post'
+import { userKeys } from '@/queries/keys'
 import { useI18n } from '@/composables/useI18n'
-import { userApi, postApi } from '@/api'
+import { getGlobalSnackbar } from '@/composables/config'
 import { PostType, ContentState } from '@/enums'
 import { parseContentNodes } from '@/utils/postUtils'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -272,12 +278,13 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { t, locale } = useI18n()
 const router = useRouter()
+const queryClient = useQueryClient()
 
 // 状态筛选
 const statusFilter = ref<'all' | 'draft' | 'pending' | 'published' | 'rejected'>('all')
 
 // 将 statusFilter 转换为后端 state 值
-const getStateValue = (): number | undefined => {
+const stateValue = computed((): number | undefined => {
   switch (statusFilter.value) {
     case 'draft':
       return ContentState.DRAFT
@@ -288,9 +295,9 @@ const getStateValue = (): number | undefined => {
     case 'rejected':
       return ContentState.REJECTED
     default:
-      return undefined // all - 后端返回除 BANNED 外的所有状态
+      return undefined
   }
-}
+})
 
 // 删除确认对话框
 const showDeleteDialog = ref(false)
@@ -300,47 +307,31 @@ const postToDelete = ref<number | null>(null)
 const nodeSelectorDialog = ref()
 const editingCatalog = ref<any>(null)
 
-// 使用 useInfiniteScroll 加载目录列表
+// 使用 TanStack 加载目录列表
 const {
-  items: posts,
-  loading,
-  hasMore,
-  loadMore: loadMorePosts,
-  reset: resetPosts,
-} = useInfiniteScroll({
-  fetchFn: async (params) => {
-    const response = await userApi.getCurrentUserAllPosts(
-      params.lastId,
-      PostType.INDEX,
-      getStateValue()
-    )
-    return {
-      code: response.code,
-      data: response.data?.items || [],
-      message: response.message || '',
-      hasMore: response.data?.hasMore || false,
-    }
-  },
-  getNextParams: (lastItem) => ({
-    lastId: lastItem.id,
-  }),
-  initialParams: { lastId: undefined },
-})
+  data: postsData,
+  isLoading: loading,
+  hasNextPage: hasMore,
+  fetchNextPage,
+  isFetchingNextPage,
+} = useMyPostsQuery(
+  computed(() => PostType.INDEX),
+  stateValue
+)
 
-// 监听 statusFilter 变化，重新加载列表
-watch(statusFilter, () => {
-  resetPosts()
-  loadMorePosts()
-})
+const posts = computed(() => postsData.value?.pages.flatMap((p) => p.items) ?? [])
 
 // 删除帖子
-const { execute: deletePost } = useMutation((postId: number) => postApi.deletePost(postId), {
-  successMessage: t('user.profile.catalogDeleted'),
-  onSuccess: () => {
-    // 从列表中移除已删除的项
-    posts.value = posts.value.filter((p) => p.id !== postToDelete.value)
-  },
-})
+const { mutate: deletePostMutate } = useDeletePostMutation()
+
+const deletePost = (postId: number) => {
+  deletePostMutate(postId, {
+    onSuccess: () => {
+      getGlobalSnackbar()?.(t('user.profile.catalogDeleted'), 'success')
+      void queryClient.invalidateQueries({ queryKey: userKeys.myPosts() })
+    },
+  })
+}
 
 // 转换帖子数据为目录格式
 const catalogs = computed(() => {
@@ -395,15 +386,14 @@ const editCatalog = (catalog: any) => {
 
 // 目录编辑成功后刷新列表
 const handleCatalogUpdated = () => {
-  resetPosts()
-  loadMorePosts({ done: () => {} })
+  void queryClient.invalidateQueries({ queryKey: userKeys.myPosts() })
   editingCatalog.value = null
 }
 
 // 确认删除
-const confirmDelete = async () => {
+const confirmDelete = () => {
   if (postToDelete.value !== null) {
-    await deletePost(postToDelete.value)
+    deletePost(postToDelete.value)
   }
   postToDelete.value = null
 }
@@ -422,15 +412,9 @@ const onLoadMore = async ({ done }: { done: LoadMoreCallback }): Promise<void> =
     done('empty')
     return
   }
-
-  await loadMorePosts({ done: () => {} })
+  await fetchNextPage()
   done(hasMore.value ? 'ok' : 'empty')
 }
-
-onMounted(() => {
-  // 加载第一页数据
-  loadMorePosts({ done: () => {} })
-})
 </script>
 
 <style scoped>

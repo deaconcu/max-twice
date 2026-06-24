@@ -87,25 +87,13 @@ public class ContentBannedEvent {
         event.contentType = ContentType.post;
         event.previousState = previousState;
         event.nodeId = nodeId;
-        event.postType = PostType.index;
+        event.postType = PostType.INDEX;
         event.reason = reason;
         event.referencedNodeIds = referencedNodeIds;
         return event;
     }
 
-    /** Roadmap 类型构造函数 */
-    public static ContentBannedEvent forRoadmap(Long creatorId, Long roadmapId, ContentState previousState, Long roleId,
-                                                String roleName, String reason) {
-        ContentBannedEvent event = new ContentBannedEvent();
-        event.creatorId = creatorId;
-        event.contentId = roadmapId;
-        event.contentType = ContentType.roadmap;
-        event.previousState = previousState;
-        event.roleId = roleId;
-        event.roleName = roleName;
-        event.reason = reason;
-        return event;
-    }
+    /** Roadmap 类型构造函数 - 已废弃，使用 RoadmapBannedEvent */
 
     /** MemoryCardDeck 类型构造函数 */
     public static ContentBannedEvent forMemoryCardDeck(Long creatorId, Long deckId, ContentState previousState, Long postId, Long nodeId,

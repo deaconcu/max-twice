@@ -24,7 +24,7 @@ export interface User {
   phone?: string // 手机号（可选）
   emailValidated?: boolean // 邮箱是否验证
   biography?: string // 个人简介
-  state?: number // 用户状态（1: 正常, 2: 已屏蔽）
+  state?: string // 用户状态（'active' | 'banned'）
   role?: UserRole // 用户角色
   avatar?: string // 头像
   subscriptions?: SubscriptionInfo[] // 订阅的课程列表
@@ -33,6 +33,7 @@ export interface User {
   followed?: number // 关注人数
   isFollowing?: boolean // 是否已关注
   timezone?: string // 用户时区（IANA格式，如 America/Los_Angeles）
+  locale?: string // 用户偏好语言（'zh' / 'en'），登录后覆盖 localStorage
   hasPassword?: boolean // 是否已设置密码（邮箱验证码登录自动建号时为 false）
 }
 

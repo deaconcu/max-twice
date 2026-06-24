@@ -31,7 +31,7 @@ public class UserWithSubscriptionsDTO extends UserBriefDTO {
 
     /**
      * 用户角色
-     * 说明：USER(0-普通用户), MODERATOR(1-审核员), ADMIN(2-管理员), SUPER_ADMIN(3-超级管理员)
+     * 说明：USER-普通用户, MODERATOR-审核员, ADMIN-管理员, SUPER-超级管理员
      */
     private Integer role;
 

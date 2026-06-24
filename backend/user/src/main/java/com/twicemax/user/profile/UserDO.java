@@ -26,9 +26,9 @@ public class UserDO {
 
     private String avatar;
 
-    private Byte state;
+    private String state;
 
-    private Integer role;  // 角色代码字段
+    private String role;
 
     /**
      * 用户时区
@@ -36,6 +36,12 @@ public class UserDO {
      * 例如：Asia/Shanghai, America/New_York
      */
     private String timezone;
+
+    /**
+     * 用户偏好语言，决定 UI 语言以及内容库路由（zh → twicemax_zh，en → twicemax_en）。
+     * 注册时根据 Accept-Language 决定初始值（zh* → zh，其余 → en），用户可在 UI 切换。
+     */
+    private String locale;
 
     private LocalDateTime createdAt;
 
@@ -47,14 +53,14 @@ public class UserDO {
      * 获取用户角色枚举
      */
     public UserRole getRoleEnum() {
-        return UserRole.fromCode(this.role);
+        return UserRole.fromName(this.role);
     }
 
     /**
      * 设置用户角色
      */
     public void setRoleEnum(UserRole role) {
-        this.role = role != null ? role.getCode() : UserRole.USER.getCode();
+        this.role = role != null ? role.value() : UserRole.USER.value();
     }
 
     /**

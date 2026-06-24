@@ -2,11 +2,11 @@
 import { ref, computed, inject, watch } from 'vue'
 import draggable from 'vuedraggable'
 import { useRouter } from 'vue-router'
-import { postApi } from '@/api/modules/post'
-import { useMutation } from '@/composables/useMutation'
 import { PostType } from '@/enums'
 import type { Node } from '@/types/node'
 import { useI18n } from '@/composables/useI18n'
+import { useCreatePostMutation, useUpdatePostMutation } from '@/queries/post'
+import { postApi } from '@/api/modules/post'
 
 const props = withDefaults(defineProps<Props>(), {
   courseId: 0,
@@ -66,91 +66,82 @@ const buildJsonContent = () => {
   })
 }
 
-// 保存草稿
-const { execute: executeSaveDraft, loading: savingDraft } = useMutation(
-  async () => {
-    const jsonContent = buildJsonContent()
+const createPostMutation = useCreatePostMutation()
+const updatePostMutation = useUpdatePostMutation()
+const savingDraft = createPostMutation.isPending
+const submitting = updatePostMutation.isPending
+const isSubmitting = computed(() => savingDraft.value || submitting.value)
 
-    if (isEditMode.value) {
-      // 编辑模式：更新现有草稿
-      const draft = getCurrentDraft.value
-      return await postApi.updatePost(draft.id, {
-        content: JSON.stringify(jsonContent),
-      })
-    } else {
-      // 创建模式：创建新草稿
-      return await postApi.createPost({
+// 保存草稿
+const executeSaveDraft = () => {
+  const jsonContent = buildJsonContent()
+
+  if (isEditMode.value) {
+    const draft = getCurrentDraft.value
+    updatePostMutation.mutate(
+      { id: draft.id, data: { content: JSON.stringify(jsonContent) } },
+      {
+        onSuccess: () => {
+          showSnackbar?.(t('nodeSelector.draftSaved'), 'success')
+        },
+      }
+    )
+  } else {
+    createPostMutation.mutate(
+      {
         nodeId: props.nodeId,
         type: PostType.INDEX,
         content: JSON.stringify(jsonContent),
         state: 0, // DRAFT
-      })
-    }
-  },
-  {
-    onSuccess: (response) => {
-      showSnackbar?.(t('nodeSelector.draftSaved'), 'success')
-
-      // 如果是创建模式，保存返回的草稿信息，转为编辑模式
-      if (!isEditMode.value && response) {
-        currentDraft.value = response
+      },
+      {
+        onSuccess: (response) => {
+          showSnackbar?.(t('nodeSelector.draftSaved'), 'success')
+          if (response) {
+            currentDraft.value = response
+          }
+        },
       }
-
-      // 不关闭对话框，不刷新列表
-    },
-    onError: (error) => {
-      console.error('保存草稿失败:', error)
-      showSnackbar?.(t('nodeSelector.draftSaveFailed'), 'error')
-    },
+    )
   }
-)
+}
 
 // 提交审核
-const { execute: executeSubmit, loading: submitting } = useMutation(
-  async () => {
-    const jsonContent = buildJsonContent()
+const executeSubmit = () => {
+  const jsonContent = buildJsonContent()
+  const isEdit = isEditMode.value
 
-    if (isEditMode.value) {
-      // 编辑模式：更新内容并提交审核
-      const draft = getCurrentDraft.value
-      return await postApi.updatePost(draft.id, {
-        content: JSON.stringify(jsonContent),
-        state: 1, // SUBMITTED
-      })
-    } else {
-      // 创建模式：直接创建并提交审核
-      return await postApi.createPost({
+  if (isEdit) {
+    const draft = getCurrentDraft.value
+    updatePostMutation.mutate(
+      { id: draft.id, data: { content: JSON.stringify(jsonContent), state: 1 } },
+      {
+        onSuccess: () => {
+          showSnackbar?.(t('nodeSelector.submitUpdated'), 'success')
+          if (props.draftPost) emit('load-data')
+          close()
+        },
+      }
+    )
+  } else {
+    createPostMutation.mutate(
+      {
         nodeId: props.nodeId,
         type: PostType.INDEX,
         content: JSON.stringify(jsonContent),
         state: 1, // SUBMITTED
-      })
-    }
-  },
-  {
-    onSuccess: () => {
-      showSnackbar?.(
-        isEditMode.value ? t('nodeSelector.submitUpdated') : t('nodeSelector.submitSuccess'),
-        'success'
-      )
-
-      // 只有编辑模式（从个人页进入）才需要刷新列表
-      // 创建模式（从 read 页进入）不需要刷新
-      if (props.draftPost) {
-        emit('load-data')
+      },
+      {
+        onSuccess: () => {
+          showSnackbar?.(t('nodeSelector.submitSuccess'), 'success')
+          close()
+        },
       }
-
-      close()
-    },
-    onError: (error) => {
-      console.error('提交目录失败:', error)
-      showSnackbar?.(t('nodeSelector.submitFailed'), 'error')
-    },
+    )
   }
-)
+}
 
 const canConfirm = computed(() => selectedNodes.value.length >= 2)
-const isSubmitting = computed(() => savingDraft.value || submitting.value)
 
 // 监听输入框变化，清空搜索结果
 watch(
@@ -183,7 +174,7 @@ const handleSearch = async () => {
   hasSearched.value = true
   try {
     const response = await postApi.searchSimilarNodes(query, 20)
-    searchResults.value = response.data || []
+    searchResults.value = response || []
   } catch (error) {
     console.error('搜索节点失败', error)
     searchResults.value = []
@@ -223,8 +214,8 @@ const addNewNode = async () => {
   // 检查课程内是否有同名已发布节点
   if (props.courseId) {
     try {
-      const response = await postApi.checkDuplicateNode(props.courseId, newNode.value.name)
-      if (response.data === true) {
+      const isDuplicate = await postApi.checkDuplicateNode(props.courseId, newNode.value.name)
+      if (isDuplicate === true) {
         showSnackbar?.(t('nodeSelector.nodeExists', { name: newNode.value.name }), 'error')
         return
       }

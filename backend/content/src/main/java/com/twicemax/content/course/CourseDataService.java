@@ -1,6 +1,5 @@
 package com.twicemax.content.course;
 
-import com.twicemax.shared.domain.Enums;
 import com.twicemax.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -80,9 +79,9 @@ public class CourseDataService {
     }
 
     /**
-     * 根据状态获取课程列表
+     * 根据状态获取主课程列表（仅 parent_course_id=0）。state 为 NewContentState 字符串值。
      */
-    public List<CourseDO> listByState(Byte state, Long lastId, int limit) {
+    public List<CourseDO> listByState(String state, Long lastId, int limit) {
         return courseMapper.listByState(state, lastId, limit);
     }
 
@@ -115,10 +114,17 @@ public class CourseDataService {
     }
 
     /**
-     * 根据父ID和状态获取子课程列表
+     * 根据父ID和状态获取子课程列表。state 为 NewContentState 字符串值。
      */
-    public List<CourseDO> listByParentAndState(Enums.ContentState state, long parentId) {
+    public List<CourseDO> listByParentAndState(String state, long parentId) {
         return courseMapper.listByParentAndState(state, parentId);
+    }
+
+    /**
+     * 按创建者分页（state 为 NewContentState 字符串值，可为 null 表示默认排除 BANNED）。
+     */
+    public List<CourseDO> listByCreator(long creatorId, Long lastId, int limit, String state) {
+        return courseMapper.listByCreator(creatorId, lastId, limit, state);
     }
 
     /**
@@ -196,27 +202,37 @@ public class CourseDataService {
     }
 
     /**
-     * 课程审批
+     * 切换 pending_revision_id（提交 / 撤回 / 驳回 时用）。
      */
     @CacheEvict(value = "courses", key = "#id")
-    public int approve(long id) {
-        return courseMapper.approve(id);
+    public int updatePending(long id, Long pendingRevisionId) {
+        return courseMapper.updatePending(id, pendingRevisionId);
     }
 
     /**
-     * 课程拒绝
+     * 审核通过：state=PUBLISHED，刷新内容镜像字段，设置 current_revision_id，清空 pending_revision_id。
      */
     @CacheEvict(value = "courses", key = "#id")
-    public int reject(long id, String reason) {
-        return courseMapper.reject(id, reason);
+    public int approve(long id, String name, String description, String icon,
+                       int mainCategory, int subCategory, long parentCourseId, long currentRevisionId) {
+        return courseMapper.approve(id, name, description, icon, mainCategory, subCategory,
+                parentCourseId, currentRevisionId);
     }
 
     /**
-     * 课程封禁
+     * 封禁：state=BANNED，pending_revision_id 清空。
      */
     @CacheEvict(value = "courses", key = "#id")
-    public int ban(long id, String reason) {
-        return courseMapper.ban(id, reason);
+    public int ban(long id) {
+        return courseMapper.ban(id);
+    }
+
+    /**
+     * 简单状态切换（解封时使用）。
+     */
+    @CacheEvict(value = "courses", key = "#id")
+    public int updateState(long id, String state) {
+        return courseMapper.updateState(id, state);
     }
 
     /**

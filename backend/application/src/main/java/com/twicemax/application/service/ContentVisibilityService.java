@@ -16,6 +16,7 @@ import com.twicemax.memory.deck.MemoryCardDeckDO;
 import com.twicemax.memory.deck.MemoryCardDeckDataService;
 import com.twicemax.shared.domain.Enums.ContentState;
 import com.twicemax.shared.domain.Enums.ContentType;
+import com.twicemax.shared.domain.Enums.NewContentState;
 import com.twicemax.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -161,8 +162,8 @@ public class ContentVisibilityService {
             throw StatusCode.CONTENT_NOT_VISIBLE.exception();
         }
 
-        // 检查课程本身
-        checkContentVisible(course.getState(), course.getCreatorId(), currentUserId);
+        // 检查课程本身（course 已迁到 NewContentState 字符串枚举）
+        checkVisibleByNewState(course.getState(), course.getCreatorId(), currentUserId);
 
         // 检查父课程
         if (course.getParentCourseId() != null && course.getParentCourseId() > 0) {
@@ -170,7 +171,7 @@ public class ContentVisibilityService {
             if (parentCourse == null) {
                 throw StatusCode.CONTENT_NOT_VISIBLE.exception();
             }
-            checkContentVisible(parentCourse.getState(), parentCourse.getCreatorId(), currentUserId);
+            checkVisibleByNewState(parentCourse.getState(), parentCourse.getCreatorId(), currentUserId);
         }
     }
 
@@ -215,8 +216,8 @@ public class ContentVisibilityService {
             throw StatusCode.CONTENT_NOT_VISIBLE.exception();
         }
 
-        // 检查角色本身
-        checkContentVisible(role.getState(), role.getCreatorId(), currentUserId);
+        // 检查角色本身（role 已迁到 NewContentState 字符串枚举）
+        checkVisibleByNewState(role.getState(), role.getCreatorId(), currentUserId);
     }
 
     /**
@@ -228,11 +229,29 @@ public class ContentVisibilityService {
             throw StatusCode.CONTENT_NOT_VISIBLE.exception();
         }
 
-        // 检查路线图本身
-        checkContentVisible(roadmap.getState(), roadmap.getCreatorId(), currentUserId);
+        // 检查路线图本身（roadmap 已迁到 NewContentState 字符串枚举）
+        checkVisibleByNewState(roadmap.getState(), roadmap.getCreatorId(), currentUserId);
 
         // 检查角色
         validateRoleVisibility(roadmap.getRoleId(), currentUserId);
+    }
+
+    /**
+     * 基于 NewContentState 的通用可见性判定（roadmap / role 等已迁到字符串枚举的内容）。
+     * - 自己的内容：BANNED 不可见
+     * - 别人的内容：仅 PUBLISHED 可见
+     */
+    private void checkVisibleByNewState(String state, Long creatorId, Long currentUserId) {
+        boolean isOwner = creatorId != null && creatorId.equals(currentUserId);
+        if (isOwner) {
+            if (NewContentState.BANNED_VALUE.equals(state)) {
+                throw StatusCode.CONTENT_NOT_VISIBLE.exception();
+            }
+        } else {
+            if (!NewContentState.PUBLISHED_VALUE.equals(state)) {
+                throw StatusCode.CONTENT_NOT_VISIBLE.exception();
+            }
+        }
     }
 
     /**
@@ -321,14 +340,14 @@ public class ContentVisibilityService {
             throw StatusCode.INVALID_PARAMETER.exception("课程不存在");
         }
 
-        if (course.getState() != ContentState.PUBLISHED.value()) {
+        if (!NewContentState.PUBLISHED_VALUE.equals(course.getState())) {
             throw StatusCode.INVALID_PARAMETER.exception("无法对未发布的内容进行操作");
         }
 
         // 检查父课程
         if (course.getParentCourseId() != null && course.getParentCourseId() > 0) {
             CourseDO parentCourse = courseDataService.getById(course.getParentCourseId());
-            if (parentCourse == null || parentCourse.getState() != ContentState.PUBLISHED.value()) {
+            if (parentCourse == null || !NewContentState.PUBLISHED_VALUE.equals(parentCourse.getState())) {
                 throw StatusCode.INVALID_PARAMETER.exception("无法对未发布的内容进行操作");
             }
         }
@@ -377,7 +396,7 @@ public class ContentVisibilityService {
             throw StatusCode.INVALID_PARAMETER.exception("角色不存在");
         }
 
-        if (role.getState() != ContentState.PUBLISHED.value()) {
+        if (!NewContentState.PUBLISHED_VALUE.equals(role.getState())) {
             throw StatusCode.INVALID_PARAMETER.exception("无法对未发布的内容进行操作");
         }
     }
@@ -391,7 +410,7 @@ public class ContentVisibilityService {
             throw StatusCode.INVALID_PARAMETER.exception("路线图不存在");
         }
 
-        if (roadmap.getState() != ContentState.PUBLISHED.value()) {
+        if (!NewContentState.PUBLISHED_VALUE.equals(roadmap.getState())) {
             throw StatusCode.INVALID_PARAMETER.exception("无法对未发布的内容进行操作");
         }
 
